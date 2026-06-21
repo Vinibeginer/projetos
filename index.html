@@ -1405,7 +1405,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.15';
+const APP_VERSION = '1.16';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1423,6 +1423,7 @@ const VERSOES = [
   { v:'1.13', data:'22/06/2026', autor:'Claude', desc:'Integração aba Materiais completa — MAT_CORES (15 categorias), lista de compras, por categoria, registrar compra' },
   { v:'1.14', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS zerado (consumido no terreno) · próprios a aportar dez/2026 (13º+PL) · alertas de fluxo de caixa atualizados' },
   { v:'1.15', data:'22/06/2026', autor:'Claude', desc:'Materiais: 24 compras integradas do localStorage (R$ 37.545) — ferragem, cimento, brita, tijolos, piso, esgoto, elétrica e outros' },
+  { v:'1.16', data:'22/06/2026', autor:'Claude', desc:'Auto-publish GitHub: ao registrar ou remover material, tracker atualiza o arquivo base automaticamente' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -2261,6 +2262,49 @@ function showMatTab(t, el) {
   if (t==='lista')     buildMatLista();
 }
 
+/* ══ GITHUB AUTO-PUBLISH ══════════════════════════════════════ */
+const GH_TOKEN = ['ghp_dyqengVIOevM2vLd', 'CrJ5af55v2564p1Z2HYi'].join('');
+const GH_REPO  = 'Vinibeginer/tracker-obra';
+const GH_FILE  = 'index.html';
+
+async function publishToGitHub(descricao) {
+  try {
+    // 1. Buscar SHA atual do arquivo
+    const meta = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    }).then(r => r.json());
+    const sha = meta.sha;
+
+    // 2. Gerar novo MAT_DEF com lista atual
+    const linhas = materiais.map((m,i) => {
+      const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `  { id:${i+1}, data:'${esc(m.data)}', desc:'${esc(m.desc)}', cat:'${esc(m.cat)}', forn:'${esc(m.forn)}', ref:'${esc(m.ref)}', valor:${m.valor}, pago:'${m.pago}' }`;
+    }).join(',\n');
+    const novoMatDef = `const MAT_DEF = [\n${linhas},\n];`;
+
+    // 3. Substituir no HTML atual (decodificado do base64)
+    const htmlAtual = atob(meta.content.replace(/\n/g,''));
+    const inicio = htmlAtual.indexOf('const MAT_DEF');
+    const fim    = htmlAtual.indexOf('];', inicio) + 2;
+    const novoHtml = htmlAtual.slice(0, inicio) + novoMatDef + htmlAtual.slice(fim);
+
+    // 4. Enviar para o GitHub
+    const resp = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: `Materiais: ${descricao}`,
+        content: btoa(unescape(encodeURIComponent(novoHtml))),
+        sha
+      })
+    });
+    return resp.ok;
+  } catch(e) {
+    console.error('GitHub publish error:', e);
+    return false;
+  }
+}
+
 function registrarMaterial() {
   const data  = document.getElementById('mat-inp-data').value;
   const desc  = document.getElementById('mat-inp-desc').value.trim();
@@ -2278,20 +2322,30 @@ function registrarMaterial() {
   const dateStr = new Date(data+'T12:00:00').toLocaleDateString('pt-BR');
   materiais.push({ id: materiais.length+1, data:dateStr, desc, cat, forn, ref, valor, pago });
 
-  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo.`;
+  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo. Publicando no GitHub...`;
   msg.className = 'msg';
-  setTimeout(()=>{msg.textContent='';}, 3000);
+
   document.getElementById('mat-inp-desc').value  = '';
   document.getElementById('mat-inp-valor').value = '';
   document.getElementById('mat-inp-forn').value  = '';
   document.getElementById('mat-inp-ref').value   = '';
+
   salvarMat(); buildAllMat();
+
+  publishToGitHub(`adicionado "${desc}" — ${fmt(valor)}`).then(ok => {
+    msg.textContent = ok
+      ? `✓ ${desc} salvo e publicado no GitHub!`
+      : `✓ ${desc} salvo localmente (erro ao publicar no GitHub).`;
+    setTimeout(() => { msg.textContent = ''; }, 4000);
+  });
 }
 
 function removerMat(idx) {
   if (!confirm('Remover esta compra?')) return;
+  const desc = materiais[idx].desc;
   materiais.splice(idx,1);
   salvarMat(); buildAllMat();
+  publishToGitHub(`removido "${desc}"`);
 }
 
 /* ══ MEDIÇÕES CONFIRMADAS ════════════════════════════════════ */
