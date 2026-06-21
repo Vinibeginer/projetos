@@ -683,18 +683,18 @@ textarea { resize: vertical; min-height: 60px; }
         </div>
         <div class="card warn">
           <div class="card-label">Recursos próprios (obra)</div>
-          <div class="card-value">R$ 110.807</div>
-          <div class="card-sub">22,39% do custo PCI</div>
+          <div class="card-value" style="font-size:16px;">A aportar</div>
+          <div class="card-sub">previsão: 13º + PL — dez/2026</div>
         </div>
-        <div class="card ok">
+        <div class="card dash">
           <div class="card-label">FGTS (conta vinculada)</div>
-          <div class="card-value">R$ 11.305</div>
-          <div class="card-sub">2,28% do custo PCI</div>
+          <div class="card-value" style="font-size:16px;">Consumido</div>
+          <div class="card-sub">utilizado na quitação do terreno</div>
         </div>
         <div class="card">
           <div class="card-label">Custo PCI total</div>
           <div class="card-value">R$ 495.000</div>
-          <div class="card-sub">recursos fecham exatamente ✓</div>
+          <div class="card-sub">CAIXA cobre até a 5ª medição</div>
         </div>
         <div class="card">
           <div class="card-label">Desembolso médio / medição</div>
@@ -712,13 +712,12 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="sect-title">Composição dos recursos para a obra</div>
       <div class="progress-wrap" style="height:32px;">
         <div class="progress-medido" style="width:75.33%;font-size:12px;">CAIXA 75,3% · R$ 372.888</div>
-        <div class="progress-exec"   style="left:75.33%;width:22.39%;font-size:12px;">Próprios 22,4%</div>
-        <div style="position:absolute;left:97.72%;top:0;height:100%;width:2.28%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green);font-weight:600;">FGTS</div>
+        <div class="progress-exec" style="left:75.33%;width:24.67%;font-size:11px;opacity:0.6;">Próprios a aportar (dez/2026)</div>
       </div>
       <div class="legend">
         <span><div class="dot" style="background:var(--green-mid)"></div>CAIXA p/ obra: R$ 372.888 (75,3%)</span>
-        <span><div class="dot" style="background:var(--blue-mid)"></div>Recursos próprios p/ obra: R$ 110.807 (22,4%)</span>
-        <span><div class="dot" style="background:var(--green-bg);border:1px solid var(--green)"></div>FGTS: R$ 11.305 (2,3%)</span>
+        <span><div class="dot" style="background:var(--blue-mid);opacity:0.6"></div>Recursos próprios: a aportar — previsão dez/2026</span>
+        <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>FGTS: consumido na quitação do terreno</span>
       </div>
 
       <!-- tabela de composição -->
@@ -747,25 +746,25 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <td style="font-weight:500">Recursos próprios</td>
               <td class="right">R$ 152.271</td>
-              <td class="right" style="color:var(--text2)">R$ 41.463 <span style="font-size:11px">(complemento terreno)</span></td>
-              <td class="right" style="font-weight:600;color:var(--amber)">R$ 110.807</td>
-              <td class="right">22,39%</td>
-              <td class="right" style="color:var(--text2)">~50,8 m²</td>
+              <td class="right" style="color:var(--text2)">terreno + FGTS + ITBI + cartório + taxas</td>
+              <td class="right" style="font-weight:600;color:var(--amber)">A aportar — dez/2026 <span style="font-size:11px">(13º + PL)</span></td>
+              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text3)">—</td>
             </tr>
             <tr>
               <td style="font-weight:500">FGTS (conta vinculada)</td>
               <td class="right">R$ 11.305</td>
-              <td class="right" style="color:var(--text2)">—</td>
-              <td class="right" style="font-weight:600;color:var(--green)">R$ 11.305</td>
-              <td class="right">2,28%</td>
-              <td class="right" style="color:var(--text2)">~5,2 m²</td>
+              <td class="right" style="color:var(--red)">Consumido — quitação do terreno</td>
+              <td class="right" style="font-weight:600;color:var(--text3)">R$ 0</td>
+              <td class="right" style="color:var(--text3)">0%</td>
+              <td class="right" style="color:var(--text3)">—</td>
             </tr>
             <tr style="font-weight:600;border-top:2px solid var(--border2);">
-              <td>TOTAL PARA A OBRA</td>
+              <td>TOTAL CONFIRMADO PARA A OBRA</td>
               <td class="right">R$ 618.063</td>
-              <td class="right" style="color:var(--text2)">R$ 123.063</td>
-              <td class="right" style="color:var(--green)">R$ 495.000</td>
-              <td class="right">100,00%</td>
+              <td class="right" style="color:var(--text2)">R$ 123.063+</td>
+              <td class="right" style="color:var(--blue)">R$ 372.888 + aportes</td>
+              <td class="right">75,33%+</td>
               <td class="right" style="color:var(--text2)">227,0 m²</td>
             </tr>
           </tbody>
@@ -773,29 +772,29 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
 
       <!-- percentuais de conclusão possíveis por fonte -->
-      <div class="sect-title">Quanto cada fonte consegue concluir da obra</div>
+      <div class="sect-title">Quanto cada fonte cobre da obra</div>
       <div class="cards" style="margin-bottom:1.5rem;">
         <div class="card info">
-          <div class="card-label">Só com CAIXA</div>
+          <div class="card-label">CAIXA (confirmado)</div>
           <div class="card-value">75,3%</div>
-          <div class="card-sub">~171 m² · R$ 372.888</div>
+          <div class="card-sub">~171 m² · R$ 372.888 · até 5ª medição</div>
         </div>
         <div class="card warn">
-          <div class="card-label">Só com recursos próprios</div>
-          <div class="card-value">22,4%</div>
-          <div class="card-sub">~51 m² · R$ 110.807</div>
+          <div class="card-label">Recursos próprios</div>
+          <div class="card-value" style="font-size:16px;">A aportar</div>
+          <div class="card-sub">necessários a partir da 6ª medição (mar/2027)</div>
         </div>
-        <div class="card ok">
-          <div class="card-label">Só com FGTS</div>
-          <div class="card-value">2,3%</div>
-          <div class="card-sub">~5 m² · R$ 11.305</div>
+        <div class="card dash">
+          <div class="card-label">FGTS</div>
+          <div class="card-value" style="font-size:16px;">R$ 0</div>
+          <div class="card-sub">consumido na quitação do terreno</div>
         </div>
       </div>
 
       <!-- estratégia de uso -->
-      <div class="sect-title">Como os recursos próprios serão usados</div>
+      <div class="sect-title">Estratégia de uso dos recursos</div>
       <div class="alert alert-info">
-        Os recursos próprios (R$ 152.271) precisam ser integralizados <strong>via obra executada</strong>, não como depósito. A CAIXA verifica a aplicação em vistorias. O cronograma abaixo mostra como distribuir os R$ 110.807 disponíveis para obra ao longo das etapas.
+        O financiamento CAIXA (R$ 372.888) cobre as <strong>fases 1 a 5</strong> da obra integralmente até aproximadamente a 5ª medição. Os recursos próprios precisam estar disponíveis a partir da <strong>6ª medição (~mar/2027)</strong>, quando entram nas fases de revestimento e acabamento. Previsão de aporte: <strong>13º salário + PLR — dez/2026</strong>.
       </div>
       <div class="table-wrap">
         <table>
@@ -841,7 +840,7 @@ textarea { resize: vertical; min-height: 60px; }
               <td style="font-weight:500;color:var(--text2)">Fase 5 — Acabamentos</td>
               <td style="color:var(--text2);font-size:12px">Pisos, louças, instalações completas, complementos</td>
               <td class="right">R$ 106.575</td>
-              <td class="right"><span class="badge b-adiant">Próprios + FGTS</span></td>
+              <td class="right"><span class="badge b-adiant">Próprios</span></td>
               <td class="right">21,53%</td>
             </tr>
             <tr style="font-weight:600;border-top:2px solid var(--border2);">
@@ -856,10 +855,10 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
 
       <div class="alert alert-warn" style="margin-top:1rem;">
-        ⚠️ Os R$ 110.807 de recursos próprios disponíveis para obra precisam ser aplicados principalmente nas <strong>fases 4 e 5</strong> (revestimentos e acabamentos), quando o saldo CAIXA começa a escassear. Planejar o fluxo de caixa pessoal para essas etapas.
+        ⚠️ Os recursos próprios precisam estar disponíveis para as <strong>fases 4 e 5</strong> (revestimentos e acabamentos — a partir de mar/2027). Planejar o aporte com base no 13º salário e PLR de <strong>dez/2026</strong>, mantendo reserva suficiente para cobrir essas etapas sem interrupção da obra.
       </div>
       <div class="alert alert-info" style="margin-top:0.5rem;">
-        💡 O FGTS (R$ 11.305) entra preferencialmente na fase final para complementar o pagamento de louças, metais e complementos, evitando usar recursos próprios no encerramento.
+        💡 O FGTS já foi utilizado na quitação do terreno e <strong>não está disponível</strong> para a obra. Todo o complemento das fases finais depende exclusivamente dos recursos próprios.
       </div>
 
     </div><!-- /tab-recursos -->
@@ -1406,7 +1405,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.13';
+const APP_VERSION = '1.14';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1422,6 +1421,7 @@ const VERSOES = [
   { v:'1.11', data:'21/06/2026', autor:'Claude', desc:'Aba medição com confirmação direta no tracker — botão "Confirmar medição CAIXA" · histórico automático' },
   { v:'1.12', data:'22/06/2026', autor:'Claude', desc:'Previsão alvenaria+pilares corrigida: horizonte de 4 semanas (22/06–18/07/2026), não semana única' },
   { v:'1.13', data:'22/06/2026', autor:'Claude', desc:'Integração aba Materiais completa — MAT_CORES (15 categorias), lista de compras, por categoria, registrar compra' },
+  { v:'1.14', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS zerado (consumido no terreno) · próprios a aportar dez/2026 (13º+PL) · alertas de fluxo de caixa atualizados' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
