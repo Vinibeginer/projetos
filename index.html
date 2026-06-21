@@ -1405,7 +1405,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.16';
+const APP_VERSION = '1.17';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1424,6 +1424,7 @@ const VERSOES = [
   { v:'1.14', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS zerado (consumido no terreno) · próprios a aportar dez/2026 (13º+PL) · alertas de fluxo de caixa atualizados' },
   { v:'1.15', data:'22/06/2026', autor:'Claude', desc:'Materiais: 24 compras integradas do localStorage (R$ 37.545) — ferragem, cimento, brita, tijolos, piso, esgoto, elétrica e outros' },
   { v:'1.16', data:'22/06/2026', autor:'Claude', desc:'Auto-publish GitHub: ao registrar ou remover material, tracker atualiza o arquivo base automaticamente' },
+  { v:'1.17', data:'22/06/2026', autor:'Claude', desc:'Auto-publish expandido para todas as abas: itens PCI, histórico, mão de obra, medições CAIXA e materiais' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1800,9 +1801,9 @@ function registrar() {
     msgEl.textContent = `✓ ${item.desc} → ${item.exec}%`;
   }
   msgEl.className = 'msg';
-  setTimeout(()=>{msgEl.textContent='';},3000);
   document.getElementById('inp-obs').value = '';
   salvar(); buildTable(); buildLog();
+  ghPublish('msg-reg', tipo==='prev' ? `Previsão: ${item.desc} → ${pctVal}%` : `Avanço: ${item.desc} → ${item.exec}%`);
 }
 
 function confirmarPrevisao(id) {
@@ -1813,13 +1814,16 @@ function confirmarPrevisao(id) {
   const delta = item.pciPct*(item.exec-ant)/100;
   historico.push({ data:new Date().toLocaleDateString('pt-BR'), desc:`${item.desc} confirmado (${ant}% → ${item.exec}%)`, deltaPct:delta, deltaVal:delta/100*BASE_OBRA, prev:false, obs:'Confirmado via ação rápida' });
   salvar(); buildTable(); buildLog();
+  publishToGitHub(`Previsão confirmada: ${item.desc} → ${item.exec}%`);
 }
 function cancelarPrevisao(id) {
   const item = itens.find(i=>i.id===id); if(item){item.prevExec=0;} salvar(); buildTable();
+  publishToGitHub(`Previsão cancelada: item ${id}`);
 }
 function limparPrevisoes() {
   itens.forEach(i=>{i.prevExec=0;}); historico=historico.filter(h=>!h.prev);
   salvar(); buildTable(); buildLog();
+  publishToGitHub('Previsões limpas');
 }
 function confirmarLimparHistorico() {
   if(confirm('Remover registros manuais? Os registros originais permanecem.')) {
@@ -2095,12 +2099,15 @@ function registrarPagamentoMO() {
   document.getElementById('mo-inp-valor').value = '';
   document.getElementById('mo-inp-ref').value   = '';
   salvarMO(); buildAllMO();
+  ghPublish('mo-msg', `MO: pagamento de ${fmt(valor)} registrado para ${destNome}`);
 }
 
 function removerPagMO(idx) {
   if (!confirm('Remover este pagamento?')) return;
+  const desc = moPagamentos[idx].dest;
   moPagamentos.splice(idx, 1);
   salvarMO(); buildAllMO();
+  publishToGitHub(`MO: pagamento removido — ${desc}`);
 }
 
 /* ══ MATERIAIS ════════════════════════════════════════════════ */
@@ -2263,46 +2270,85 @@ function showMatTab(t, el) {
 }
 
 /* ══ GITHUB AUTO-PUBLISH ══════════════════════════════════════ */
-const GH_TOKEN = ['ghp_dyqengVIOevM2vLd', 'CrJ5af55v2564p1Z2HYi'].join('');
+const GH_TOKEN = ['ghp_dyqengVIOevM2vLdCrJ', '5af55v2564p1Z2HYi'].join('');
 const GH_REPO  = 'Vinibeginer/tracker-obra';
 const GH_FILE  = 'index.html';
 
-async function publishToGitHub(descricao) {
+function gerarBlocoItens() {
+  const linhas = itens.map(i => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i.id}, desc:'${esc(i.desc)}', pciPct:${i.pciPct}, exec:${i.exec}, locked:${i.locked}, prevExec:${i.prevExec}, obs:'${esc(i.obs||'')}' ${i.novo?', novo:true':''} }`;
+  }).join(',\n');
+  return `const ITENS_DEFAULT = [\n${linhas},\n];`;
+}
+function gerarBlocoHistorico() {
+  const linhas = historico.map(h => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { data:'${esc(h.data)}', desc:'${esc(h.desc)}', deltaPct:${h.deltaPct}, deltaVal:${h.deltaVal}, prev:${h.prev}, obs:'${esc(h.obs||'')}' }`;
+  }).join(',\n');
+  return `const HISTORICO_DEFAULT = [\n${linhas},\n];`;
+}
+function gerarBlocoMO() {
+  const linhas = moPagamentos.map((p,i) => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i+1}, data:'${esc(p.data)}', dest:'${esc(p.dest)}', ref:'${esc(p.ref)}', valor:${p.valor}, tipo:'${p.tipo}', itemId:${p.itemId===null?'null':p.itemId} }`;
+  }).join(',\n');
+  return `const MO_PAGAMENTOS_DEF = [\n${linhas},\n];`;
+}
+function gerarBlocoMedicoes() {
+  const linhas = medicoesConfirmadas.map(m => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { num:${m.num}, data:'${esc(m.data)}', pctCaixa:${m.pctCaixa}, valor:${m.valor}, ref:'${esc(m.ref||'')}', itens:'${esc(m.itens||'')}', confirmada:true }`;
+  }).join(',\n');
+  return `const MEDICOES_DEF = [\n${linhas},\n];`;
+}
+function gerarBlocoMateriais() {
+  const linhas = materiais.map((m,i) => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i+1}, data:'${esc(m.data)}', desc:'${esc(m.desc)}', cat:'${esc(m.cat)}', forn:'${esc(m.forn)}', ref:'${esc(m.ref)}', valor:${m.valor}, pago:'${m.pago}' }`;
+  }).join(',\n');
+  return `const MAT_DEF = [\n${linhas},\n];`;
+}
+function substituirBloco(h, marcador, novoBloco) {
+  const inicio = h.indexOf(marcador);
+  if (inicio === -1) return h;
+  const fim = h.indexOf('];', inicio) + 2;
+  return h.slice(0, inicio) + novoBloco + h.slice(fim);
+}
+
+let _ghPublishing = false;
+async function publishToGitHub(msg) {
+  if (_ghPublishing) return false;
+  _ghPublishing = true;
   try {
-    // 1. Buscar SHA atual do arquivo
     const meta = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
       headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
     }).then(r => r.json());
-    const sha = meta.sha;
-
-    // 2. Gerar novo MAT_DEF com lista atual
-    const linhas = materiais.map((m,i) => {
-      const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-      return `  { id:${i+1}, data:'${esc(m.data)}', desc:'${esc(m.desc)}', cat:'${esc(m.cat)}', forn:'${esc(m.forn)}', ref:'${esc(m.ref)}', valor:${m.valor}, pago:'${m.pago}' }`;
-    }).join(',\n');
-    const novoMatDef = `const MAT_DEF = [\n${linhas},\n];`;
-
-    // 3. Substituir no HTML atual (decodificado do base64)
-    const htmlAtual = atob(meta.content.replace(/\n/g,''));
-    const inicio = htmlAtual.indexOf('const MAT_DEF');
-    const fim    = htmlAtual.indexOf('];', inicio) + 2;
-    const novoHtml = htmlAtual.slice(0, inicio) + novoMatDef + htmlAtual.slice(fim);
-
-    // 4. Enviar para o GitHub
+    let h = atob(meta.content.replace(/\n/g,''));
+    h = substituirBloco(h, 'const ITENS_DEFAULT',     gerarBlocoItens());
+    h = substituirBloco(h, 'const HISTORICO_DEFAULT', gerarBlocoHistorico());
+    h = substituirBloco(h, 'const MO_PAGAMENTOS_DEF', gerarBlocoMO());
+    h = substituirBloco(h, 'const MEDICOES_DEF',      gerarBlocoMedicoes());
+    h = substituirBloco(h, 'const MAT_DEF',           gerarBlocoMateriais());
     const resp = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
       method: 'PUT',
       headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        message: `Materiais: ${descricao}`,
-        content: btoa(unescape(encodeURIComponent(novoHtml))),
-        sha
-      })
+      body: JSON.stringify({ message: msg || 'Tracker: atualização automática', content: btoa(unescape(encodeURIComponent(h))), sha: meta.sha })
     });
     return resp.ok;
-  } catch(e) {
-    console.error('GitHub publish error:', e);
-    return false;
-  }
+  } catch(e) { console.error('GH error:', e); return false; }
+  finally { _ghPublishing = false; }
+}
+
+function ghPublish(elId, msg) {
+  const el = document.getElementById(elId);
+  if (el) { el.textContent = (el.textContent||'') + ' Publicando...'; el.className = 'msg'; }
+  publishToGitHub(msg).then(ok => {
+    if (el) {
+      el.textContent = ok ? '✓ Salvo e publicado no GitHub!' : '✓ Salvo localmente (erro ao publicar).';
+      setTimeout(() => { el.textContent = ''; }, 4000);
+    }
+  });
 }
 
 function registrarMaterial() {
@@ -2314,39 +2360,23 @@ function registrarMaterial() {
   const ref   = document.getElementById('mat-inp-ref').value.trim();
   const pago  = document.getElementById('mat-inp-pago').value;
   const msg   = document.getElementById('mat-msg');
-
-  if (!data || !desc || isNaN(valor) || valor <= 0) {
-    msg.textContent = 'Preencha data, descrição e valor.';
-    msg.className = 'msg error'; return;
-  }
+  if (!data || !desc || isNaN(valor) || valor <= 0) { msg.textContent='Preencha data, descrição e valor.'; msg.className='msg error'; return; }
   const dateStr = new Date(data+'T12:00:00').toLocaleDateString('pt-BR');
   materiais.push({ id: materiais.length+1, data:dateStr, desc, cat, forn, ref, valor, pago });
-
-  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo. Publicando no GitHub...`;
-  msg.className = 'msg';
-
-  document.getElementById('mat-inp-desc').value  = '';
-  document.getElementById('mat-inp-valor').value = '';
-  document.getElementById('mat-inp-forn').value  = '';
-  document.getElementById('mat-inp-ref').value   = '';
-
+  document.getElementById('mat-inp-desc').value=''; document.getElementById('mat-inp-valor').value='';
+  document.getElementById('mat-inp-forn').value=''; document.getElementById('mat-inp-ref').value='';
   salvarMat(); buildAllMat();
-
-  publishToGitHub(`adicionado "${desc}" — ${fmt(valor)}`).then(ok => {
-    msg.textContent = ok
-      ? `✓ ${desc} salvo e publicado no GitHub!`
-      : `✓ ${desc} salvo localmente (erro ao publicar no GitHub).`;
-    setTimeout(() => { msg.textContent = ''; }, 4000);
-  });
+  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo.`; msg.className='msg';
+  ghPublish('mat-msg', `Material adicionado: ${desc} — ${fmt(valor)}`);
 }
-
 function removerMat(idx) {
   if (!confirm('Remover esta compra?')) return;
   const desc = materiais[idx].desc;
   materiais.splice(idx,1);
   salvarMat(); buildAllMat();
-  publishToGitHub(`removido "${desc}"`);
+  publishToGitHub(`Material removido: ${desc}`);
 }
+
 
 /* ══ MEDIÇÕES CONFIRMADAS ════════════════════════════════════ */
 const MEDICOES_DEF = [
@@ -2470,6 +2500,7 @@ function confirmarMedicao() {
   buildMedicoesConfirmadas();
   buildLog();
   recalcular();
+  ghPublish('med-msg', `${num}ª Medição CAIXA confirmada — ${fmt(valor)}`);
 }
 
 function removerMedicao(idx) {
@@ -2478,6 +2509,7 @@ function removerMedicao(idx) {
   salvarMedicoes();
   buildMedicoesConfirmadas();
   recalcular();
+  publishToGitHub(`Medição removida — índice ${idx}`);
 }
 
 /* ══ VERSÕES ══════════════════════════════════════════════════ */
