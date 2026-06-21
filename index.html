@@ -1405,7 +1405,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.14';
+const APP_VERSION = '1.15';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1422,6 +1422,7 @@ const VERSOES = [
   { v:'1.12', data:'22/06/2026', autor:'Claude', desc:'Previsão alvenaria+pilares corrigida: horizonte de 4 semanas (22/06–18/07/2026), não semana única' },
   { v:'1.13', data:'22/06/2026', autor:'Claude', desc:'Integração aba Materiais completa — MAT_CORES (15 categorias), lista de compras, por categoria, registrar compra' },
   { v:'1.14', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS zerado (consumido no terreno) · próprios a aportar dez/2026 (13º+PL) · alertas de fluxo de caixa atualizados' },
+  { v:'1.15', data:'22/06/2026', autor:'Claude', desc:'Materiais: 24 compras integradas do localStorage (R$ 37.545) — ferragem, cimento, brita, tijolos, piso, esgoto, elétrica e outros' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -2121,7 +2122,30 @@ const MAT_CORES = {
 };
 
 const MAT_DEF = [
-  { id:1, data:'24/09/2025', desc:'Madeira para fôrma/escoramento', cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104', valor:1500, pago:'sim' },
+  { id:1,  data:'24/09/2025', desc:'Madeira para fôrma/escoramento',    cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104', valor:1500,    pago:'sim' },
+  { id:2,  data:'30/11/2024', desc:'Ferragem + radie',                   cat:'Estrutura',        forn:'Pai de Felipe Versada',          ref:'',                  valor:6780,    pago:'sim' },
+  { id:3,  data:'05/06/2025', desc:'7m de brita 1',                      cat:'Estrutura',        forn:'Felipe Total Solar',             ref:'',                  valor:850,     pago:'sim' },
+  { id:4,  data:'23/06/2025', desc:'Sondagem',                           cat:'Outros',           forn:'MS GEO',                         ref:'',                  valor:1850,    pago:'sim' },
+  { id:5,  data:'29/10/2024', desc:'Caixa d\'agua',                      cat:'Outros',           forn:'Goytacazes',                     ref:'',                  valor:370,     pago:'sim' },
+  { id:6,  data:'27/08/2025', desc:'Atualização + Projeto',              cat:'Outros',           forn:'Zé Carlos Eng.',                 ref:'',                  valor:1400,    pago:'sim' },
+  { id:7,  data:'27/08/2025', desc:'Areia',                              cat:'Outros',           forn:'Felipe Total',                   ref:'',                  valor:235,     pago:'sim' },
+  { id:8,  data:'20/08/2025', desc:'Cimento',                            cat:'Outros',           forn:'JMR',                            ref:'',                  valor:980,     pago:'sim' },
+  { id:9,  data:'30/08/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1120,    pago:'sim' },
+  { id:10, data:'30/08/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1050,    pago:'sim' },
+  { id:11, data:'30/08/2025', desc:'Ferragem',                           cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:118,     pago:'sim' },
+  { id:12, data:'08/09/2025', desc:'Ferragem',                           cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:400,     pago:'sim' },
+  { id:13, data:'17/09/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:900,     pago:'sim' },
+  { id:14, data:'17/10/2025', desc:'Cimento + impermeabilizante',        cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1320,    pago:'sim' },
+  { id:15, data:'15/06/2026', desc:'Cimento + lona',                     cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1122,    pago:'sim' },
+  { id:16, data:'16/06/2026', desc:'Tijolo alvenaria + amarração',       cat:'Alvenaria',        forn:'Pai de Felipe Ver',              ref:'',                  valor:10000,   pago:'sim' },
+  { id:17, data:'24/09/2025', desc:'Madeira baldrame',                   cat:'Fôrmas e madeira', forn:'L M Madeiras',                   ref:'',                  valor:1500,    pago:'sim' },
+  { id:18, data:'24/09/2025', desc:'Brita 1',                            cat:'Estrutura',        forn:'Felipe Total',                   ref:'',                  valor:850,     pago:'sim' },
+  { id:19, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:588.08,  pago:'sim' },
+  { id:20, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:1334,    pago:'sim' },
+  { id:21, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:1856.68, pago:'sim' },
+  { id:22, data:'27/10/2025', desc:'Material esgoto',                    cat:'Hidráulico',       forn:'ICS Azevedo',                    ref:'',                  valor:871.64,  pago:'sim' },
+  { id:23, data:'09/06/2026', desc:'Poste padrão',                       cat:'Elétrico',         forn:'Monica Santos',                  ref:'',                  valor:700,     pago:'sim' },
+  { id:24, data:'09/06/2026', desc:'Instalação padrão elétrica',         cat:'Elétrico',         forn:'Charles',                        ref:'',                  valor:550,     pago:'sim' },
 ];
 
 let materiais = JSON.parse(JSON.stringify(MAT_DEF));
