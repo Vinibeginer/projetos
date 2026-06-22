@@ -770,7 +770,7 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <td style="font-weight:500">Financiamento CAIXA</td>
               <td class="right">R$ 454.488</td>
-              <td class="right" style="color:var(--text2)">R$ 81.600 <span style="font-size:11px">(80% de R$102k)</span></td>
+              <td class="right" style="color:var(--text2)">R$ 81.600 <span style="font-size:11px">(80% de R$102k avaliado)</span></td>
               <td class="right" style="font-weight:600;color:var(--blue)">R$ 372.888</td>
               <td class="right">75,33%</td>
               <td class="right" style="color:var(--text2)">~171,0 m²</td>
@@ -778,25 +778,33 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <td style="font-weight:500">Recursos próprios</td>
               <td class="right">R$ 152.271</td>
-              <td class="right" style="color:var(--text2)">terreno + FGTS + ITBI + cartório + taxas</td>
-              <td class="right" style="font-weight:600;color:var(--amber)">A aportar — dez/2026 <span style="font-size:11px">(13º + PL)</span></td>
-              <td class="right" style="color:var(--text3)">—</td>
-              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text2)">R$ 27.000 <span style="font-size:11px">(aporte terreno)</span></td>
+              <td class="right" style="font-weight:600;color:var(--amber)">R$ 125.271 <span style="font-size:11px">(a aportar dez/2026)</span></td>
+              <td class="right">25,31%</td>
+              <td class="right" style="color:var(--text2)">~57,5 m²</td>
             </tr>
             <tr>
               <td style="font-weight:500">FGTS (conta vinculada)</td>
               <td class="right">R$ 11.305</td>
-              <td class="right" style="color:var(--red)">Consumido — quitação do terreno</td>
+              <td class="right" style="color:var(--red)">R$ 11.305 <span style="font-size:11px">(consumido no terreno)</span></td>
               <td class="right" style="font-weight:600;color:var(--text3)">R$ 0</td>
               <td class="right" style="color:var(--text3)">0%</td>
               <td class="right" style="color:var(--text3)">—</td>
             </tr>
+            <tr>
+              <td style="font-weight:500;color:var(--green)">Desconto Campos Urbanismo</td>
+              <td class="right" style="color:var(--green)">R$ 3.159</td>
+              <td class="right" style="color:var(--green)">R$ 3.159 <span style="font-size:11px">(abatimento no terreno)</span></td>
+              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text3)">—</td>
+            </tr>
             <tr style="font-weight:600;border-top:2px solid var(--border2);">
-              <td>TOTAL CONFIRMADO PARA A OBRA</td>
-              <td class="right">R$ 618.063</td>
-              <td class="right" style="color:var(--text2)">R$ 123.063+</td>
-              <td class="right" style="color:var(--blue)">R$ 372.888 + aportes</td>
-              <td class="right">75,33%+</td>
+              <td>TOTAL PARA A OBRA</td>
+              <td class="right">R$ 621.222</td>
+              <td class="right" style="color:var(--text2)">R$ 123.063 <span style="font-size:11px">(terreno quitado)</span></td>
+              <td class="right" style="color:var(--blue)">R$ 498.159</td>
+              <td class="right">100,64%</td>
               <td class="right" style="color:var(--text2)">227,0 m²</td>
             </tr>
           </tbody>
@@ -809,12 +817,17 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card info">
           <div class="card-label">CAIXA (confirmado)</div>
           <div class="card-value">75,3%</div>
-          <div class="card-sub">~171 m² · R$ 372.888 · até 5ª medição</div>
+          <div class="card-sub">~171 m² · R$ 372.888 · até ~5ª medição</div>
         </div>
         <div class="card warn">
-          <div class="card-label">Recursos próprios</div>
-          <div class="card-value" style="font-size:16px;">A aportar</div>
+          <div class="card-label">Recursos próprios (obra)</div>
+          <div class="card-value">R$ 125.271</div>
           <div class="card-sub">necessários a partir da 6ª medição (mar/2027)</div>
+        </div>
+        <div class="card ok">
+          <div class="card-label">Desconto Campos Urbanismo</div>
+          <div class="card-value">R$ 3.159</div>
+          <div class="card-sub">abatido no terreno — já realizado</div>
         </div>
         <div class="card dash">
           <div class="card-label">FGTS</div>
@@ -826,7 +839,7 @@ textarea { resize: vertical; min-height: 60px; }
       <!-- estratégia de uso -->
       <div class="sect-title">Estratégia de uso dos recursos</div>
       <div class="alert alert-info">
-        O financiamento CAIXA (R$ 372.888) cobre as <strong>fases 1 a 5</strong> da obra integralmente até aproximadamente a 5ª medição. Os recursos próprios precisam estar disponíveis a partir da <strong>6ª medição (~mar/2027)</strong>, quando entram nas fases de revestimento e acabamento. Previsão de aporte: <strong>13º salário + PLR — dez/2026</strong>.
+        O financiamento CAIXA (R$ 372.888) cobre as <strong>fases 1 a 5</strong> da obra integralmente. Os recursos próprios (R$ 125.271) precisam estar disponíveis a partir da <strong>6ª medição (~mar/2027)</strong>, quando entram nas fases de revestimento e acabamento. Previsão de aporte: <strong>13º salário + PLR — dez/2026</strong>. O FGTS (R$ 11.305) foi consumido integralmente na quitação do terreno.
       </div>
       <div class="table-wrap">
         <table>
@@ -1438,7 +1451,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.33';
+const APP_VERSION = '1.34';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1474,6 +1487,7 @@ const VERSOES = [
   { v:'1.31', data:'22/06/2026', autor:'Claude', desc:'Cronograma corrigido: térreo BR (4 medições, conclusão ~30/03/2027) separado de 1º+2º pav (a contratar, datas a definir)' },
   { v:'1.32', data:'22/06/2026', autor:'Claude', desc:'Fontes corrigidas: CAIXA cobre quase toda a obra (R$349.660 de R$372.888) · Rec. próprios só no final da 7ª med. · badges e alertas atualizados' },
   { v:'1.33', data:'22/06/2026', autor:'Claude', desc:'Base CAIXA recalculada: R$354.244 (R$372.888 − R$18.644 bloqueados/habite-se) · todos os valores das 7 medições atualizados · folga ~R$22.067' },
+  { v:'1.34', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS R$11.305 + próprios R$27.000 consumidos no terreno · desconto Campos Urbanismo R$3.159 · próprios para obra R$125.271' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
