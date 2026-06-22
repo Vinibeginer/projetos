@@ -288,14 +288,14 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card-sub" id="c-medido-sub">R$ 30.623 · 1ª med. 30/05/2026</div>
       </div>
       <div class="card info">
-        <div class="card-label">Executado físico (não medido)</div>
+        <div class="card-label">Executado físico (% PCI)</div>
         <div class="card-value" id="c-exec">—</div>
-        <div class="card-sub" id="c-exec-sub">% PCI · % CAIXA estimado</div>
+        <div class="card-sub" id="c-exec-sub">peso na planilha de custos · % CAIXA ao lado →</div>
       </div>
       <div class="card warn">
-        <div class="card-label">Estimativa próx. medição CAIXA</div>
+        <div class="card-label">Estimativa próx. medição (% CAIXA)</div>
         <div class="card-value" id="c-novo">—</div>
-        <div class="card-sub" id="c-novo-sub">só itens executados · sem previsões</div>
+        <div class="card-sub" id="c-novo-sub">% PCI × 0,7533 · só executados · sem previsões</div>
       </div>
       <div class="card dash">
         <div class="card-label">Com previsões incluídas</div>
@@ -1406,7 +1406,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.22';
+const APP_VERSION = '1.23';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1431,6 +1431,7 @@ const VERSOES = [
   { v:'1.20', data:'22/06/2026', autor:'Claude', desc:'Cronograma ajustado: 2ª medição corrigida para esgoto completo + magro + elétrica padrão · impermeabilização e hidráulica removidas da fase 2 · datas pilares atualizadas' },
   { v:'1.21', data:'22/06/2026', autor:'Claude', desc:'FGTS removido do cronograma: badges Prop+FGTS → Rec. próprios · fase 5 · explicação e alertas corrigidos' },
   { v:'1.22', data:'22/06/2026', autor:'Claude', desc:'Correção: esgoto 1ºpav removido (sem laje) · 2ª medição corrigida para 3,31% CAIXA ~R$12.340 · histórico limpo · cronograma ajustado' },
+  { v:'1.23', data:'22/06/2026', autor:'Claude', desc:'Cards clarificados: "Executado físico (% PCI)" separado de "Estimativa próx. medição (% CAIXA)" · sub mostra relação ×0,7533 explicitamente' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1691,8 +1692,8 @@ function recalcular() {
   // cards
   document.getElementById('c-exec').textContent     = fmtP(execNovo);
   document.getElementById('c-exec-sub').textContent = isAdmin
-    ? `~${fmt(execVal)} · ${fmtP(execNovoCaixa)} CAIXA`
-    : 'executado físico — pendente vistoria';
+    ? `~${fmt(execVal)} · → ${fmtP(execNovoCaixa)} CAIXA (×0,7533)`
+    : 'peso PCI — % CAIXA no card ao lado';
 
   document.getElementById('c-novo').textContent    = '~' + fmtP(execNovoCaixa);
   document.getElementById('c-novo-sub').innerHTML  = isAdmin
