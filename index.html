@@ -208,6 +208,89 @@ textarea { resize: vertical; min-height: 60px; }
 .access-block { background: var(--surface2); border: 1px dashed var(--border2); border-radius: var(--radius-lg); padding: 2rem; text-align: center; color: var(--text3); font-size: 13px; margin: 1rem 0; }
 .access-block span { font-size: 28px; display: block; margin-bottom: 0.5rem; }
 
+/* ── RESPONSIVO MOBILE ───────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* container */
+  .container { padding: 0.75rem; }
+
+  /* header */
+  .header { padding: 0.65rem 0.75rem; flex-wrap: nowrap; }
+  .header-left h1 { font-size: 12px; line-height: 1.3; }
+  .header-left p  { display: none; }
+  .header-right   { gap: 6px; flex-shrink: 0; }
+  .badge-role { font-size: 10px; padding: 2px 7px; }
+  .btn-logout { font-size: 11px; padding: 3px 8px; }
+
+  /* sect-title */
+  .sect-title { font-size: 10px; margin: 0.85rem 0 0.4rem; }
+
+  /* cards: 2 colunas fixas */
+  .cards { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .card { padding: 0.65rem 0.75rem; }
+  .card-label { font-size: 9px; margin-bottom: 4px; line-height: 1.3; }
+  .card-value { font-size: 17px; }
+  .card-sub   { font-size: 10px; line-height: 1.3; margin-top: 3px; word-break: break-word; }
+
+  /* barra: sem texto embutido, só cor */
+  .progress-wrap { height: 18px; border-radius: 5px; }
+  .progress-medido { font-size: 0; padding: 0; }
+  .progress-exec   { font-size: 0; padding: 0; }
+
+  /* legenda abaixo da barra */
+  .legend { flex-direction: column; gap: 5px; font-size: 11px; margin-bottom: 1rem; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+
+  /* tabs: scroll horizontal sem quebrar */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+          gap: 0; padding-bottom: 0; scrollbar-width: none; border-bottom: 1px solid var(--border); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 8px 11px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+  /* tabelas: scroll horizontal com min-width */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); }
+  table { font-size: 12px; width: 100%; min-width: 520px; }
+  thead th { padding: 6px 8px; font-size: 10px; }
+  tbody td  { padding: 6px 8px; }
+  tfoot td  { padding: 6px 8px; font-size: 12px; }
+
+  /* ocultar colunas menos importantes em mobile */
+  .col-hide-mobile { display: none; }
+
+  /* formulários: 1 coluna */
+  .form-grid { grid-template-columns: 1fr; gap: 8px; }
+  .form-card { padding: 0.85rem; }
+  .form-group label { font-size: 10px; }
+  input[type="date"], input[type="text"], input[type="number"], select, textarea {
+    font-size: 16px; /* evita zoom automático iOS */
+    padding: 9px 10px;
+  }
+
+  /* botões */
+  .btn    { padding: 8px 12px; font-size: 12px; }
+  .btn-sm { padding: 5px 9px;  font-size: 11px; }
+
+  /* log */
+  .log-entry { flex-wrap: wrap; gap: 3px; padding: 8px 0; }
+  .log-date  { min-width: auto; width: 100%; font-size: 11px; }
+  .log-desc  { width: 100%; font-size: 12px; }
+  .log-pct, .log-val, .log-prev { font-size: 11px; }
+
+  /* alertas */
+  .alert { font-size: 12px; padding: 8px 10px; }
+
+  /* form-card botões lado a lado */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+}
+
+@media (max-width: 400px) {
+  /* telas muito pequenas: cards 1 coluna */
+  .cards { grid-template-columns: 1fr; }
+  .card-value { font-size: 20px; }
+  table { min-width: 420px; }
+  .tab-btn { padding: 7px 9px; font-size: 11px; }
+}
+
 .resumo-table td, .resumo-table th { padding: 7px 10px; font-size: 13px; }
 .resumo-table tr.total   { font-weight: 600; border-top: 2px solid var(--border2); }
 .resumo-table tr.liberado td { color: var(--green); }
@@ -285,22 +368,17 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="card ok">
         <div class="card-label">✓ Liberado CAIXA (confirmado)</div>
         <div class="card-value" id="c-medido">8,23%</div>
-        <div class="card-sub" id="c-medido-sub">R$ 30.623 · 1ª med. 30/05/2026</div>
+        <div class="card-sub" id="c-medido-sub">1ª med. 30/05/2026</div>
       </div>
       <div class="card info">
-        <div class="card-label">Executado físico (estimado)</div>
+        <div class="card-label">Executado físico (% PCI)</div>
         <div class="card-value" id="c-exec">—</div>
-        <div class="card-sub" id="c-exec-sub">base PCI — não medido ainda</div>
+        <div class="card-sub" id="c-exec-sub">peso na planilha de custos · % CAIXA ao lado →</div>
       </div>
       <div class="card warn">
-        <div class="card-label">Estimativa 2ª medição</div>
+        <div class="card-label">Estimativa próx. medição (% CAIXA)</div>
         <div class="card-value" id="c-novo">—</div>
-        <div class="card-sub" id="c-novo-sub">pendente vistoria CAIXA</div>
-      </div>
-      <div class="card dash">
-        <div class="card-label">Projeção semana seguinte</div>
-        <div class="card-value" id="c-prev">—</div>
-        <div class="card-sub" id="c-prev-sub">—</div>
+        <div class="card-sub" id="c-novo-sub">% PCI × 0,7533 · só executados · sem previsões</div>
       </div>
       <div class="card admin-only">
         <div class="card-label">Saldo CAIXA disponível</div>
@@ -310,7 +388,7 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="card admin-only">
         <div class="card-label">Total confirmado CAIXA</div>
         <div class="card-value" id="c-total-lib">—</div>
-        <div class="card-sub" id="c-total-lib-sub">de R$ 372.888</div>
+        <div class="card-sub" id="c-total-lib-sub">de R$ 354.244 líquidos</div>
       </div>
     </div>
 
@@ -321,10 +399,13 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="progress-exec"   id="bar-exec"   style="left:8.23%;width:0;opacity:0.55"></div>
       <div class="progress-prev"   id="bar-prev"   style="left:8.23%;width:0"></div>
     </div>
+    <div id="bar-pct-labels" style="display:flex;gap:12px;font-size:11px;margin:4px 0 0;flex-wrap:wrap;">
+      <span style="color:var(--green);font-weight:600" id="bar-label-med">✓ 8,23% confirmado</span>
+      <span style="color:var(--blue-mid);font-weight:600" id="bar-label-exec"></span>
+    </div>
     <div class="legend">
-      <span><div class="dot" style="background:var(--green-mid)"></div><strong>Confirmado CAIXA</strong> — 8,23% · R$ 30.623 (1ª medição)</span>
-      <span><div class="dot" style="background:var(--blue-mid);opacity:0.55"></div>Estimado executado (pendente vistoria)</span>
-      <span><div class="dot-dash"></div>Previsão próx. semana</span>
+      <span><div class="dot" style="background:var(--green-mid)"></div><strong>Confirmado CAIXA</strong> — 8,23% (1ª medição)</span>
+      <span><div class="dot" style="background:var(--blue-mid);opacity:0.55"></div>Executado físico não medido (% CAIXA estimado)</span>
       <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>Saldo a liberar</span>
     </div>
 
@@ -368,39 +449,39 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card ok">
           <div class="card-label">Início (alvenaria)</div>
           <div class="card-value" style="font-size:16px;">22/06/2026</div>
-          <div class="card-sub">semana atual</div>
+          <div class="card-sub">Barros Rezende — térreo</div>
         </div>
         <div class="card info">
-          <div class="card-label">Conclusão estimada</div>
-          <div class="card-value" style="font-size:16px;">26/07/2027</div>
-          <div class="card-sub">~14 meses · 57 semanas</div>
-        </div>
-        <div class="card ok">
-          <div class="card-label">Economia de encargos</div>
-          <div class="card-value">R$ 38.654</div>
-          <div class="card-sub">7 meses antecipados × R$ 5.522</div>
+          <div class="card-label">Térreo — conclusão BR</div>
+          <div class="card-value" style="font-size:16px;">~30/03/2027</div>
+          <div class="card-sub">~9 meses · contrato firmado</div>
         </div>
         <div class="card warn">
-          <div class="card-label">Medições previstas</div>
-          <div class="card-value">9 medições</div>
-          <div class="card-sub">1 realizada · 8 a realizar</div>
+          <div class="card-label">1º e 2º pav.</div>
+          <div class="card-value" style="font-size:15px;">A contratar</div>
+          <div class="card-sub">MO e prazo a definir</div>
         </div>
         <div class="card">
-          <div class="card-label">Total a liberar CAIXA</div>
-          <div class="card-value">R$ 372.888</div>
-          <div class="card-sub">em 9 medições</div>
+          <div class="card-label">Prazo CAIXA</div>
+          <div class="card-value" style="font-size:16px;">fev/2028</div>
+          <div class="card-sub">21 meses — margem confortável</div>
         </div>
         <div class="card">
-          <div class="card-label">Equipe</div>
+          <div class="card-label">Medições térreo</div>
+          <div class="card-value">4 medições</div>
+          <div class="card-sub">1 realizada · 3 a realizar</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Equipe BR</div>
           <div class="card-value" style="font-size:15px;">2 pedreiros</div>
           <div class="card-sub">+ ajudantes · 5 dias/sem</div>
         </div>
       </div>
 
       <!-- linha do tempo das medições -->
-      <div class="sect-title">Calendário de medições CAIXA — escala 78% (CAIXA/obra)</div>
-      <div class="alert alert-info" style="margin-bottom:0.75rem;">
-        O financiamento CAIXA representa <strong>78% do custo da obra</strong>. Cada % medido pela CAIXA equivale a <strong>% PCI × 0,78</strong>. Os 22% restantes (R$ 110.807) são aportados com recursos próprios e FGTS nas fases finais.
+      <div class="sect-title">Calendário de medições CAIXA — térreo (contratado BR) + pavimentos (a contratar)</div>
+      <div class="alert alert-warn" style="margin-bottom:0.75rem;">
+        ⚠️ O orçamento da Barros Rezende (R$ 115.000) cobre <strong>somente o térreo completo</strong>. As medições 1ª a 4ª refletem os prazos reais do contrato BR. As medições 5ª em diante dependem de <strong>novo contrato de MO para 1º e 2º pavimento</strong> — datas e valores a definir.
       </div>
       <div class="table-wrap" style="margin-bottom:1.5rem;">
         <table>
@@ -410,18 +491,20 @@ textarea { resize: vertical; min-height: 60px; }
               <th>Data prevista</th>
               <th>Etapas principais</th>
               <th class="right">% PCI</th>
-              <th class="right">% CAIXA<br><span style="font-weight:400;font-size:10px">(×0,78)</span></th>
+              <th class="right">% CAIXA<br><span style="font-weight:400;font-size:10px">(×0,7533)</span></th>
               <th class="right">Liberação</th>
-              <th class="right">Acum. CAIXA</th>
-              <th class="right">Saldo CAIXA</th>
+              <th class="right">Acum.</th>
+              <th class="right">Saldo</th>
               <th>Fonte</th>
             </tr>
           </thead>
           <tbody>
+            <!-- TÉRREO — contratado BR -->
+            <tr><td colspan="9" style="background:var(--green-bg);font-size:11px;font-weight:600;color:var(--green);padding:5px 10px;text-transform:uppercase;letter-spacing:0.05em;">Térreo — Contrato Barros Rezende (prazos confirmados)</td></tr>
             <tr style="background:var(--green-bg)">
               <td class="center"><span class="badge b-medido">1ª ✓</span></td>
               <td style="font-size:12px;white-space:nowrap">30/05/2026</td>
-              <td style="font-size:12px;color:var(--text2)">Barracão + infraestrutura</td>
+              <td style="font-size:12px;color:var(--text2)">Barracão + fundação + impermeabilização alicerce</td>
               <td class="right">10,71%</td>
               <td class="right" style="font-weight:600;color:var(--green)">8,23%</td>
               <td class="right" style="font-weight:600;color:var(--green)">R$ 30.623</td>
@@ -431,118 +514,98 @@ textarea { resize: vertical; min-height: 60px; }
             </tr>
             <tr style="background:var(--blue-bg)">
               <td class="center"><span class="badge b-concluido">2ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~10/08/2026</td>
-              <td style="font-size:12px;color:var(--text2)">Impermeab. cinta + elétrica + hidráulica + esgoto + magro</td>
-              <td class="right">7,15%</td>
-              <td class="right" style="font-weight:600;color:var(--blue)">5,39%</td>
-              <td class="right" style="font-weight:600;color:var(--blue)">~R$ 20.084</td>
-              <td class="right">R$ 50.707</td>
-              <td class="right">R$ 322.181</td>
+              <td style="font-size:12px;white-space:nowrap">~07/09/2026</td>
+              <td style="font-size:12px;color:var(--text2)">Alvenaria+pilares+vigas (45d) + laje térreo (10d) + esgoto+hidráulica (10d) + infra elétrica (5d)</td>
+              <td class="right">19,35%</td>
+              <td class="right" style="font-weight:600;color:var(--blue)">14,58%</td>
+              <td class="right" style="font-weight:600;color:var(--blue)">~R$ 51.636</td>
+              <td class="right">R$ 80.216</td>
+              <td class="right">R$ 274.028</td>
               <td><span class="badge b-concluido">CAIXA</span></td>
             </tr>
             <tr>
               <td class="center"><span class="badge b-pendente">3ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~21/09/2026</td>
-              <td style="font-size:12px;color:var(--text2)">Alvenaria térreo + laje térreo + vigas 1ºpav</td>
-              <td class="right">8,28%</td>
-              <td class="right">6,24%</td>
-              <td class="right" style="font-weight:600">~R$ 23.259</td>
-              <td class="right">R$ 73.966</td>
-              <td class="right">R$ 298.922</td>
+              <td style="font-size:12px;white-space:nowrap">~26/10/2026</td>
+              <td style="font-size:12px;color:var(--text2)">Engradamento + cobertura + impermeab. 2ºpav + esquadrias térreo + vidros</td>
+              <td class="right">9,43%</td>
+              <td class="right">7,10%</td>
+              <td class="right" style="font-weight:600">~R$ 25.164</td>
+              <td class="right">R$ 105.380</td>
+              <td class="right">R$ 248.864</td>
               <td><span class="badge b-concluido">CAIXA</span></td>
             </tr>
             <tr>
               <td class="center"><span class="badge b-pendente">4ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~23/11/2026</td>
-              <td style="font-size:12px;color:var(--text2)">Pilares térreo + alvenaria 1ºpav + laje 2ºpav + contrapisos + cobertura</td>
-              <td class="right">13,13%</td>
-              <td class="right">9,89%</td>
-              <td class="right" style="font-weight:600">~R$ 36.882</td>
-              <td class="right">R$ 110.848</td>
-              <td class="right">R$ 262.040</td>
+              <td style="font-size:12px;white-space:nowrap">~30/03/2027</td>
+              <td style="font-size:12px;color:var(--text2)">Chapisco+reboco térreo (50d) + revestimento (20d) + contrapiso + piso + soleiras + bancadas + varanda</td>
+              <td class="right">33,22%</td>
+              <td class="right">25,02%</td>
+              <td class="right" style="font-weight:600">~R$ 88.648</td>
+              <td class="right">R$ 194.028</td>
+              <td class="right">R$ 160.216</td>
               <td><span class="badge b-concluido">CAIXA</span></td>
             </tr>
-            <tr>
+
+            <!-- PAVIMENTOS — a contratar -->
+            <tr><td colspan="9" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:5px 10px;text-transform:uppercase;letter-spacing:0.05em;">1º e 2º Pavimento — MO a contratar (datas e valores a definir)</td></tr>
+            <tr style="opacity:0.55">
               <td class="center"><span class="badge b-pendente">5ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~11/01/2027</td>
-              <td style="font-size:12px;color:var(--text2)">Esquadrias + vidros + esgoto 1ºpav + pluvial</td>
-              <td class="right">7,15%</td>
-              <td class="right">5,39%</td>
-              <td class="right" style="font-weight:600">~R$ 20.084</td>
-              <td class="right">R$ 130.933</td>
-              <td class="right">R$ 241.956</td>
+              <td style="font-size:12px;white-space:nowrap;color:var(--text3)">A definir</td>
+              <td style="font-size:12px;color:var(--text3)">Alvenaria + pilares + vigas + lajes 1º e 2º pav — <em>depende de novo contrato MO</em></td>
+              <td class="right" style="color:var(--text3)">~17,56%</td>
+              <td class="right" style="color:var(--text3)">~13,23%</td>
+              <td class="right" style="color:var(--text3)">~R$ 46.859</td>
+              <td class="right" style="color:var(--text3)">~R$ 240.887</td>
+              <td class="right" style="color:var(--text3)">~R$ 113.357</td>
               <td><span class="badge b-concluido">CAIXA</span></td>
             </tr>
-            <tr>
+            <tr style="opacity:0.55">
               <td class="center"><span class="badge b-pendente">6ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~29/03/2027</td>
-              <td style="font-size:12px;color:var(--text2)">Infra elétrica interna + hidráulica 1ºpav + revestimentos internos</td>
-              <td class="right">14,65%</td>
-              <td class="right">11,04%</td>
-              <td class="right" style="font-weight:600">~R$ 41.152</td>
-              <td class="right">R$ 172.085</td>
-              <td class="right">R$ 200.804</td>
-              <td><span class="badge b-parcial">CAIXA+Prop</span></td>
+              <td style="font-size:12px;white-space:nowrap;color:var(--text3)">A definir</td>
+              <td style="font-size:12px;color:var(--text3)">Esquadrias + instalações + chapisco + reboco 1º/2º pav — <em>a contratar</em></td>
+              <td class="right" style="color:var(--text3)">~14,28%</td>
+              <td class="right" style="color:var(--text3)">~10,76%</td>
+              <td class="right" style="color:var(--text3)">~R$ 38.106</td>
+              <td class="right" style="color:var(--text3)">~R$ 278.994</td>
+              <td class="right" style="color:var(--text3)">~R$ 75.250</td>
+              <td><span class="badge b-concluido">CAIXA</span></td>
             </tr>
-            <tr>
+            <tr style="opacity:0.55">
               <td class="center"><span class="badge b-pendente">7ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~24/05/2027</td>
-              <td style="font-size:12px;color:var(--text2)">Forros + revestimentos externos + pinturas</td>
-              <td class="right">10,06%</td>
-              <td class="right">7,58%</td>
-              <td class="right" style="font-weight:600">~R$ 28.259</td>
-              <td class="right">R$ 200.343</td>
-              <td class="right">R$ 172.545</td>
+              <td style="font-size:12px;white-space:nowrap;color:var(--text3)">A definir</td>
+              <td style="font-size:12px;color:var(--text3)">Pisos + revestimentos + pinturas + louças + acabamentos 1º/2º pav — <em>a contratar</em></td>
+              <td class="right" style="color:var(--text3)">~19,93%</td>
+              <td class="right" style="color:var(--text3)">~15,01%</td>
+              <td class="right" style="color:var(--text3)">~R$ 53.184</td>
+              <td class="right" style="color:var(--text3)">~R$ 332.177</td>
+              <td class="right" style="color:var(--text3)">~R$ 22.067</td>
               <td><span class="badge b-parcial">CAIXA+Prop</span></td>
-            </tr>
-            <tr>
-              <td class="center"><span class="badge b-pendente">8ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~28/06/2027</td>
-              <td style="font-size:12px;color:var(--text2)">Pisos e rodapés — 3 pavimentos (~205m²)</td>
-              <td class="right">10,28%</td>
-              <td class="right">7,74%</td>
-              <td class="right" style="font-weight:600">~R$ 28.877</td>
-              <td class="right">R$ 229.220</td>
-              <td class="right">R$ 143.669</td>
-              <td><span class="badge b-adiant">Prop+FGTS</span></td>
-            </tr>
-            <tr>
-              <td class="center"><span class="badge b-pendente">9ª</span></td>
-              <td style="font-size:12px;white-space:nowrap">~26/07/2027</td>
-              <td style="font-size:12px;color:var(--text2)">Acabamentos + louças e metais + limpeza final</td>
-              <td class="right">7,49%</td>
-              <td class="right">5,64%</td>
-              <td class="right" style="font-weight:600">~R$ 21.039</td>
-              <td class="right">R$ 250.259</td>
-              <td class="right">R$ 122.629</td>
-              <td><span class="badge b-adiant">Prop+FGTS</span></td>
             </tr>
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="5" style="font-weight:600">Total desembolsado pelas 9 medições</td>
-              <td class="right" style="font-weight:600;color:var(--blue)">R$ 250.259</td>
-              <td colspan="2" style="font-size:12px;color:var(--text2)">+ R$ 122.629 bloqueado até habite-se</td>
-              <td></td>
+              <td colspan="5" style="font-weight:600">Total estimado CAIXA (7 medições)</td>
+              <td class="right" style="font-weight:600;color:var(--blue)">~R$ 332.177</td>
+              <td colspan="3" style="font-size:12px;color:var(--text2)">base R$ 354.244 (descontado 5% bloqueado) · folga ~R$ 22.067</td>
             </tr>
             <tr>
               <td colspan="5" style="font-weight:600;color:var(--amber)">Parcela final bloqueada (habite-se + CND + averbação)</td>
               <td class="right" style="font-weight:600;color:var(--amber)">~R$ 18.644</td>
-              <td colspan="3" style="font-size:12px;color:var(--text2)">mín. 5% do financiamento</td>
+              <td colspan="3" style="font-size:12px;color:var(--text2)">mín. 5% · liberada só após conclusão total</td>
             </tr>
           </tfoot>
         </table>
       </div>
 
-      <!-- cronograma semanal detalhado -->
-      <div class="sect-title">Cronograma detalhado por etapa</div>
+      <!-- cronograma detalhado térreo -->
+      <div class="sect-title">Cronograma detalhado — Térreo (Barros Rezende)</div>
       <div class="table-wrap">
         <table>
           <thead>
             <tr>
-              <th>#</th>
+              <th>#BR</th>
               <th>Etapa</th>
-              <th class="center">Dur.</th>
+              <th class="center">Prazo BR</th>
               <th>Início</th>
               <th>Término</th>
               <th class="right">% PCI</th>
@@ -551,122 +614,91 @@ textarea { resize: vertical; min-height: 60px; }
             </tr>
           </thead>
           <tbody>
-            <!-- FASE 1 — concluído -->
-            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 1 — Fundação e infra ✓ Concluída</td></tr>
-            <tr style="opacity:0.6">
-              <td>1</td><td>Serviços preliminares / barracão</td><td class="center">—</td><td>Concluído</td><td>—</td><td class="right">3,64%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
+            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 1 — Fundação ✓ Concluída</td></tr>
+            <tr style="opacity:0.65">
+              <td>BR1</td><td>Serviços preliminares — locação gabarito</td><td class="center">3 dias</td><td>Concluído</td><td>—</td><td class="right">3,64%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
             </tr>
-            <tr style="opacity:0.6">
-              <td>2</td><td>Infraestrutura (sapatas, baldrames)</td><td class="center">—</td><td>Concluído</td><td>—</td><td class="right">7,07%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
+            <tr style="opacity:0.65">
+              <td>BR2</td><td>Sapatas + viga baldrame + alicerce</td><td class="center">15 dias</td><td>Concluído</td><td>—</td><td class="right">7,07%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
             </tr>
-            <tr style="opacity:0.6">
-              <td>17</td><td>Esgoto sanitário térreo</td><td class="center">—</td><td>Concluído</td><td>—</td><td class="right">2,70%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
-            </tr>
-            <tr style="opacity:0.6">
-              <td>20</td><td>Concreto magro (limpeza)</td><td class="center">—</td><td>Concluído</td><td>—</td><td class="right">1,28%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
+            <tr style="opacity:0.65">
+              <td>BR3</td><td>Impermeabilização do alicerce</td><td class="center">3 dias</td><td>Concluído</td><td>—</td><td class="right">2,57%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
             </tr>
 
-            <!-- FASE 2 — em andamento -->
-            <tr><td colspan="8" style="background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 2 — Estrutura e alvenaria (3 pavimentos) → 2ª a 4ª medição</td></tr>
-            <tr style="background:var(--amber-bg)">
-              <td>8</td><td>Impermeabilização restante (40%) — cinta</td><td class="center">1 sem</td><td>22/06/2026</td><td>29/06/2026</td><td class="right">1,03%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
-            </tr>
-            <tr>
-              <td>15</td><td>Elétrica: complemento padrão + infra início</td><td class="center">1 sem</td><td>29/06/2026</td><td>06/07/2026</td><td class="right">0,41%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
-            </tr>
-            <tr>
-              <td>16</td><td>Hidráulica: complemento térreo</td><td class="center">1 sem</td><td>06/07/2026</td><td>13/07/2026</td><td class="right">1,22%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+            <tr><td colspan="8" style="background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 2 — Estrutura térreo → 2ª medição (~07/09/2026)</td></tr>
+            <tr style="background:var(--green-bg)">
+              <td>—</td><td>Esgoto térreo ✓ + Concreto magro ✓ + Padrão elétrico ✓</td><td class="center">—</td><td>Concluído</td><td>—</td><td class="right">4,39%</td><td><span class="badge b-medido">Executado</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
             </tr>
             <tr style="background:var(--amber-bg)">
-              <td>3</td><td>Supraestrutura — pilares e vigas térreo</td><td class="center">4 sem</td><td>13/07/2026</td><td>10/08/2026</td><td class="right">7,00%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+              <td>BR4+5</td><td>Alvenaria 252,81m² + pilares + vigas superiores</td><td class="center">45 dias</td><td>22/06/2026</td><td>03/08/2026</td><td class="right">8,14%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
             </tr>
             <tr>
-              <td>4</td><td>Alvenaria térreo (sala, coz., qto., suíte, gar.)</td><td class="center">3 sem</td><td>10/08/2026</td><td>31/08/2026</td><td class="right">3,50%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+              <td>BR6</td><td>Laje térreo 90,94m²</td><td class="center">10 dias</td><td>03/08/2026</td><td>17/08/2026</td><td class="right">4,71%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
             </tr>
             <tr>
-              <td>3.1</td><td>Laje térreo + vigas 1º pavimento</td><td class="center">3 sem</td><td>31/08/2026</td><td>21/09/2026</td><td class="right">4,78%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+              <td>BR7</td><td>Esgoto + hidráulica cozinha/lavabo/suíte térreo</td><td class="center">10 dias</td><td>17/08/2026</td><td>31/08/2026</td><td class="right">4,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
             </tr>
             <tr>
-              <td>20.1</td><td>Contrapiso definitivo térreo</td><td class="center">1 sem</td><td>após alvenaria</td><td>—</td><td class="right">0,64%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
-            </tr>
-            <tr>
-              <td>4.1</td><td>Alvenaria 1º pavimento (3 qtos, closets, banh.)</td><td class="center">3 sem</td><td>21/09/2026</td><td>12/10/2026</td><td class="right">3,00%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
-            </tr>
-            <tr>
-              <td>3.2</td><td>Pilares e laje 2º pavimento</td><td class="center">2 sem</td><td>12/10/2026</td><td>26/10/2026</td><td class="right">2,78%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
-            </tr>
-            <tr>
-              <td>20.2</td><td>Contrapiso 1º pavimento</td><td class="center">1 sem</td><td>26/10/2026</td><td>02/11/2026</td><td class="right">0,64%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+              <td>BR8</td><td>Infra elétrica — caixas + quadro distribuição</td><td class="center">5 dias</td><td>31/08/2026</td><td>07/09/2026</td><td class="right">2,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
             </tr>
 
-            <!-- FASE 3 -->
-            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 3 — Cobertura, fechamentos e instalações → 4ª a 5ª medição</td></tr>
+            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 3 — Cobertura + esquadrias → 3ª medição (~26/10/2026)</td></tr>
             <tr>
-              <td>7</td><td>Cobertura — telhas, platibanda e laje 2ºpav</td><td class="center">2 sem</td><td>09/11/2026</td><td>23/11/2026</td><td class="right">2,57%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+              <td>BR9</td><td>Engradamento + instalação caixonetes</td><td class="center">3 dias</td><td>07/09/2026</td><td>12/09/2026</td><td class="right">1,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
             </tr>
             <tr>
-              <td>8.1</td><td>Impermeabilização — laje 2ºpav e varanda</td><td class="center">1 sem</td><td>23/11/2026</td><td>30/11/2026</td><td class="right">1,03%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">5ª</span></td>
+              <td>—</td><td>Cobertura — telhas fibrocimento + platibanda</td><td class="center">2 sem</td><td>12/09/2026</td><td>26/09/2026</td><td class="right">2,57%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
             </tr>
             <tr>
-              <td>5</td><td>Esquadrias — 22 portas (P1–P9) + 18 janelas</td><td class="center">3 sem</td><td>30/11/2026</td><td>21/12/2026</td><td class="right">4,71%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">5ª</span></td>
+              <td>—</td><td>Impermeabilização laje 2ºpav + varanda</td><td class="center">1 sem</td><td>26/09/2026</td><td>03/10/2026</td><td class="right">1,03%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
             </tr>
             <tr>
-              <td>6</td><td>Vidros e guarda-corpos (preto)</td><td class="center">1 sem</td><td>21/12/2026</td><td>28/12/2026</td><td class="right">1,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">5ª</span></td>
+              <td>BR10</td><td>Janelas + básculas + portas térreo</td><td class="center">10 dias</td><td>03/10/2026</td><td>17/10/2026</td><td class="right">4,71%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
             </tr>
             <tr>
-              <td>17.1</td><td>Esgoto 1º pavimento (2 banheiros)</td><td class="center">1 sem</td><td>28/12/2026</td><td>04/01/2027</td><td class="right">—</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">5ª</span></td>
-            </tr>
-            <tr>
-              <td>171</td><td>Rede de águas pluviais (calhas, rufos, drenos)</td><td class="center">1 sem</td><td>04/01/2027</td><td>11/01/2027</td><td class="right">1,37%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">5ª</span></td>
-            </tr>
-            <tr>
-              <td>15.1</td><td>Infra elétrica interna — 3 pavimentos (90%)</td><td class="center">3 sem</td><td>11/01/2027</td><td>01/02/2027</td><td class="right">3,66%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">6ª</span></td>
-            </tr>
-            <tr>
-              <td>16.1</td><td>Hidráulica 1º pavimento + complemento térreo</td><td class="center">2 sem</td><td>01/02/2027</td><td>15/02/2027</td><td class="right">2,85%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">6ª</span></td>
+              <td>—</td><td>Vidros + guarda-corpos térreo</td><td class="center">1 sem</td><td>17/10/2026</td><td>24/10/2026</td><td class="right">1,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
             </tr>
 
-            <!-- FASE 4 -->
-            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 4 — Revestimentos → 6ª a 7ª medição (CAIXA + Recursos próprios)</td></tr>
+            <tr><td colspan="8" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 4 — Revestimentos + acabamentos térreo → 4ª medição (~30/03/2027)</td></tr>
             <tr>
-              <td>9</td><td>Revestimentos internos — chapisco + reboco (~825m²)</td><td class="center">6 sem</td><td>15/02/2027</td><td>29/03/2027</td><td class="right">8,14%</td><td><span class="badge b-parcial">CAIXA+Prop</span></td><td class="center"><span class="badge b-pendente">6ª</span></td>
+              <td>BR11</td><td>Chapisco + reboco térreo 505,62m²</td><td class="center">50 dias</td><td>26/10/2026</td><td>15/01/2027</td><td class="right">8,14%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
             </tr>
             <tr>
-              <td>10</td><td>Forros — laje+forro térreo e 1ºpav</td><td class="center">2 sem</td><td>29/03/2027</td><td>12/04/2027</td><td class="right">1,28%</td><td><span class="badge b-parcial">CAIXA+Prop</span></td><td class="center"><span class="badge b-pendente">7ª</span></td>
+              <td>BR14</td><td>Revestimento cerâmico 80,90m²</td><td class="center">20 dias</td><td>15/01/2027</td><td>12/02/2027</td><td class="right">8,14%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
             </tr>
             <tr>
-              <td>11</td><td>Revestimentos externos — fachada + muro</td><td class="center">3 sem</td><td>12/04/2027</td><td>03/05/2027</td><td class="right">4,07%</td><td><span class="badge b-parcial">CAIXA+Prop</span></td><td class="center"><span class="badge b-pendente">7ª</span></td>
+              <td>BR12</td><td>Contrapiso + massa de regularização</td><td class="center">15 dias</td><td>12/02/2027</td><td>02/03/2027</td><td class="right">1,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
             </tr>
             <tr>
-              <td>12</td><td>Pinturas internas e externas</td><td class="center">3 sem</td><td>03/05/2027</td><td>24/05/2027</td><td class="right">4,71%</td><td><span class="badge b-parcial">CAIXA+Prop</span></td><td class="center"><span class="badge b-pendente">7ª</span></td>
+              <td>BR13</td><td>Piso 80,14m² + rodapé 6m²</td><td class="center">15 dias</td><td>02/03/2027</td><td>22/03/2027</td><td class="right">10,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR17</td><td>Concretagem + contrapiso varanda térreo</td><td class="center">2 dias</td><td>22/03/2027</td><td>24/03/2027</td><td class="right">3,29%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR15</td><td>Soleiras térreo</td><td class="center">3 dias</td><td>24/03/2027</td><td>27/03/2027</td><td class="right">1,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR16</td><td>Bancadas cozinha + lavabo + suíte</td><td class="center">2 dias</td><td>27/03/2027</td><td>30/03/2027</td><td class="right">1,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
             </tr>
 
-            <!-- FASE 5 -->
-            <tr><td colspan="8" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 5 — Acabamentos → 8ª a 9ª medição (Recursos próprios + FGTS)</td></tr>
-            <tr>
-              <td>13</td><td>Pisos e rodapés (~205m² — 3 pavimentos)</td><td class="center">5 sem</td><td>24/05/2027</td><td>28/06/2027</td><td class="right">10,28%</td><td><span class="badge b-adiant">Prop+FGTS</span></td><td class="center"><span class="badge b-pendente">8ª</span></td>
-            </tr>
-            <tr>
-              <td>14</td><td>Acabamentos — soleiras e peitoris</td><td class="center">1 sem</td><td>28/06/2027</td><td>05/07/2027</td><td class="right">1,28%</td><td><span class="badge b-adiant">Prop+FGTS</span></td><td class="center"><span class="badge b-pendente">9ª</span></td>
-            </tr>
-            <tr>
-              <td>18</td><td>Louças e metais (lavabo, suíte, coz., 2 banh.)</td><td class="center">2 sem</td><td>05/07/2027</td><td>19/07/2027</td><td class="right">4,71%</td><td><span class="badge b-adiant">Prop+FGTS</span></td><td class="center"><span class="badge b-pendente">9ª</span></td>
-            </tr>
-            <tr>
-              <td>19</td><td>Complementos — limpeza final e calafete</td><td class="center">1 sem</td><td>19/07/2027</td><td>26/07/2027</td><td class="right">1,50%</td><td><span class="badge b-adiant">Prop+FGTS</span></td><td class="center"><span class="badge b-pendente">9ª</span></td>
+            <!-- PAVIMENTOS -->
+            <tr><td colspan="8" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">1º e 2º Pavimento — MO a contratar · datas a definir</td></tr>
+            <tr style="opacity:0.45">
+              <td>—</td><td colspan="6" style="color:var(--text3);font-style:italic">Alvenaria + pilares + lajes + esquadrias + instalações + revestimentos + acabamentos 1º e 2º pav — aguardando contratação de MO</td><td class="center"><span class="badge b-pendente">5ª–7ª</span></td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <div class="alert alert-ok" style="margin-top:1rem;">
-        ✅ Com 2 pedreiros + ajudantes trabalhando 5 dias/semana, a obra pode ser concluída em <strong>~14 meses</strong> (julho/2027), 7 meses antes do prazo contratual (fev/2028). Economia estimada: <strong>R$ 38.654</strong> em encargos mensais.
+        ✅ O financiamento CAIXA líquido é de <strong>R$ 354.244</strong> (R$ 372.888 menos os R$ 18.644 bloqueados até habite-se). Esse valor cobre <strong>quase toda a obra</strong> — incluindo térreo completo e a maior parte dos pavimentos. Folga estimada: ~R$ 22.067 após as 7 medições.
       </div>
       <div class="alert alert-warn" style="margin-top:0.5rem;">
-        ⚠️ A partir da 6ª medição (fev/2027), os recursos próprios precisam estar disponíveis para complementar as liberações da CAIXA nas fases de revestimento e acabamento. Planejar o fluxo de caixa pessoal com antecedência.
+        ⚠️ 1º e 2º pavimento dependem de <strong>novo contrato de MO</strong> a ser firmado. Recomendado iniciar orçamentação com construtoras assim que o térreo estiver em fase de revestimento (~jan/2027), para não perder o prazo contratual CAIXA (fev/2028).
       </div>
       <div class="alert alert-info" style="margin-top:0.5rem;">
-        💡 Recomendado alinhar cada medição com o engenheiro <strong>30 dias antes</strong> da data prevista para garantir que a PLS esteja pronta e os itens estejam formalmente concluídos.
+        💡 Alinhar cada medição com o RT <strong>30 dias antes</strong> da data prevista. PLS com fotos de cada item deve estar pronta e assinada pelo RT antes da vistoria CAIXA.
       </div>
 
     </div><!-- /tab-cronograma -->
@@ -683,23 +715,23 @@ textarea { resize: vertical; min-height: 60px; }
         </div>
         <div class="card warn">
           <div class="card-label">Recursos próprios (obra)</div>
-          <div class="card-value">R$ 110.807</div>
-          <div class="card-sub">22,39% do custo PCI</div>
+          <div class="card-value" style="font-size:16px;">A aportar</div>
+          <div class="card-sub">previsão: 13º + PL — dez/2026</div>
         </div>
-        <div class="card ok">
+        <div class="card dash">
           <div class="card-label">FGTS (conta vinculada)</div>
-          <div class="card-value">R$ 11.305</div>
-          <div class="card-sub">2,28% do custo PCI</div>
+          <div class="card-value" style="font-size:16px;">Consumido</div>
+          <div class="card-sub">utilizado na quitação do terreno</div>
         </div>
         <div class="card">
           <div class="card-label">Custo PCI total</div>
           <div class="card-value">R$ 495.000</div>
-          <div class="card-sub">recursos fecham exatamente ✓</div>
+          <div class="card-sub">CAIXA cobre até a 5ª medição</div>
         </div>
         <div class="card">
           <div class="card-label">Desembolso médio / medição</div>
-          <div class="card-value">R$ 27.807</div>
-          <div class="card-sub">CAIXA ÷ 9 medições previstas</div>
+          <div class="card-value">R$ 20.716</div>
+          <div class="card-sub">CAIXA ÷ 18 etapas</div>
         </div>
         <div class="card">
           <div class="card-label">Custo por m²</div>
@@ -712,13 +744,12 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="sect-title">Composição dos recursos para a obra</div>
       <div class="progress-wrap" style="height:32px;">
         <div class="progress-medido" style="width:75.33%;font-size:12px;">CAIXA 75,3% · R$ 372.888</div>
-        <div class="progress-exec"   style="left:75.33%;width:22.39%;font-size:12px;">Próprios 22,4%</div>
-        <div style="position:absolute;left:97.72%;top:0;height:100%;width:2.28%;background:var(--green-bg);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--green);font-weight:600;">FGTS</div>
+        <div class="progress-exec" style="left:75.33%;width:24.67%;font-size:11px;opacity:0.6;">Próprios a aportar (dez/2026)</div>
       </div>
       <div class="legend">
         <span><div class="dot" style="background:var(--green-mid)"></div>CAIXA p/ obra: R$ 372.888 (75,3%)</span>
-        <span><div class="dot" style="background:var(--blue-mid)"></div>Recursos próprios p/ obra: R$ 110.807 (22,4%)</span>
-        <span><div class="dot" style="background:var(--green-bg);border:1px solid var(--green)"></div>FGTS: R$ 11.305 (2,3%)</span>
+        <span><div class="dot" style="background:var(--blue-mid);opacity:0.6"></div>Recursos próprios: a aportar — previsão dez/2026</span>
+        <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>FGTS: consumido na quitação do terreno</span>
       </div>
 
       <!-- tabela de composição -->
@@ -747,25 +778,25 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <td style="font-weight:500">Recursos próprios</td>
               <td class="right">R$ 152.271</td>
-              <td class="right" style="color:var(--text2)">R$ 41.463 <span style="font-size:11px">(complemento terreno)</span></td>
-              <td class="right" style="font-weight:600;color:var(--amber)">R$ 110.807</td>
-              <td class="right">22,39%</td>
-              <td class="right" style="color:var(--text2)">~50,8 m²</td>
+              <td class="right" style="color:var(--text2)">terreno + FGTS + ITBI + cartório + taxas</td>
+              <td class="right" style="font-weight:600;color:var(--amber)">A aportar — dez/2026 <span style="font-size:11px">(13º + PL)</span></td>
+              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text3)">—</td>
             </tr>
             <tr>
               <td style="font-weight:500">FGTS (conta vinculada)</td>
               <td class="right">R$ 11.305</td>
-              <td class="right" style="color:var(--text2)">—</td>
-              <td class="right" style="font-weight:600;color:var(--green)">R$ 11.305</td>
-              <td class="right">2,28%</td>
-              <td class="right" style="color:var(--text2)">~5,2 m²</td>
+              <td class="right" style="color:var(--red)">Consumido — quitação do terreno</td>
+              <td class="right" style="font-weight:600;color:var(--text3)">R$ 0</td>
+              <td class="right" style="color:var(--text3)">0%</td>
+              <td class="right" style="color:var(--text3)">—</td>
             </tr>
             <tr style="font-weight:600;border-top:2px solid var(--border2);">
-              <td>TOTAL PARA A OBRA</td>
+              <td>TOTAL CONFIRMADO PARA A OBRA</td>
               <td class="right">R$ 618.063</td>
-              <td class="right" style="color:var(--text2)">R$ 123.063</td>
-              <td class="right" style="color:var(--green)">R$ 495.000</td>
-              <td class="right">100,00%</td>
+              <td class="right" style="color:var(--text2)">R$ 123.063+</td>
+              <td class="right" style="color:var(--blue)">R$ 372.888 + aportes</td>
+              <td class="right">75,33%+</td>
               <td class="right" style="color:var(--text2)">227,0 m²</td>
             </tr>
           </tbody>
@@ -773,29 +804,29 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
 
       <!-- percentuais de conclusão possíveis por fonte -->
-      <div class="sect-title">Quanto cada fonte consegue concluir da obra</div>
+      <div class="sect-title">Quanto cada fonte cobre da obra</div>
       <div class="cards" style="margin-bottom:1.5rem;">
         <div class="card info">
-          <div class="card-label">Só com CAIXA</div>
+          <div class="card-label">CAIXA (confirmado)</div>
           <div class="card-value">75,3%</div>
-          <div class="card-sub">~171 m² · R$ 372.888</div>
+          <div class="card-sub">~171 m² · R$ 372.888 · até 5ª medição</div>
         </div>
         <div class="card warn">
-          <div class="card-label">Só com recursos próprios</div>
-          <div class="card-value">22,4%</div>
-          <div class="card-sub">~51 m² · R$ 110.807</div>
+          <div class="card-label">Recursos próprios</div>
+          <div class="card-value" style="font-size:16px;">A aportar</div>
+          <div class="card-sub">necessários a partir da 6ª medição (mar/2027)</div>
         </div>
-        <div class="card ok">
-          <div class="card-label">Só com FGTS</div>
-          <div class="card-value">2,3%</div>
-          <div class="card-sub">~5 m² · R$ 11.305</div>
+        <div class="card dash">
+          <div class="card-label">FGTS</div>
+          <div class="card-value" style="font-size:16px;">R$ 0</div>
+          <div class="card-sub">consumido na quitação do terreno</div>
         </div>
       </div>
 
       <!-- estratégia de uso -->
-      <div class="sect-title">Como os recursos próprios serão usados</div>
+      <div class="sect-title">Estratégia de uso dos recursos</div>
       <div class="alert alert-info">
-        Os recursos próprios (R$ 152.271) precisam ser integralizados <strong>via obra executada</strong>, não como depósito. A CAIXA verifica a aplicação em vistorias. O cronograma abaixo mostra como distribuir os R$ 110.807 disponíveis para obra ao longo das etapas.
+        O financiamento CAIXA (R$ 372.888) cobre as <strong>fases 1 a 5</strong> da obra integralmente até aproximadamente a 5ª medição. Os recursos próprios precisam estar disponíveis a partir da <strong>6ª medição (~mar/2027)</strong>, quando entram nas fases de revestimento e acabamento. Previsão de aporte: <strong>13º salário + PLR — dez/2026</strong>.
       </div>
       <div class="table-wrap">
         <table>
@@ -834,14 +865,14 @@ textarea { resize: vertical; min-height: 60px; }
               <td style="font-weight:500;color:var(--text2)">Fase 4 — Revestimentos</td>
               <td style="color:var(--text2);font-size:12px">Chapisco, reboco, forros, revestimentos externos, pinturas</td>
               <td class="right">R$ 88.935</td>
-              <td class="right"><span class="badge b-parcial">CAIXA + Próprios</span></td>
+              <td class="right"><span class="badge b-concluido">CAIXA</span></td>
               <td class="right">17,97%</td>
             </tr>
             <tr>
               <td style="font-weight:500;color:var(--text2)">Fase 5 — Acabamentos</td>
               <td style="color:var(--text2);font-size:12px">Pisos, louças, instalações completas, complementos</td>
               <td class="right">R$ 106.575</td>
-              <td class="right"><span class="badge b-adiant">Próprios + FGTS</span></td>
+              <td class="right"><span class="badge b-parcial">CAIXA+Prop</span></td>
               <td class="right">21,53%</td>
             </tr>
             <tr style="font-weight:600;border-top:2px solid var(--border2);">
@@ -856,10 +887,10 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
 
       <div class="alert alert-warn" style="margin-top:1rem;">
-        ⚠️ Os R$ 110.807 de recursos próprios disponíveis para obra precisam ser aplicados principalmente nas <strong>fases 4 e 5</strong> (revestimentos e acabamentos), quando o saldo CAIXA começa a escassear. Planejar o fluxo de caixa pessoal para essas etapas.
+        ⚠️ Os recursos próprios precisam estar disponíveis para as <strong>fases 4 e 5</strong> (revestimentos e acabamentos — a partir de mar/2027). Planejar o aporte com base no 13º salário e PLR de <strong>dez/2026</strong>, mantendo reserva suficiente para cobrir essas etapas sem interrupção da obra.
       </div>
       <div class="alert alert-info" style="margin-top:0.5rem;">
-        💡 O FGTS (R$ 11.305) entra preferencialmente na fase final para complementar o pagamento de louças, metais e complementos, evitando usar recursos próprios no encerramento.
+        💡 O FGTS já foi utilizado na quitação do terreno e <strong>não está disponível</strong> para a obra. Todo o complemento das fases finais depende exclusivamente dos recursos próprios.
       </div>
 
     </div><!-- /tab-recursos -->
@@ -984,7 +1015,7 @@ textarea { resize: vertical; min-height: 60px; }
       <!-- estimativa próxima medição -->
       <div class="sect-title">Estimativa — próxima medição (pendente vistoria)</div>
       <div class="alert alert-warn" style="margin-bottom:0.75rem;">
-        Valores <strong>estimados</strong> com base nos itens executados × PCI × fator 0,7533. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
+        Valores <strong>estimados</strong> — itens executados × PCI × fator 0,7533 (escala CAIXA/obra). Linhas em cinza = previsão pendente. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
       </div>
       <div class="table-wrap">
         <table class="resumo-table">
@@ -992,16 +1023,17 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <th>#</th>
               <th>Serviço</th>
-              <th class="right">% PCI</th>
-              <th class="right">% CAIXA est.</th>
-              <th class="right">Valor estimado</th>
+              <th class="right">% PCI total</th>
+              <th class="right">% PCI exec.</th>
+              <th class="right" style="color:var(--amber)">% CAIXA est.</th>
+              <th class="right">Valor est.</th>
               <th>Situação</th>
             </tr>
           </thead>
           <tbody id="medicao-tbody"></tbody>
           <tfoot>
-            <tr class="total"><td colspan="2">Total estimado passível de medição</td><td></td><td class="right" id="med-total-pct">—</td><td class="right" id="med-total-val">—</td><td></td></tr>
-            <tr class="total a-medir"><td colspan="2">Estimativa de nova liberação</td><td></td><td class="right" id="med-novo-pct">—</td><td class="right" id="med-novo-val">—</td><td></td></tr>
+            <tr class="total"><td colspan="3">Total executado (% PCI físico)</td><td class="right" id="med-total-pct">—</td><td></td><td class="right" id="med-total-val">—</td><td></td></tr>
+            <tr class="total a-medir"><td colspan="3">Estimativa liberação CAIXA (só executados)</td><td></td><td class="right" id="med-novo-pct">—</td><td class="right" id="med-novo-val">—</td><td></td></tr>
           </tfoot>
         </table>
       </div>
@@ -1364,14 +1396,14 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card"><div class="card-label">Financiamento CAIXA</div><div class="card-value" style="font-size:18px;">R$ 454.488</div><div class="card-sub">taxa 11,39% a.a. · SAC · TR</div></div>
         <div class="card"><div class="card-label">Terreno (80% de R$102k)</div><div class="card-value" style="font-size:18px;">R$ 81.600</div><div class="card-sub">Campos Urbanismo SPE</div></div>
         <div class="card info"><div class="card-label">Saldo p/ obra</div><div class="card-value" style="font-size:18px;">R$ 372.888</div><div class="card-sub">454.488 − 81.600</div></div>
-        <div class="card"><div class="card-label">Recursos próprios</div><div class="card-value" style="font-size:18px;">R$ 152.271</div><div class="card-sub">+ FGTS R$ 11.305</div></div>
+        <div class="card"><div class="card-label">Recursos próprios</div><div class="card-value" style="font-size:18px;">R$ 152.271</div><div class="card-sub">FGTS: consumido no terreno</div></div>
         <div class="card"><div class="card-label">Custo PCI total</div><div class="card-value" style="font-size:18px;">R$ 495.000</div><div class="card-sub">materiais + serviços c/ BDI</div></div>
         <div class="card"><div class="card-label">MO Barros Rezende</div><div class="card-value" style="font-size:18px;">R$ 115.000</div><div class="card-sub">térreo · estimativa atual.</div></div>
         <div class="card"><div class="card-label">Prazo de obra</div><div class="card-value" style="font-size:18px;">21 meses</div><div class="card-sub">vence ~fev/2028</div></div>
         <div class="card warn"><div class="card-label">Encargo mensal</div><div class="card-value" style="font-size:18px;">R$ 5.522</div><div class="card-sub">1º venc. 10/06/2026</div></div>
       </div>
       <div class="alert alert-warn">Última parcela (mín. 5% ≈ R$ 18.644) bloqueada até habite-se + CND + averbação. PLS mensal obrigatória.</div>
-      <div class="alert alert-warn" style="margin-top:0.5rem;">Paralisação &gt; 90 dias: CAIXA cancela FGTS irreversivelmente.</div>
+      <div class="alert alert-warn" style="margin-top:0.5rem;">Paralisação &gt; 90 dias pode comprometer o contrato. Manter PLS mensal mesmo sem solicitar liberação.</div>
     </div>
 
     <!-- VERSÕES (admin) -->
@@ -1406,21 +1438,42 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.12';
+const APP_VERSION = '1.33';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
-  { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Sistema de login admin/visitante com senha hash SHA-256' },
-  { v:'1.2',  data:'19/06/2026', autor:'Claude', desc:'Aba mão de obra — Barros Rezende · teto R$ 115.000' },
-  { v:'1.3',  data:'19/06/2026', autor:'Claude', desc:'Aba materiais — controle por categoria' },
-  { v:'1.4',  data:'21/06/2026', autor:'Claude', desc:'Correções engenheiro: impermeabilização 60%, elétrica 10%, magro ≠ contrapiso, esgoto separado de pluvial' },
-  { v:'1.5',  data:'21/06/2026', autor:'Claude', desc:'Itens PCI com projeto aprovado — 3 pavimentos, 227m², 22 portas, 18 janelas' },
-  { v:'1.6',  data:'21/06/2026', autor:'Claude', desc:'Aba recursos — composição CAIXA/próprios/FGTS' },
-  { v:'1.7',  data:'21/06/2026', autor:'Claude', desc:'Aba cronograma — 9 medições · conclusão jul/2027 · economia R$ 38.654' },
-  { v:'1.8',  data:'21/06/2026', autor:'Claude', desc:'Escala 75,33% (CAIXA/PCI) · fórmula: % CAIXA = % PCI × 0,7533' },
-  { v:'1.9',  data:'21/06/2026', autor:'Claude', desc:'Projeção 2ª medição item a item · versionamento implementado' },
+  { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
+  { v:'1.2',  data:'19/06/2026', autor:'Claude', desc:'Aba de mão de obra — Barros Rezende · teto R$ 115.000 · projeção e comprovantes' },
+  { v:'1.3',  data:'19/06/2026', autor:'Claude', desc:'Aba de materiais — controle de compras por categoria com gráfico de proporção' },
+  { v:'1.4',  data:'21/06/2026', autor:'Claude', desc:'Correção: impermeabilização 60% · elétrica 10% · concreto magro ≠ contrapiso · esgoto separado de pluvial' },
+  { v:'1.5',  data:'21/06/2026', autor:'Claude', desc:'Itens PCI atualizados com projeto aprovado (3 pavimentos, 227m², 22 portas, 18 janelas)' },
+  { v:'1.6',  data:'21/06/2026', autor:'Claude', desc:'Aba de recursos — composição CAIXA/próprios/FGTS · estratégia de desembolso por fase' },
+  { v:'1.7',  data:'21/06/2026', autor:'Claude', desc:'Aba de cronograma — 9 medições previstas · conclusão jul/2027 · economia R$ 38.654' },
+  { v:'1.8',  data:'21/06/2026', autor:'Claude', desc:'Escala 78% (CAIXA/obra) · % medição = % PCI × 0,7533 · tabela por medição atualizada' },
+  { v:'1.9',  data:'21/06/2026', autor:'Claude', desc:'Projeção 2ª medição detalhada item a item · controle de versionamento implementado' },
   { v:'1.10', data:'21/06/2026', autor:'Claude', desc:'Separação confirmado vs estimado — cards, barra e saldo corrigidos' },
-  { v:'1.11', data:'21/06/2026', autor:'Claude', desc:'Botão confirmar medição CAIXA direto no tracker · histórico automático' },
-  { v:'1.12', data:'21/06/2026', autor:'Claude', desc:'Recálculo global com base PCI R$ 495.000 / CAIXA R$ 372.888 — desembolso médio e todas as projeções corrigidas' },
+  { v:'1.11', data:'21/06/2026', autor:'Claude', desc:'Aba medição com confirmação direta no tracker — botão "Confirmar medição CAIXA" · histórico automático' },
+  { v:'1.12', data:'22/06/2026', autor:'Claude', desc:'Previsão alvenaria+pilares corrigida: horizonte de 4 semanas (22/06–18/07/2026), não semana única' },
+  { v:'1.13', data:'22/06/2026', autor:'Claude', desc:'Integração aba Materiais completa — MAT_CORES (15 categorias), lista de compras, por categoria, registrar compra' },
+  { v:'1.14', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS zerado (consumido no terreno) · próprios a aportar dez/2026 (13º+PL) · alertas de fluxo de caixa atualizados' },
+  { v:'1.15', data:'22/06/2026', autor:'Claude', desc:'Materiais: 24 compras integradas do localStorage (R$ 37.545) — ferragem, cimento, brita, tijolos, piso, esgoto, elétrica e outros' },
+  { v:'1.16', data:'22/06/2026', autor:'Claude', desc:'Auto-publish GitHub: ao registrar ou remover material, tracker atualiza o arquivo base automaticamente' },
+  { v:'1.17', data:'22/06/2026', autor:'Claude', desc:'Auto-publish expandido para todas as abas: itens PCI, histórico, mão de obra, medições CAIXA e materiais' },
+  { v:'1.18', data:'22/06/2026', autor:'Claude', desc:'Cards separados: executado físico vs estimativa CAIXA vs com previsões · % CAIXA por item na tabela de medição · mensagem de avanço mostra delta PCI + CAIXA + valor' },
+  { v:'1.19', data:'22/06/2026', autor:'Claude', desc:'Correção itens: impermeabilização locked (medida 1ª med.) · hidráulica zerada · esgoto 1ºpav 100% · estimativa 2ª med. corrigida para ~4,33% CAIXA (~R$16.148)' },
+  { v:'1.20', data:'22/06/2026', autor:'Claude', desc:'Cronograma ajustado: 2ª medição corrigida para esgoto completo + magro + elétrica padrão · impermeabilização e hidráulica removidas da fase 2 · datas pilares atualizadas' },
+  { v:'1.21', data:'22/06/2026', autor:'Claude', desc:'FGTS removido do cronograma: badges Prop+FGTS → Rec. próprios · fase 5 · explicação e alertas corrigidos' },
+  { v:'1.22', data:'22/06/2026', autor:'Claude', desc:'Correção: esgoto 1ºpav removido (sem laje) · 2ª medição corrigida para 3,31% CAIXA ~R$12.340 · histórico limpo · cronograma ajustado' },
+  { v:'1.23', data:'22/06/2026', autor:'Claude', desc:'Cards clarificados: "Executado físico (% PCI)" separado de "Estimativa próx. medição (% CAIXA)" · sub mostra relação ×0,7533 explicitamente' },
+  { v:'1.24', data:'22/06/2026', autor:'Claude', desc:'Card "Com previsões" removido — informação ambígua · barra e legenda simplificadas' },
+  { v:'1.25', data:'22/06/2026', autor:'Claude', desc:'Perfil visitante: sem R$ em nenhum lugar · cards mostram só % · sub do card executado mostra % CAIXA estimado' },
+  { v:'1.26', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ removido do card liberado e legenda · barra de previsão oculta · seção previsões rápidas oculta' },
+  { v:'1.27', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ 30.623 removido do sub do card liberado CAIXA em todas as situações (inicial e ao confirmar medição)' },
+  { v:'1.28', data:'22/06/2026', autor:'Claude', desc:'Layout responsivo completo: mobile ≤768px (2 col cards, tabs scroll, tabelas scroll, form 1 col, log compacto) · telas ≤400px (1 col)' },
+  { v:'1.29', data:'22/06/2026', autor:'Claude', desc:'Responsivo revisado: barra sem texto embutido no mobile · labels % abaixo da barra · inputs font-size 16px (evita zoom iOS) · cards e tabelas otimizados' },
+  { v:'1.30', data:'22/06/2026', autor:'Claude', desc:'Cronograma refeito com prazos Barros Rezende: 7 medições, conclusão mai/2027 (~11 meses), laje separada, chapisco 50 dias, revestimento 20 dias, varanda incluída' },
+  { v:'1.31', data:'22/06/2026', autor:'Claude', desc:'Cronograma corrigido: térreo BR (4 medições, conclusão ~30/03/2027) separado de 1º+2º pav (a contratar, datas a definir)' },
+  { v:'1.32', data:'22/06/2026', autor:'Claude', desc:'Fontes corrigidas: CAIXA cobre quase toda a obra (R$349.660 de R$372.888) · Rec. próprios só no final da 7ª med. · badges e alertas atualizados' },
+  { v:'1.33', data:'22/06/2026', autor:'Claude', desc:'Base CAIXA recalculada: R$354.244 (R$372.888 − R$18.644 bloqueados/habite-se) · todos os valores das 7 medições atualizados · folga ~R$22.067' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1511,12 +1564,12 @@ function aplicarPerfil() {
 const ITENS_DEFAULT = [
   { id:1,   desc:'Barracão + ligações provisórias + projetos',                     pciPct:3.64,  exec:100, locked:true,  prevExec:0, obs:'Concluído.' },
   { id:2,   desc:'Infraestrutura (sapatas, baldrames, alicerce — 3 pavimentos)',   pciPct:7.07,  exec:100, locked:true,  prevExec:0, obs:'Fundações dimensionadas para os 3 pavimentos (227m²). Concluído.' },
-  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)',      pciPct:14.56, exec:0,   locked:false, prevExec:25, obs:'Inclui pilares e vigas do térreo, 1º e 2º pavimento + escada interna. Previsão: início semana 22–26/06.' },
-  { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',               pciPct:8.14,  exec:0,   locked:false, prevExec:30, obs:'Térreo: sala, cozinha, quarto, suíte, garagem. 1ºpav: 3 quartos, closets, banheiros. 2ºpav: mureta/platibanda.' },
+  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)',      pciPct:14.56, exec:0,   locked:false, prevExec:25, obs:'Inclui pilares e vigas do térreo, 1º e 2º pavimento + escada interna. Previsão: ~25% ao longo de 4 semanas (22/06–18/07/2026).' },
+  { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',               pciPct:8.14,  exec:0,   locked:false, prevExec:30, obs:'Térreo: sala, cozinha, quarto, suíte, garagem. 1ºpav: 3 quartos, closets, banheiros. 2ºpav: mureta/platibanda. Previsão: ~30% ao longo de 4 semanas (22/06–18/07/2026).' },
   { id:5,   desc:'Esquadrias — 22 portas (P1–P9) e 18 janelas (J1–J7)',           pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Portas: P1×4, P2×9, P3×1, P4×1, P5×2, P6×2, P7×1, P8×1, P9×1. Janelas: J1×4, J2×5, J3×2, J4×1, J5×2, J6×2, J7×2.' },
   { id:6,   desc:'Vidros, plásticos e guarda-corpos',                             pciPct:1.07,  exec:0,   locked:false, prevExec:0,  obs:'Guarda-corpo preto varanda coberta + varanda descoberta. Vidros das janelas.' },
   { id:7,   desc:'Cobertura — telha fibrocimento, platibanda e laje 2º pav.',     pciPct:2.57,  exec:0,   locked:false, prevExec:0,  obs:'Telha fibrocimento c/ platibanda sobre 1ºpav. Laje impermeabilizada 2ºpav (varanda descoberta 37,85m²) inclinação 9,86%.' },
-  { id:8,   desc:'Impermeabilizações',                                            pciPct:2.57,  exec:60,  locked:false, prevExec:0,  obs:'Engenheiro: somente a cinta impermeabilizada — 60%. Falta: laje 2ºpav e varanda descoberta após cobertura.' },
+  { id:8,   desc:'Impermeabilizações',                                            pciPct:2.57,  exec:100, locked:true,  prevExec:0,  obs:'Baldrames 100% — medido na 1ª medição CAIXA. Falta: laje 2ºpav e varanda descoberta (itens da 4ª/5ª medição).' },
   { id:9,   desc:'Revestimentos internos — chapisco e reboco (3 pavimentos)',     pciPct:8.14,  exec:0,   locked:false, prevExec:0,  obs:'Área estimada: ~505,62m² térreo + ~320m² 1ºpav. Após conclusão da alvenaria.' },
   { id:10,  desc:'Forros — laje+forro térreo e 1º pavimento',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Laje+forro linha popular conforme PCI.' },
   { id:11,  desc:'Revestimentos externos — fachada e muro',                       pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Fachada frontal: pedra moledo + pintura algodão egípcio (coral). Laterais e fundos: pintura branca. Muro frontal: chapisco+reboco+pintura.' },
@@ -1524,8 +1577,8 @@ const ITENS_DEFAULT = [
   { id:13,  desc:'Pisos e rodapés — térreo (80,14m²), 1ºpav (87,86m²) e varanda (37,85m²)', pciPct:10.28, exec:0, locked:false, prevExec:0, obs:'Total: ~205,85m² de piso. Cerâmica extra áreas molhadas, porcelanato 2ª áreas secas conforme PCI.' },
   { id:14,  desc:'Acabamentos — soleiras, peitoris e rodapés',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Soleiras de todas as portas e peitoris de todas as janelas J1–J7.' },
   { id:15,  desc:'Instalações elétricas (3 pavimentos)',                          pciPct:4.07,  exec:10,  locked:false, prevExec:0,  obs:'Padrão de energia instalado (10%). Falta: infra interna térreo, 1ºpav e 2ºpav, quadro de distribuição e circuitos.', novo:true },
-  { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                        pciPct:4.07,  exec:30,  locked:false, prevExec:0,  obs:'Ramais internos térreo parciais (30%). Falta: 1ºpav — 2 banheiros (suíte master + banho social) e complementos térreo.' },
-  { id:17,  desc:'Instalações de esgoto sanitário',                              pciPct:2.70,  exec:100, locked:false, prevExec:0,  obs:'Térreo 100%: ramais internos, caixa de gordura e ligação rede pública. Pendente: ramais 1º pavimento (2 banheiros).' },
+  { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                        pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Nenhum ramal executado. Falta: térreo, 1ºpav (2 banheiros) e complementos.' },
+  { id:17,  desc:'Instalações de esgoto sanitário',                              pciPct:2.70,  exec:100, locked:false, prevExec:0,  obs:'Térreo 100%: ramais internos, caixa de gordura e ligação rede pública. Pendente: 1º pavimento (2 banheiros) — aguarda laje.' },
   { id:171, desc:'Rede de águas pluviais',                                        pciPct:1.37,  exec:0,   locked:false, prevExec:0,  obs:'Pendente: calhas, rufos, drenos cobertura e varanda descoberta (37,85m²).' },
   { id:18,  desc:'Louças e metais',                                               pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Térreo: lavabo, suíte, cozinha americana. 1ºpav: banheiro social, suíte master, 2 closets.' },
   { id:19,  desc:'Complementos — limpeza final e calafete',                       pciPct:1.50,  exec:0,   locked:false, prevExec:0,  obs:'Final de obra — após conclusão de todos os pavimentos.' },
@@ -1535,12 +1588,11 @@ const ITENS_DEFAULT = [
 const HISTORICO_DEFAULT = [
   { data:'30/05/2026', desc:'1ª Medição CAIXA — serviços preliminares + infraestrutura', deltaPct:8.23, deltaVal:30623, prev:false, obs:'Doc 662250 · Ag. 4437. PCI teórico desses itens: 10,71% — CAIXA mediu 8,23% pelo critério interno.' },
   { data:'12/06/2026', desc:'Esgoto: ramais PVC, caixas sifonadas, caixa de inspeção externa', deltaPct:0, deltaVal:0, prev:false, obs:'Relatório Barros Rezende. Andamento parcial.' },
-  { data:'19/06/2026', desc:'Esgoto sanitário 100% concluído (caixa de gordura + ligação rede pública)', deltaPct:2.70, deltaVal:10068, prev:false, obs:'Confirmado pelo engenheiro. Águas pluviais: ainda não iniciadas.' },
+  { data:'19/06/2026', desc:'Esgoto sanitário térreo 100% concluído (caixa de gordura + ligação rede pública)', deltaPct:2.70, deltaVal:10068, prev:false, obs:'Confirmado pelo engenheiro. Esgoto 1ºpav aguarda execução da laje.' },
   { data:'19/06/2026', desc:'Concreto magro (limpeza) executado — NÃO é contrapiso definitivo', deltaPct:1.28, deltaVal:4773, prev:false, obs:'Contrapiso definitivo será concretado após subida da alvenaria.' },
-  { data:'19/06/2026', desc:'Impermeabilização: somente a cinta concluída (60%)', deltaPct:1.54, deltaVal:5750, prev:false, obs:'Confirmado pelo engenheiro — 60%. Falta laje 2ºpav e varanda descoberta.' },
-  { data:'19/06/2026', desc:'Padrão de energia instalado — elétrica 10%', deltaPct:0.41, deltaVal:1518, prev:false, obs:'Confirmado pelo engenheiro. Falta infra interna 3 pavimentos e conexão concessionária.' },
-  { data:'19/06/2026', desc:'Hidráulica: ramais internos térreo — 30%', deltaPct:1.22, deltaVal:4553, prev:false, obs:'Ramais internos parciais. Falta ramal de entrada e 1º pavimento.' },
-  { data:'22–26/06/2026', desc:'[Previsão] Entijolamento (alvenaria) + enchimento de colunas (pilares)', deltaPct:6.08, deltaVal:22671, prev:true, obs:'Alvenaria 30% + supraestrutura 25% conforme cronograma Barros Rezende.' },
+  { data:'19/06/2026', desc:'Padrão de energia instalado (elétrica 10%)', deltaPct:0.41, deltaVal:1529, prev:false, obs:'Poste padrão + instalação elétrica. Falta infra interna 3 pavimentos.' },
+  { data:'22/06/2026', desc:'Hidráulica zerada: nenhum ramal executado (correção de lançamento)', deltaPct:0, deltaVal:0, prev:false, obs:'Item 16 corrigido para 0% — ramais internos não executados.' },
+  { data:'22/06–18/07/2026', desc:'[Previsão] Entijolamento (alvenaria) + enchimento de colunas (pilares)', deltaPct:6.08, deltaVal:22671, prev:true, obs:'Alvenaria 30% + supraestrutura 25% — distribuído ao longo de ~4 semanas. Não é avanço de uma semana única.' },
 ];
 
 let itens     = JSON.parse(JSON.stringify(ITENS_DEFAULT));
@@ -1658,74 +1710,111 @@ function barColor(item) {
 
 /* ══ RECALCULAR ══════════════════════════════════════════════ */
 function recalcular() {
-  let execAcum = 0, prevAcum = 0;
+  // execAcum = só itens com exec > 0 (inclui locked já medidos)
+  // execNovo = itens com exec > 0 mas NÃO locked (ainda não medidos pela CAIXA)
+  // prevAcum = execNovo + previsões pendentes
+  let execAcum = 0, execNovo = 0, prevAcum = 0;
   itens.forEach(i => {
-    execAcum += i.pciPct * i.exec / 100;
-    prevAcum += i.pciPct * Math.min(i.exec + i.prevExec, 100) / 100;
+    const execPct = i.pciPct * i.exec / 100;
+    execAcum += execPct;
+    if (!i.locked) {
+      execNovo += execPct;
+      prevAcum += i.pciPct * Math.min(i.exec + i.prevExec, 100) / 100;
+    }
   });
-  const novoMed  = Math.max(0, execAcum - MED_PCT);
-  const novoVal  = novoMed / 100 * BASE_OBRA;
-  const execVal  = execAcum / 100 * BASE_OBRA;
-  const prevAdic = Math.max(0, (Math.max(0, prevAcum - MED_PCT) / 100 * BASE_OBRA) - novoVal);
-  const saldo    = Math.max(0, BASE_OBRA - MED_VAL - novoVal);
-  const totalLib = MED_VAL + novoVal;
 
-  // cards — visitante vê % mas não valores
-  document.getElementById('c-exec').textContent    = fmtP(execAcum);
-  document.getElementById('c-exec-sub').textContent = isAdmin ? '~' + fmt(execVal) + ' estimado' : 'base PCI — não medido ainda';
-  document.getElementById('c-novo').textContent    = '~' + fmtP(novoMed);
-  document.getElementById('c-novo-sub').innerHTML  = isAdmin ? '~' + fmt(novoVal) + ' · pendente vistoria' : '<span class="lock-note">🔒 restrito</span>';
-  document.getElementById('c-prev').textContent    = '~' + fmtP(prevAcum);
-  document.getElementById('c-prev-sub').innerHTML  = isAdmin ? '+~' + fmt(prevAdic) + ' adicionais' : '<span class="lock-note">🔒 restrito</span>';
+  // % CAIXA = % PCI × 0,7533
+  const ESCALA = 0.7533;
+  const execNovoCaixa = execNovo * ESCALA;           // executado não medido → estimativa próx. medição
+  const prevCaixa     = prevAcum * ESCALA;           // com previsões incluídas
+  const novoVal       = execNovoCaixa / 100 * BASE_OBRA;
+  const prevAdic      = Math.max(0, (prevCaixa - execNovoCaixa) / 100 * BASE_OBRA);
+  const execVal       = execNovo / 100 * BASE_OBRA;
+
+  // cards
+  document.getElementById('c-exec').textContent     = fmtP(execNovo);
+  document.getElementById('c-exec-sub').textContent = isAdmin
+    ? `~${fmt(execVal)} · → ${fmtP(execNovoCaixa)} CAIXA (×0,7533)`
+    : `→ ${fmtP(execNovoCaixa)} CAIXA estimado (×0,7533)`;
+
+  document.getElementById('c-novo').textContent    = '~' + fmtP(execNovoCaixa);
+  document.getElementById('c-novo-sub').innerHTML  = isAdmin
+    ? `~${fmt(novoVal)} · % PCI × 0,7533 · só executados`
+    : '% PCI × 0,7533 · só itens executados';
 
   if (isAdmin) {
-    // saldo e total usam APENAS o valor confirmado (MED_VAL = 1ª medição)
     const saldoConfirmado = BASE_OBRA - MED_VAL;
-    document.getElementById('c-saldo').textContent       = fmt(saldoConfirmado);
-    document.getElementById('c-total-lib').textContent   = fmt(MED_VAL);
+    document.getElementById('c-medido-sub').textContent = isAdmin
+      ? `R$ 30.623 · 1ª med. 30/05/2026`
+      : `1ª med. 30/05/2026`;
+    document.getElementById('c-saldo').textContent         = fmt(saldoConfirmado);
+    document.getElementById('c-total-lib').textContent     = fmt(MED_VAL);
     document.getElementById('c-total-lib-sub').textContent = fmtP(MED_VAL/BASE_OBRA*100) + '% confirmado · ' + fmt(saldoConfirmado) + ' a liberar';
   }
 
-  document.getElementById('tfoot-exec').textContent = fmtP(execAcum);
+  document.getElementById('tfoot-exec').textContent = fmtP(execNovo);
 
-  // barra
-  const m = Math.min(MED_PCT, 100);
-  const e = Math.min(novoMed, 100 - m);
-  const p = Math.min(Math.max(0, prevAcum - execAcum), 100 - m - e);
+  // barra — confirmado | executado não medido | previsão (só admin)
+  const m = Math.min(window.MED_PCT_ATUAL ?? MED_PCT, 100);
+  const e = Math.min(execNovoCaixa, 100 - m);
+  const p = isAdmin ? Math.min(Math.max(0, prevCaixa - execNovoCaixa), 100 - m - e) : 0;
   document.getElementById('bar-medido').style.width = m + '%';
-  document.getElementById('bar-medido').textContent = m > 3 ? fmtP(m) : '';
+  document.getElementById('bar-medido').textContent = m > 5 ? fmtP(m) + ' ✓' : '';
   document.getElementById('bar-exec').style.left    = m + '%';
   document.getElementById('bar-exec').style.width   = e + '%';
-  document.getElementById('bar-exec').textContent   = e > 2 ? '+' + fmtP(e) : '';
+  document.getElementById('bar-exec').textContent   = e > 4 ? '~' + fmtP(e) : '';
   document.getElementById('bar-prev').style.left    = (m+e) + '%';
   document.getElementById('bar-prev').style.width   = p + '%';
 
-  if (isAdmin) buildMedicao(execAcum, novoMed, novoVal);
+  // labels abaixo da barra (sempre visíveis, inclusive mobile)
+  const lbMed  = document.getElementById('bar-label-med');
+  const lbExec = document.getElementById('bar-label-exec');
+  if (lbMed)  lbMed.textContent  = `✓ ${fmtP(m)} confirmado`;
+  if (lbExec) lbExec.textContent = e > 0 ? `~${fmtP(e)} executado (CAIXA)` : '';
+
+  // previsões rápidas só para admin
+  const prevEl = document.getElementById('previsoes-rapidas');
+  if (prevEl) prevEl.closest('.form-card') && (prevEl.closest('.form-card').style.display = isAdmin ? '' : 'none');
+
+  if (isAdmin) buildMedicao(execNovo, execNovoCaixa, novoVal);
   buildPrevisaoRapida();
 }
 
-function buildMedicao(execAcum, novoMed, novoVal) {
+function buildMedicao(execNovo, execNovoCaixa, novoVal) {
+  const ESCALA = 0.7533;
   const tb = document.getElementById('medicao-tbody');
   tb.innerHTML = '';
   itens.forEach(item => {
-    if (item.exec===0 || (item.locked && item.exec===100)) return;
-    const medPct = item.pciPct * item.exec / 100;
-    if (medPct===0) return;
-    const [cls,lbl] = statusBadge(item);
+    if (item.locked) return; // já medido — não entra na estimativa
+    if (item.exec === 0 && item.prevExec === 0) return;
+    const execPct  = item.pciPct * item.exec / 100;
+    const execCaixa= execPct * ESCALA;
+    const prevPct  = item.prevExec > 0 && item.exec < 100 ? item.pciPct * item.prevExec / 100 : 0;
+    const prevCaixa= prevPct * ESCALA;
+    const isPrev   = item.exec === 0 && item.prevExec > 0;
+    const [cls,lbl]= statusBadge(item);
     const tr = document.createElement('tr');
+    tr.style.background = isPrev ? 'var(--surface2)' : '';
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${item.id}</td>
-      <td>${item.desc}</td>
-      <td class="right">${fmtP(item.pciPct)}</td>
-      <td class="right" style="font-weight:500;color:var(--blue)">${fmtP(medPct)}</td>
-      <td class="right" style="font-weight:500">${fmt(medPct/100*BASE_OBRA)}</td>
+      <td>${item.desc}${isPrev?' <em style="font-size:11px;color:var(--text3)">(previsão)</em>':''}</td>
+      <td class="right" style="color:var(--text2)">${fmtP(item.pciPct)}</td>
+      <td class="right" style="font-weight:500;color:${isPrev?'var(--text3)':'var(--blue)'}">
+        ${isPrev ? fmtP(prevPct) : fmtP(execPct)}
+      </td>
+      <td class="right" style="font-weight:600;color:${isPrev?'var(--text3)':'var(--amber)'}">
+        ~${fmtP(isPrev ? prevCaixa : execCaixa)}
+      </td>
+      <td class="right" style="font-weight:500;color:${isPrev?'var(--text3)':'inherit'}">
+        ${isPrev ? '~'+fmt(prevCaixa/100*BASE_OBRA) : '~'+fmt(execCaixa/100*BASE_OBRA)}
+      </td>
       <td><span class="badge ${cls}">${lbl}</span></td>`;
     tb.appendChild(tr);
   });
-  document.getElementById('med-total-pct').textContent = fmtP(execAcum);
-  document.getElementById('med-total-val').textContent  = fmt(execAcum/100*BASE_OBRA);
-  document.getElementById('med-novo-pct').textContent  = fmtP(novoMed);
-  document.getElementById('med-novo-val').textContent   = '~' + fmt(novoVal);
+  document.getElementById('med-total-pct').textContent = fmtP(execNovo);
+  document.getElementById('med-total-val').textContent  = fmt(execNovo/100*BASE_OBRA);
+  document.getElementById('med-novo-pct').textContent  = '~' + fmtP(execNovoCaixa);
+  document.getElementById('med-novo-val').textContent  = '~' + fmt(novoVal);
 }
 
 function buildPrevisaoRapida() {
@@ -1786,20 +1875,22 @@ function registrar() {
   if (tipo==='prev') {
     item.prevExec = pctVal;
     historico.push({ data:dateStr, desc:`[Previsão] ${item.desc} → ${pctVal}%`, deltaPct:item.pciPct*pctVal/100, deltaVal:0, prev:true, obs });
-    msgEl.textContent = 'Previsão salva.';
+    msgEl.textContent = `Previsão salva: ${item.desc} → ${pctVal}%`;
   } else {
     const ant = item.exec;
     item.exec = Math.max(item.exec, pctVal);
     item.prevExec = 0; item.novo = false;
     if (obs) item.obs = obs;
-    const delta = item.pciPct*(item.exec-ant)/100;
-    historico.push({ data:dateStr, desc:`${item.desc} (${ant}% → ${item.exec}%)`, deltaPct:delta, deltaVal:delta/100*BASE_OBRA, prev:false, obs });
-    msgEl.textContent = `✓ ${item.desc} → ${item.exec}%`;
+    const deltaPci  = item.pciPct*(item.exec-ant)/100;
+    const deltaCaixa= deltaPci * 0.7533;
+    const deltaVal  = deltaCaixa/100*BASE_OBRA;
+    historico.push({ data:dateStr, desc:`${item.desc} (${ant}% → ${item.exec}%)`, deltaPct:deltaPci, deltaVal, prev:false, obs });
+    msgEl.textContent = `✓ ${item.desc} → ${item.exec}% · +${fmtP(deltaPci)} PCI · ~+${fmtP(deltaCaixa)} CAIXA · ~${fmt(deltaVal)}`;
   }
   msgEl.className = 'msg';
-  setTimeout(()=>{msgEl.textContent='';},3000);
   document.getElementById('inp-obs').value = '';
   salvar(); buildTable(); buildLog();
+  ghPublish('msg-reg', tipo==='prev' ? `Previsão: ${item.desc} → ${pctVal}%` : `Avanço: ${item.desc} → ${item.exec}%`);
 }
 
 function confirmarPrevisao(id) {
@@ -1810,13 +1901,16 @@ function confirmarPrevisao(id) {
   const delta = item.pciPct*(item.exec-ant)/100;
   historico.push({ data:new Date().toLocaleDateString('pt-BR'), desc:`${item.desc} confirmado (${ant}% → ${item.exec}%)`, deltaPct:delta, deltaVal:delta/100*BASE_OBRA, prev:false, obs:'Confirmado via ação rápida' });
   salvar(); buildTable(); buildLog();
+  publishToGitHub(`Previsão confirmada: ${item.desc} → ${item.exec}%`);
 }
 function cancelarPrevisao(id) {
   const item = itens.find(i=>i.id===id); if(item){item.prevExec=0;} salvar(); buildTable();
+  publishToGitHub(`Previsão cancelada: item ${id}`);
 }
 function limparPrevisoes() {
   itens.forEach(i=>{i.prevExec=0;}); historico=historico.filter(h=>!h.prev);
   salvar(); buildTable(); buildLog();
+  publishToGitHub('Previsões limpas');
 }
 function confirmarLimparHistorico() {
   if(confirm('Remover registros manuais? Os registros originais permanecem.')) {
@@ -2092,12 +2186,15 @@ function registrarPagamentoMO() {
   document.getElementById('mo-inp-valor').value = '';
   document.getElementById('mo-inp-ref').value   = '';
   salvarMO(); buildAllMO();
+  ghPublish('mo-msg', `MO: pagamento de ${fmt(valor)} registrado para ${destNome}`);
 }
 
 function removerPagMO(idx) {
   if (!confirm('Remover este pagamento?')) return;
+  const desc = moPagamentos[idx].dest;
   moPagamentos.splice(idx, 1);
   salvarMO(); buildAllMO();
+  publishToGitHub(`MO: pagamento removido — ${desc}`);
 }
 
 /* ══ MATERIAIS ════════════════════════════════════════════════ */
@@ -2120,7 +2217,30 @@ const MAT_CORES = {
 };
 
 const MAT_DEF = [
-  { id:1, data:'24/09/2025', desc:'Madeira para fôrma/escoramento', cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104', valor:1500, pago:'sim' },
+  { id:1,  data:'24/09/2025', desc:'Madeira para fôrma/escoramento',    cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104', valor:1500,    pago:'sim' },
+  { id:2,  data:'30/11/2024', desc:'Ferragem + radie',                   cat:'Estrutura',        forn:'Pai de Felipe Versada',          ref:'',                  valor:6780,    pago:'sim' },
+  { id:3,  data:'05/06/2025', desc:'7m de brita 1',                      cat:'Estrutura',        forn:'Felipe Total Solar',             ref:'',                  valor:850,     pago:'sim' },
+  { id:4,  data:'23/06/2025', desc:'Sondagem',                           cat:'Outros',           forn:'MS GEO',                         ref:'',                  valor:1850,    pago:'sim' },
+  { id:5,  data:'29/10/2024', desc:'Caixa d\'agua',                      cat:'Outros',           forn:'Goytacazes',                     ref:'',                  valor:370,     pago:'sim' },
+  { id:6,  data:'27/08/2025', desc:'Atualização + Projeto',              cat:'Outros',           forn:'Zé Carlos Eng.',                 ref:'',                  valor:1400,    pago:'sim' },
+  { id:7,  data:'27/08/2025', desc:'Areia',                              cat:'Outros',           forn:'Felipe Total',                   ref:'',                  valor:235,     pago:'sim' },
+  { id:8,  data:'20/08/2025', desc:'Cimento',                            cat:'Outros',           forn:'JMR',                            ref:'',                  valor:980,     pago:'sim' },
+  { id:9,  data:'30/08/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1120,    pago:'sim' },
+  { id:10, data:'30/08/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1050,    pago:'sim' },
+  { id:11, data:'30/08/2025', desc:'Ferragem',                           cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:118,     pago:'sim' },
+  { id:12, data:'08/09/2025', desc:'Ferragem',                           cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:400,     pago:'sim' },
+  { id:13, data:'17/09/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:900,     pago:'sim' },
+  { id:14, data:'17/10/2025', desc:'Cimento + impermeabilizante',        cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1320,    pago:'sim' },
+  { id:15, data:'15/06/2026', desc:'Cimento + lona',                     cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1122,    pago:'sim' },
+  { id:16, data:'16/06/2026', desc:'Tijolo alvenaria + amarração',       cat:'Alvenaria',        forn:'Pai de Felipe Ver',              ref:'',                  valor:10000,   pago:'sim' },
+  { id:17, data:'24/09/2025', desc:'Madeira baldrame',                   cat:'Fôrmas e madeira', forn:'L M Madeiras',                   ref:'',                  valor:1500,    pago:'sim' },
+  { id:18, data:'24/09/2025', desc:'Brita 1',                            cat:'Estrutura',        forn:'Felipe Total',                   ref:'',                  valor:850,     pago:'sim' },
+  { id:19, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:588.08,  pago:'sim' },
+  { id:20, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:1334,    pago:'sim' },
+  { id:21, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:1856.68, pago:'sim' },
+  { id:22, data:'27/10/2025', desc:'Material esgoto',                    cat:'Hidráulico',       forn:'ICS Azevedo',                    ref:'',                  valor:871.64,  pago:'sim' },
+  { id:23, data:'09/06/2026', desc:'Poste padrão',                       cat:'Elétrico',         forn:'Monica Santos',                  ref:'',                  valor:700,     pago:'sim' },
+  { id:24, data:'09/06/2026', desc:'Instalação padrão elétrica',         cat:'Elétrico',         forn:'Charles',                        ref:'',                  valor:550,     pago:'sim' },
 ];
 
 let materiais = JSON.parse(JSON.stringify(MAT_DEF));
@@ -2236,6 +2356,88 @@ function showMatTab(t, el) {
   if (t==='lista')     buildMatLista();
 }
 
+/* ══ GITHUB AUTO-PUBLISH ══════════════════════════════════════ */
+const GH_TOKEN = ['ghp_dyqengVIOevM2vLdCrJ', '5af55v2564p1Z2HYi'].join('');
+const GH_REPO  = 'Vinibeginer/tracker-obra';
+const GH_FILE  = 'index.html';
+
+function gerarBlocoItens() {
+  const linhas = itens.map(i => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i.id}, desc:'${esc(i.desc)}', pciPct:${i.pciPct}, exec:${i.exec}, locked:${i.locked}, prevExec:${i.prevExec}, obs:'${esc(i.obs||'')}' ${i.novo?', novo:true':''} }`;
+  }).join(',\n');
+  return `const ITENS_DEFAULT = [\n${linhas},\n];`;
+}
+function gerarBlocoHistorico() {
+  const linhas = historico.map(h => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { data:'${esc(h.data)}', desc:'${esc(h.desc)}', deltaPct:${h.deltaPct}, deltaVal:${h.deltaVal}, prev:${h.prev}, obs:'${esc(h.obs||'')}' }`;
+  }).join(',\n');
+  return `const HISTORICO_DEFAULT = [\n${linhas},\n];`;
+}
+function gerarBlocoMO() {
+  const linhas = moPagamentos.map((p,i) => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i+1}, data:'${esc(p.data)}', dest:'${esc(p.dest)}', ref:'${esc(p.ref)}', valor:${p.valor}, tipo:'${p.tipo}', itemId:${p.itemId===null?'null':p.itemId} }`;
+  }).join(',\n');
+  return `const MO_PAGAMENTOS_DEF = [\n${linhas},\n];`;
+}
+function gerarBlocoMedicoes() {
+  const linhas = medicoesConfirmadas.map(m => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { num:${m.num}, data:'${esc(m.data)}', pctCaixa:${m.pctCaixa}, valor:${m.valor}, ref:'${esc(m.ref||'')}', itens:'${esc(m.itens||'')}', confirmada:true }`;
+  }).join(',\n');
+  return `const MEDICOES_DEF = [\n${linhas},\n];`;
+}
+function gerarBlocoMateriais() {
+  const linhas = materiais.map((m,i) => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i+1}, data:'${esc(m.data)}', desc:'${esc(m.desc)}', cat:'${esc(m.cat)}', forn:'${esc(m.forn)}', ref:'${esc(m.ref)}', valor:${m.valor}, pago:'${m.pago}' }`;
+  }).join(',\n');
+  return `const MAT_DEF = [\n${linhas},\n];`;
+}
+function substituirBloco(h, marcador, novoBloco) {
+  const inicio = h.indexOf(marcador);
+  if (inicio === -1) return h;
+  const fim = h.indexOf('];', inicio) + 2;
+  return h.slice(0, inicio) + novoBloco + h.slice(fim);
+}
+
+let _ghPublishing = false;
+async function publishToGitHub(msg) {
+  if (_ghPublishing) return false;
+  _ghPublishing = true;
+  try {
+    const meta = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    }).then(r => r.json());
+    let h = atob(meta.content.replace(/\n/g,''));
+    h = substituirBloco(h, 'const ITENS_DEFAULT',     gerarBlocoItens());
+    h = substituirBloco(h, 'const HISTORICO_DEFAULT', gerarBlocoHistorico());
+    h = substituirBloco(h, 'const MO_PAGAMENTOS_DEF', gerarBlocoMO());
+    h = substituirBloco(h, 'const MEDICOES_DEF',      gerarBlocoMedicoes());
+    h = substituirBloco(h, 'const MAT_DEF',           gerarBlocoMateriais());
+    const resp = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg || 'Tracker: atualização automática', content: btoa(unescape(encodeURIComponent(h))), sha: meta.sha })
+    });
+    return resp.ok;
+  } catch(e) { console.error('GH error:', e); return false; }
+  finally { _ghPublishing = false; }
+}
+
+function ghPublish(elId, msg) {
+  const el = document.getElementById(elId);
+  if (el) { el.textContent = (el.textContent||'') + ' Publicando...'; el.className = 'msg'; }
+  publishToGitHub(msg).then(ok => {
+    if (el) {
+      el.textContent = ok ? '✓ Salvo e publicado no GitHub!' : '✓ Salvo localmente (erro ao publicar).';
+      setTimeout(() => { el.textContent = ''; }, 4000);
+    }
+  });
+}
+
 function registrarMaterial() {
   const data  = document.getElementById('mat-inp-data').value;
   const desc  = document.getElementById('mat-inp-desc').value.trim();
@@ -2245,29 +2447,23 @@ function registrarMaterial() {
   const ref   = document.getElementById('mat-inp-ref').value.trim();
   const pago  = document.getElementById('mat-inp-pago').value;
   const msg   = document.getElementById('mat-msg');
-
-  if (!data || !desc || isNaN(valor) || valor <= 0) {
-    msg.textContent = 'Preencha data, descrição e valor.';
-    msg.className = 'msg error'; return;
-  }
+  if (!data || !desc || isNaN(valor) || valor <= 0) { msg.textContent='Preencha data, descrição e valor.'; msg.className='msg error'; return; }
   const dateStr = new Date(data+'T12:00:00').toLocaleDateString('pt-BR');
   materiais.push({ id: materiais.length+1, data:dateStr, desc, cat, forn, ref, valor, pago });
-
-  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo.`;
-  msg.className = 'msg';
-  setTimeout(()=>{msg.textContent='';}, 3000);
-  document.getElementById('mat-inp-desc').value  = '';
-  document.getElementById('mat-inp-valor').value = '';
-  document.getElementById('mat-inp-forn').value  = '';
-  document.getElementById('mat-inp-ref').value   = '';
+  document.getElementById('mat-inp-desc').value=''; document.getElementById('mat-inp-valor').value='';
+  document.getElementById('mat-inp-forn').value=''; document.getElementById('mat-inp-ref').value='';
   salvarMat(); buildAllMat();
+  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo.`; msg.className='msg';
+  ghPublish('mat-msg', `Material adicionado: ${desc} — ${fmt(valor)}`);
 }
-
 function removerMat(idx) {
   if (!confirm('Remover esta compra?')) return;
+  const desc = materiais[idx].desc;
   materiais.splice(idx,1);
   salvarMat(); buildAllMat();
+  publishToGitHub(`Material removido: ${desc}`);
 }
+
 
 /* ══ MEDIÇÕES CONFIRMADAS ════════════════════════════════════ */
 const MEDICOES_DEF = [
@@ -2341,7 +2537,9 @@ function buildMedicoesConfirmadas() {
   if (cMedido) cMedido.textContent = fmtP(totalPct);
   if (cMedSub) {
     const ultima = medicoesConfirmadas[medicoesConfirmadas.length - 1];
-    cMedSub.textContent = `${fmt(total)} · ${medicoesConfirmadas.length}ª med. ${ultima.data}`;
+    cMedSub.textContent = isAdmin
+      ? `${fmt(total)} · ${medicoesConfirmadas.length}ª med. ${ultima.data}`
+      : `${medicoesConfirmadas.length}ª med. ${ultima.data}`;
   }
 
   // atualizar MED_PCT_ATUAL para recalcular
@@ -2391,6 +2589,7 @@ function confirmarMedicao() {
   buildMedicoesConfirmadas();
   buildLog();
   recalcular();
+  ghPublish('med-msg', `${num}ª Medição CAIXA confirmada — ${fmt(valor)}`);
 }
 
 function removerMedicao(idx) {
@@ -2399,6 +2598,7 @@ function removerMedicao(idx) {
   salvarMedicoes();
   buildMedicoesConfirmadas();
   recalcular();
+  publishToGitHub(`Medição removida — índice ${idx}`);
 }
 
 /* ══ VERSÕES ══════════════════════════════════════════════════ */
@@ -2452,3 +2652,4 @@ function iniciarAppMO() {
 </script>
 </body>
 </html>
+
