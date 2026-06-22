@@ -208,6 +208,72 @@ textarea { resize: vertical; min-height: 60px; }
 .access-block { background: var(--surface2); border: 1px dashed var(--border2); border-radius: var(--radius-lg); padding: 2rem; text-align: center; color: var(--text3); font-size: 13px; margin: 1rem 0; }
 .access-block span { font-size: 28px; display: block; margin-bottom: 0.5rem; }
 
+/* ── RESPONSIVO MOBILE ───────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* container sem padding lateral excessivo */
+  .container { padding: 1rem 0.75rem; }
+
+  /* header compacto */
+  .header { padding: 0.7rem 1rem; }
+  .header-left h1 { font-size: 13px; }
+  .header-left p  { display: none; }
+
+  /* tabs: scroll horizontal em vez de quebrar linha */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px; scrollbar-width: none; }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 8px 12px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+  /* cards: 2 colunas no mobile */
+  .cards { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  .card { padding: 0.75rem 0.9rem; }
+  .card-value { font-size: 18px; }
+  .card-label { font-size: 10px; }
+  .card-sub   { font-size: 11px; }
+
+  /* barra de progresso mais fina */
+  .progress-wrap { height: 22px; }
+  .progress-medido, .progress-exec { font-size: 10px; padding-right: 5px; }
+
+  /* tabelas: scroll horizontal */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  table { font-size: 12px; min-width: 480px; }
+  thead th { padding: 6px 8px; font-size: 10px; }
+  tbody td  { padding: 6px 8px; }
+  tfoot td  { padding: 6px 8px; }
+
+  /* formulários: 1 coluna */
+  .form-grid { grid-template-columns: 1fr; }
+  .form-card { padding: 1rem; }
+
+  /* log compacto */
+  .log-entry { flex-wrap: wrap; gap: 4px; }
+  .log-date  { min-width: auto; width: 100%; }
+  .log-desc  { width: 100%; }
+
+  /* alertas menores */
+  .alert { font-size: 12px; padding: 8px 12px; }
+
+  /* sect-title menor */
+  .sect-title { font-size: 10px; margin: 1rem 0 0.5rem; }
+
+  /* legenda em coluna */
+  .legend { flex-direction: column; gap: 6px; font-size: 11px; }
+
+  /* botões menores */
+  .btn { padding: 7px 12px; font-size: 12px; }
+  .btn-sm { padding: 4px 8px; font-size: 11px; }
+
+  /* login card sem padding excessivo */
+  .login-card { padding: 1.75rem 1.25rem; }
+}
+
+@media (max-width: 400px) {
+  /* telas muito pequenas: 1 coluna de cards */
+  .cards { grid-template-columns: 1fr; }
+  .card-value { font-size: 20px; }
+}
+
 .resumo-table td, .resumo-table th { padding: 7px 10px; font-size: 13px; }
 .resumo-table tr.total   { font-weight: 600; border-top: 2px solid var(--border2); }
 .resumo-table tr.liberado td { color: var(--green); }
@@ -1400,7 +1466,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.27';
+const APP_VERSION = '1.28';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1430,6 +1496,7 @@ const VERSOES = [
   { v:'1.25', data:'22/06/2026', autor:'Claude', desc:'Perfil visitante: sem R$ em nenhum lugar · cards mostram só % · sub do card executado mostra % CAIXA estimado' },
   { v:'1.26', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ removido do card liberado e legenda · barra de previsão oculta · seção previsões rápidas oculta' },
   { v:'1.27', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ 30.623 removido do sub do card liberado CAIXA em todas as situações (inicial e ao confirmar medição)' },
+  { v:'1.28', data:'22/06/2026', autor:'Claude', desc:'Layout responsivo completo: mobile ≤768px (2 col cards, tabs scroll, tabelas scroll, form 1 col, log compacto) · telas ≤400px (1 col)' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
