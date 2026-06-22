@@ -1400,7 +1400,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.26';
+const APP_VERSION = '1.27';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1429,6 +1429,7 @@ const VERSOES = [
   { v:'1.24', data:'22/06/2026', autor:'Claude', desc:'Card "Com previsões" removido — informação ambígua · barra e legenda simplificadas' },
   { v:'1.25', data:'22/06/2026', autor:'Claude', desc:'Perfil visitante: sem R$ em nenhum lugar · cards mostram só % · sub do card executado mostra % CAIXA estimado' },
   { v:'1.26', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ removido do card liberado e legenda · barra de previsão oculta · seção previsões rápidas oculta' },
+  { v:'1.27', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ 30.623 removido do sub do card liberado CAIXA em todas as situações (inicial e ao confirmar medição)' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1699,7 +1700,9 @@ function recalcular() {
 
   if (isAdmin) {
     const saldoConfirmado = BASE_OBRA - MED_VAL;
-    document.getElementById('c-medido-sub').textContent = `R$ 30.623 · 1ª med. 30/05/2026`;
+    document.getElementById('c-medido-sub').textContent = isAdmin
+      ? `R$ 30.623 · 1ª med. 30/05/2026`
+      : `1ª med. 30/05/2026`;
     document.getElementById('c-saldo').textContent         = fmt(saldoConfirmado);
     document.getElementById('c-total-lib').textContent     = fmt(MED_VAL);
     document.getElementById('c-total-lib-sub').textContent = fmtP(MED_VAL/BASE_OBRA*100) + '% confirmado · ' + fmt(saldoConfirmado) + ' a liberar';
@@ -2484,7 +2487,9 @@ function buildMedicoesConfirmadas() {
   if (cMedido) cMedido.textContent = fmtP(totalPct);
   if (cMedSub) {
     const ultima = medicoesConfirmadas[medicoesConfirmadas.length - 1];
-    cMedSub.textContent = `${fmt(total)} · ${medicoesConfirmadas.length}ª med. ${ultima.data}`;
+    cMedSub.textContent = isAdmin
+      ? `${fmt(total)} · ${medicoesConfirmadas.length}ª med. ${ultima.data}`
+      : `${medicoesConfirmadas.length}ª med. ${ultima.data}`;
   }
 
   // atualizar MED_PCT_ATUAL para recalcular
