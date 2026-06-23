@@ -1,0 +1,2669 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Obra — Vinícius Ornellas</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:         #F7F6F3;
+  --surface:    #FFFFFF;
+  --surface2:   #F1EFE9;
+  --border:     #E2DFD8;
+  --border2:    #C8C5BC;
+  --text:       #1A1916;
+  --text2:      #6B6860;
+  --text3:      #9E9C97;
+  --blue:       #185FA5;
+  --blue-bg:    #E6F1FB;
+  --blue-mid:   #378ADD;
+  --green:      #0F6E56;
+  --green-bg:   #E1F5EE;
+  --green-mid:  #1D9E75;
+  --amber:      #854F0B;
+  --amber-bg:   #FAEEDA;
+  --amber-mid:  #EF9F27;
+  --red:        #A32D2D;
+  --red-bg:     #FCEBEB;
+  --red-mid:    #E24B4A;
+  --radius:     8px;
+  --radius-lg:  12px;
+}
+
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
+
+/* ── TELA DE LOGIN ── */
+#login-screen {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 100vh; padding: 1.5rem;
+}
+.login-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-lg); padding: 2.5rem 2rem;
+  width: 100%; max-width: 380px; text-align: center;
+}
+.login-logo {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: var(--blue-bg); display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 1.25rem; font-size: 24px;
+}
+.login-card h2 { font-size: 18px; font-weight: 600; margin-bottom: 4px; }
+.login-card p  { font-size: 13px; color: var(--text2); margin-bottom: 1.75rem; }
+.login-options { display: flex; flex-direction: column; gap: 10px; margin-bottom: 1.25rem; }
+.login-opt {
+  padding: 12px 16px; border-radius: var(--radius);
+  border: 1px solid var(--border); cursor: pointer;
+  text-align: left; background: var(--surface); font-family: inherit;
+  transition: border-color 0.15s, background 0.15s;
+  display: flex; align-items: center; gap: 12px;
+}
+.login-opt:hover { border-color: var(--blue-mid); background: var(--blue-bg); }
+.login-opt .opt-icon { font-size: 20px; flex-shrink: 0; }
+.login-opt .opt-title { font-size: 14px; font-weight: 500; color: var(--text); }
+.login-opt .opt-sub   { font-size: 12px; color: var(--text2); }
+.pwd-wrap { display: none; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+.pwd-wrap.visible { display: flex; }
+.pwd-wrap input {
+  width: 100%; padding: 10px 12px; font-size: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); font-family: inherit;
+  text-align: center; letter-spacing: 4px;
+}
+.pwd-wrap input:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(55,138,221,0.15); }
+.btn-login {
+  width: 100%; padding: 10px; font-size: 14px; font-weight: 500;
+  background: var(--blue-mid); color: #fff; border: none;
+  border-radius: var(--radius); cursor: pointer; font-family: inherit;
+}
+.btn-login:hover { background: var(--blue); }
+.login-error { font-size: 12px; color: var(--red); min-height: 16px; text-align: center; }
+
+/* ── APP PRINCIPAL ── */
+#app { display: none; }
+
+/* HEADER */
+.header {
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 0.9rem 1.5rem; display: flex; align-items: center;
+  justify-content: space-between; flex-wrap: wrap; gap: 0.5rem;
+  position: sticky; top: 0; z-index: 10;
+}
+.header-left h1 { font-size: 15px; font-weight: 600; }
+.header-left p  { font-size: 11px; color: var(--text2); margin-top: 1px; }
+.header-right   { display: flex; gap: 8px; align-items: center; }
+.badge-role {
+  font-size: 11px; font-weight: 600; padding: 3px 10px;
+  border-radius: 10px; letter-spacing: 0.03em;
+}
+.badge-admin   { background: var(--green-bg);  color: var(--green); }
+.badge-visitor { background: var(--blue-bg);   color: var(--blue);  }
+.btn-logout {
+  font-size: 12px; padding: 4px 10px; border-radius: var(--radius);
+  border: 1px solid var(--border2); background: transparent; color: var(--text2);
+  cursor: pointer; font-family: inherit;
+}
+.btn-logout:hover { background: var(--surface2); }
+
+/* CONTAINER */
+.container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
+
+/* CARDS */
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin-bottom: 1.5rem; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1rem 1.1rem; }
+.card-label { font-size: 11px; color: var(--text2); font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 6px; }
+.card-value { font-size: 22px; font-weight: 600; color: var(--text); line-height: 1.1; }
+.card-sub   { font-size: 12px; color: var(--text2); margin-top: 4px; }
+.card.ok   { background: var(--green-bg); border-color: #9FE1CB; }
+.card.ok   .card-value { color: var(--green); }
+.card.info { background: var(--blue-bg);  border-color: #B5D4F4; }
+.card.info .card-value { color: var(--blue); }
+.card.warn { background: var(--amber-bg); border-color: #FAC775; }
+.card.warn .card-value { color: var(--amber); }
+.card.dash { border: 1.5px dashed var(--border2); }
+.card.dash .card-value { color: var(--text2); }
+
+/* BLOCO BLOQUEADO (visitante) */
+.blurred-val { filter: blur(5px); user-select: none; pointer-events: none; }
+.lock-note { font-size: 11px; color: var(--text3); margin-top: 4px; display: flex; align-items: center; gap: 4px; }
+
+/* PROGRESS */
+.sect-title { font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.05em; margin: 1.5rem 0 0.6rem; }
+.progress-wrap { position: relative; width: 100%; height: 28px; background: var(--surface2); border-radius: 6px; overflow: hidden; margin-bottom: 0.5rem; }
+.progress-medido { position: absolute; left: 0; top: 0; height: 100%; background: var(--green-mid); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; transition: width 0.4s; }
+.progress-exec   { position: absolute; top: 0; height: 100%; background: var(--blue-mid); display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-size: 11px; font-weight: 600; color: #fff; white-space: nowrap; transition: left 0.4s, width 0.4s; }
+.progress-prev   { position: absolute; top: 0; height: 100%; background: repeating-linear-gradient(90deg,#B5D4F4 0,#B5D4F4 7px,transparent 7px,transparent 12px); transition: left 0.4s, width 0.4s; }
+.legend { display: flex; gap: 16px; font-size: 12px; color: var(--text2); flex-wrap: wrap; margin-bottom: 1.5rem; }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 3px; flex-shrink: 0; }
+.dot-dash { width: 12px; height: 12px; border-radius: 3px; background: repeating-linear-gradient(90deg,#B5D4F4 0,#B5D4F4 5px,transparent 5px,transparent 9px); flex-shrink: 0; }
+
+/* TABS */
+.tabs { display: flex; gap: 0; margin-bottom: 1rem; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+.tab-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; color: var(--text2); background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer; font-family: inherit; margin-bottom: -1px; transition: color 0.15s; }
+.tab-btn:hover  { color: var(--text); }
+.tab-btn.active { color: var(--blue); border-bottom-color: var(--blue); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* TABELA */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead th { font-size: 11px; font-weight: 600; color: var(--text2); text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.04em; white-space: nowrap; background: var(--surface); }
+tbody td { padding: 8px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+tbody tr:last-child td { border-bottom: none; }
+tbody tr:hover { background: var(--surface2); }
+tfoot td { padding: 8px 10px; font-weight: 600; border-top: 2px solid var(--border2); }
+.right { text-align: right; }
+.center { text-align: center; }
+.bar-bg { background: var(--surface2); border-radius: 4px; height: 8px; width: 100%; min-width: 60px; }
+.bar-fill   { height: 8px; border-radius: 4px; transition: width 0.4s; }
+.bar-stripe { height: 8px; border-radius: 4px; background: repeating-linear-gradient(90deg,#B5D4F4 0,#B5D4F4 6px,transparent 6px,transparent 10px); }
+
+.badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; white-space: nowrap; }
+.b-medido    { background: var(--green-bg);  color: var(--green); }
+.b-concluido { background: var(--blue-bg);   color: var(--blue); }
+.b-parcial   { background: var(--amber-bg);  color: var(--amber); }
+.b-novo      { background: var(--amber-bg);  color: var(--amber); border: 1px solid var(--amber-mid); }
+.b-previsao  { background: var(--surface2);  color: var(--text2); border: 1px dashed var(--border2); }
+.b-pendente  { background: var(--surface2);  color: var(--text3); }
+
+/* FORMULÁRIO (só admin) */
+.form-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-lg); padding: 1.25rem; margin-bottom: 1rem; }
+.form-grid { display: grid; grid-template-columns: 1fr 1fr 110px 110px; gap: 10px; align-items: end; margin-bottom: 0.75rem; }
+@media (max-width: 680px) { .form-grid { grid-template-columns: 1fr 1fr; } }
+.form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+input[type="date"], select, textarea { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font-family: inherit; }
+input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(55,138,221,0.15); }
+textarea { resize: vertical; min-height: 60px; }
+
+.btn { padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: var(--radius); cursor: pointer; border: 1px solid transparent; font-family: inherit; transition: opacity 0.15s; }
+.btn:hover { opacity: 0.85; }
+.btn-primary { background: var(--blue-mid);  color: #fff; border-color: var(--blue-mid);  }
+.btn-success { background: var(--green-mid); color: #fff; border-color: var(--green-mid); }
+.btn-ghost   { background: transparent; color: var(--text2); border-color: var(--border2); }
+.btn-danger  { background: transparent; color: var(--red);   border-color: var(--red);    }
+.btn-sm      { padding: 5px 10px; font-size: 12px; }
+
+.msg       { font-size: 12px; color: var(--green); margin-left: 8px; }
+.msg.error { color: var(--red); }
+
+/* HISTÓRICO */
+.log-entry { display: flex; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13px; align-items: flex-start; }
+.log-entry:last-child { border-bottom: none; }
+.log-date { font-weight: 600; color: var(--text); white-space: nowrap; min-width: 105px; font-size: 12px; }
+.log-desc { flex: 1; color: var(--text2); }
+.log-pct  { font-weight: 600; color: var(--blue); white-space: nowrap; font-size: 12px; }
+.log-val  { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.log-prev { font-weight: 600; color: var(--text3); font-style: italic; white-space: nowrap; font-size: 12px; }
+
+/* ALERTAS */
+.alert { padding: 10px 14px; font-size: 13px; margin-bottom: 0.75rem; border-left: 3px solid; border-radius: 0 var(--radius) var(--radius) 0; }
+.alert-ok   { background: var(--green-bg); color: var(--green); border-color: var(--green-mid); }
+.alert-info { background: var(--blue-bg);  color: var(--blue);  border-color: var(--blue-mid); }
+.alert-warn { background: var(--amber-bg); color: var(--amber); border-color: var(--amber-mid); }
+
+/* ACESSO NEGADO */
+.access-block { background: var(--surface2); border: 1px dashed var(--border2); border-radius: var(--radius-lg); padding: 2rem; text-align: center; color: var(--text3); font-size: 13px; margin: 1rem 0; }
+.access-block span { font-size: 28px; display: block; margin-bottom: 0.5rem; }
+
+/* ── RESPONSIVO MOBILE ───────────────────────────────────────── */
+@media (max-width: 768px) {
+
+  /* container */
+  .container { padding: 0.75rem; }
+
+  /* header */
+  .header { padding: 0.65rem 0.75rem; flex-wrap: nowrap; }
+  .header-left h1 { font-size: 12px; line-height: 1.3; }
+  .header-left p  { display: none; }
+  .header-right   { gap: 6px; flex-shrink: 0; }
+  .badge-role { font-size: 10px; padding: 2px 7px; }
+  .btn-logout { font-size: 11px; padding: 3px 8px; }
+
+  /* sect-title */
+  .sect-title { font-size: 10px; margin: 0.85rem 0 0.4rem; }
+
+  /* cards: 2 colunas fixas */
+  .cards { grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 1rem; }
+  .card { padding: 0.65rem 0.75rem; }
+  .card-label { font-size: 9px; margin-bottom: 4px; line-height: 1.3; }
+  .card-value { font-size: 17px; }
+  .card-sub   { font-size: 10px; line-height: 1.3; margin-top: 3px; word-break: break-word; }
+
+  /* barra: sem texto embutido, só cor */
+  .progress-wrap { height: 18px; border-radius: 5px; }
+  .progress-medido { font-size: 0; padding: 0; }
+  .progress-exec   { font-size: 0; padding: 0; }
+
+  /* legenda abaixo da barra */
+  .legend { flex-direction: column; gap: 5px; font-size: 11px; margin-bottom: 1rem; }
+  .legend span { display: flex; align-items: center; gap: 6px; }
+
+  /* tabs: scroll horizontal sem quebrar */
+  .tabs { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch;
+          gap: 0; padding-bottom: 0; scrollbar-width: none; border-bottom: 1px solid var(--border); }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab-btn { padding: 8px 11px; font-size: 12px; white-space: nowrap; flex-shrink: 0; }
+
+  /* tabelas: scroll horizontal com min-width */
+  .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: var(--radius); }
+  table { font-size: 12px; width: 100%; min-width: 520px; }
+  thead th { padding: 6px 8px; font-size: 10px; }
+  tbody td  { padding: 6px 8px; }
+  tfoot td  { padding: 6px 8px; font-size: 12px; }
+
+  /* ocultar colunas menos importantes em mobile */
+  .col-hide-mobile { display: none; }
+
+  /* formulários: 1 coluna */
+  .form-grid { grid-template-columns: 1fr; gap: 8px; }
+  .form-card { padding: 0.85rem; }
+  .form-group label { font-size: 10px; }
+  input[type="date"], input[type="text"], input[type="number"], select, textarea {
+    font-size: 16px; /* evita zoom automático iOS */
+    padding: 9px 10px;
+  }
+
+  /* botões */
+  .btn    { padding: 8px 12px; font-size: 12px; }
+  .btn-sm { padding: 5px 9px;  font-size: 11px; }
+
+  /* log */
+  .log-entry { flex-wrap: wrap; gap: 3px; padding: 8px 0; }
+  .log-date  { min-width: auto; width: 100%; font-size: 11px; }
+  .log-desc  { width: 100%; font-size: 12px; }
+  .log-pct, .log-val, .log-prev { font-size: 11px; }
+
+  /* alertas */
+  .alert { font-size: 12px; padding: 8px 10px; }
+
+  /* form-card botões lado a lado */
+  .btn-row { display: flex; flex-wrap: wrap; gap: 8px; }
+}
+
+@media (max-width: 400px) {
+  /* telas muito pequenas: cards 1 coluna */
+  .cards { grid-template-columns: 1fr; }
+  .card-value { font-size: 20px; }
+  table { min-width: 420px; }
+  .tab-btn { padding: 7px 9px; font-size: 11px; }
+}
+
+.resumo-table td, .resumo-table th { padding: 7px 10px; font-size: 13px; }
+.resumo-table tr.total   { font-weight: 600; border-top: 2px solid var(--border2); }
+.resumo-table tr.liberado td { color: var(--green); }
+.resumo-table tr.a-medir  td { color: var(--blue); }
+
+.empty { text-align: center; padding: 2rem; color: var(--text3); font-size: 13px; }
+.last-update { font-size: 11px; color: var(--text3); }
+.mo-panel { display: none; }
+#mo-panel-pagos { display: block; }
+.b-quitado  { background: var(--green-bg); color: var(--green); }
+.b-adiant   { background: var(--amber-bg); color: var(--amber); }
+.b-material { background: var(--surface2); color: var(--text2); }
+.b-mo       { background: var(--blue-bg);  color: var(--blue);  }
+</style>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     TELA DE LOGIN
+══════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">🏗️</div>
+    <h2>Acompanhamento de obra</h2>
+    <p>Vinícius Sampaio Ornellas · Campos/RJ</p>
+
+    <div class="login-options">
+      <button class="login-opt" onclick="entrarVisitante()">
+        <span class="opt-icon">👁️</span>
+        <div>
+          <div class="opt-title">Visualizar andamento</div>
+          <div class="opt-sub">Acesso público — percentuais de avanço</div>
+        </div>
+      </button>
+      <button class="login-opt" onclick="mostrarSenha()">
+        <span class="opt-icon">🔐</span>
+        <div>
+          <div class="opt-title">Administrador da obra</div>
+          <div class="opt-sub">Acesso completo com senha</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="pwd-wrap" id="pwd-wrap">
+      <input type="password" id="pwd-input" placeholder="Senha" maxlength="30"
+        onkeydown="if(event.key==='Enter') entrarAdmin()" autocomplete="current-password" />
+      <button class="btn-login" onclick="entrarAdmin()">Entrar como administrador</button>
+    </div>
+    <div class="login-error" id="login-error"></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     APP PRINCIPAL
+══════════════════════════════════════ -->
+<div id="app">
+
+  <div class="header">
+    <div class="header-left">
+      <h1>Tracker de obra — Vinícius Sampaio Ornellas</h1>
+      <p>Contrato CAIXA nº 1.4444.2662250-5 · Loteamento Residencial Village, Campos/RJ · <span id="app-version-badge" style="font-weight:600;color:var(--blue)"></span></p>
+    </div>
+    <div class="header-right">
+      <span class="last-update" id="last-update"></span>
+      <span class="badge-role" id="badge-role"></span>
+      <button class="btn-logout" onclick="sair()">Sair</button>
+    </div>
+  </div>
+
+  <div class="container">
+
+    <!-- CARDS -->
+    <div class="sect-title">Posição da obra</div>
+    <div class="cards">
+      <div class="card ok">
+        <div class="card-label">✓ Liberado CAIXA (confirmado)</div>
+        <div class="card-value" id="c-medido">8,23%</div>
+        <div class="card-sub" id="c-medido-sub">1ª med. 30/05/2026</div>
+      </div>
+      <div class="card info">
+        <div class="card-label">Executado físico (% PCI)</div>
+        <div class="card-value" id="c-exec">—</div>
+        <div class="card-sub" id="c-exec-sub">peso na planilha de custos · % CAIXA ao lado →</div>
+      </div>
+      <div class="card warn">
+        <div class="card-label">Estimativa próx. medição (% CAIXA)</div>
+        <div class="card-value" id="c-novo">—</div>
+        <div class="card-sub" id="c-novo-sub">% PCI × 0,7533 · só executados · sem previsões</div>
+      </div>
+      <div class="card admin-only">
+        <div class="card-label">Saldo CAIXA disponível</div>
+        <div class="card-value" id="c-saldo">—</div>
+        <div class="card-sub">financiamento − liberado confirmado</div>
+      </div>
+      <div class="card admin-only">
+        <div class="card-label">Total confirmado CAIXA</div>
+        <div class="card-value" id="c-total-lib">—</div>
+        <div class="card-sub" id="c-total-lib-sub">de R$ 354.244 líquidos</div>
+      </div>
+    </div>
+
+    <!-- BARRA -->
+    <div class="sect-title">Progresso do financiamento CAIXA</div>
+    <div class="progress-wrap">
+      <div class="progress-medido" id="bar-medido" style="width:8.23%">8,23% ✓</div>
+      <div class="progress-exec"   id="bar-exec"   style="left:8.23%;width:0;opacity:0.55"></div>
+      <div class="progress-prev"   id="bar-prev"   style="left:8.23%;width:0"></div>
+    </div>
+    <div id="bar-pct-labels" style="display:flex;gap:12px;font-size:11px;margin:4px 0 0;flex-wrap:wrap;">
+      <span style="color:var(--green);font-weight:600" id="bar-label-med">✓ 8,23% confirmado</span>
+      <span style="color:var(--blue-mid);font-weight:600" id="bar-label-exec"></span>
+    </div>
+    <div class="legend">
+      <span><div class="dot" style="background:var(--green-mid)"></div><strong>Confirmado CAIXA</strong> — 8,23% (1ª medição)</span>
+      <span><div class="dot" style="background:var(--blue-mid);opacity:0.55"></div>Executado físico não medido (% CAIXA estimado)</span>
+      <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>Saldo a liberar</span>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs" id="tabs-wrap">
+      <button class="tab-btn active" onclick="showTab('tabela',this)">Itens da obra</button>
+      <button class="tab-btn admin-tab" onclick="showTab('cronograma',this)">Cronograma</button>
+      <button class="tab-btn admin-tab" onclick="showTab('recursos',this)">Recursos</button>
+      <button class="tab-btn admin-tab" onclick="showTab('registrar',this)">Registrar avanço</button>
+      <button class="tab-btn admin-tab" onclick="showTab('medicao',this)">Resumo de medição</button>
+      <button class="tab-btn" onclick="showTab('historico',this)">Histórico</button>
+      <button class="tab-btn admin-tab" onclick="showTab('mo',this)">Mão de obra</button>
+      <button class="tab-btn admin-tab" onclick="showTab('mat',this)">Materiais</button>
+      <button class="tab-btn admin-tab" onclick="showTab('contrato',this)">Contrato</button>
+      <button class="tab-btn admin-tab" onclick="showTab('versoes',this)">Versões</button>
+    </div>
+
+    <!-- TABELA DE ITENS -->
+    <div id="tab-tabela" class="panel active">
+      <div class="table-wrap">
+        <table>
+          <thead id="tabela-thead"></thead>
+          <tbody id="itens-tbody"></tbody>
+          <tfoot>
+            <tr>
+              <td colspan="2">Total executado acumulado</td>
+              <td></td><td id="tfoot-pci-col"></td><td></td>
+              <td class="center" id="tfoot-exec" style="color:var(--blue)">—</td>
+              <td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+    </div>
+
+    <!-- CRONOGRAMA (admin) -->
+    <div id="tab-cronograma" class="panel">
+
+      <!-- cards resumo -->
+      <div class="cards" style="margin-bottom:1.25rem;">
+        <div class="card ok">
+          <div class="card-label">Início (alvenaria)</div>
+          <div class="card-value" style="font-size:16px;">22/06/2026</div>
+          <div class="card-sub">Barros Rezende — térreo</div>
+        </div>
+        <div class="card info">
+          <div class="card-label">Térreo — conclusão BR</div>
+          <div class="card-value" style="font-size:16px;">~30/03/2027</div>
+          <div class="card-sub">~9 meses · contrato firmado</div>
+        </div>
+        <div class="card warn">
+          <div class="card-label">1º e 2º pav.</div>
+          <div class="card-value" style="font-size:15px;">A contratar</div>
+          <div class="card-sub">MO e prazo a definir</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Prazo CAIXA</div>
+          <div class="card-value" style="font-size:16px;">fev/2028</div>
+          <div class="card-sub">21 meses — margem confortável</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Medições térreo</div>
+          <div class="card-value">4 medições</div>
+          <div class="card-sub">1 realizada · 3 a realizar</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Equipe BR</div>
+          <div class="card-value" style="font-size:15px;">2 pedreiros</div>
+          <div class="card-sub">+ ajudantes · 5 dias/sem</div>
+        </div>
+      </div>
+
+      <!-- linha do tempo das medições -->
+      <div class="sect-title">Calendário de medições CAIXA — térreo (contratado BR) + pavimentos (a contratar)</div>
+      <div class="alert alert-warn" style="margin-bottom:0.75rem;">
+        ⚠️ O orçamento da Barros Rezende (R$ 115.000) cobre <strong>somente o térreo completo</strong>. As medições 1ª a 4ª refletem os prazos reais do contrato BR. As medições 5ª em diante dependem de <strong>novo contrato de MO para 1º e 2º pavimento</strong> — datas e valores a definir.
+      </div>
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table>
+          <thead>
+            <tr>
+              <th class="center">Medição</th>
+              <th>Data prevista</th>
+              <th>Etapas principais</th>
+              <th class="right">% PCI</th>
+              <th class="right">% CAIXA<br><span style="font-weight:400;font-size:10px">(×0,7533)</span></th>
+              <th class="right">Liberação</th>
+              <th class="right">Acum.</th>
+              <th class="right">Saldo</th>
+              <th>Fonte</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- TÉRREO — contratado BR -->
+            <tr><td colspan="9" style="background:var(--green-bg);font-size:11px;font-weight:600;color:var(--green);padding:5px 10px;text-transform:uppercase;letter-spacing:0.05em;">Térreo — Contrato Barros Rezende (prazos confirmados)</td></tr>
+            <tr style="background:var(--green-bg)">
+              <td class="center"><span class="badge b-medido">1ª ✓</span></td>
+              <td style="font-size:12px;white-space:nowrap">30/05/2026</td>
+              <td style="font-size:12px;color:var(--text2)">Barracão + fundação + impermeabilização alicerce</td>
+              <td class="right">10,71%</td>
+              <td class="right" style="font-weight:600;color:var(--green)">8,23%</td>
+              <td class="right" style="font-weight:600;color:var(--green)">R$ 30.623</td>
+              <td class="right">R$ 30.623</td>
+              <td class="right">R$ 342.265</td>
+              <td><span class="badge b-medido">CAIXA ✓</span></td>
+            </tr>
+            <tr style="background:var(--blue-bg)">
+              <td class="center"><span class="badge b-concluido">2ª</span></td>
+              <td style="font-size:12px;white-space:nowrap">~07/09/2026</td>
+              <td style="font-size:12px;color:var(--text2)">Alvenaria+pilares+vigas (45d) + laje térreo (10d) + esgoto+hidráulica (10d) + infra elétrica (5d)</td>
+              <td class="right">19,35%</td>
+              <td class="right" style="font-weight:600;color:var(--blue)">14,58%</td>
+              <td class="right" style="font-weight:600;color:var(--blue)">~R$ 51.636</td>
+              <td class="right">R$ 80.216</td>
+              <td class="right">R$ 274.028</td>
+              <td><span class="badge b-concluido">CAIXA</span></td>
+            </tr>
+            <tr>
+              <td class="center"><span class="badge b-pendente">3ª</span></td>
+              <td style="font-size:12px;white-space:nowrap">~26/10/2026</td>
+              <td style="font-size:12px;color:var(--text2)">Engradamento + cobertura + impermeab. 2ºpav + esquadrias térreo + vidros</td>
+              <td class="right">9,43%</td>
+              <td class="right">7,10%</td>
+              <td class="right" style="font-weight:600">~R$ 25.164</td>
+              <td class="right">R$ 105.380</td>
+              <td class="right">R$ 248.864</td>
+              <td><span class="badge b-concluido">CAIXA</span></td>
+            </tr>
+            <tr>
+              <td class="center"><span class="badge b-pendente">4ª</span></td>
+              <td style="font-size:12px;white-space:nowrap">~30/03/2027</td>
+              <td style="font-size:12px;color:var(--text2)">Chapisco+reboco térreo (50d) + revestimento (20d) + contrapiso + piso + soleiras + bancadas + varanda</td>
+              <td class="right">33,22%</td>
+              <td class="right">25,02%</td>
+              <td class="right" style="font-weight:600">~R$ 88.648</td>
+              <td class="right">R$ 194.028</td>
+              <td class="right">R$ 160.216</td>
+              <td><span class="badge b-concluido">CAIXA</span></td>
+            </tr>
+
+            <!-- PAVIMENTOS — a contratar -->
+            <tr><td colspan="9" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:5px 10px;text-transform:uppercase;letter-spacing:0.05em;">1º e 2º Pavimento — MO a contratar (datas e valores a definir)</td></tr>
+            <tr style="opacity:0.55">
+              <td class="center"><span class="badge b-pendente">5ª</span></td>
+              <td style="font-size:12px;white-space:nowrap;color:var(--text3)">A definir</td>
+              <td style="font-size:12px;color:var(--text3)">Alvenaria + pilares + vigas + lajes 1º e 2º pav — <em>depende de novo contrato MO</em></td>
+              <td class="right" style="color:var(--text3)">~17,56%</td>
+              <td class="right" style="color:var(--text3)">~13,23%</td>
+              <td class="right" style="color:var(--text3)">~R$ 46.859</td>
+              <td class="right" style="color:var(--text3)">~R$ 240.887</td>
+              <td class="right" style="color:var(--text3)">~R$ 113.357</td>
+              <td><span class="badge b-concluido">CAIXA</span></td>
+            </tr>
+            <tr style="opacity:0.55">
+              <td class="center"><span class="badge b-pendente">6ª</span></td>
+              <td style="font-size:12px;white-space:nowrap;color:var(--text3)">A definir</td>
+              <td style="font-size:12px;color:var(--text3)">Esquadrias + instalações + chapisco + reboco 1º/2º pav — <em>a contratar</em></td>
+              <td class="right" style="color:var(--text3)">~14,28%</td>
+              <td class="right" style="color:var(--text3)">~10,76%</td>
+              <td class="right" style="color:var(--text3)">~R$ 38.106</td>
+              <td class="right" style="color:var(--text3)">~R$ 278.994</td>
+              <td class="right" style="color:var(--text3)">~R$ 75.250</td>
+              <td><span class="badge b-concluido">CAIXA</span></td>
+            </tr>
+            <tr style="opacity:0.55">
+              <td class="center"><span class="badge b-pendente">7ª</span></td>
+              <td style="font-size:12px;white-space:nowrap;color:var(--text3)">A definir</td>
+              <td style="font-size:12px;color:var(--text3)">Pisos + revestimentos + pinturas + louças + acabamentos 1º/2º pav — <em>a contratar</em></td>
+              <td class="right" style="color:var(--text3)">~19,93%</td>
+              <td class="right" style="color:var(--text3)">~15,01%</td>
+              <td class="right" style="color:var(--text3)">~R$ 53.184</td>
+              <td class="right" style="color:var(--text3)">~R$ 332.177</td>
+              <td class="right" style="color:var(--text3)">~R$ 22.067</td>
+              <td><span class="badge b-parcial">CAIXA+Prop</span></td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td colspan="5" style="font-weight:600">Total estimado CAIXA (7 medições)</td>
+              <td class="right" style="font-weight:600;color:var(--blue)">~R$ 332.177</td>
+              <td colspan="3" style="font-size:12px;color:var(--text2)">base R$ 354.244 (descontado 5% bloqueado) · folga ~R$ 22.067</td>
+            </tr>
+            <tr>
+              <td colspan="5" style="font-weight:600;color:var(--amber)">Parcela final bloqueada (habite-se + CND + averbação)</td>
+              <td class="right" style="font-weight:600;color:var(--amber)">~R$ 18.644</td>
+              <td colspan="3" style="font-size:12px;color:var(--text2)">mín. 5% · liberada só após conclusão total</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- cronograma detalhado térreo -->
+      <div class="sect-title">Cronograma detalhado — Térreo (Barros Rezende)</div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#BR</th>
+              <th>Etapa</th>
+              <th class="center">Prazo BR</th>
+              <th>Início</th>
+              <th>Término</th>
+              <th class="right">% PCI</th>
+              <th>Fonte</th>
+              <th>Medição</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 1 — Fundação ✓ Concluída</td></tr>
+            <tr style="opacity:0.65">
+              <td>BR1</td><td>Serviços preliminares — locação gabarito</td><td class="center">3 dias</td><td>Concluído</td><td>—</td><td class="right">3,64%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
+            </tr>
+            <tr style="opacity:0.65">
+              <td>BR2</td><td>Sapatas + viga baldrame + alicerce</td><td class="center">15 dias</td><td>Concluído</td><td>—</td><td class="right">7,07%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
+            </tr>
+            <tr style="opacity:0.65">
+              <td>BR3</td><td>Impermeabilização do alicerce</td><td class="center">3 dias</td><td>Concluído</td><td>—</td><td class="right">2,57%</td><td><span class="badge b-medido">CAIXA ✓</span></td><td class="center"><span class="badge b-medido">1ª</span></td>
+            </tr>
+
+            <tr><td colspan="8" style="background:var(--blue-bg);font-size:11px;font-weight:600;color:var(--blue);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 2 — Estrutura térreo → 2ª medição (~07/09/2026)</td></tr>
+            <tr style="background:var(--green-bg)">
+              <td>—</td><td>Esgoto térreo ✓ + Concreto magro ✓ + Padrão elétrico ✓</td><td class="center">—</td><td>Concluído</td><td>—</td><td class="right">4,39%</td><td><span class="badge b-medido">Executado</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+            </tr>
+            <tr style="background:var(--amber-bg)">
+              <td>BR4+5</td><td>Alvenaria 252,81m² + pilares + vigas superiores</td><td class="center">45 dias</td><td>22/06/2026</td><td>03/08/2026</td><td class="right">8,14%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+            </tr>
+            <tr>
+              <td>BR6</td><td>Laje térreo 90,94m²</td><td class="center">10 dias</td><td>03/08/2026</td><td>17/08/2026</td><td class="right">4,71%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+            </tr>
+            <tr>
+              <td>BR7</td><td>Esgoto + hidráulica cozinha/lavabo/suíte térreo</td><td class="center">10 dias</td><td>17/08/2026</td><td>31/08/2026</td><td class="right">4,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+            </tr>
+            <tr>
+              <td>BR8</td><td>Infra elétrica — caixas + quadro distribuição</td><td class="center">5 dias</td><td>31/08/2026</td><td>07/09/2026</td><td class="right">2,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-concluido">2ª</span></td>
+            </tr>
+
+            <tr><td colspan="8" style="background:var(--surface2);font-size:11px;font-weight:600;color:var(--text2);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 3 — Cobertura + esquadrias → 3ª medição (~26/10/2026)</td></tr>
+            <tr>
+              <td>BR9</td><td>Engradamento + instalação caixonetes</td><td class="center">3 dias</td><td>07/09/2026</td><td>12/09/2026</td><td class="right">1,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+            </tr>
+            <tr>
+              <td>—</td><td>Cobertura — telhas fibrocimento + platibanda</td><td class="center">2 sem</td><td>12/09/2026</td><td>26/09/2026</td><td class="right">2,57%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+            </tr>
+            <tr>
+              <td>—</td><td>Impermeabilização laje 2ºpav + varanda</td><td class="center">1 sem</td><td>26/09/2026</td><td>03/10/2026</td><td class="right">1,03%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+            </tr>
+            <tr>
+              <td>BR10</td><td>Janelas + básculas + portas térreo</td><td class="center">10 dias</td><td>03/10/2026</td><td>17/10/2026</td><td class="right">4,71%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+            </tr>
+            <tr>
+              <td>—</td><td>Vidros + guarda-corpos térreo</td><td class="center">1 sem</td><td>17/10/2026</td><td>24/10/2026</td><td class="right">1,07%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">3ª</span></td>
+            </tr>
+
+            <tr><td colspan="8" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">Fase 4 — Revestimentos + acabamentos térreo → 4ª medição (~30/03/2027)</td></tr>
+            <tr>
+              <td>BR11</td><td>Chapisco + reboco térreo 505,62m²</td><td class="center">50 dias</td><td>26/10/2026</td><td>15/01/2027</td><td class="right">8,14%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR14</td><td>Revestimento cerâmico 80,90m²</td><td class="center">20 dias</td><td>15/01/2027</td><td>12/02/2027</td><td class="right">8,14%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR12</td><td>Contrapiso + massa de regularização</td><td class="center">15 dias</td><td>12/02/2027</td><td>02/03/2027</td><td class="right">1,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR13</td><td>Piso 80,14m² + rodapé 6m²</td><td class="center">15 dias</td><td>02/03/2027</td><td>22/03/2027</td><td class="right">10,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR17</td><td>Concretagem + contrapiso varanda térreo</td><td class="center">2 dias</td><td>22/03/2027</td><td>24/03/2027</td><td class="right">3,29%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR15</td><td>Soleiras térreo</td><td class="center">3 dias</td><td>24/03/2027</td><td>27/03/2027</td><td class="right">1,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+            <tr>
+              <td>BR16</td><td>Bancadas cozinha + lavabo + suíte</td><td class="center">2 dias</td><td>27/03/2027</td><td>30/03/2027</td><td class="right">1,28%</td><td><span class="badge b-concluido">CAIXA</span></td><td class="center"><span class="badge b-pendente">4ª</span></td>
+            </tr>
+
+            <!-- PAVIMENTOS -->
+            <tr><td colspan="8" style="background:var(--amber-bg);font-size:11px;font-weight:600;color:var(--amber);padding:6px 10px;text-transform:uppercase;letter-spacing:0.05em;">1º e 2º Pavimento — MO a contratar · datas a definir</td></tr>
+            <tr style="opacity:0.45">
+              <td>—</td><td colspan="6" style="color:var(--text3);font-style:italic">Alvenaria + pilares + lajes + esquadrias + instalações + revestimentos + acabamentos 1º e 2º pav — aguardando contratação de MO</td><td class="center"><span class="badge b-pendente">5ª–7ª</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-ok" style="margin-top:1rem;">
+        ✅ O financiamento CAIXA líquido é de <strong>R$ 354.244</strong> (R$ 372.888 menos os R$ 18.644 bloqueados até habite-se). Esse valor cobre <strong>quase toda a obra</strong> — incluindo térreo completo e a maior parte dos pavimentos. Folga estimada: ~R$ 22.067 após as 7 medições.
+      </div>
+      <div class="alert alert-warn" style="margin-top:0.5rem;">
+        ⚠️ 1º e 2º pavimento dependem de <strong>novo contrato de MO</strong> a ser firmado. Recomendado iniciar orçamentação com construtoras assim que o térreo estiver em fase de revestimento (~jan/2027), para não perder o prazo contratual CAIXA (fev/2028).
+      </div>
+      <div class="alert alert-info" style="margin-top:0.5rem;">
+        💡 Alinhar cada medição com o RT <strong>30 dias antes</strong> da data prevista. PLS com fotos de cada item deve estar pronta e assinada pelo RT antes da vistoria CAIXA.
+      </div>
+
+    </div><!-- /tab-cronograma -->
+
+    <!-- RECURSOS (admin) -->
+    <div id="tab-recursos" class="panel">
+
+      <!-- cards topo -->
+      <div class="cards" style="margin-bottom:1.25rem;">
+        <div class="card info">
+          <div class="card-label">Financiamento CAIXA (obra)</div>
+          <div class="card-value">R$ 372.888</div>
+          <div class="card-sub">75,33% do custo PCI</div>
+        </div>
+        <div class="card warn">
+          <div class="card-label">Recursos próprios (obra)</div>
+          <div class="card-value" style="font-size:16px;">A aportar</div>
+          <div class="card-sub">previsão: 13º + PL — dez/2026</div>
+        </div>
+        <div class="card dash">
+          <div class="card-label">FGTS (conta vinculada)</div>
+          <div class="card-value" style="font-size:16px;">Consumido</div>
+          <div class="card-sub">utilizado na quitação do terreno</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Custo PCI total</div>
+          <div class="card-value">R$ 495.000</div>
+          <div class="card-sub">CAIXA cobre até a 5ª medição</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Desembolso médio / medição</div>
+          <div class="card-value">R$ 20.716</div>
+          <div class="card-sub">CAIXA ÷ 18 etapas</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Custo por m²</div>
+          <div class="card-value">R$ 2.181</div>
+          <div class="card-sub">495.000 ÷ 227 m²</div>
+        </div>
+      </div>
+
+      <!-- barra de composição -->
+      <div class="sect-title">Composição dos recursos para a obra</div>
+      <div class="progress-wrap" style="height:32px;">
+        <div class="progress-medido" style="width:75.33%;font-size:12px;">CAIXA 75,3% · R$ 372.888</div>
+        <div class="progress-exec" style="left:75.33%;width:24.67%;font-size:11px;opacity:0.6;">Próprios a aportar (dez/2026)</div>
+      </div>
+      <div class="legend">
+        <span><div class="dot" style="background:var(--green-mid)"></div>CAIXA p/ obra: R$ 372.888 (75,3%)</span>
+        <span><div class="dot" style="background:var(--blue-mid);opacity:0.6"></div>Recursos próprios: a aportar — previsão dez/2026</span>
+        <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>FGTS: consumido na quitação do terreno</span>
+      </div>
+
+      <!-- tabela de composição -->
+      <div class="sect-title">Detalhamento completo dos recursos</div>
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table>
+          <thead>
+            <tr>
+              <th>Fonte</th>
+              <th class="right">Valor total</th>
+              <th class="right">Destinação terreno</th>
+              <th class="right">Disponível para obra</th>
+              <th class="right">% do custo PCI</th>
+              <th class="right">m² equivalentes</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:500">Financiamento CAIXA</td>
+              <td class="right">R$ 454.488</td>
+              <td class="right" style="color:var(--text2)">R$ 81.600 <span style="font-size:11px">(80% de R$102k avaliado)</span></td>
+              <td class="right" style="font-weight:600;color:var(--blue)">R$ 372.888</td>
+              <td class="right">75,33%</td>
+              <td class="right" style="color:var(--text2)">~171,0 m²</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500">Recursos próprios</td>
+              <td class="right">R$ 152.271</td>
+              <td class="right" style="color:var(--text2)">R$ 27.000 <span style="font-size:11px">(aporte terreno)</span></td>
+              <td class="right" style="font-weight:600;color:var(--amber)">R$ 125.271 <span style="font-size:11px">(a aportar dez/2026)</span></td>
+              <td class="right">25,31%</td>
+              <td class="right" style="color:var(--text2)">~57,5 m²</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500">FGTS (conta vinculada)</td>
+              <td class="right">R$ 11.305</td>
+              <td class="right" style="color:var(--red)">R$ 11.305 <span style="font-size:11px">(consumido no terreno)</span></td>
+              <td class="right" style="font-weight:600;color:var(--text3)">R$ 0</td>
+              <td class="right" style="color:var(--text3)">0%</td>
+              <td class="right" style="color:var(--text3)">—</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;color:var(--green)">Desconto Campos Urbanismo</td>
+              <td class="right" style="color:var(--green)">R$ 3.159</td>
+              <td class="right" style="color:var(--green)">R$ 3.159 <span style="font-size:11px">(abatimento no terreno)</span></td>
+              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text3)">—</td>
+              <td class="right" style="color:var(--text3)">—</td>
+            </tr>
+            <tr style="font-weight:600;border-top:2px solid var(--border2);">
+              <td>TOTAL PARA A OBRA</td>
+              <td class="right">R$ 621.222</td>
+              <td class="right" style="color:var(--text2)">R$ 123.063 <span style="font-size:11px">(terreno quitado)</span></td>
+              <td class="right" style="color:var(--blue)">R$ 498.159</td>
+              <td class="right">100,64%</td>
+              <td class="right" style="color:var(--text2)">227,0 m²</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- percentuais de conclusão possíveis por fonte -->
+      <div class="sect-title">Quanto cada fonte cobre da obra</div>
+      <div class="cards" style="margin-bottom:1.5rem;">
+        <div class="card info">
+          <div class="card-label">CAIXA (confirmado)</div>
+          <div class="card-value">75,3%</div>
+          <div class="card-sub">~171 m² · R$ 372.888 · até ~5ª medição</div>
+        </div>
+        <div class="card warn">
+          <div class="card-label">Recursos próprios (obra)</div>
+          <div class="card-value">R$ 125.271</div>
+          <div class="card-sub">necessários a partir da 6ª medição (mar/2027)</div>
+        </div>
+        <div class="card ok">
+          <div class="card-label">Desconto Campos Urbanismo</div>
+          <div class="card-value">R$ 3.159</div>
+          <div class="card-sub">abatido no terreno — já realizado</div>
+        </div>
+        <div class="card dash">
+          <div class="card-label">FGTS</div>
+          <div class="card-value" style="font-size:16px;">R$ 0</div>
+          <div class="card-sub">consumido na quitação do terreno</div>
+        </div>
+      </div>
+
+      <!-- estratégia de uso -->
+      <div class="sect-title">Estratégia de uso dos recursos</div>
+      <div class="alert alert-info">
+        O financiamento CAIXA (R$ 372.888) cobre as <strong>fases 1 a 5</strong> da obra integralmente. Os recursos próprios (R$ 125.271) precisam estar disponíveis a partir da <strong>6ª medição (~mar/2027)</strong>, quando entram nas fases de revestimento e acabamento. Previsão de aporte: <strong>13º salário + PLR — dez/2026</strong>. O FGTS (R$ 11.305) foi consumido integralmente na quitação do terreno.
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Fase da obra</th>
+              <th>Itens PCI envolvidos</th>
+              <th class="right">Custo estimado</th>
+              <th class="right">Fonte sugerida</th>
+              <th class="right">% da obra</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:500;color:var(--green)">✓ Fase 1 — Fundação e infra</td>
+              <td style="color:var(--text2);font-size:12px">Barracão, sapatas, baldrames, impermeabilização, magro</td>
+              <td class="right">R$ 57.585</td>
+              <td class="right"><span class="badge b-medido">CAIXA ✓</span></td>
+              <td class="right">11,63%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;color:var(--amber)">→ Fase 2 — Estrutura e alvenaria</td>
+              <td style="color:var(--text2);font-size:12px">Pilares, vigas, alvenaria 3 pavimentos, escada</td>
+              <td class="right">R$ 109.395</td>
+              <td class="right"><span class="badge b-concluido">CAIXA</span></td>
+              <td class="right">22,10%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;color:var(--amber)">→ Fase 3 — Cobertura e fechamentos</td>
+              <td style="color:var(--text2);font-size:12px">Cobertura, esquadrias, vidros, esgoto 1ºpav, pluvial</td>
+              <td class="right">R$ 48.510</td>
+              <td class="right"><span class="badge b-concluido">CAIXA</span></td>
+              <td class="right">9,80%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;color:var(--text2)">Fase 4 — Revestimentos</td>
+              <td style="color:var(--text2);font-size:12px">Chapisco, reboco, forros, revestimentos externos, pinturas</td>
+              <td class="right">R$ 88.935</td>
+              <td class="right"><span class="badge b-concluido">CAIXA</span></td>
+              <td class="right">17,97%</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500;color:var(--text2)">Fase 5 — Acabamentos</td>
+              <td style="color:var(--text2);font-size:12px">Pisos, louças, instalações completas, complementos</td>
+              <td class="right">R$ 106.575</td>
+              <td class="right"><span class="badge b-parcial">CAIXA+Prop</span></td>
+              <td class="right">21,53%</td>
+            </tr>
+            <tr style="font-weight:600;border-top:2px solid var(--border2);">
+              <td>TOTAL</td>
+              <td></td>
+              <td class="right">R$ 495.000</td>
+              <td></td>
+              <td class="right">100%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="alert alert-warn" style="margin-top:1rem;">
+        ⚠️ Os recursos próprios precisam estar disponíveis para as <strong>fases 4 e 5</strong> (revestimentos e acabamentos — a partir de mar/2027). Planejar o aporte com base no 13º salário e PLR de <strong>dez/2026</strong>, mantendo reserva suficiente para cobrir essas etapas sem interrupção da obra.
+      </div>
+      <div class="alert alert-info" style="margin-top:0.5rem;">
+        💡 O FGTS já foi utilizado na quitação do terreno e <strong>não está disponível</strong> para a obra. Todo o complemento das fases finais depende exclusivamente dos recursos próprios.
+      </div>
+
+    </div><!-- /tab-recursos -->
+
+    <!-- REGISTRAR (admin) -->
+    <div id="tab-registrar" class="panel">
+      <div class="alert alert-info">Registre o avanço executado ou previsão para a próxima semana. Dados salvos automaticamente no navegador.</div>
+      <div class="form-card">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Data / semana</label>
+            <input type="date" id="inp-data" />
+          </div>
+          <div class="form-group">
+            <label>Serviço</label>
+            <select id="inp-item"><option value="">Selecionar...</option></select>
+          </div>
+          <div class="form-group">
+            <label>% executado</label>
+            <select id="inp-pct">
+              <option value="10">10%</option>
+              <option value="25">25%</option>
+              <option value="50">50%</option>
+              <option value="60">60%</option>
+              <option value="75">75%</option>
+              <option value="100" selected>100%</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="inp-tipo">
+              <option value="exec">Executado</option>
+              <option value="prev">Previsão</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Observação (opcional)</label>
+          <textarea id="inp-obs" placeholder="Ex: Alvenaria iniciada pela fachada principal..."></textarea>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" onclick="registrar()">Salvar registro</button>
+          <button class="btn btn-ghost"   onclick="limparPrevisoes()">Limpar previsões</button>
+          <button class="btn btn-ghost"   onclick="exportarDados()">Exportar JSON</button>
+          <button class="btn btn-ghost"   onclick="importarDados()">Importar JSON</button>
+          <span class="msg" id="msg-reg"></span>
+        </div>
+      </div>
+      <div class="sect-title">Confirmar previsões da semana</div>
+      <div id="previsoes-rapidas" class="form-card" style="padding:0.75rem 1rem;"></div>
+    </div>
+
+    <!-- RESUMO MEDIÇÃO (admin) -->
+    <div id="tab-medicao" class="panel">
+
+      <!-- medições confirmadas -->
+      <div class="sect-title" style="margin-top:0">Medições confirmadas pela CAIXA</div>
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table class="resumo-table">
+          <thead>
+            <tr>
+              <th class="center" style="width:60px">Medição</th>
+              <th>Data</th>
+              <th class="right">% CAIXA</th>
+              <th class="right">Valor liberado</th>
+              <th class="right">Acumulado</th>
+              <th class="center">Status</th>
+              <th class="center admin-only">Ação</th>
+            </tr>
+          </thead>
+          <tbody id="med-confirmadas-tbody"></tbody>
+          <tfoot>
+            <tr class="total liberado">
+              <td colspan="2">Total confirmado pela CAIXA</td>
+              <td class="right" id="med-conf-pct-total">—</td>
+              <td class="right" id="med-conf-val-total">—</td>
+              <td class="right" id="med-conf-acum">—</td>
+              <td colspan="2"></td>
+            </tr>
+            <tr class="total">
+              <td colspan="2">Saldo CAIXA disponível</td>
+              <td></td>
+              <td class="right" id="med-conf-saldo">—</td>
+              <td colspan="3" style="font-size:11px;color:var(--text2)">financiamento − total confirmado</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <!-- confirmar nova medição -->
+      <div class="sect-title admin-only">Confirmar nova medição CAIXA</div>
+      <div class="form-card admin-only" style="margin-bottom:1.5rem;">
+        <div class="alert alert-info" style="margin-bottom:0.75rem;">
+          Quando a CAIXA liberar o valor, registre aqui. O tracker move automaticamente de "estimado" para "confirmado".
+        </div>
+        <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
+          <div class="form-group">
+            <label>Data do desbloqueio</label>
+            <input type="date" id="med-inp-data" />
+          </div>
+          <div class="form-group">
+            <label>Valor liberado (R$)</label>
+            <input type="text" id="med-inp-valor" placeholder="Ex: 20.084,39" />
+          </div>
+          <div class="form-group">
+            <label>Nº documento / referência</label>
+            <input type="text" id="med-inp-ref" placeholder="Ex: doc 662251" />
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>Itens cobertos (resumo)</label>
+          <input type="text" id="med-inp-itens" placeholder="Ex: impermeabilização 60% + esgoto 100% + magro 100%" />
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-success" onclick="confirmarMedicao()">
+            <i class="ti ti-check" aria-hidden="true"></i> Confirmar medição
+          </button>
+          <span class="msg" id="med-msg"></span>
+        </div>
+      </div>
+
+      <!-- estimativa próxima medição -->
+      <div class="sect-title">Estimativa — próxima medição (pendente vistoria)</div>
+      <div class="alert alert-warn" style="margin-bottom:0.75rem;">
+        Valores <strong>estimados</strong> — itens executados × PCI × fator 0,7533 (escala CAIXA/obra). Linhas em cinza = previsão pendente. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
+      </div>
+      <div class="table-wrap">
+        <table class="resumo-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Serviço</th>
+              <th class="right">% PCI total</th>
+              <th class="right">% PCI exec.</th>
+              <th class="right" style="color:var(--amber)">% CAIXA est.</th>
+              <th class="right">Valor est.</th>
+              <th>Situação</th>
+            </tr>
+          </thead>
+          <tbody id="medicao-tbody"></tbody>
+          <tfoot>
+            <tr class="total"><td colspan="3">Total executado (% PCI físico)</td><td class="right" id="med-total-pct">—</td><td></td><td class="right" id="med-total-val">—</td><td></td></tr>
+            <tr class="total a-medir"><td colspan="3">Estimativa liberação CAIXA (só executados)</td><td></td><td class="right" id="med-novo-pct">—</td><td class="right" id="med-novo-val">—</td><td></td></tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="alert alert-warn" style="margin-top:1rem;">
+        Entregar PLS ao RT antes de solicitar vistoria CAIXA. PLS deve ter fotos de cada item e ser assinada pelo RT + devedor.
+      </div>
+    </div>
+
+    <!-- HISTÓRICO -->
+    <div id="tab-historico" class="panel">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem;flex-wrap:wrap;gap:8px;">
+        <span style="font-size:13px;color:var(--text2)">Registros da obra em ordem cronológica.</span>
+        <button class="btn btn-danger btn-sm admin-only" onclick="confirmarLimparHistorico()">Limpar histórico</button>
+      </div>
+      <div id="log-container"></div>
+    </div>
+
+    <!-- MÃO DE OBRA (admin) -->
+    <div id="tab-mo" class="panel">
+
+      <!-- cards resumo MO -->
+      <div class="cards" style="margin-bottom:1.25rem;">
+        <div class="card ok">
+          <div class="card-label">Total pago MO</div>
+          <div class="card-value" id="mo-total-pago">R$ 27.490</div>
+          <div class="card-sub" id="mo-total-pago-pct">24,0% do teto</div>
+        </div>
+        <div class="card warn">
+          <div class="card-label">Saldo restante MO</div>
+          <div class="card-value" id="mo-saldo">R$ 87.510</div>
+          <div class="card-sub">teto R$ 115.000</div>
+        </div>
+        <div class="card info">
+          <div class="card-label">Próximo pagamento est.</div>
+          <div class="card-value" id="mo-proximo">R$ 23.271</div>
+          <div class="card-sub">alvenaria + pilares</div>
+        </div>
+        <div class="card dash">
+          <div class="card-label">Consumo do teto</div>
+          <div class="card-value" id="mo-consumo-pct">24,0%</div>
+          <div class="card-sub" id="mo-consumo-bar-wrap" style="margin-top:6px;">
+            <div style="background:var(--border);border-radius:4px;height:6px;width:100%;">
+              <div id="mo-consumo-bar" style="height:6px;border-radius:4px;background:var(--green-mid);width:24%;transition:width 0.4s;"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-label">Material (fora do teto)</div>
+          <div class="card-value" style="font-size:16px;">R$ 1.500</div>
+          <div class="card-sub">madeira/fôrma · set/2025</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Pagamentos registrados</div>
+          <div class="card-value" id="mo-n-pagamentos" style="font-size:18px;">7</div>
+          <div class="card-sub">comprovantes</div>
+        </div>
+      </div>
+
+      <!-- barra de consumo do teto -->
+      <div class="sect-title">Consumo do teto de R$ 115.000</div>
+      <div class="progress-wrap">
+        <div id="mo-bar-pago" class="progress-medido" style="width:24%">R$ 27.490</div>
+        <div id="mo-bar-prev" class="progress-prev"   style="left:24%;width:20%"></div>
+      </div>
+      <div class="legend">
+        <span><div class="dot" style="background:var(--green-mid)"></div>Pago</span>
+        <span><div class="dot-dash"></div>Próximos pagamentos estimados</span>
+        <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>Saldo disponível</span>
+      </div>
+
+      <!-- tabs internas MO -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
+        <button class="tab-btn active" id="mo-tab-btn-pagos"    onclick="showMoTab('pagos',this)">Pagamentos realizados</button>
+        <button class="tab-btn"        id="mo-tab-btn-itens"    onclick="showMoTab('itens',this)">Por item de serviço</button>
+        <button class="tab-btn"        id="mo-tab-btn-projecao" onclick="showMoTab('projecao',this)">Projeção de custos</button>
+        <button class="tab-btn"        id="mo-tab-btn-novo"     onclick="showMoTab('novo',this)">Registrar pagamento</button>
+      </div>
+
+      <!-- PAGAMENTOS REALIZADOS -->
+      <div id="mo-panel-pagos" class="mo-panel">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Destinatário</th>
+                <th>Referência</th>
+                <th class="right">Valor</th>
+                <th class="center">Tipo</th>
+                <th class="center">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="mo-pagamentos-tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" style="font-weight:600;">Total MO pago</td>
+                <td class="right" style="font-weight:600;color:var(--green);" id="mo-tfoot-total">—</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- POR ITEM DE SERVIÇO -->
+      <div id="mo-panel-itens" class="mo-panel" style="display:none;">
+        <div class="alert alert-info">Distribuição dos pagamentos pelos itens do orçamento Barros Rezende. Teto total: R$ 115.000.</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Serviço</th>
+                <th class="right">MO orçada</th>
+                <th class="right">MO paga</th>
+                <th class="right">Saldo</th>
+                <th class="center">Status</th>
+                <th style="min-width:80px;">Consumo</th>
+              </tr>
+            </thead>
+            <tbody id="mo-itens-tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="2" style="font-weight:600;">Total</td>
+                <td class="right" style="font-weight:600;">R$ 115.000</td>
+                <td class="right" style="font-weight:600;color:var(--green);" id="mo-itens-pago">—</td>
+                <td class="right" style="font-weight:600;color:var(--amber);" id="mo-itens-saldo">—</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- PROJEÇÃO -->
+      <div id="mo-panel-projecao" class="mo-panel" style="display:none;">
+        <div class="alert alert-info">Estimativa dos próximos pagamentos de MO baseada no avanço físico previsto no tracker. Valores proporcionais ao orçamento Barros Rezende (teto R$ 115.000).</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Serviço</th>
+                <th class="right">MO orçada</th>
+                <th class="right">% previsto</th>
+                <th class="right">Custo estimado</th>
+                <th>Quando</th>
+              </tr>
+            </thead>
+            <tbody id="mo-projecao-tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="4" style="font-weight:600;">Total estimado próximas etapas</td>
+                <td class="right" style="font-weight:600;color:var(--blue);" id="mo-proj-total">—</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="alert alert-warn" style="margin-top:1rem;" id="mo-proj-alerta"></div>
+      </div>
+
+      <!-- REGISTRAR PAGAMENTO -->
+      <div id="mo-panel-novo" class="mo-panel" style="display:none;">
+        <div class="form-card">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Data do pagamento</label>
+              <input type="date" id="mo-inp-data" />
+            </div>
+            <div class="form-group">
+              <label>Destinatário</label>
+              <select id="mo-inp-dest">
+                <option value="fabio">Fábio de Barros da Silva</option>
+                <option value="outro">Outro (descrever)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Valor (R$)</label>
+              <input type="text" id="mo-inp-valor" placeholder="0,00" />
+            </div>
+            <div class="form-group">
+              <label>Tipo</label>
+              <select id="mo-inp-tipo">
+                <option value="mo">Mão de obra</option>
+                <option value="adiantamento">Adiantamento</option>
+                <option value="material">Material (fora do teto)</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+            <div class="form-group">
+              <label>Item do serviço</label>
+              <select id="mo-inp-item">
+                <option value="">Selecionar item...</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Referência / observação</label>
+              <input type="text" id="mo-inp-ref" placeholder="Ex: Pix etapa alvenaria" />
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-primary" onclick="registrarPagamentoMO()">Salvar pagamento</button>
+            <span class="msg" id="mo-msg"></span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-mo -->
+
+    <!-- MATERIAIS (admin) -->
+    <div id="tab-mat" class="panel">
+
+      <!-- cards resumo -->
+      <div class="cards" style="margin-bottom:1.25rem;">
+        <div class="card info">
+          <div class="card-label">Total gasto em material</div>
+          <div class="card-value" id="mat-total">—</div>
+          <div class="card-sub" id="mat-total-sub">—</div>
+        </div>
+        <div class="card ok">
+          <div class="card-label">Compras pagas</div>
+          <div class="card-value" id="mat-pagas">—</div>
+          <div class="card-sub">comprovantes</div>
+        </div>
+        <div class="card warn">
+          <div class="card-label">Maior gasto</div>
+          <div class="card-value" id="mat-maior">—</div>
+          <div class="card-sub" id="mat-maior-desc">—</div>
+        </div>
+        <div class="card dash">
+          <div class="card-label">Último registro</div>
+          <div class="card-value" id="mat-ultimo" style="font-size:15px;">—</div>
+          <div class="card-sub" id="mat-ultimo-desc">—</div>
+        </div>
+      </div>
+
+      <!-- tabs internas materiais -->
+      <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
+        <button class="tab-btn active" id="mat-tab-btn-lista"    onclick="showMatTab('lista',this)">Compras registradas</button>
+        <button class="tab-btn"        id="mat-tab-btn-categoria" onclick="showMatTab('categoria',this)">Por categoria</button>
+        <button class="tab-btn"        id="mat-tab-btn-novo"     onclick="showMatTab('novo',this)">Registrar compra</button>
+      </div>
+
+      <!-- LISTA -->
+      <div id="mat-panel-lista">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Fornecedor</th>
+                <th class="right">Valor</th>
+                <th class="center">Pago?</th>
+                <th class="center">Ação</th>
+              </tr>
+            </thead>
+            <tbody id="mat-lista-tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td colspan="5" style="font-weight:600;">Total</td>
+                <td class="right" style="font-weight:600;color:var(--blue);" id="mat-tfoot-total">—</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- POR CATEGORIA -->
+      <div id="mat-panel-categoria" style="display:none;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Categoria</th>
+                <th class="right">Qtd. compras</th>
+                <th class="right">Total gasto</th>
+                <th class="right">% do total</th>
+                <th style="min-width:100px;">Proporção</th>
+              </tr>
+            </thead>
+            <tbody id="mat-cat-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- REGISTRAR -->
+      <div id="mat-panel-novo" style="display:none;">
+        <div class="form-card">
+          <div class="form-grid">
+            <div class="form-group">
+              <label>Data da compra</label>
+              <input type="date" id="mat-inp-data" />
+            </div>
+            <div class="form-group">
+              <label>Descrição do material</label>
+              <input type="text" id="mat-inp-desc" placeholder="Ex: Bloco cerâmico 9x19x19cm" />
+            </div>
+            <div class="form-group">
+              <label>Categoria</label>
+              <select id="mat-inp-cat">
+                <option value="Estrutura">Estrutura</option>
+                <option value="Alvenaria">Alvenaria</option>
+                <option value="Cobertura">Cobertura</option>
+                <option value="Hidráulico">Hidráulico</option>
+                <option value="Elétrico">Elétrico</option>
+                <option value="Revestimento">Revestimento</option>
+                <option value="Piso">Piso</option>
+                <option value="Esquadrias">Esquadrias</option>
+                <option value="Impermeabilização">Impermeabilização</option>
+                <option value="Fôrmas e madeira">Fôrmas e madeira</option>
+                <option value="Ferragem">Ferragem</option>
+                <option value="Concreto e argamassa">Concreto e argamassa</option>
+                <option value="Acabamento">Acabamento</option>
+                <option value="EPI e ferramentas">EPI e ferramentas</option>
+                <option value="Outros">Outros</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Valor (R$)</label>
+              <input type="text" id="mat-inp-valor" placeholder="0,00" />
+            </div>
+          </div>
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 120px;">
+            <div class="form-group">
+              <label>Fornecedor</label>
+              <input type="text" id="mat-inp-forn" placeholder="Ex: Casa do Construtor" />
+            </div>
+            <div class="form-group">
+              <label>Nota fiscal / referência</label>
+              <input type="text" id="mat-inp-ref" placeholder="NF ou número do Pix" />
+            </div>
+            <div class="form-group">
+              <label>Pago?</label>
+              <select id="mat-inp-pago">
+                <option value="sim">Sim</option>
+                <option value="nao">Não (pendente)</option>
+              </select>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <button class="btn btn-primary" onclick="registrarMaterial()">Salvar compra</button>
+            <span class="msg" id="mat-msg"></span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /tab-mat -->
+
+    <!-- CONTRATO (admin) -->
+    <div id="tab-contrato" class="panel">
+      <div class="cards" style="margin-bottom:1rem;">
+        <div class="card"><div class="card-label">Contrato</div><div class="card-value" style="font-size:14px;">1.4444.2662250-5</div><div class="card-sub">assinado 06/05/2026</div></div>
+        <div class="card"><div class="card-label">Financiamento CAIXA</div><div class="card-value" style="font-size:18px;">R$ 454.488</div><div class="card-sub">taxa 11,39% a.a. · SAC · TR</div></div>
+        <div class="card"><div class="card-label">Terreno (80% de R$102k)</div><div class="card-value" style="font-size:18px;">R$ 81.600</div><div class="card-sub">Campos Urbanismo SPE</div></div>
+        <div class="card info"><div class="card-label">Saldo p/ obra</div><div class="card-value" style="font-size:18px;">R$ 372.888</div><div class="card-sub">454.488 − 81.600</div></div>
+        <div class="card"><div class="card-label">Recursos próprios</div><div class="card-value" style="font-size:18px;">R$ 152.271</div><div class="card-sub">FGTS: consumido no terreno</div></div>
+        <div class="card"><div class="card-label">Custo PCI total</div><div class="card-value" style="font-size:18px;">R$ 495.000</div><div class="card-sub">materiais + serviços c/ BDI</div></div>
+        <div class="card"><div class="card-label">MO Barros Rezende</div><div class="card-value" style="font-size:18px;">R$ 115.000</div><div class="card-sub">térreo · estimativa atual.</div></div>
+        <div class="card"><div class="card-label">Prazo de obra</div><div class="card-value" style="font-size:18px;">21 meses</div><div class="card-sub">vence ~fev/2028</div></div>
+        <div class="card warn"><div class="card-label">Encargo mensal</div><div class="card-value" style="font-size:18px;">R$ 5.522</div><div class="card-sub">1º venc. 10/06/2026</div></div>
+      </div>
+      <div class="alert alert-warn">Última parcela (mín. 5% ≈ R$ 18.644) bloqueada até habite-se + CND + averbação. PLS mensal obrigatória.</div>
+      <div class="alert alert-warn" style="margin-top:0.5rem;">Paralisação &gt; 90 dias pode comprometer o contrato. Manter PLS mensal mesmo sem solicitar liberação.</div>
+    </div>
+
+    <!-- VERSÕES (admin) -->
+    <div id="tab-versoes" class="panel">
+      <div class="sect-title" style="margin-top:0">Histórico de versões do tracker</div>
+      <div class="alert alert-info" style="margin-bottom:1rem;">
+        Cada atualização feita no arquivo gera uma nova versão registrada aqui. O número de versão aparece no cabeçalho. Versão atual: <strong id="versao-atual-label"></strong>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:60px">Versão</th>
+              <th style="width:105px">Data</th>
+              <th>Alterações realizadas</th>
+              <th style="width:70px" class="center">Por</th>
+            </tr>
+          </thead>
+          <tbody id="versoes-tbody"></tbody>
+        </table>
+      </div>
+      <div class="sect-title" style="margin-top:1.5rem;">Convenção de versionamento</div>
+      <div style="background:var(--color-background-secondary);border-radius:var(--border-radius-md);padding:1rem;font-size:13px;color:var(--color-text-secondary);">
+        <div style="margin-bottom:6px;"><strong style="color:var(--color-text-primary)">X.0</strong> — Versão maior: reestruturação significativa ou nova funcionalidade principal</div>
+        <div style="margin-bottom:6px;"><strong style="color:var(--color-text-primary)">X.Y</strong> — Versão menor: correção de dados, nova aba, ajuste de cálculo ou atualização de obra</div>
+        <div><strong style="color:var(--color-text-primary)">Arquivo único</strong> — O tracker é sempre atualizado no mesmo arquivo. Exporte o JSON semanalmente como backup dos dados inseridos.</div>
+      </div>
+    </div><!-- /tab-versoes -->
+
+  </div><!-- /container -->
+</div><!-- /app -->
+
+<script>
+/* ══ VERSÃO ════════════════════════════════════════════════════ */
+const APP_VERSION = '1.34';
+const VERSOES = [
+  { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
+  { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
+  { v:'1.2',  data:'19/06/2026', autor:'Claude', desc:'Aba de mão de obra — Barros Rezende · teto R$ 115.000 · projeção e comprovantes' },
+  { v:'1.3',  data:'19/06/2026', autor:'Claude', desc:'Aba de materiais — controle de compras por categoria com gráfico de proporção' },
+  { v:'1.4',  data:'21/06/2026', autor:'Claude', desc:'Correção: impermeabilização 60% · elétrica 10% · concreto magro ≠ contrapiso · esgoto separado de pluvial' },
+  { v:'1.5',  data:'21/06/2026', autor:'Claude', desc:'Itens PCI atualizados com projeto aprovado (3 pavimentos, 227m², 22 portas, 18 janelas)' },
+  { v:'1.6',  data:'21/06/2026', autor:'Claude', desc:'Aba de recursos — composição CAIXA/próprios/FGTS · estratégia de desembolso por fase' },
+  { v:'1.7',  data:'21/06/2026', autor:'Claude', desc:'Aba de cronograma — 9 medições previstas · conclusão jul/2027 · economia R$ 38.654' },
+  { v:'1.8',  data:'21/06/2026', autor:'Claude', desc:'Escala 78% (CAIXA/obra) · % medição = % PCI × 0,7533 · tabela por medição atualizada' },
+  { v:'1.9',  data:'21/06/2026', autor:'Claude', desc:'Projeção 2ª medição detalhada item a item · controle de versionamento implementado' },
+  { v:'1.10', data:'21/06/2026', autor:'Claude', desc:'Separação confirmado vs estimado — cards, barra e saldo corrigidos' },
+  { v:'1.11', data:'21/06/2026', autor:'Claude', desc:'Aba medição com confirmação direta no tracker — botão "Confirmar medição CAIXA" · histórico automático' },
+  { v:'1.12', data:'22/06/2026', autor:'Claude', desc:'Previsão alvenaria+pilares corrigida: horizonte de 4 semanas (22/06–18/07/2026), não semana única' },
+  { v:'1.13', data:'22/06/2026', autor:'Claude', desc:'Integração aba Materiais completa — MAT_CORES (15 categorias), lista de compras, por categoria, registrar compra' },
+  { v:'1.14', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS zerado (consumido no terreno) · próprios a aportar dez/2026 (13º+PL) · alertas de fluxo de caixa atualizados' },
+  { v:'1.15', data:'22/06/2026', autor:'Claude', desc:'Materiais: 24 compras integradas do localStorage (R$ 37.545) — ferragem, cimento, brita, tijolos, piso, esgoto, elétrica e outros' },
+  { v:'1.16', data:'22/06/2026', autor:'Claude', desc:'Auto-publish GitHub: ao registrar ou remover material, tracker atualiza o arquivo base automaticamente' },
+  { v:'1.17', data:'22/06/2026', autor:'Claude', desc:'Auto-publish expandido para todas as abas: itens PCI, histórico, mão de obra, medições CAIXA e materiais' },
+  { v:'1.18', data:'22/06/2026', autor:'Claude', desc:'Cards separados: executado físico vs estimativa CAIXA vs com previsões · % CAIXA por item na tabela de medição · mensagem de avanço mostra delta PCI + CAIXA + valor' },
+  { v:'1.19', data:'22/06/2026', autor:'Claude', desc:'Correção itens: impermeabilização locked (medida 1ª med.) · hidráulica zerada · esgoto 1ºpav 100% · estimativa 2ª med. corrigida para ~4,33% CAIXA (~R$16.148)' },
+  { v:'1.20', data:'22/06/2026', autor:'Claude', desc:'Cronograma ajustado: 2ª medição corrigida para esgoto completo + magro + elétrica padrão · impermeabilização e hidráulica removidas da fase 2 · datas pilares atualizadas' },
+  { v:'1.21', data:'22/06/2026', autor:'Claude', desc:'FGTS removido do cronograma: badges Prop+FGTS → Rec. próprios · fase 5 · explicação e alertas corrigidos' },
+  { v:'1.22', data:'22/06/2026', autor:'Claude', desc:'Correção: esgoto 1ºpav removido (sem laje) · 2ª medição corrigida para 3,31% CAIXA ~R$12.340 · histórico limpo · cronograma ajustado' },
+  { v:'1.23', data:'22/06/2026', autor:'Claude', desc:'Cards clarificados: "Executado físico (% PCI)" separado de "Estimativa próx. medição (% CAIXA)" · sub mostra relação ×0,7533 explicitamente' },
+  { v:'1.24', data:'22/06/2026', autor:'Claude', desc:'Card "Com previsões" removido — informação ambígua · barra e legenda simplificadas' },
+  { v:'1.25', data:'22/06/2026', autor:'Claude', desc:'Perfil visitante: sem R$ em nenhum lugar · cards mostram só % · sub do card executado mostra % CAIXA estimado' },
+  { v:'1.26', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ removido do card liberado e legenda · barra de previsão oculta · seção previsões rápidas oculta' },
+  { v:'1.27', data:'22/06/2026', autor:'Claude', desc:'Visitante: R$ 30.623 removido do sub do card liberado CAIXA em todas as situações (inicial e ao confirmar medição)' },
+  { v:'1.28', data:'22/06/2026', autor:'Claude', desc:'Layout responsivo completo: mobile ≤768px (2 col cards, tabs scroll, tabelas scroll, form 1 col, log compacto) · telas ≤400px (1 col)' },
+  { v:'1.29', data:'22/06/2026', autor:'Claude', desc:'Responsivo revisado: barra sem texto embutido no mobile · labels % abaixo da barra · inputs font-size 16px (evita zoom iOS) · cards e tabelas otimizados' },
+  { v:'1.30', data:'22/06/2026', autor:'Claude', desc:'Cronograma refeito com prazos Barros Rezende: 7 medições, conclusão mai/2027 (~11 meses), laje separada, chapisco 50 dias, revestimento 20 dias, varanda incluída' },
+  { v:'1.31', data:'22/06/2026', autor:'Claude', desc:'Cronograma corrigido: térreo BR (4 medições, conclusão ~30/03/2027) separado de 1º+2º pav (a contratar, datas a definir)' },
+  { v:'1.32', data:'22/06/2026', autor:'Claude', desc:'Fontes corrigidas: CAIXA cobre quase toda a obra (R$349.660 de R$372.888) · Rec. próprios só no final da 7ª med. · badges e alertas atualizados' },
+  { v:'1.33', data:'22/06/2026', autor:'Claude', desc:'Base CAIXA recalculada: R$354.244 (R$372.888 − R$18.644 bloqueados/habite-se) · todos os valores das 7 medições atualizados · folga ~R$22.067' },
+  { v:'1.34', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS R$11.305 + próprios R$27.000 consumidos no terreno · desconto Campos Urbanismo R$3.159 · próprios para obra R$125.271' },
+];
+
+/* ══ CONFIG ══════════════════════════════════════════════════ */
+const ADMIN_HASH  = '9cb3c126406a1b510b3b615d1c0fb9a511bf73b4699cdfcc1bbb66c73f09ef78'; // hash de "obra2026"
+const STORAGE_KEY = 'tracker_obra_vinicius_v2';
+const BASE_OBRA   = 372888;
+const MED_PCT     = 8.23;
+const MED_VAL     = 30623;
+
+/* ══ AUTENTICAÇÃO ══════════════════════════════════════════ */
+let isAdmin = false;
+
+async function hashSenha(str) {
+  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+}
+
+function mostrarSenha() {
+  document.getElementById('pwd-wrap').classList.add('visible');
+  document.getElementById('pwd-input').focus();
+}
+
+async function entrarAdmin() {
+  const pwd = document.getElementById('pwd-input').value;
+  if (!pwd) return;
+  const h = await hashSenha(pwd);
+  if (h === ADMIN_HASH) {
+    isAdmin = true;
+    sessionStorage.setItem('obra_role', 'admin');
+    iniciarApp();
+  } else {
+    document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
+    document.getElementById('pwd-input').value = '';
+    document.getElementById('pwd-input').focus();
+  }
+}
+
+function entrarVisitante() {
+  isAdmin = false;
+  sessionStorage.setItem('obra_role', 'visitor');
+  iniciarApp();
+}
+
+function sair() {
+  sessionStorage.removeItem('obra_role');
+  isAdmin = false;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
+  document.getElementById('pwd-wrap').classList.remove('visible');
+  document.getElementById('pwd-input').value = '';
+  document.getElementById('login-error').textContent = '';
+}
+
+function iniciarApp() {
+  document.getElementById('login-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  aplicarPerfil();
+  carregar();
+  buildSelect();
+  buildTable();
+  buildLog();
+  atualizarTimestamp();
+  document.getElementById('inp-data').value = new Date().toISOString().split('T')[0];
+  iniciarAppMO();
+  buildVersoes();
+}
+
+function aplicarPerfil() {
+  const badge = document.getElementById('badge-role');
+  if (isAdmin) {
+    badge.textContent = 'Administrador';
+    badge.className   = 'badge-role badge-admin';
+  } else {
+    badge.textContent = 'Visitante';
+    badge.className   = 'badge-role badge-visitor';
+  }
+  // tabs admin
+  document.querySelectorAll('.admin-tab').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+  // cards/botões admin-only
+  document.querySelectorAll('.admin-only').forEach(el => {
+    el.style.display = isAdmin ? '' : 'none';
+  });
+}
+
+/* ══ DADOS ══════════════════════════════════════════════════ */
+const ITENS_DEFAULT = [
+  { id:1,   desc:'Barracão + ligações provisórias + projetos',                     pciPct:3.64,  exec:100, locked:true,  prevExec:0, obs:'Concluído.' },
+  { id:2,   desc:'Infraestrutura (sapatas, baldrames, alicerce — 3 pavimentos)',   pciPct:7.07,  exec:100, locked:true,  prevExec:0, obs:'Fundações dimensionadas para os 3 pavimentos (227m²). Concluído.' },
+  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)',      pciPct:14.56, exec:0,   locked:false, prevExec:25, obs:'Inclui pilares e vigas do térreo, 1º e 2º pavimento + escada interna. Previsão: ~25% ao longo de 4 semanas (22/06–18/07/2026).' },
+  { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',               pciPct:8.14,  exec:0,   locked:false, prevExec:30, obs:'Térreo: sala, cozinha, quarto, suíte, garagem. 1ºpav: 3 quartos, closets, banheiros. 2ºpav: mureta/platibanda. Previsão: ~30% ao longo de 4 semanas (22/06–18/07/2026).' },
+  { id:5,   desc:'Esquadrias — 22 portas (P1–P9) e 18 janelas (J1–J7)',           pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Portas: P1×4, P2×9, P3×1, P4×1, P5×2, P6×2, P7×1, P8×1, P9×1. Janelas: J1×4, J2×5, J3×2, J4×1, J5×2, J6×2, J7×2.' },
+  { id:6,   desc:'Vidros, plásticos e guarda-corpos',                             pciPct:1.07,  exec:0,   locked:false, prevExec:0,  obs:'Guarda-corpo preto varanda coberta + varanda descoberta. Vidros das janelas.' },
+  { id:7,   desc:'Cobertura — telha fibrocimento, platibanda e laje 2º pav.',     pciPct:2.57,  exec:0,   locked:false, prevExec:0,  obs:'Telha fibrocimento c/ platibanda sobre 1ºpav. Laje impermeabilizada 2ºpav (varanda descoberta 37,85m²) inclinação 9,86%.' },
+  { id:8,   desc:'Impermeabilizações',                                            pciPct:2.57,  exec:100, locked:true,  prevExec:0,  obs:'Baldrames 100% — medido na 1ª medição CAIXA. Falta: laje 2ºpav e varanda descoberta (itens da 4ª/5ª medição).' },
+  { id:9,   desc:'Revestimentos internos — chapisco e reboco (3 pavimentos)',     pciPct:8.14,  exec:0,   locked:false, prevExec:0,  obs:'Área estimada: ~505,62m² térreo + ~320m² 1ºpav. Após conclusão da alvenaria.' },
+  { id:10,  desc:'Forros — laje+forro térreo e 1º pavimento',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Laje+forro linha popular conforme PCI.' },
+  { id:11,  desc:'Revestimentos externos — fachada e muro',                       pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Fachada frontal: pedra moledo + pintura algodão egípcio (coral). Laterais e fundos: pintura branca. Muro frontal: chapisco+reboco+pintura.' },
+  { id:12,  desc:'Pinturas internas e externas',                                  pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Interna: branca. Externa: algodão egípcio (coral) na fachada. Guarda-corpos: preto.' },
+  { id:13,  desc:'Pisos e rodapés — térreo (80,14m²), 1ºpav (87,86m²) e varanda (37,85m²)', pciPct:10.28, exec:0, locked:false, prevExec:0, obs:'Total: ~205,85m² de piso. Cerâmica extra áreas molhadas, porcelanato 2ª áreas secas conforme PCI.' },
+  { id:14,  desc:'Acabamentos — soleiras, peitoris e rodapés',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Soleiras de todas as portas e peitoris de todas as janelas J1–J7.' },
+  { id:15,  desc:'Instalações elétricas (3 pavimentos)',                          pciPct:4.07,  exec:10,  locked:false, prevExec:0,  obs:'Padrão de energia instalado (10%). Falta: infra interna térreo, 1ºpav e 2ºpav, quadro de distribuição e circuitos.', novo:true },
+  { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                        pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Nenhum ramal executado. Falta: térreo, 1ºpav (2 banheiros) e complementos.' },
+  { id:17,  desc:'Instalações de esgoto sanitário',                              pciPct:2.70,  exec:100, locked:false, prevExec:0,  obs:'Térreo 100%: ramais internos, caixa de gordura e ligação rede pública. Pendente: 1º pavimento (2 banheiros) — aguarda laje.' },
+  { id:171, desc:'Rede de águas pluviais',                                        pciPct:1.37,  exec:0,   locked:false, prevExec:0,  obs:'Pendente: calhas, rufos, drenos cobertura e varanda descoberta (37,85m²).' },
+  { id:18,  desc:'Louças e metais',                                               pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Térreo: lavabo, suíte, cozinha americana. 1ºpav: banheiro social, suíte master, 2 closets.' },
+  { id:19,  desc:'Complementos — limpeza final e calafete',                       pciPct:1.50,  exec:0,   locked:false, prevExec:0,  obs:'Final de obra — após conclusão de todos os pavimentos.' },
+  { id:20,  desc:'Concreto magro (limpeza) — contrapiso definitivo após alvenaria', pciPct:1.28,  exec:100, locked:false, prevExec:0,  obs:'Executado 15–19/06/2026. ATENÇÃO: este é o concreto magro/limpeza, NÃO o contrapiso definitivo. Contrapiso será concretado após subida da alvenaria.' },
+];
+
+const HISTORICO_DEFAULT = [
+  { data:'30/05/2026', desc:'1ª Medição CAIXA — serviços preliminares + infraestrutura', deltaPct:8.23, deltaVal:30623, prev:false, obs:'Doc 662250 · Ag. 4437. PCI teórico desses itens: 10,71% — CAIXA mediu 8,23% pelo critério interno.' },
+  { data:'12/06/2026', desc:'Esgoto: ramais PVC, caixas sifonadas, caixa de inspeção externa', deltaPct:0, deltaVal:0, prev:false, obs:'Relatório Barros Rezende. Andamento parcial.' },
+  { data:'19/06/2026', desc:'Esgoto sanitário térreo 100% concluído (caixa de gordura + ligação rede pública)', deltaPct:2.70, deltaVal:10068, prev:false, obs:'Confirmado pelo engenheiro. Esgoto 1ºpav aguarda execução da laje.' },
+  { data:'19/06/2026', desc:'Concreto magro (limpeza) executado — NÃO é contrapiso definitivo', deltaPct:1.28, deltaVal:4773, prev:false, obs:'Contrapiso definitivo será concretado após subida da alvenaria.' },
+  { data:'19/06/2026', desc:'Padrão de energia instalado (elétrica 10%)', deltaPct:0.41, deltaVal:1529, prev:false, obs:'Poste padrão + instalação elétrica. Falta infra interna 3 pavimentos.' },
+  { data:'22/06/2026', desc:'Hidráulica zerada: nenhum ramal executado (correção de lançamento)', deltaPct:0, deltaVal:0, prev:false, obs:'Item 16 corrigido para 0% — ramais internos não executados.' },
+  { data:'22/06–18/07/2026', desc:'[Previsão] Entijolamento (alvenaria) + enchimento de colunas (pilares)', deltaPct:6.08, deltaVal:22671, prev:true, obs:'Alvenaria 30% + supraestrutura 25% — distribuído ao longo de ~4 semanas. Não é avanço de uma semana única.' },
+];
+
+let itens     = JSON.parse(JSON.stringify(ITENS_DEFAULT));
+let historico = JSON.parse(JSON.stringify(HISTORICO_DEFAULT));
+
+function salvar() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ itens, historico, savedAt: new Date().toISOString() }));
+  atualizarTimestamp();
+}
+function carregar() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try { const s = JSON.parse(raw); if (s.itens) itens = s.itens; if (s.historico) historico = s.historico; } catch(e) {}
+}
+function atualizarTimestamp() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const { savedAt } = JSON.parse(raw);
+    if (savedAt) {
+      const d = new Date(savedAt);
+      document.getElementById('last-update').textContent = 'Salvo ' + d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+    }
+  } catch(e){}
+}
+
+/* ══ FORMATAÇÃO ══════════════════════════════════════════════ */
+const fmt  = v => 'R$ ' + Math.round(v).toLocaleString('pt-BR');
+const fmtP = v => (Math.round(v * 10) / 10).toFixed(1) + '%';
+
+/* visitante vê só % */
+function dispVal(v, unit='R$') {
+  if (isAdmin) return unit === '%' ? fmtP(v) : fmt(v);
+  return '<span class="blurred-val">' + (unit === '%' ? fmtP(v) : fmt(v)) + '</span>';
+}
+
+/* ══ BUILD TABLE ═════════════════════════════════════════════ */
+function buildTable() {
+  // cabeçalho dinâmico
+  const thead = document.getElementById('tabela-thead');
+  if (isAdmin) {
+    thead.innerHTML = `<tr>
+      <th style="width:24px">#</th><th>Serviço (PCI CAIXA)</th>
+      <th class="right" style="width:60px">% PCI</th>
+      <th class="right" style="width:90px">Valor PCI</th>
+      <th class="center" style="width:115px">Status</th>
+      <th class="center" style="width:60px">Exec.</th>
+      <th style="min-width:90px">Progresso</th>
+    </tr>`;
+    document.getElementById('tfoot-pci-col').textContent = '';
+  } else {
+    thead.innerHTML = `<tr>
+      <th style="width:24px">#</th><th>Serviço</th>
+      <th class="center" style="width:115px">Status</th>
+      <th class="center" style="width:60px">Exec.</th>
+      <th style="min-width:100px">Progresso</th>
+    </tr>`;
+  }
+
+  const tb = document.getElementById('itens-tbody');
+  tb.innerHTML = '';
+  itens.forEach(item => {
+    const [cls, lbl] = statusBadge(item);
+    const isPrev = item.prevExec > 0 && item.exec === 0;
+    const color  = barColor(item);
+    const barHTML = isPrev
+      ? `<div class="bar-bg"><div class="bar-stripe" style="width:${item.prevExec}%"></div></div>`
+      : `<div class="bar-bg"><div class="bar-fill" style="width:${item.exec}%;background:${color}"></div></div>`;
+    const execLabel = isPrev
+      ? `<em style="color:var(--text3)">${item.prevExec}%*</em>`
+      : `<span style="color:${item.exec>0?'var(--blue)':'var(--text3)'}">${item.exec}%</span>`;
+    const novoBadge = item.novo ? ' <span style="font-size:10px;background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:8px;font-weight:600;">novo</span>' : '';
+    const obsAttr   = item.obs && isAdmin ? ` title="${item.obs}"` : '';
+    const tr = document.createElement('tr');
+    tr.style.opacity = item.exec === 0 && !isPrev ? '0.45' : '1';
+    if (item.novo) tr.style.background = '#FAEEDA22';
+
+    if (isAdmin) {
+      tr.innerHTML = `
+        <td style="color:var(--text3);font-size:12px">${item.id}</td>
+        <td${obsAttr}>${item.desc}${novoBadge}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
+        <td class="right" style="color:var(--text2)">${fmtP(item.pciPct)}</td>
+        <td class="right" style="color:var(--text2)">${fmt(item.pciPct/100*495000)}</td>
+        <td class="center"><span class="badge ${cls}">${lbl}</span></td>
+        <td class="center">${execLabel}</td>
+        <td>${barHTML}</td>`;
+    } else {
+      tr.innerHTML = `
+        <td style="color:var(--text3);font-size:12px">${item.id}</td>
+        <td>${item.desc}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
+        <td class="center"><span class="badge ${cls}">${lbl}</span></td>
+        <td class="center">${execLabel}</td>
+        <td>${barHTML}</td>`;
+    }
+    tb.appendChild(tr);
+  });
+  recalcular();
+}
+
+function statusBadge(item) {
+  if (item.locked && item.exec===100) return ['b-medido','Medido ✓'];
+  if (item.novo   && item.exec > 0)   return ['b-novo','Novo '+item.exec+'%'];
+  if (item.prevExec > 0 && item.exec===0) return ['b-previsao','Previsão '+item.prevExec+'%'];
+  if (item.exec===100) return ['b-concluido','Concluído'];
+  if (item.exec > 0)  return ['b-parcial','Parcial '+item.exec+'%'];
+  return ['b-pendente','Pendente'];
+}
+function barColor(item) {
+  if (item.locked)       return '#1D9E75';
+  if (item.novo)         return '#EF9F27';
+  if (item.exec===100)   return '#378ADD';
+  if (item.exec > 0)     return '#BA7517';
+  return 'transparent';
+}
+
+/* ══ RECALCULAR ══════════════════════════════════════════════ */
+function recalcular() {
+  // execAcum = só itens com exec > 0 (inclui locked já medidos)
+  // execNovo = itens com exec > 0 mas NÃO locked (ainda não medidos pela CAIXA)
+  // prevAcum = execNovo + previsões pendentes
+  let execAcum = 0, execNovo = 0, prevAcum = 0;
+  itens.forEach(i => {
+    const execPct = i.pciPct * i.exec / 100;
+    execAcum += execPct;
+    if (!i.locked) {
+      execNovo += execPct;
+      prevAcum += i.pciPct * Math.min(i.exec + i.prevExec, 100) / 100;
+    }
+  });
+
+  // % CAIXA = % PCI × 0,7533
+  const ESCALA = 0.7533;
+  const execNovoCaixa = execNovo * ESCALA;           // executado não medido → estimativa próx. medição
+  const prevCaixa     = prevAcum * ESCALA;           // com previsões incluídas
+  const novoVal       = execNovoCaixa / 100 * BASE_OBRA;
+  const prevAdic      = Math.max(0, (prevCaixa - execNovoCaixa) / 100 * BASE_OBRA);
+  const execVal       = execNovo / 100 * BASE_OBRA;
+
+  // cards
+  document.getElementById('c-exec').textContent     = fmtP(execNovo);
+  document.getElementById('c-exec-sub').textContent = isAdmin
+    ? `~${fmt(execVal)} · → ${fmtP(execNovoCaixa)} CAIXA (×0,7533)`
+    : `→ ${fmtP(execNovoCaixa)} CAIXA estimado (×0,7533)`;
+
+  document.getElementById('c-novo').textContent    = '~' + fmtP(execNovoCaixa);
+  document.getElementById('c-novo-sub').innerHTML  = isAdmin
+    ? `~${fmt(novoVal)} · % PCI × 0,7533 · só executados`
+    : '% PCI × 0,7533 · só itens executados';
+
+  if (isAdmin) {
+    const saldoConfirmado = BASE_OBRA - MED_VAL;
+    document.getElementById('c-medido-sub').textContent = isAdmin
+      ? `R$ 30.623 · 1ª med. 30/05/2026`
+      : `1ª med. 30/05/2026`;
+    document.getElementById('c-saldo').textContent         = fmt(saldoConfirmado);
+    document.getElementById('c-total-lib').textContent     = fmt(MED_VAL);
+    document.getElementById('c-total-lib-sub').textContent = fmtP(MED_VAL/BASE_OBRA*100) + '% confirmado · ' + fmt(saldoConfirmado) + ' a liberar';
+  }
+
+  document.getElementById('tfoot-exec').textContent = fmtP(execNovo);
+
+  // barra — confirmado | executado não medido | previsão (só admin)
+  const m = Math.min(window.MED_PCT_ATUAL ?? MED_PCT, 100);
+  const e = Math.min(execNovoCaixa, 100 - m);
+  const p = isAdmin ? Math.min(Math.max(0, prevCaixa - execNovoCaixa), 100 - m - e) : 0;
+  document.getElementById('bar-medido').style.width = m + '%';
+  document.getElementById('bar-medido').textContent = m > 5 ? fmtP(m) + ' ✓' : '';
+  document.getElementById('bar-exec').style.left    = m + '%';
+  document.getElementById('bar-exec').style.width   = e + '%';
+  document.getElementById('bar-exec').textContent   = e > 4 ? '~' + fmtP(e) : '';
+  document.getElementById('bar-prev').style.left    = (m+e) + '%';
+  document.getElementById('bar-prev').style.width   = p + '%';
+
+  // labels abaixo da barra (sempre visíveis, inclusive mobile)
+  const lbMed  = document.getElementById('bar-label-med');
+  const lbExec = document.getElementById('bar-label-exec');
+  if (lbMed)  lbMed.textContent  = `✓ ${fmtP(m)} confirmado`;
+  if (lbExec) lbExec.textContent = e > 0 ? `~${fmtP(e)} executado (CAIXA)` : '';
+
+  // previsões rápidas só para admin
+  const prevEl = document.getElementById('previsoes-rapidas');
+  if (prevEl) prevEl.closest('.form-card') && (prevEl.closest('.form-card').style.display = isAdmin ? '' : 'none');
+
+  if (isAdmin) buildMedicao(execNovo, execNovoCaixa, novoVal);
+  buildPrevisaoRapida();
+}
+
+function buildMedicao(execNovo, execNovoCaixa, novoVal) {
+  const ESCALA = 0.7533;
+  const tb = document.getElementById('medicao-tbody');
+  tb.innerHTML = '';
+  itens.forEach(item => {
+    if (item.locked) return; // já medido — não entra na estimativa
+    if (item.exec === 0 && item.prevExec === 0) return;
+    const execPct  = item.pciPct * item.exec / 100;
+    const execCaixa= execPct * ESCALA;
+    const prevPct  = item.prevExec > 0 && item.exec < 100 ? item.pciPct * item.prevExec / 100 : 0;
+    const prevCaixa= prevPct * ESCALA;
+    const isPrev   = item.exec === 0 && item.prevExec > 0;
+    const [cls,lbl]= statusBadge(item);
+    const tr = document.createElement('tr');
+    tr.style.background = isPrev ? 'var(--surface2)' : '';
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:12px">${item.id}</td>
+      <td>${item.desc}${isPrev?' <em style="font-size:11px;color:var(--text3)">(previsão)</em>':''}</td>
+      <td class="right" style="color:var(--text2)">${fmtP(item.pciPct)}</td>
+      <td class="right" style="font-weight:500;color:${isPrev?'var(--text3)':'var(--blue)'}">
+        ${isPrev ? fmtP(prevPct) : fmtP(execPct)}
+      </td>
+      <td class="right" style="font-weight:600;color:${isPrev?'var(--text3)':'var(--amber)'}">
+        ~${fmtP(isPrev ? prevCaixa : execCaixa)}
+      </td>
+      <td class="right" style="font-weight:500;color:${isPrev?'var(--text3)':'inherit'}">
+        ${isPrev ? '~'+fmt(prevCaixa/100*BASE_OBRA) : '~'+fmt(execCaixa/100*BASE_OBRA)}
+      </td>
+      <td><span class="badge ${cls}">${lbl}</span></td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('med-total-pct').textContent = fmtP(execNovo);
+  document.getElementById('med-total-val').textContent  = fmt(execNovo/100*BASE_OBRA);
+  document.getElementById('med-novo-pct').textContent  = '~' + fmtP(execNovoCaixa);
+  document.getElementById('med-novo-val').textContent  = '~' + fmt(novoVal);
+}
+
+function buildPrevisaoRapida() {
+  if (!isAdmin) return;
+  const el = document.getElementById('previsoes-rapidas');
+  const prev = itens.filter(i => i.prevExec > 0 && i.exec < 100);
+  if (!prev.length) { el.innerHTML = '<p class="empty">Nenhuma previsão registrada.</p>'; return; }
+  el.innerHTML = prev.map(i => `
+    <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
+      <span style="flex:1;color:var(--text2)">${i.desc} — previsão ${i.prevExec}%</span>
+      <button class="btn btn-success btn-sm" onclick="confirmarPrevisao(${i.id})">Confirmar</button>
+      <button class="btn btn-ghost btn-sm"   onclick="cancelarPrevisao(${i.id})">Cancelar</button>
+    </div>`).join('');
+}
+
+function buildLog() {
+  const el = document.getElementById('log-container');
+  if (!historico.length) { el.innerHTML = '<p class="empty">Nenhum registro.</p>'; return; }
+  el.innerHTML = '';
+  historico.slice().reverse().forEach(h => {
+    const d = document.createElement('div');
+    d.className = 'log-entry';
+    const obsHtml = h.obs && isAdmin ? `<br><span style="font-size:11px;color:var(--text3)">${h.obs}</span>` : '';
+    const valHtml = isAdmin && h.deltaVal > 0 ? `<span class="log-val">${fmt(h.deltaVal)}</span>` : '';
+    d.innerHTML = `
+      <span class="log-date">${h.data}</span>
+      <span class="log-desc">${h.desc}${obsHtml}</span>
+      ${h.deltaPct > 0 ? `<span class="${h.prev?'log-prev':'log-pct'}">${h.prev?'(prev.) ':''}+${fmtP(h.deltaPct)}</span>` : ''}
+      ${valHtml}`;
+    el.appendChild(d);
+  });
+}
+
+function buildSelect() {
+  const sel = document.getElementById('inp-item');
+  sel.innerHTML = '<option value="">Selecionar serviço...</option>';
+  itens.forEach(item => {
+    if (item.locked) return;
+    const o = document.createElement('option');
+    o.value = item.id;
+    o.textContent = `${item.id}. ${item.desc}`;
+    sel.appendChild(o);
+  });
+}
+
+/* ══ AÇÕES ADMIN ════════════════════════════════════════════ */
+function registrar() {
+  const dataVal = document.getElementById('inp-data').value;
+  const itemId  = parseInt(document.getElementById('inp-item').value);
+  const pctVal  = parseInt(document.getElementById('inp-pct').value);
+  const tipo    = document.getElementById('inp-tipo').value;
+  const obs     = document.getElementById('inp-obs').value.trim();
+  const msgEl   = document.getElementById('msg-reg');
+  if (!dataVal || !itemId) { msgEl.textContent='Preencha data e serviço.'; msgEl.className='msg error'; return; }
+  const item    = itens.find(i=>i.id===itemId);
+  if (!item) return;
+  const dateStr = new Date(dataVal+'T12:00:00').toLocaleDateString('pt-BR');
+  if (tipo==='prev') {
+    item.prevExec = pctVal;
+    historico.push({ data:dateStr, desc:`[Previsão] ${item.desc} → ${pctVal}%`, deltaPct:item.pciPct*pctVal/100, deltaVal:0, prev:true, obs });
+    msgEl.textContent = `Previsão salva: ${item.desc} → ${pctVal}%`;
+  } else {
+    const ant = item.exec;
+    item.exec = Math.max(item.exec, pctVal);
+    item.prevExec = 0; item.novo = false;
+    if (obs) item.obs = obs;
+    const deltaPci  = item.pciPct*(item.exec-ant)/100;
+    const deltaCaixa= deltaPci * 0.7533;
+    const deltaVal  = deltaCaixa/100*BASE_OBRA;
+    historico.push({ data:dateStr, desc:`${item.desc} (${ant}% → ${item.exec}%)`, deltaPct:deltaPci, deltaVal, prev:false, obs });
+    msgEl.textContent = `✓ ${item.desc} → ${item.exec}% · +${fmtP(deltaPci)} PCI · ~+${fmtP(deltaCaixa)} CAIXA · ~${fmt(deltaVal)}`;
+  }
+  msgEl.className = 'msg';
+  document.getElementById('inp-obs').value = '';
+  salvar(); buildTable(); buildLog();
+  ghPublish('msg-reg', tipo==='prev' ? `Previsão: ${item.desc} → ${pctVal}%` : `Avanço: ${item.desc} → ${item.exec}%`);
+}
+
+function confirmarPrevisao(id) {
+  const item = itens.find(i=>i.id===id); if(!item) return;
+  const ant = item.exec;
+  item.exec = Math.max(item.exec, item.prevExec);
+  item.prevExec=0; item.novo=false;
+  const delta = item.pciPct*(item.exec-ant)/100;
+  historico.push({ data:new Date().toLocaleDateString('pt-BR'), desc:`${item.desc} confirmado (${ant}% → ${item.exec}%)`, deltaPct:delta, deltaVal:delta/100*BASE_OBRA, prev:false, obs:'Confirmado via ação rápida' });
+  salvar(); buildTable(); buildLog();
+  publishToGitHub(`Previsão confirmada: ${item.desc} → ${item.exec}%`);
+}
+function cancelarPrevisao(id) {
+  const item = itens.find(i=>i.id===id); if(item){item.prevExec=0;} salvar(); buildTable();
+  publishToGitHub(`Previsão cancelada: item ${id}`);
+}
+function limparPrevisoes() {
+  itens.forEach(i=>{i.prevExec=0;}); historico=historico.filter(h=>!h.prev);
+  salvar(); buildTable(); buildLog();
+  publishToGitHub('Previsões limpas');
+}
+function confirmarLimparHistorico() {
+  if(confirm('Remover registros manuais? Os registros originais permanecem.')) {
+    historico=JSON.parse(JSON.stringify(HISTORICO_DEFAULT)); salvar(); buildLog();
+  }
+}
+function exportarDados() {
+  const blob = new Blob([JSON.stringify({itens,historico,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a = Object.assign(document.createElement('a'),{href:URL.createObjectURL(blob),download:'tracker_obra_vinicius_'+new Date().toISOString().slice(0,10)+'.json'});
+  a.click(); URL.revokeObjectURL(a.href);
+}
+function importarDados() {
+  const input = Object.assign(document.createElement('input'),{type:'file',accept:'.json'});
+  input.onchange = e => {
+    const r = new FileReader();
+    r.onload = ev => {
+      try { const s=JSON.parse(ev.target.result); if(s.itens)itens=s.itens; if(s.historico)historico=s.historico; salvar();buildTable();buildLog();buildSelect();alert('Importado!'); } catch(err){alert('Arquivo inválido.');}
+    };
+    r.readAsText(e.target.files[0]);
+  };
+  input.click();
+}
+
+/* ══ TABS ════════════════════════════════════════════════════ */
+function showTab(t, el) {
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  el.classList.add('active');
+  if(t==='historico') buildLog();
+  if(t==='versoes')   buildVersoes();
+  if(t==='medicao')   buildMedicoesConfirmadas();
+}
+
+/* ══ MÃO DE OBRA ══════════════════════════════════════════════ */
+const MO_TETO = 115000;
+
+const MO_ITENS_DEF = [
+  { id:1,  desc:'Serviços preliminares / barracão',         orcado:1358  },
+  { id:2,  desc:'Sapatas, baldrame, alicerce',              orcado:12729 },
+  { id:3,  desc:'Impermeabilização do alicerce',            orcado:1608  },
+  { id:4,  desc:'Alvenaria + pilares + vigas superiores',   orcado:23271 },
+  { id:5,  desc:'Laje (90,94 m²)',                          orcado:17352 },
+  { id:6,  desc:'Esgoto + instalação hidráulica',           orcado:3108  },
+  { id:7,  desc:'Infra elétrica (chumbação + quadro)',      orcado:2487  },
+  { id:8,  desc:'Engradamento + caixonetes',                orcado:870   },
+  { id:9,  desc:'Janelas, básculas e portas',               orcado:3791  },
+  { id:10, desc:'Chapisco e reboco (505,62 m²)',            orcado:23252 },
+  { id:11, desc:'Contrapiso + concretagem + regularização', orcado:7913  },
+  { id:12, desc:'Piso (80,14 m²) e rodapé',                orcado:6425  },
+  { id:13, desc:'Revestimento (80,90 m²)',                  orcado:6034  },
+  { id:14, desc:'Soleiras',                                 orcado:542   },
+  { id:15, desc:'Bancadas (cozinha, lavabo, suíte)',        orcado:1430  },
+  { id:16, desc:'Concretagem varanda / regularização',      orcado:2859  },
+];
+
+// Pagamentos já realizados com base nos comprovantes
+const MO_PAGAMENTOS_DEF = [
+  { id:1, data:'12/08/2025', dest:'Fábio de Barros da Silva', ref:'Pix etapa inicial — sapatas e baldrame',       valor:7000,   tipo:'mo',         itemId:2  },
+  { id:2, data:'30/08/2025', dest:'Fábio de Barros da Silva', ref:'Pix complemento infraestrutura',               valor:3500,   tipo:'mo',         itemId:2  },
+  { id:3, data:'13/09/2025', dest:'Fábio de Barros da Silva', ref:'Pix impermeabilização + serviços preliminares',valor:2000,   tipo:'mo',         itemId:3  },
+  { id:4, data:'21/09/2025', dest:'Fábio de Barros da Silva', ref:'Pix regularização e aterro',                   valor:6325,   tipo:'mo',         itemId:11 },
+  { id:5, data:'24/09/2025', dest:'L M de Lucas Rocha Madeira Ltda', ref:'Material — madeira/fôrma',              valor:1500,   tipo:'material',   itemId:null },
+  { id:6, data:'12/06/2026', dest:'Barros Rezende Construtora', ref:'Recibo 1ª etapa — esgoto + infraestrutura', valor:4700,   tipo:'mo',         itemId:6  },
+  { id:7, data:'19/06/2026', dest:'Barros Rezende Construtora', ref:'Recibo saldo — esgoto + contrapiso',        valor:3965.30,tipo:'mo',         itemId:6  },
+];
+
+// projeção próximas etapas com base no avanço físico
+const MO_PROJECAO_DEF = [
+  { id:4,  desc:'Alvenaria + pilares + vigas',  orcado:23271, prevPct:30,  quando:'Semana 22–26/06/2026 (em andamento)' },
+  { id:5,  desc:'Laje (90,94 m²)',              orcado:17352, prevPct:100, quando:'Após conclusão da alvenaria' },
+  { id:7,  desc:'Infra elétrica interna',       orcado:2487,  prevPct:90,  quando:'Concomitante à alvenaria (falta 90% da elétrica interna)' },
+  { id:8,  desc:'Engradamento + caixonetes',    orcado:870,   prevPct:100, quando:'Cobertura' },
+  { id:9,  desc:'Janelas, básculas e portas',   orcado:3791,  prevPct:100, quando:'Após laje' },
+  { id:10, desc:'Chapisco e reboco',            orcado:23252, prevPct:100, quando:'Após esquadrias' },
+  { id:11, desc:'Rede de águas pluviais',       orcado:1300,  prevPct:100, quando:'Após cobertura' },
+  { id:12, desc:'Piso e rodapé',               orcado:6425,  prevPct:100, quando:'Acabamento' },
+  { id:13, desc:'Revestimento',                orcado:6034,  prevPct:100, quando:'Acabamento' },
+  { id:14, desc:'Soleiras',                    orcado:542,   prevPct:100, quando:'Final' },
+  { id:15, desc:'Bancadas',                    orcado:1430,  prevPct:100, quando:'Final' },
+  { id:16, desc:'Concretagem varanda',          orcado:2859,  prevPct:100, quando:'Final' },
+];
+
+let moPagamentos = JSON.parse(JSON.stringify(MO_PAGAMENTOS_DEF));
+
+function salvarMO() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  const estado = raw ? JSON.parse(raw) : {};
+  estado.moPagamentos = moPagamentos;
+  estado.savedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
+  atualizarTimestamp();
+}
+
+function carregarMO() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try { const e = JSON.parse(raw); if (e.moPagamentos) moPagamentos = e.moPagamentos; } catch(e){}
+}
+
+function totalMOPago() {
+  return moPagamentos.filter(p => p.tipo === 'mo' || p.tipo === 'adiantamento')
+    .reduce((s, p) => s + p.valor, 0);
+}
+function totalMaterial() {
+  return moPagamentos.filter(p => p.tipo === 'material').reduce((s,p)=>s+p.valor,0);
+}
+
+function buildMOCards() {
+  const pago   = totalMOPago();
+  const saldo  = MO_TETO - pago;
+  const pct    = Math.round(pago / MO_TETO * 100);
+  const proxVal = MO_ITENS_DEF.find(i=>i.id===4)?.orcado || 0;
+
+  document.getElementById('mo-total-pago').textContent     = fmt(pago);
+  document.getElementById('mo-total-pago-pct').textContent  = pct + '% do teto';
+  document.getElementById('mo-saldo').textContent          = fmt(saldo);
+  document.getElementById('mo-proximo').textContent        = fmt(proxVal);
+  document.getElementById('mo-consumo-pct').textContent    = pct + '%';
+  document.getElementById('mo-consumo-bar').style.width    = Math.min(pct,100) + '%';
+  document.getElementById('mo-consumo-bar').style.background = pct > 80 ? 'var(--red-mid)' : pct > 60 ? 'var(--amber-mid)' : 'var(--green-mid)';
+  document.getElementById('mo-n-pagamentos').textContent   = moPagamentos.length;
+
+  const barPct  = Math.min(pago / MO_TETO * 100, 100);
+  const projPct = Math.min(proxVal / MO_TETO * 100, 100 - barPct);
+  document.getElementById('mo-bar-pago').style.width = barPct + '%';
+  document.getElementById('mo-bar-pago').textContent  = barPct > 6 ? fmt(pago) : '';
+  document.getElementById('mo-bar-prev').style.left   = barPct + '%';
+  document.getElementById('mo-bar-prev').style.width  = projPct + '%';
+}
+
+function buildMOPagamentos() {
+  const tb = document.getElementById('mo-pagamentos-tbody');
+  tb.innerHTML = '';
+  moPagamentos.forEach((p, idx) => {
+    const [cls, lbl] = p.tipo === 'mo' ? ['b-quitado','MO'] :
+                       p.tipo === 'adiantamento' ? ['b-adiant','Adiantamento'] :
+                       ['b-material','Material'];
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:12px">${idx+1}</td>
+      <td style="white-space:nowrap">${p.data}</td>
+      <td style="color:var(--text2)">${p.dest}</td>
+      <td style="color:var(--text2);font-size:12px">${p.ref}</td>
+      <td class="right" style="font-weight:600;color:var(--green)">${fmt(p.valor)}</td>
+      <td class="center"><span class="badge ${cls}">${lbl}</span></td>
+      <td class="center"><button class="btn btn-ghost btn-sm" onclick="removerPagMO(${idx})" style="color:var(--red);border-color:var(--red);">✕</button></td>
+    `;
+    tb.appendChild(tr);
+  });
+  const total = totalMOPago();
+  document.getElementById('mo-tfoot-total').textContent = fmt(total);
+}
+
+function buildMOItens() {
+  const tb = document.getElementById('mo-itens-tbody');
+  tb.innerHTML = '';
+  let totalPago = 0;
+
+  MO_ITENS_DEF.forEach(item => {
+    const pagos = moPagamentos.filter(p => p.itemId === item.id && p.tipo !== 'material');
+    const pago  = pagos.reduce((s,p)=>s+p.valor,0);
+    const saldo = Math.max(0, item.orcado - pago);
+    const pct   = Math.min(Math.round(pago / item.orcado * 100), 100);
+    totalPago  += pago;
+
+    const [cls, lbl] = pago >= item.orcado ? ['b-quitado','Quitado'] :
+                       pago > 0            ? ['b-adiant', 'Parcial']  :
+                                             ['b-pendente','Pendente'];
+    const barColor = pago >= item.orcado ? 'var(--green-mid)' : pago > 0 ? 'var(--amber-mid)' : 'transparent';
+
+    const tr = document.createElement('tr');
+    tr.style.opacity = pago === 0 ? '0.5' : '1';
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:12px">${item.id}</td>
+      <td>${item.desc}</td>
+      <td class="right" style="color:var(--text2)">${fmt(item.orcado)}</td>
+      <td class="right" style="font-weight:600;color:var(--green)">${pago > 0 ? fmt(pago) : '—'}</td>
+      <td class="right" style="color:${saldo>0?'var(--amber)':'var(--green)'}">${saldo > 0 ? fmt(saldo) : '—'}</td>
+      <td class="center"><span class="badge ${cls}">${lbl}</span></td>
+      <td><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${barColor}"></div></div></td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  document.getElementById('mo-itens-pago').textContent  = fmt(totalPago);
+  document.getElementById('mo-itens-saldo').textContent = fmt(MO_TETO - totalPago);
+}
+
+function buildMOProjecao() {
+  const tb = document.getElementById('mo-projecao-tbody');
+  tb.innerHTML = '';
+  let totalProj = 0;
+  const pago = totalMOPago();
+
+  MO_PROJECAO_DEF.forEach(item => {
+    const jaFoi = moPagamentos.filter(p=>p.itemId===item.id && p.tipo!=='material').reduce((s,p)=>s+p.valor,0);
+    const estimado = Math.max(0, (item.orcado * item.prevPct / 100) - jaFoi);
+    totalProj += estimado;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:12px">${item.id}</td>
+      <td>${item.desc}</td>
+      <td class="right" style="color:var(--text2)">${fmt(item.orcado)}</td>
+      <td class="right">${item.prevPct}%</td>
+      <td class="right" style="font-weight:600;color:var(--blue)">${fmt(estimado)}</td>
+      <td style="font-size:12px;color:var(--text2)">${item.quando}</td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  document.getElementById('mo-proj-total').textContent = fmt(totalProj);
+  const totalFuturo = pago + totalProj;
+  const alerta = document.getElementById('mo-proj-alerta');
+  if (totalFuturo > MO_TETO) {
+    alerta.className = 'alert alert-warn';
+    alerta.textContent = `⚠️ Projeção total (pago R$ ${Math.round(pago).toLocaleString('pt-BR')} + estimado R$ ${Math.round(totalProj).toLocaleString('pt-BR')}) = R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} — ultrapassa o teto de R$ 115.000 em R$ ${Math.round(totalFuturo-MO_TETO).toLocaleString('pt-BR')}.`;
+  } else {
+    alerta.className = 'alert alert-ok';
+    alerta.textContent = `✅ Projeção total dentro do teto: R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} de R$ 115.000 (sobra R$ ${Math.round(MO_TETO-totalFuturo).toLocaleString('pt-BR')}).`;
+  }
+}
+
+function buildMOSelectItens() {
+  const sel = document.getElementById('mo-inp-item');
+  sel.innerHTML = '<option value="">Selecionar item...</option>';
+  MO_ITENS_DEF.forEach(i => {
+    const o = document.createElement('option');
+    o.value = i.id; o.textContent = `${i.id}. ${i.desc}`;
+    sel.appendChild(o);
+  });
+}
+
+function buildAllMO() {
+  buildMOCards();
+  buildMOPagamentos();
+  buildMOItens();
+  buildMOProjecao();
+}
+
+function showMoTab(t, el) {
+  document.querySelectorAll('[id^="mo-panel-"]').forEach(p => p.style.display='none');
+  document.querySelectorAll('[id^="mo-tab-btn-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('mo-panel-'+t).style.display = 'block';
+  el.classList.add('active');
+  if (t==='itens')    buildMOItens();
+  if (t==='projecao') buildMOProjecao();
+}
+
+function registrarPagamentoMO() {
+  const data  = document.getElementById('mo-inp-data').value;
+  const dest  = document.getElementById('mo-inp-dest');
+  const valor = parseFloat(document.getElementById('mo-inp-valor').value.replace(',','.'));
+  const tipo  = document.getElementById('mo-inp-tipo').value;
+  const itemId= parseInt(document.getElementById('mo-inp-item').value) || null;
+  const ref   = document.getElementById('mo-inp-ref').value.trim();
+  const msg   = document.getElementById('mo-msg');
+
+  if (!data || isNaN(valor) || valor <= 0) {
+    msg.textContent='Preencha data e valor.'; msg.className='msg error'; return;
+  }
+  const dateStr = new Date(data+'T12:00:00').toLocaleDateString('pt-BR');
+  const destNome = dest.options[dest.selectedIndex].text;
+  moPagamentos.push({
+    id: moPagamentos.length + 1,
+    data: dateStr, dest: destNome,
+    ref: ref || (tipo==='adiantamento' ? 'Adiantamento' : tipo==='material' ? 'Material' : 'Pagamento MO'),
+    valor, tipo, itemId
+  });
+  msg.textContent = `✓ Pagamento de ${fmt(valor)} registrado.`;
+  msg.className = 'msg';
+  setTimeout(()=>{msg.textContent='';},3000);
+  document.getElementById('mo-inp-valor').value = '';
+  document.getElementById('mo-inp-ref').value   = '';
+  salvarMO(); buildAllMO();
+  ghPublish('mo-msg', `MO: pagamento de ${fmt(valor)} registrado para ${destNome}`);
+}
+
+function removerPagMO(idx) {
+  if (!confirm('Remover este pagamento?')) return;
+  const desc = moPagamentos[idx].dest;
+  moPagamentos.splice(idx, 1);
+  salvarMO(); buildAllMO();
+  publishToGitHub(`MO: pagamento removido — ${desc}`);
+}
+
+/* ══ MATERIAIS ════════════════════════════════════════════════ */
+const MAT_CORES = {
+  'Estrutura':           '#378ADD',
+  'Alvenaria':           '#1D9E75',
+  'Cobertura':           '#854F0B',
+  'Hidráulico':          '#185FA5',
+  'Elétrico':            '#EF9F27',
+  'Revestimento':        '#D85A30',
+  'Piso':                '#639922',
+  'Esquadrias':          '#7F77DD',
+  'Impermeabilização':   '#0F6E56',
+  'Fôrmas e madeira':    '#BA7517',
+  'Ferragem':            '#888780',
+  'Concreto e argamassa':'#5F5E5A',
+  'Acabamento':          '#D4537E',
+  'EPI e ferramentas':   '#993C1D',
+  'Outros':              '#B4B2A9',
+};
+
+const MAT_DEF = [
+  { id:1,  data:'24/09/2025', desc:'Madeira para fôrma/escoramento',    cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104', valor:1500,    pago:'sim' },
+  { id:2,  data:'30/11/2024', desc:'Ferragem + radie',                   cat:'Estrutura',        forn:'Pai de Felipe Versada',          ref:'',                  valor:6780,    pago:'sim' },
+  { id:3,  data:'05/06/2025', desc:'7m de brita 1',                      cat:'Estrutura',        forn:'Felipe Total Solar',             ref:'',                  valor:850,     pago:'sim' },
+  { id:4,  data:'23/06/2025', desc:'Sondagem',                           cat:'Outros',           forn:'MS GEO',                         ref:'',                  valor:1850,    pago:'sim' },
+  { id:5,  data:'29/10/2024', desc:'Caixa d\'agua',                      cat:'Outros',           forn:'Goytacazes',                     ref:'',                  valor:370,     pago:'sim' },
+  { id:6,  data:'27/08/2025', desc:'Atualização + Projeto',              cat:'Outros',           forn:'Zé Carlos Eng.',                 ref:'',                  valor:1400,    pago:'sim' },
+  { id:7,  data:'27/08/2025', desc:'Areia',                              cat:'Outros',           forn:'Felipe Total',                   ref:'',                  valor:235,     pago:'sim' },
+  { id:8,  data:'20/08/2025', desc:'Cimento',                            cat:'Outros',           forn:'JMR',                            ref:'',                  valor:980,     pago:'sim' },
+  { id:9,  data:'30/08/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1120,    pago:'sim' },
+  { id:10, data:'30/08/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1050,    pago:'sim' },
+  { id:11, data:'30/08/2025', desc:'Ferragem',                           cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:118,     pago:'sim' },
+  { id:12, data:'08/09/2025', desc:'Ferragem',                           cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:400,     pago:'sim' },
+  { id:13, data:'17/09/2025', desc:'Cimento',                            cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:900,     pago:'sim' },
+  { id:14, data:'17/10/2025', desc:'Cimento + impermeabilizante',        cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1320,    pago:'sim' },
+  { id:15, data:'15/06/2026', desc:'Cimento + lona',                     cat:'Estrutura',        forn:'JMR',                            ref:'',                  valor:1122,    pago:'sim' },
+  { id:16, data:'16/06/2026', desc:'Tijolo alvenaria + amarração',       cat:'Alvenaria',        forn:'Pai de Felipe Ver',              ref:'',                  valor:10000,   pago:'sim' },
+  { id:17, data:'24/09/2025', desc:'Madeira baldrame',                   cat:'Fôrmas e madeira', forn:'L M Madeiras',                   ref:'',                  valor:1500,    pago:'sim' },
+  { id:18, data:'24/09/2025', desc:'Brita 1',                            cat:'Estrutura',        forn:'Felipe Total',                   ref:'',                  valor:850,     pago:'sim' },
+  { id:19, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:588.08,  pago:'sim' },
+  { id:20, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:1334,    pago:'sim' },
+  { id:21, data:'27/10/2025', desc:'Piso',                               cat:'Piso',             forn:'Tigrão',                         ref:'',                  valor:1856.68, pago:'sim' },
+  { id:22, data:'27/10/2025', desc:'Material esgoto',                    cat:'Hidráulico',       forn:'ICS Azevedo',                    ref:'',                  valor:871.64,  pago:'sim' },
+  { id:23, data:'09/06/2026', desc:'Poste padrão',                       cat:'Elétrico',         forn:'Monica Santos',                  ref:'',                  valor:700,     pago:'sim' },
+  { id:24, data:'09/06/2026', desc:'Instalação padrão elétrica',         cat:'Elétrico',         forn:'Charles',                        ref:'',                  valor:550,     pago:'sim' },
+];
+
+let materiais = JSON.parse(JSON.stringify(MAT_DEF));
+
+function salvarMat() {
+  const raw    = localStorage.getItem(STORAGE_KEY);
+  const estado = raw ? JSON.parse(raw) : {};
+  estado.materiais = materiais;
+  estado.savedAt   = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
+  atualizarTimestamp();
+}
+function carregarMat() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try { const e = JSON.parse(raw); if (e.materiais) materiais = e.materiais; } catch(e){}
+}
+
+function totalMat() { return materiais.reduce((s,m)=>s+m.valor,0); }
+
+function buildMatCards() {
+  const total = totalMat();
+  const maior = materiais.reduce((a,m) => m.valor > (a?.valor||0) ? m : a, null);
+  const ultimo = materiais.length ? materiais[materiais.length-1] : null;
+
+  document.getElementById('mat-total').textContent    = fmt(total);
+  document.getElementById('mat-total-sub').textContent = materiais.length + ' compra(s) registrada(s)';
+  document.getElementById('mat-pagas').textContent    = materiais.filter(m=>m.pago==='sim').length;
+  document.getElementById('mat-maior').textContent    = maior ? fmt(maior.valor) : '—';
+  document.getElementById('mat-maior-desc').textContent = maior ? maior.desc.substring(0,30) : '—';
+  document.getElementById('mat-ultimo').textContent   = ultimo ? ultimo.data : '—';
+  document.getElementById('mat-ultimo-desc').textContent = ultimo ? ultimo.desc.substring(0,25) : '—';
+}
+
+function buildMatLista() {
+  const tb = document.getElementById('mat-lista-tbody');
+  tb.innerHTML = '';
+  if (!materiais.length) {
+    tb.innerHTML = '<tr><td colspan="8" class="empty">Nenhuma compra registrada.</td></tr>';
+    document.getElementById('mat-tfoot-total').textContent = fmt(0);
+    return;
+  }
+  materiais.slice().reverse().forEach((m, ri) => {
+    const idx = materiais.length - 1 - ri;
+    const cor = MAT_CORES[m.cat] || '#888';
+    const pagoBadge = m.pago === 'sim'
+      ? '<span class="badge b-quitado">Pago</span>'
+      : '<span class="badge b-adiant">Pendente</span>';
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:12px">${idx+1}</td>
+      <td style="white-space:nowrap;font-size:12px">${m.data}</td>
+      <td>${m.desc}</td>
+      <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></span>${m.cat}
+      </span></td>
+      <td style="color:var(--text2);font-size:12px">${m.forn || '—'}</td>
+      <td class="right" style="font-weight:600;color:var(--blue)">${fmt(m.valor)}</td>
+      <td class="center">${pagoBadge}</td>
+      <td class="center">
+        <button class="btn btn-ghost btn-sm" onclick="removerMat(${idx})" style="color:var(--red);border-color:var(--red);">✕</button>
+      </td>
+    `;
+    tb.appendChild(tr);
+  });
+  document.getElementById('mat-tfoot-total').textContent = fmt(totalMat());
+}
+
+function buildMatCategoria() {
+  const tb    = document.getElementById('mat-cat-tbody');
+  tb.innerHTML = '';
+  const total = totalMat();
+  if (!total) { tb.innerHTML='<tr><td colspan="5" class="empty">Nenhuma compra registrada.</td></tr>'; return; }
+
+  const cats = {};
+  materiais.forEach(m => {
+    if (!cats[m.cat]) cats[m.cat] = { total:0, qtd:0 };
+    cats[m.cat].total += m.valor;
+    cats[m.cat].qtd++;
+  });
+
+  Object.entries(cats)
+    .sort((a,b) => b[1].total - a[1].total)
+    .forEach(([cat, val]) => {
+      const pct = Math.round(val.total / total * 100);
+      const cor = MAT_CORES[cat] || '#888';
+      const tr  = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="display:flex;align-items:center;gap:8px;">
+          <span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;"></span>${cat}
+        </td>
+        <td class="right" style="color:var(--text2)">${val.qtd}</td>
+        <td class="right" style="font-weight:600">${fmt(val.total)}</td>
+        <td class="right" style="color:var(--text2)">${pct}%</td>
+        <td><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${cor}"></div></div></td>
+      `;
+      tb.appendChild(tr);
+    });
+}
+
+function buildAllMat() {
+  buildMatCards();
+  buildMatLista();
+  buildMatCategoria();
+}
+
+function showMatTab(t, el) {
+  document.querySelectorAll('[id^="mat-panel-"]').forEach(p => p.style.display='none');
+  document.querySelectorAll('[id^="mat-tab-btn-"]').forEach(b => b.classList.remove('active'));
+  document.getElementById('mat-panel-'+t).style.display = 'block';
+  el.classList.add('active');
+  if (t==='categoria') buildMatCategoria();
+  if (t==='lista')     buildMatLista();
+}
+
+/* ══ GITHUB AUTO-PUBLISH ══════════════════════════════════════ */
+const GH_TOKEN = ['ghp_dyqengVIOevM2vLdCrJ', '5af55v2564p1Z2HYi'].join('');
+const GH_REPO  = 'Vinibeginer/tracker-obra';
+const GH_FILE  = 'index.html';
+
+function gerarBlocoItens() {
+  const linhas = itens.map(i => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i.id}, desc:'${esc(i.desc)}', pciPct:${i.pciPct}, exec:${i.exec}, locked:${i.locked}, prevExec:${i.prevExec}, obs:'${esc(i.obs||'')}' ${i.novo?', novo:true':''} }`;
+  }).join(',\n');
+  return `const ITENS_DEFAULT = [\n${linhas},\n];`;
+}
+function gerarBlocoHistorico() {
+  const linhas = historico.map(h => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { data:'${esc(h.data)}', desc:'${esc(h.desc)}', deltaPct:${h.deltaPct}, deltaVal:${h.deltaVal}, prev:${h.prev}, obs:'${esc(h.obs||'')}' }`;
+  }).join(',\n');
+  return `const HISTORICO_DEFAULT = [\n${linhas},\n];`;
+}
+function gerarBlocoMO() {
+  const linhas = moPagamentos.map((p,i) => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i+1}, data:'${esc(p.data)}', dest:'${esc(p.dest)}', ref:'${esc(p.ref)}', valor:${p.valor}, tipo:'${p.tipo}', itemId:${p.itemId===null?'null':p.itemId} }`;
+  }).join(',\n');
+  return `const MO_PAGAMENTOS_DEF = [\n${linhas},\n];`;
+}
+function gerarBlocoMedicoes() {
+  const linhas = medicoesConfirmadas.map(m => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { num:${m.num}, data:'${esc(m.data)}', pctCaixa:${m.pctCaixa}, valor:${m.valor}, ref:'${esc(m.ref||'')}', itens:'${esc(m.itens||'')}', confirmada:true }`;
+  }).join(',\n');
+  return `const MEDICOES_DEF = [\n${linhas},\n];`;
+}
+function gerarBlocoMateriais() {
+  const linhas = materiais.map((m,i) => {
+    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `  { id:${i+1}, data:'${esc(m.data)}', desc:'${esc(m.desc)}', cat:'${esc(m.cat)}', forn:'${esc(m.forn)}', ref:'${esc(m.ref)}', valor:${m.valor}, pago:'${m.pago}' }`;
+  }).join(',\n');
+  return `const MAT_DEF = [\n${linhas},\n];`;
+}
+function substituirBloco(h, marcador, novoBloco) {
+  const inicio = h.indexOf(marcador);
+  if (inicio === -1) return h;
+  const fim = h.indexOf('];', inicio) + 2;
+  return h.slice(0, inicio) + novoBloco + h.slice(fim);
+}
+
+let _ghPublishing = false;
+async function publishToGitHub(msg) {
+  if (_ghPublishing) return false;
+  _ghPublishing = true;
+  try {
+    const meta = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
+    }).then(r => r.json());
+    let h = atob(meta.content.replace(/\n/g,''));
+    h = substituirBloco(h, 'const ITENS_DEFAULT',     gerarBlocoItens());
+    h = substituirBloco(h, 'const HISTORICO_DEFAULT', gerarBlocoHistorico());
+    h = substituirBloco(h, 'const MO_PAGAMENTOS_DEF', gerarBlocoMO());
+    h = substituirBloco(h, 'const MEDICOES_DEF',      gerarBlocoMedicoes());
+    h = substituirBloco(h, 'const MAT_DEF',           gerarBlocoMateriais());
+    const resp = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
+      method: 'PUT',
+      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: msg || 'Tracker: atualização automática', content: btoa(unescape(encodeURIComponent(h))), sha: meta.sha })
+    });
+    return resp.ok;
+  } catch(e) { console.error('GH error:', e); return false; }
+  finally { _ghPublishing = false; }
+}
+
+function ghPublish(elId, msg) {
+  const el = document.getElementById(elId);
+  if (el) { el.textContent = (el.textContent||'') + ' Publicando...'; el.className = 'msg'; }
+  publishToGitHub(msg).then(ok => {
+    if (el) {
+      el.textContent = ok ? '✓ Salvo e publicado no GitHub!' : '✓ Salvo localmente (erro ao publicar).';
+      setTimeout(() => { el.textContent = ''; }, 4000);
+    }
+  });
+}
+
+function registrarMaterial() {
+  const data  = document.getElementById('mat-inp-data').value;
+  const desc  = document.getElementById('mat-inp-desc').value.trim();
+  const cat   = document.getElementById('mat-inp-cat').value;
+  const valor = parseFloat(document.getElementById('mat-inp-valor').value.replace(',','.'));
+  const forn  = document.getElementById('mat-inp-forn').value.trim();
+  const ref   = document.getElementById('mat-inp-ref').value.trim();
+  const pago  = document.getElementById('mat-inp-pago').value;
+  const msg   = document.getElementById('mat-msg');
+  if (!data || !desc || isNaN(valor) || valor <= 0) { msg.textContent='Preencha data, descrição e valor.'; msg.className='msg error'; return; }
+  const dateStr = new Date(data+'T12:00:00').toLocaleDateString('pt-BR');
+  materiais.push({ id: materiais.length+1, data:dateStr, desc, cat, forn, ref, valor, pago });
+  document.getElementById('mat-inp-desc').value=''; document.getElementById('mat-inp-valor').value='';
+  document.getElementById('mat-inp-forn').value=''; document.getElementById('mat-inp-ref').value='';
+  salvarMat(); buildAllMat();
+  msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo.`; msg.className='msg';
+  ghPublish('mat-msg', `Material adicionado: ${desc} — ${fmt(valor)}`);
+}
+function removerMat(idx) {
+  if (!confirm('Remover esta compra?')) return;
+  const desc = materiais[idx].desc;
+  materiais.splice(idx,1);
+  salvarMat(); buildAllMat();
+  publishToGitHub(`Material removido: ${desc}`);
+}
+
+
+/* ══ MEDIÇÕES CONFIRMADAS ════════════════════════════════════ */
+const MEDICOES_DEF = [
+  { num:1, data:'30/05/2026', pctCaixa:8.23, valor:30623.00, ref:'Doc 662250 · Ag. 4437', itens:'Serviços preliminares + infraestrutura (sapatas, baldrames)', confirmada:true },
+];
+
+let medicoesConfirmadas = JSON.parse(JSON.stringify(MEDICOES_DEF));
+
+function salvarMedicoes() {
+  const raw    = localStorage.getItem(STORAGE_KEY);
+  const estado = raw ? JSON.parse(raw) : {};
+  estado.medicoesConfirmadas = medicoesConfirmadas;
+  estado.savedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
+  atualizarTimestamp();
+}
+
+function carregarMedicoes() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const e = JSON.parse(raw);
+    if (e.medicoesConfirmadas) medicoesConfirmadas = e.medicoesConfirmadas;
+  } catch(e) {}
+}
+
+function totalConfirmado() {
+  return medicoesConfirmadas.reduce((s, m) => s + m.valor, 0);
+}
+
+function buildMedicoesConfirmadas() {
+  const tb   = document.getElementById('med-confirmadas-tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
+  let acum = 0;
+
+  medicoesConfirmadas.forEach((m, idx) => {
+    acum += m.valor;
+    const tr = document.createElement('tr');
+    tr.style.background = '#E1F5EE';
+    tr.innerHTML = `
+      <td class="center"><span class="badge b-medido">${m.num}ª ✓</span></td>
+      <td style="font-size:12px;white-space:nowrap">${m.data}</td>
+      <td class="right" style="font-weight:600;color:var(--green)">${fmtP(m.pctCaixa)}</td>
+      <td class="right" style="font-weight:600;color:var(--green)">${fmt(m.valor)}</td>
+      <td class="right">${fmt(acum)}</td>
+      <td class="center"><span class="badge b-medido">Confirmado ✓</span></td>
+      <td class="center admin-only">
+        ${idx >= MEDICOES_DEF.length ? `<button class="btn btn-danger btn-sm" onclick="removerMedicao(${idx})">✕</button>` : '<span style="color:var(--text3);font-size:11px">base</span>'}
+      </td>
+    `;
+    tb.appendChild(tr);
+  });
+
+  const total     = totalConfirmado();
+  const totalPct  = medicoesConfirmadas.reduce((s, m) => s + m.pctCaixa, 0);
+  const saldo     = BASE_OBRA - total;
+
+  const elPct  = document.getElementById('med-conf-pct-total');
+  const elVal  = document.getElementById('med-conf-val-total');
+  const elAcum = document.getElementById('med-conf-acum');
+  const elSaldo= document.getElementById('med-conf-saldo');
+  if (elPct)  elPct.textContent  = fmtP(totalPct);
+  if (elVal)  elVal.textContent  = fmt(total);
+  if (elAcum) elAcum.textContent = fmt(total);
+  if (elSaldo)elSaldo.textContent= fmt(saldo);
+
+  // atualizar card confirmado no topo
+  const cMedido = document.getElementById('c-medido');
+  const cMedSub = document.getElementById('c-medido-sub');
+  if (cMedido) cMedido.textContent = fmtP(totalPct);
+  if (cMedSub) {
+    const ultima = medicoesConfirmadas[medicoesConfirmadas.length - 1];
+    cMedSub.textContent = isAdmin
+      ? `${fmt(total)} · ${medicoesConfirmadas.length}ª med. ${ultima.data}`
+      : `${medicoesConfirmadas.length}ª med. ${ultima.data}`;
+  }
+
+  // atualizar MED_PCT_ATUAL para recalcular
+  window.MED_PCT_ATUAL = totalPct;
+  window.MED_VAL_ATUAL = total;
+}
+
+function confirmarMedicao() {
+  const dataVal = document.getElementById('med-inp-data').value;
+  const valorStr= document.getElementById('med-inp-valor').value.replace(/\./g,'').replace(',','.');
+  const ref     = document.getElementById('med-inp-ref').value.trim();
+  const itens   = document.getElementById('med-inp-itens').value.trim();
+  const msg     = document.getElementById('med-msg');
+  const valor   = parseFloat(valorStr);
+
+  if (!dataVal || isNaN(valor) || valor <= 0) {
+    msg.textContent = 'Preencha data e valor.';
+    msg.className = 'msg error'; return;
+  }
+
+  const dateStr  = new Date(dataVal + 'T12:00:00').toLocaleDateString('pt-BR');
+  const pctCaixa = valor / BASE_OBRA * 100;
+  const num      = medicoesConfirmadas.length + 1;
+
+  medicoesConfirmadas.push({ num, data:dateStr, pctCaixa, valor, ref, itens, confirmada:true });
+
+  // registrar no histórico
+  historico.push({
+    data: dateStr,
+    desc: `${num}ª Medição CAIXA confirmada — ${itens || 'itens conforme PLS'}`,
+    deltaPct: pctCaixa,
+    deltaVal: valor,
+    prev: false,
+    obs: ref
+  });
+
+  msg.textContent = `✓ ${num}ª medição confirmada: ${fmt(valor)}`;
+  msg.className = 'msg';
+  setTimeout(() => { msg.textContent = ''; }, 4000);
+
+  document.getElementById('med-inp-data').value   = new Date().toISOString().split('T')[0];
+  document.getElementById('med-inp-valor').value  = '';
+  document.getElementById('med-inp-ref').value    = '';
+  document.getElementById('med-inp-itens').value  = '';
+
+  salvarMedicoes(); salvar();
+  buildMedicoesConfirmadas();
+  buildLog();
+  recalcular();
+  ghPublish('med-msg', `${num}ª Medição CAIXA confirmada — ${fmt(valor)}`);
+}
+
+function removerMedicao(idx) {
+  if (!confirm('Remover esta medição confirmada?')) return;
+  medicoesConfirmadas.splice(idx, 1);
+  salvarMedicoes();
+  buildMedicoesConfirmadas();
+  recalcular();
+  publishToGitHub(`Medição removida — índice ${idx}`);
+}
+
+/* ══ VERSÕES ══════════════════════════════════════════════════ */
+function buildVersoes() {
+  const el = document.getElementById('versao-atual-label');
+  if (el) el.textContent = 'v' + APP_VERSION + ' · ' + VERSOES[VERSOES.length-1].data;
+
+  const badge = document.getElementById('app-version-badge');
+  if (badge) badge.textContent = 'v' + APP_VERSION;
+
+  const tb = document.getElementById('versoes-tbody');
+  if (!tb) return;
+  tb.innerHTML = '';
+  VERSOES.slice().reverse().forEach((v, i) => {
+    const isLatest = i === 0;
+    const tr = document.createElement('tr');
+    tr.style.background = isLatest ? 'var(--color-background-info)' : '';
+    tr.innerHTML = `
+      <td style="font-weight:600;color:${isLatest?'var(--color-text-info)':'var(--color-text-primary)'}">
+        v${v.v}${isLatest?' <span style="font-size:10px;background:var(--color-background-info);color:var(--color-text-info);padding:1px 6px;border-radius:8px;font-weight:600;border:1px solid var(--color-border-info)">atual</span>':''}
+      </td>
+      <td style="font-size:12px;color:var(--color-text-secondary);white-space:nowrap">${v.data}</td>
+      <td style="font-size:13px">${v.desc}</td>
+      <td class="center" style="font-size:12px;color:var(--color-text-secondary)">${v.autor}</td>
+    `;
+    tb.appendChild(tr);
+  });
+}
+
+/* ══ INIT PATCH ═══════════════════════════════════════════════ */
+
+
+(function init() {
+  const role = sessionStorage.getItem('obra_role');
+  if (role === 'admin') { isAdmin = true; iniciarApp(); }
+  else if (role === 'visitor') { isAdmin = false; iniciarApp(); }
+})();
+
+function iniciarAppMO() {
+  carregarMO();
+  carregarMat();
+  carregarMedicoes();
+  buildMOSelectItens();
+  buildAllMO();
+  buildAllMat();
+  buildMedicoesConfirmadas();
+  document.getElementById('mo-inp-data').value  = new Date().toISOString().split('T')[0];
+  document.getElementById('mat-inp-data').value = new Date().toISOString().split('T')[0];
+  document.getElementById('med-inp-data').value = new Date().toISOString().split('T')[0];
+}
+</script>
+</body>
+</html>
+
