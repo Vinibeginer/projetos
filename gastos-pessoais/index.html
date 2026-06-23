@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Controle de Gastos</title>
+  <link rel="stylesheet" href="style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div class="app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <span class="logo-icon">₢</span>
+        <div>
+          <p class="logo-title">Controle</p>
+          <p class="logo-sub">de Gastos</p>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-btn active" data-view="dashboard">
+          <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          Dashboard
+        </button>
+        <button class="nav-btn" data-view="lancamentos">
+          <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Lançamentos
+        </button>
+        <button class="nav-btn" data-view="analise">
+          <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Análise
+        </button>
+        <button class="nav-btn" data-view="importar">
+          <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+          Importar
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="month-selector">
+          <button id="prevMonth">‹</button>
+          <span id="currentMonthLabel">Jun 2025</span>
+          <button id="nextMonth">›</button>
+        </div>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main">
+
+      <!-- DASHBOARD VIEW -->
+      <section class="view active" id="view-dashboard">
+        <header class="page-header">
+          <h1>Dashboard</h1>
+          <button class="btn-primary" id="btnNovoGasto">+ Novo Gasto</button>
+        </header>
+
+        <div class="cards-row">
+          <div class="card card-receita">
+            <p class="card-label">Receita</p>
+            <p class="card-value" id="totalReceita">R$ 0,00</p>
+          </div>
+          <div class="card card-gasto">
+            <p class="card-label">Gastos</p>
+            <p class="card-value" id="totalGasto">R$ 0,00</p>
+          </div>
+          <div class="card card-saldo">
+            <p class="card-label">Saldo</p>
+            <p class="card-value" id="totalSaldo">R$ 0,00</p>
+          </div>
+          <div class="card card-evitavel">
+            <p class="card-label">Gastos Evitáveis</p>
+            <p class="card-value" id="totalEvitavel">R$ 0,00</p>
+          </div>
+        </div>
+
+        <div class="row-two">
+          <div class="panel">
+            <h2>Por Categoria</h2>
+            <div id="categoriasChart"></div>
+          </div>
+          <div class="panel">
+            <h2>Alertas de Gastos</h2>
+            <div id="alertasLista"></div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h2>Últimos Lançamentos</h2>
+          <table class="tabela" id="tabelaRecentes">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Tipo</th>
+                <th>Evitável?</th>
+                <th>Valor</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabelaRecentesBody"></tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- LANÇAMENTOS VIEW -->
+      <section class="view" id="view-lancamentos">
+        <header class="page-header">
+          <h1>Lançamentos</h1>
+          <button class="btn-primary" id="btnNovoGasto2">+ Novo Gasto</button>
+        </header>
+
+        <div class="filtros-bar">
+          <input type="text" class="input-search" id="searchInput" placeholder="Buscar descrição..." />
+          <select class="select-filter" id="filterCategoria">
+            <option value="">Todas as categorias</option>
+          </select>
+          <select class="select-filter" id="filterTipo">
+            <option value="">Todos os tipos</option>
+            <option value="Despesa">Despesa</option>
+            <option value="Receita">Receita</option>
+          </select>
+          <select class="select-filter" id="filterEvitavel">
+            <option value="">Evitável / Não</option>
+            <option value="sim">Evitável</option>
+            <option value="nao">Não evitável</option>
+          </select>
+        </div>
+
+        <div class="panel">
+          <table class="tabela" id="tabelaCompleta">
+            <thead>
+              <tr>
+                <th>Data</th>
+                <th>Descrição</th>
+                <th>Categoria</th>
+                <th>Tipo</th>
+                <th>Origem</th>
+                <th>Evitável?</th>
+                <th>Valor</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="tabelaCompletaBody"></tbody>
+          </table>
+          <p class="empty-state" id="emptyLancamentos">Nenhum lançamento encontrado.</p>
+        </div>
+      </section>
+
+      <!-- ANÁLISE VIEW -->
+      <section class="view" id="view-analise">
+        <header class="page-header">
+          <h1>Análise de Gastos</h1>
+        </header>
+
+        <div class="panel" id="analiseEvitaveis">
+          <h2>🚨 Gastos que Podem Ser Evitados</h2>
+          <p class="analise-sub">Baseado nos seus lançamentos marcados como evitáveis</p>
+          <div id="listaEvitaveis"></div>
+        </div>
+
+        <div class="panel">
+          <h2>📊 Gastos por Categoria</h2>
+          <div id="barrasCategoria"></div>
+        </div>
+
+        <div class="panel">
+          <h2>💡 Recomendações</h2>
+          <div id="recomendacoes"></div>
+        </div>
+      </section>
+
+      <!-- IMPORTAR VIEW -->
+      <section class="view" id="view-importar">
+        <header class="page-header">
+          <h1>Importar Extrato / Fatura</h1>
+        </header>
+
+        <div class="panel">
+          <h2>Importar CSV / OFX</h2>
+          <p class="analise-sub">Faça upload do arquivo exportado pelo seu banco ou cartão de crédito</p>
+          <div class="drop-zone" id="dropZone">
+            <svg viewBox="0 0 24 24" width="48" height="48"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            <p>Arraste seu arquivo aqui ou</p>
+            <label class="btn-secondary">
+              Selecionar arquivo
+              <input type="file" id="fileInput" accept=".csv,.ofx,.txt" hidden />
+            </label>
+            <p class="drop-hint">Formatos aceitos: CSV, OFX, TXT</p>
+          </div>
+          <div id="previewImport"></div>
+        </div>
+
+        <div class="panel">
+          <h2>Instruções por Banco</h2>
+          <div class="instrucoes-grid">
+            <div class="instrucao-card">
+              <h3>Nubank</h3>
+              <p>Menu → Extrato → Exportar → CSV</p>
+            </div>
+            <div class="instrucao-card">
+              <h3>Itaú</h3>
+              <p>Internet Banking → Extrato → Exportar OFX</p>
+            </div>
+            <div class="instrucao-card">
+              <h3>Bradesco</h3>
+              <p>Internet Banking → Extrato → Download CSV</p>
+            </div>
+            <div class="instrucao-card">
+              <h3>Inter</h3>
+              <p>App → Extrato → Compartilhar → CSV</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- MODAL NOVO GASTO -->
+  <div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+      <div class="modal-header">
+        <h2 id="modalTitle">Novo Gasto</h2>
+        <button class="modal-close" id="modalClose">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label>Data</label>
+            <input type="date" id="inputData" class="input" />
+          </div>
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="inputTipo" class="input">
+              <option value="Despesa">Despesa</option>
+              <option value="Receita">Receita</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descrição</label>
+          <input type="text" id="inputDescricao" class="input" placeholder="Ex: Mercado, Netflix, Gasolina..." />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Categoria</label>
+            <select id="inputCategoria" class="input">
+              <option value="Alimentação">Alimentação</option>
+              <option value="Transporte">Transporte</option>
+              <option value="Moradia">Moradia</option>
+              <option value="Saúde">Saúde</option>
+              <option value="Lazer">Lazer</option>
+              <option value="Vestuário">Vestuário</option>
+              <option value="Educação">Educação</option>
+              <option value="Assinaturas">Assinaturas</option>
+              <option value="Pets">Pets</option>
+              <option value="Restaurantes">Restaurantes</option>
+              <option value="Compras">Compras</option>
+              <option value="Investimentos">Investimentos</option>
+              <option value="Salário">Salário</option>
+              <option value="Outros">Outros</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Origem</label>
+            <select id="inputOrigem" class="input">
+              <option value="Cartão de Crédito">Cartão de Crédito</option>
+              <option value="Débito">Débito</option>
+              <option value="Pix">Pix</option>
+              <option value="Dinheiro">Dinheiro</option>
+              <option value="TED/DOC">TED/DOC</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Valor (R$)</label>
+          <input type="number" id="inputValor" class="input" placeholder="0,00" step="0.01" min="0" />
+        </div>
+        <div class="form-group form-check">
+          <label class="check-label">
+            <input type="checkbox" id="inputEvitavel" />
+            <span class="check-custom"></span>
+            Esse gasto poderia ser evitado
+          </label>
+        </div>
+        <div class="form-group" id="motivoEvitavelGroup" style="display:none">
+          <label>Por que é evitável?</label>
+          <input type="text" id="inputMotivo" class="input" placeholder="Ex: impulso, substituível, desnecessário..." />
+        </div>
+        <div class="form-group">
+          <label>Observação (opcional)</label>
+          <textarea id="inputObs" class="input" rows="2" placeholder="Notas adicionais..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-ghost" id="btnCancelar">Cancelar</button>
+        <button class="btn-primary" id="btnSalvar">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
