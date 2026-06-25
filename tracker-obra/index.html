@@ -1489,6 +1489,7 @@ const VERSOES = [
   { v:'1.33', data:'22/06/2026', autor:'Claude', desc:'Base CAIXA recalculada: R$354.244 (R$372.888 − R$18.644 bloqueados/habite-se) · todos os valores das 7 medições atualizados · folga ~R$22.067' },
   { v:'1.34', data:'22/06/2026', autor:'Claude', desc:'Recursos corrigidos: FGTS R$11.305 + próprios R$27.000 consumidos no terreno · desconto Campos Urbanismo R$3.159 · próprios para obra R$125.271' },
   { v:'1.35', data:'24/06/2026', autor:'Claude', desc:'Visitante: sem nenhum valor financeiro — ocultos barra de progresso, colunas Liberação/Acum./Saldo do calendário, rodapé da tabela de medições e alert com R$' },
+  { v:'1.36', data:'24/06/2026', autor:'Claude', desc:'Itens corrigidos para espelhar exatamente a PCI: item 17 unificado (esgoto+pluviais 4,07%), item 20 corrigido (muro frontal+documentação 7,49%), item 171 removido, concreto magro removido como item separado' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1593,18 +1594,16 @@ const ITENS_DEFAULT = [
   { id:14,  desc:'Acabamentos — soleiras, peitoris e rodapés',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Soleiras de todas as portas e peitoris de todas as janelas J1–J7.' },
   { id:15,  desc:'Instalações elétricas (3 pavimentos)',                          pciPct:4.07,  exec:10,  locked:false, prevExec:0,  obs:'Padrão de energia instalado (10%). Falta: infra interna térreo, 1ºpav e 2ºpav, quadro de distribuição e circuitos.', novo:true },
   { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                        pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Nenhum ramal executado. Falta: térreo, 1ºpav (2 banheiros) e complementos.' },
-  { id:17,  desc:'Instalações de esgoto sanitário',                              pciPct:2.70,  exec:100, locked:false, prevExec:0,  obs:'Térreo 100%: ramais internos, caixa de gordura e ligação rede pública. Pendente: 1º pavimento (2 banheiros) — aguarda laje.' },
-  { id:171, desc:'Rede de águas pluviais',                                        pciPct:1.37,  exec:0,   locked:false, prevExec:0,  obs:'Pendente: calhas, rufos, drenos cobertura e varanda descoberta (37,85m²).' },
+  { id:17,  desc:'Instalações de esgoto e águas pluviais (3 pavimentos)',         pciPct:4.07,  exec:66,  locked:false, prevExec:0,  obs:'Esgoto térreo 100% concluído (ramais internos, caixa de gordura, ligação rede pública) — ~66% do item. Pendente: esgoto 1ºpav (aguarda laje) + rede pluvial (calhas, rufos, drenos cobertura e varanda 37,85m²).' },
   { id:18,  desc:'Louças e metais',                                               pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Térreo: lavabo, suíte, cozinha americana. 1ºpav: banheiro social, suíte master, 2 closets.' },
   { id:19,  desc:'Complementos — limpeza final e calafete',                       pciPct:1.50,  exec:0,   locked:false, prevExec:0,  obs:'Final de obra — após conclusão de todos os pavimentos.' },
-  { id:20,  desc:'Concreto magro (limpeza) — contrapiso definitivo após alvenaria', pciPct:1.28,  exec:100, locked:false, prevExec:0,  obs:'Executado 15–19/06/2026. ATENÇÃO: este é o concreto magro/limpeza, NÃO o contrapiso definitivo. Contrapiso será concretado após subida da alvenaria.' },
+  { id:20,  desc:'Outros — muro frontal e documentação',                          pciPct:7.49,  exec:50,  locked:false, prevExec:0,  obs:'Muro frontal: chapisco, emboço, pintura, fundação, estrutura CA e portão de ferro (R$19.981). Documentação: projetos, aprovações e ART (R$15.000). Exec. estimado: documentação 100% + muro frontal 0% = ~50%.' },
 ];
 
 const HISTORICO_DEFAULT = [
   { data:'30/05/2026', desc:'1ª Medição CAIXA — serviços preliminares + infraestrutura', deltaPct:8.23, deltaVal:30623, prev:false, obs:'Doc 662250 · Ag. 4437. PCI teórico desses itens: 10,71% — CAIXA mediu 8,23% pelo critério interno.' },
   { data:'12/06/2026', desc:'Esgoto: ramais PVC, caixas sifonadas, caixa de inspeção externa', deltaPct:0, deltaVal:0, prev:false, obs:'Relatório Barros Rezende. Andamento parcial.' },
-  { data:'19/06/2026', desc:'Esgoto sanitário térreo 100% concluído (caixa de gordura + ligação rede pública)', deltaPct:2.70, deltaVal:10068, prev:false, obs:'Confirmado pelo engenheiro. Esgoto 1ºpav aguarda execução da laje.' },
-  { data:'19/06/2026', desc:'Concreto magro (limpeza) executado — NÃO é contrapiso definitivo', deltaPct:1.28, deltaVal:4773, prev:false, obs:'Contrapiso definitivo será concretado após subida da alvenaria.' },
+  { data:'19/06/2026', desc:'Esgoto sanitário térreo 100% concluído (caixa de gordura + ligação rede pública)', deltaPct:2.70, deltaVal:10068, prev:false, obs:'~66% do item 17 (esgoto+pluviais). Esgoto 1ºpav aguarda laje. Pluviais pendentes.' },
   { data:'19/06/2026', desc:'Padrão de energia instalado (elétrica 10%)', deltaPct:0.41, deltaVal:1529, prev:false, obs:'Poste padrão + instalação elétrica. Falta infra interna 3 pavimentos.' },
   { data:'22/06/2026', desc:'Hidráulica zerada: nenhum ramal executado (correção de lançamento)', deltaPct:0, deltaVal:0, prev:false, obs:'Item 16 corrigido para 0% — ramais internos não executados.' },
   { data:'22/06–18/07/2026', desc:'[Previsão] Entijolamento (alvenaria) + enchimento de colunas (pilares)', deltaPct:6.08, deltaVal:22671, prev:true, obs:'Alvenaria 30% + supraestrutura 25% — distribuído ao longo de ~4 semanas. Não é avanço de uma semana única.' },
