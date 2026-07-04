@@ -85,7 +85,8 @@
     <div class="sub">Av. Projetada, Q.H, Lote 38 — Res. Village, Campos dos Goytacazes/RJ</div>
   </div>
   <div id="stat-box">
-    Avanço físico total<br><b id="stat-total">--%</b>
+    Avanço reconhecido (CAIXA)<br><b id="stat-total">--%</b>
+    <div id="stat-pci" style="font-size:10px;opacity:.65;margin-top:2px;">PCI teórico: --%</div>
     <div id="sync-line">sincronizando...</div>
   </div>
 </div>
@@ -133,7 +134,27 @@ const FLOORS = {
 // ---------- Estado ----------
 let progress = {fundacao:0, estrutura:0, alvenaria:0, cobertura:0, acabamento:0, total:0, syncedAt:null};
 
-function computeStagesFromItems(items){
+function parseItens(html){
+  const re = /\{\s*id:(\d+),\s*desc:'((?:\\.|[^'\\])*)',\s*pciPct:([\d.]+),\s*exec:(\d+),\s*locked:(true|false)/g;
+  const items = [];
+  let m;
+  while((m = re.exec(html)) !== null){
+    items.push({ id: parseInt(m[1]), desc: m[2], pciPct: parseFloat(m[3]), exec: parseInt(m[4]), locked: m[5]==='true' });
+  }
+  return items;
+}
+function parseMedicoesPct(html){
+  const re = /pctCaixa:([\d.]+)/g;
+  let m, total = 0;
+  while((m = re.exec(html)) !== null){ total += parseFloat(m[1]); }
+  return total;
+}
+function parseEscala(html){
+  const m = html.match(/const ESCALA\s*=\s*([\d.]+)/);
+  return m ? parseFloat(m[1]) : 0.7533;
+}
+
+function computeStagesFromItems(items, medConfirmadoPct, escala){
   const byId = {};
   items.forEach(it => byId[it.id] = it);
   const weighted = ids => {
@@ -143,31 +164,34 @@ function computeStagesFromItems(items){
   };
   const out = {};
   STAGES.forEach(s => out[s.id] = weighted(s.ids));
-  let num=0, den=0;
-  items.forEach(it=>{ num += it.pciPct*it.exec; den += it.pciPct; });
-  out.total = den>0 ? num/den : 0;
+
+  // PCI teórico (referência, soma bruta de todos os itens)
+  let numAll=0, denAll=0;
+  items.forEach(it=>{ numAll += it.pciPct*it.exec; denAll += it.pciPct; });
+  out.pciTeorico = denAll>0 ? numAll/denAll : 0;
+
+  // Avanço reconhecido: igual à lógica do Tracker (m = medições CAIXA confirmadas;
+  // e = itens executados mas ainda não medidos, convertidos pela escala CAIXA)
+  let execNovoPci = 0;
+  items.forEach(it=>{ if(!it.locked){ execNovoPci += it.pciPct*it.exec/100; } });
+  const m = Math.min(100, medConfirmadoPct||0);
+  const e = Math.min(Math.max(0, execNovoPci*(escala||0.7533)), 100-m);
+  out.total = m + e;
+  out.medido = m;
+  out.executadoNaoMedido = e;
   out.syncedAt = new Date().toISOString();
   return out;
 }
 
-function parseItens(html){
-  const re = /\{\s*id:(\d+),\s*desc:'((?:\\.|[^'\\])*)',\s*pciPct:([\d.]+),\s*exec:(\d+)/g;
-  const items = [];
-  let m;
-  while((m = re.exec(html)) !== null){
-    items.push({ id: parseInt(m[1]), desc: m[2], pciPct: parseFloat(m[3]), exec: parseInt(m[4]) });
-  }
-  return items;
-}
-
 async function syncFromTracker(){
-  const line = document.getElementById('sync-btn');
   try{
     const res = await fetch(TRACKER_URL, {cache:'no-store'});
     const html = await res.text();
     const items = parseItens(html);
     if(items.length === 0) throw new Error('nenhum item encontrado');
-    progress = computeStagesFromItems(items);
+    const medConfirmadoPct = parseMedicoesPct(html);
+    const escala = parseEscala(html);
+    progress = computeStagesFromItems(items, medConfirmadoPct, escala);
     await window.storage.set(STORE_KEY, JSON.stringify(progress), false);
     setSyncStatus(true);
   }catch(e){
@@ -187,7 +211,8 @@ function setSyncStatus(ok){
   const when = progress.syncedAt ? new Date(progress.syncedAt).toLocaleString('pt-BR') : '—';
   if(ok){ el.textContent = 'sincronizado · ' + when; el.className = 'ok'; }
   else{ el.textContent = 'offline · usando última cópia salva'; el.className = 'err'; }
-  document.getElementById('stat-total').textContent = progress.total.toFixed(1) + '%';
+  document.getElementById('stat-total').textContent = (progress.total||0).toFixed(1) + '%';
+  document.getElementById('stat-pci').textContent = 'PCI teórico: ' + (progress.pciTeorico||0).toFixed(1) + '%';
 }
 
 function renderPanel(){
