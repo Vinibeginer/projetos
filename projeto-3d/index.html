@@ -74,20 +74,6 @@
   }
   #apply-override{border:1px solid var(--coral-dk); background:var(--coral); color:#fff;}
   #clear-override{border:1px solid var(--stone); background:#fff; color:var(--ink);}
-  #versions table{width:100%; border-collapse:collapse; font-size:11px;}
-  #versions th{
-    text-align:left; font-size:10px; text-transform:uppercase; letter-spacing:.04em;
-    color:var(--stone); border-bottom:1px solid var(--line); padding:4px 6px;
-  }
-  #versions td{padding:5px 6px; border-bottom:1px solid var(--line); vertical-align:top;}
-  #versions tr.latest td{background:#fdf3ef;}
-  #versions .vtag{
-    font-weight:700; color:var(--coral-dk); white-space:nowrap;
-  }
-  #versions .vtag .cur{
-    font-size:9px; background:var(--coral); color:#fff; padding:1px 5px;
-    border-radius:7px; margin-left:4px; font-weight:600;
-  }
 </style>
 </head>
 <body>
@@ -119,9 +105,6 @@
 
   <h3 style="margin-top:14px;">Ajuste manual de alvenaria (pré-visualização — ainda não confirmado no Tracker)</h3>
   <div id="manual-override"></div>
-
-  <h3 style="margin-top:14px;">Histórico de versões</h3>
-  <div id="versions"></div>
 </div>
 
 <script>
@@ -148,33 +131,12 @@ const FLOORS = {
   pav2:   {w:8.6, d:5.7,  h:3, terraceD:4.65}
 };
 
-// ---------- Versão / histórico ----------
-const APP_VERSION = '1.5';
-const VERSIONS = [
-  { v:'1.0', data:'04/07/2026', autor:'Claude', desc:'Criação da maquete 3D com base no projeto arquitetônico aprovado (térreo, 1º e 2º pavimento, cobertura e fachada).' },
-  { v:'1.1', data:'04/07/2026', autor:'Claude', desc:'Publicação no GitHub Pages (pasta projeto-3d) e integração do card na home do repositório.' },
-  { v:'1.2', data:'04/07/2026', autor:'Claude', desc:'Sincronização automática com o Tracker da Obra: leitura do PCI por item e progresso contínuo (paredes, cobertura, cor de acabamento).' },
-  { v:'1.3', data:'04/07/2026', autor:'Claude', desc:'Ajuste manual de alvenaria por pavimento (pré-visualização independente do Tracker) — térreo em 44% (8 fiadas em todas as paredes).' },
-  { v:'1.4', data:'04/07/2026', autor:'Claude', desc:'Correção do percentual total: passa a seguir a fórmula real do Tracker (medido CAIXA + executado não medido × escala 0,7533), com PCI teórico como referência.' },
-  { v:'1.5', data:'04/07/2026', autor:'Claude', desc:'Implementação do histórico de versões da maquete 3D.' },
-];
-function renderVersions(){
+// ---------- Versão ----------
+// Histórico completo de versões: ver CHANGELOG.md nesta mesma pasta.
+const APP_VERSION = '1.6';
+function renderVersionBadge(){
   const badge = document.getElementById('version-badge');
   if(badge) badge.textContent = 'v'+APP_VERSION;
-  const el = document.getElementById('versions');
-  const rows = VERSIONS.slice().reverse().map((ver, i) => {
-    const isLatest = i === 0;
-    return `<tr class="${isLatest?'latest':''}">
-      <td class="vtag">v${ver.v}${isLatest?'<span class="cur">atual</span>':''}</td>
-      <td style="white-space:nowrap;">${ver.data}</td>
-      <td>${ver.desc}</td>
-      <td>${ver.autor}</td>
-    </tr>`;
-  }).join('');
-  el.innerHTML = `<table>
-    <thead><tr><th>Versão</th><th>Data</th><th>Alterações</th><th>Por</th></tr></thead>
-    <tbody>${rows}</tbody>
-  </table>`;
 }
 
 // ---------- Estado ----------
@@ -569,7 +531,7 @@ function animate(){ requestAnimationFrame(animate); renderer.render(scene, camer
 animate();
 
 (async function init(){
-  renderVersions();
+  renderVersionBadge();
   try{
     const cached = await window.storage.get(STORE_KEY, false);
     if(cached && cached.value){ progress = JSON.parse(cached.value); renderPanel(); buildScene(); setSyncStatus(true); }
