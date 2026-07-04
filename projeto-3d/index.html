@@ -58,6 +58,22 @@
     padding:6px 10px; border-radius:5px; font-family:inherit; font-size:11px; cursor:pointer;
   }
   #hint{position:fixed; top:56px; left:14px; color:rgba(255,255,255,.5); font-size:11px; pointer-events:none;}
+  .override-row{
+    display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:6px;
+    background:#fdf3ef; border:1px dashed var(--coral); border-radius:6px;
+  }
+  .override-row label{flex:1; font-size:11.5px;}
+  .override-row input{
+    width:56px; font-family:inherit; font-size:12px; padding:3px 5px;
+    border:1px solid var(--stone); border-radius:4px; text-align:right;
+  }
+  .override-row span{font-size:11px; opacity:.7;}
+  #override-actions{display:flex; gap:8px; margin-top:4px;}
+  #override-actions button{
+    flex:1; font-family:inherit; font-size:11px; padding:6px; border-radius:5px; cursor:pointer;
+  }
+  #apply-override{border:1px solid var(--coral-dk); background:var(--coral); color:#fff;}
+  #clear-override{border:1px solid var(--stone); background:#fff; color:var(--ink);}
 </style>
 </head>
 <body>
@@ -85,12 +101,19 @@
   </div>
   <h3>Andamento por etapa (fonte: Tracker da Obra)</h3>
   <div id="stages"></div>
+
+  <h3 style="margin-top:14px;">Ajuste manual de alvenaria (pré-visualização — ainda não confirmado no Tracker)</h3>
+  <div id="manual-override"></div>
 </div>
 
 <script>
 // ---------- Config ----------
 const TRACKER_URL = '../tracker-obra/';
 const STORE_KEY = 'obra-mariara-progress-cache';
+const OVERRIDE_KEY = 'obra-mariara-manual-override';
+// override.terreo/pav1/pav2: null = usa % agregada do tracker; número = % manual de pré-visualização
+// térreo pré-definido em 44% = 8 fiadas em todas as paredes do térreo (ainda não lançado no tracker)
+let manualOverride = {terreo:44, pav1:null, pav2:null};
 
 const STAGES = [
   {id:'fundacao',    label:'Fundação',          ids:[2]},
@@ -179,6 +202,36 @@ function renderPanel(){
         <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
       </div>`;
     el.appendChild(row);
+  });
+}
+
+function renderOverridePanel(){
+  const el = document.getElementById('manual-override');
+  const floors = [['terreo','Térreo'],['pav1','1º Pavimento'],['pav2','2º Pavimento']];
+  el.innerHTML = floors.map(([id,label])=>{
+    const val = manualOverride[id];
+    return `<div class="override-row">
+      <label>${label}</label>
+      <input type="number" min="0" max="100" step="1" id="ov-${id}" value="${val===null?'':val}" placeholder="tracker">
+      <span>%</span>
+    </div>`;
+  }).join('') + `<div id="override-actions">
+      <button id="apply-override">Aplicar pré-visualização</button>
+      <button id="clear-override">Limpar (usar tracker)</button>
+    </div>`;
+  document.getElementById('apply-override').addEventListener('click', async ()=>{
+    ['terreo','pav1','pav2'].forEach(id=>{
+      const raw = document.getElementById('ov-'+id).value;
+      manualOverride[id] = raw === '' ? null : Math.max(0,Math.min(100,parseFloat(raw)));
+    });
+    await window.storage.set(OVERRIDE_KEY, JSON.stringify(manualOverride), false);
+    buildScene();
+  });
+  document.getElementById('clear-override').addEventListener('click', async ()=>{
+    manualOverride = {terreo:null, pav1:null, pav2:null};
+    await window.storage.set(OVERRIDE_KEY, JSON.stringify(manualOverride), false);
+    renderOverridePanel();
+    buildScene();
   });
 }
 
@@ -300,10 +353,15 @@ function buildScene(){
     });
   }
 
-  const wallFrac = f => Math.min(1, Math.max(0,(p.alvenaria||0)/100));
+  const wallFracFor = floorId => {
+    const ov = manualOverride[floorId];
+    const base = ov !== null && ov !== undefined ? ov : (p.alvenaria||0);
+    return Math.min(1, Math.max(0, base/100));
+  };
 
-  function addFloor(dims, label, zOffset=0){
-    const frac = wallFrac();
+  function addFloor(dims, label, floorId, zOffset=0){
+    const frac = wallFracFor(floorId);
+    const isPreview = manualOverride[floorId] !== null && manualOverride[floorId] !== undefined;
     const wallH = dims.h * frac;
     if(wallH > 0.03){
       const wall = box(dims.w, wallH, dims.d, wallColor);
@@ -320,17 +378,17 @@ function buildScene(){
       ghost.position.set(0, y+wallH+dims.h*(1-frac)/2, zOffset);
       buildGroup.add(ghost);
     }
-    const lbl = makeLabel(label, Math.round(frac*100)+'% da alvenaria');
+    const lbl = makeLabel(label, Math.round(frac*100)+'% alvenaria'+(isPreview?' (prévia)':''));
     lbl.position.set(dims.w/2+2.3, y+1.5, zOffset);
     buildGroup.add(lbl);
     y += dims.h;
   }
 
-  addFloor(FLOORS.terreo, 'TÉRREO · 89 m²');
-  addFloor(FLOORS.pav1, '1º PAV · 89 m²');
+  addFloor(FLOORS.terreo, 'TÉRREO · 89 m²', 'terreo');
+  addFloor(FLOORS.pav1, '1º PAV · 89 m²', 'pav1');
 
   const pav2Z = -(FLOORS.pav1.d - FLOORS.pav2.d)/2;
-  addFloor(FLOORS.pav2, '2º PAV · 49 m²', pav2Z);
+  addFloor(FLOORS.pav2, '2º PAV · 49 m²', 'pav2', pav2Z);
 
   const terraceZ = pav2Z + FLOORS.pav2.d/2 + FLOORS.pav2.terraceD/2;
   const terrace = box(FLOORS.pav2.w, 0.25, FLOORS.pav2.terraceD, 0xb7ada0);
@@ -444,7 +502,13 @@ animate();
     const cached = await window.storage.get(STORE_KEY, false);
     if(cached && cached.value){ progress = JSON.parse(cached.value); renderPanel(); buildScene(); setSyncStatus(true); }
   }catch(e){}
-  syncFromTracker();
+  try{
+    const ov = await window.storage.get(OVERRIDE_KEY, false);
+    if(ov && ov.value){ manualOverride = JSON.parse(ov.value); }
+    else { await window.storage.set(OVERRIDE_KEY, JSON.stringify(manualOverride), false); }
+  }catch(e){}
+  renderOverridePanel();
+  await syncFromTracker();
 })();
 </script>
 </body>
