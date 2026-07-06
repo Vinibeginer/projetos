@@ -106,18 +106,24 @@
   #plantas-body{ max-width:640px; margin:0 auto; }
   .floor-title{ font-size:13px; font-weight:700; color:var(--coral-dk); margin-bottom:2px; }
   .floor-sub{ font-size:11px; opacity:.65; margin-bottom:14px; }
-  .room-grid{
-    display:flex; flex-wrap:wrap; gap:6px; border:2px solid var(--ink);
-    border-radius:4px; padding:6px; background:#fff;
-  }
-  .room-box{
-    border:1px solid rgba(0,0,0,.25); border-radius:3px; padding:8px 6px;
-    display:flex; flex-direction:column; justify-content:space-between;
-    min-height:70px; transition:background .3s;
-  }
-  .room-box .rname{ font-size:11px; font-weight:700; line-height:1.2; }
-  .room-box .rarea{ font-size:10px; opacity:.75; }
-  .room-box .rpct{ font-size:10.5px; font-weight:700; margin-top:4px; }
+  .plan-grid{
+  display:grid; gap:0; border:3px solid var(--ink); border-radius:2px;
+  background:var(--ink);
+}
+.plan-room{
+  border:1.5px solid var(--ink); padding:6px 5px; display:flex; flex-direction:column;
+  justify-content:space-between; overflow:hidden; transition:background .3s;
+}
+.plan-room .rname{ font-size:10.5px; font-weight:700; line-height:1.15; }
+.plan-room .rarea{ font-size:9.5px; opacity:.75; }
+.plan-room .rpct{ font-size:10px; font-weight:700; margin-top:2px; }
+.plan-extra{ margin-top:10px; display:flex; flex-direction:column; gap:8px; }
+.extra-room{
+  border:1.5px dashed var(--stone); border-radius:4px; padding:8px 10px;
+  background:repeating-linear-gradient(45deg, #eef1ea, #eef1ea 8px, #e6e9e0 8px, #e6e9e0 16px);
+}
+.extra-room .rname{ font-size:11px; font-weight:700; }
+.extra-room .rarea{ font-size:10px; opacity:.7; margin-top:2px; }
   #plantas-legend{
     position:fixed; bottom:10px; left:0; right:0; display:none;
     justify-content:center; gap:16px; font-size:10.5px; color:var(--ink);
@@ -225,34 +231,48 @@ const FLOORS = {
 };
 
 // Plantas esquemáticas por pavimento — áreas somam o total do Quadro de Áreas do
-// projeto aprovado; a disposição dos ambientes é aproximada (proporcional à área),
-// não reproduz as coordenadas exatas do desenho CAD.
+// projeto aprovado; a posição de cada ambiente no grid é aproximada (mantém a
+// disposição geral do desenho — garagem/sala na frente, quartos no fundo, etc.),
+// não reproduz as coordenadas exatas do CAD.
 const FLOOR_PLANS = {
-  terreo: { label:'Térreo', area:89, rooms:[
-    {name:'Garagem', area:18.00}, {name:'Sala', area:29.60}, {name:'Cozinha', area:8.00},
-    {name:'Lavabo', area:2.16}, {name:'Despensa', area:2.88}, {name:'Suíte', area:14.00},
-    {name:'Banheiro suíte', area:3.24}, {name:'Circulação', area:11.12},
+  terreo: { label:'Térreo', area:89, cols:4, rows:4, rooms:[
+    {name:'Garagem', area:18.00, col:[1,3], row:[1,4]},
+    {name:'Sala', area:29.60, col:[3,5], row:[1,3]},
+    {name:'Cozinha', area:8.00, col:[3,4], row:[3,4]},
+    {name:'Despensa', area:2.88, col:[4,5], row:[3,4]},
+    {name:'Suíte', area:14.00, col:[1,3], row:[4,5]},
+    {name:'Banheiro suíte', area:3.24, col:[3,4], row:[4,5]},
+    {name:'Lavabo / Circulação', area:13.28, col:[4,5], row:[4,5]},
   ]},
-  pav1: { label:'1º Pavimento', area:89, rooms:[
-    {name:'Quarto Master', area:16.17}, {name:'Banheiro master', area:3.71},
-    {name:'Closet', area:4.00}, {name:'Escritório', area:4.88},
-    {name:'Quarto 1', area:17.03}, {name:'Quarto 2', area:16.78},
-    {name:'Circulação', area:9.12}, {name:'Banheiro', area:3.65},
-    {name:'Varanda coberta', area:9.14}, {name:'Hall', area:4.52},
+  pav1: { label:'1º Pavimento', area:89, cols:4, rows:5, rooms:[
+    {name:'Quarto Master', area:16.17, col:[1,3], row:[1,3]},
+    {name:'Quarto 1', area:17.03, col:[3,5], row:[1,3]},
+    {name:'Quarto 2', area:16.78, col:[1,3], row:[3,4]},
+    {name:'Escritório', area:4.88, col:[3,4], row:[3,4]},
+    {name:'Closet', area:4.00, col:[4,5], row:[3,4]},
+    {name:'Banheiro master', area:3.71, col:[1,2], row:[4,5]},
+    {name:'Banheiro', area:3.65, col:[2,3], row:[4,5]},
+    {name:'Circulação', area:9.12, col:[3,5], row:[4,5]},
+    {name:'Varanda coberta', area:9.14, col:[1,4], row:[5,6]},
+    {name:'Hall', area:4.52, col:[4,5], row:[5,6]},
   ]},
-  pav2: { label:'2º Pavimento', area:49, rooms:[
-    {name:'Sala', area:28.85}, {name:'Quarto 1', area:16.15}, {name:'Banheiro', area:4.00},
-    {name:'Varanda descoberta', area:37.85, extra:true},
+  pav2: { label:'2º Pavimento', area:49, cols:4, rows:3, rooms:[
+    {name:'Sala', area:28.85, col:[1,3], row:[1,4]},
+    {name:'Quarto 1', area:16.15, col:[3,5], row:[1,3]},
+    {name:'Banheiro', area:4.00, col:[3,5], row:[3,4]},
+  ], extraRooms:[
+    {name:'Varanda descoberta', area:37.85},
   ]},
-  cobertura: { label:'Cobertura', area:null, rooms:[
-    {name:'Telhado — fibrocimento (8–9,86%)', area:56.4},
-    {name:'Laje impermeabilizada (2º pav.)', area:37.85, extra:true},
+  cobertura: { label:'Cobertura', area:null, cols:4, rows:3, rooms:[
+    {name:'Telhado — fibrocimento (8–9,86%)', area:56.4, col:[1,5], row:[1,4]},
+  ], extraRooms:[
+    {name:'Laje impermeabilizada (2º pav.)', area:37.85},
   ]},
 };
 
 // ---------- Versão ----------
 // Histórico completo de versões: ver CHANGELOG.md nesta mesma pasta.
-const APP_VERSION = '2.1';
+const APP_VERSION = '2.2';
 function renderVersionBadge(){
   const badge = document.getElementById('version-badge');
   if(badge) badge.textContent = 'v'+APP_VERSION;
@@ -704,30 +724,38 @@ function renderFloorPlan(floorId){
   } else {
     frac = getFloorFrac(floorId);
     const isPreview = manualOverride[floorId] !== null && manualOverride[floorId] !== undefined;
-    subtitle = `${plan.area} m² · alvenaria ${Math.round(frac*100)}%${isPreview?' (prévia manual)':''}`;
+    const notStarted = frac === 0 && !isPreview && floorId !== 'terreo';
+    subtitle = `${plan.area} m² · alvenaria ${Math.round(frac*100)}%${isPreview?' (prévia manual)':(notStarted?' (ainda não iniciado)':'')}`;
   }
   const acabT = getAcabT();
-  // blend: alvenaria define o quanto "preenchido" está; acabamento clareia mais ainda
   const effFrac = floorId==='cobertura' ? frac : Math.min(1, frac*0.75 + acabT*0.4);
 
   body.innerHTML = `
     <div class="floor-title">${plan.label}</div>
     <div class="floor-sub">${subtitle}</div>
-    <div class="room-grid" id="room-grid"></div>
+    <div class="plan-grid" id="plan-grid" style="grid-template-columns:repeat(${plan.cols}, 1fr); grid-template-rows:repeat(${plan.rows}, 54px);"></div>
+    <div class="plan-extra" id="plan-extra"></div>
   `;
-  const grid = document.getElementById('room-grid');
-  const totalArea = plan.rooms.reduce((s,r)=>s+r.area,0);
+  const grid = document.getElementById('plan-grid');
   plan.rooms.forEach(r=>{
-    const box = document.createElement('div');
-    box.className = 'room-box';
-    const growPct = Math.max(8, (r.area/totalArea)*100);
-    box.style.flex = `1 1 ${growPct}%`;
-    box.style.background = r.extra ? '#eef1ea' : pctColor(effFrac);
-    box.innerHTML = `<div class="rname">${r.name}</div>
-      <div class="rarea">${r.area.toFixed(2)} m²</div>
-      <div class="rpct">${r.extra ? '—' : Math.round(effFrac*100)+'%'}</div>`;
-    grid.appendChild(box);
+    const cell = document.createElement('div');
+    cell.className = 'plan-room';
+    cell.style.gridColumn = `${r.col[0]} / ${r.col[1]}`;
+    cell.style.gridRow = `${r.row[0]} / ${r.row[1]}`;
+    cell.style.background = pctColor(effFrac);
+    cell.innerHTML = `<div class="rname">${r.name}</div><div class="rarea">${r.area.toFixed(2)} m²</div><div class="rpct">${Math.round(effFrac*100)}%</div>`;
+    grid.appendChild(cell);
   });
+  const extraEl = document.getElementById('plan-extra');
+  if(plan.extraRooms){
+    extraEl.innerHTML = plan.extraRooms.map(r=>`
+      <div class="plan-room extra-room">
+        <div class="rname">${r.name}</div>
+        <div class="rarea">${r.area.toFixed(2)} m² · área descoberta / não computada na alvenaria</div>
+      </div>`).join('');
+  } else {
+    extraEl.innerHTML = '';
+  }
 }
 
 function renderPlantas(){
