@@ -71,6 +71,50 @@
     padding:6px 10px; border-radius:5px; font-family:inherit; font-size:11px; cursor:pointer;
   }
   #hint{position:fixed; top:56px; left:14px; color:rgba(255,255,255,.5); font-size:11px; pointer-events:none;}
+
+  #view-toggle{
+    position:fixed; top:78px; left:14px; z-index:5; display:flex; gap:6px;
+  }
+  #view-toggle button{
+    font-family:inherit; font-size:11px; padding:6px 10px; border-radius:16px;
+    border:1px solid rgba(255,255,255,.25); background:rgba(20,17,15,.6); color:var(--paper);
+    cursor:pointer;
+  }
+  #view-toggle button.active{ background:var(--coral); border-color:var(--coral-dk); color:#fff; }
+
+  #plantas-view{
+    position:fixed; inset:0; display:none; background:var(--paper);
+    padding:100px 16px 200px; overflow-y:auto; color:var(--ink);
+  }
+  #plantas-view.open{ display:block; }
+  #plantas-tabs{ display:flex; gap:8px; margin-bottom:16px; flex-wrap:wrap; }
+  #plantas-tabs button{
+    font-family:inherit; font-size:12px; padding:8px 14px; border-radius:8px;
+    border:1px solid var(--stone); background:#fff; color:var(--ink); cursor:pointer;
+  }
+  #plantas-tabs button.active{ background:var(--coral); border-color:var(--coral-dk); color:#fff; font-weight:700; }
+  #plantas-body{ max-width:640px; margin:0 auto; }
+  .floor-title{ font-size:13px; font-weight:700; color:var(--coral-dk); margin-bottom:2px; }
+  .floor-sub{ font-size:11px; opacity:.65; margin-bottom:14px; }
+  .room-grid{
+    display:flex; flex-wrap:wrap; gap:6px; border:2px solid var(--ink);
+    border-radius:4px; padding:6px; background:#fff;
+  }
+  .room-box{
+    border:1px solid rgba(0,0,0,.25); border-radius:3px; padding:8px 6px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    min-height:70px; transition:background .3s;
+  }
+  .room-box .rname{ font-size:11px; font-weight:700; line-height:1.2; }
+  .room-box .rarea{ font-size:10px; opacity:.75; }
+  .room-box .rpct{ font-size:10.5px; font-weight:700; margin-top:4px; }
+  #plantas-legend{
+    position:fixed; bottom:10px; left:0; right:0; display:none;
+    justify-content:center; gap:16px; font-size:10.5px; color:var(--ink);
+    background:var(--paper); padding:6px 0; border-top:1px solid var(--line);
+  }
+  #plantas-legend.open{ display:flex; }
+  #plantas-legend i{ display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:middle; }
   .override-row{
     display:flex; align-items:center; gap:8px; padding:6px 8px; margin-bottom:6px;
     background:#fdf3ef; border:1px dashed var(--coral); border-radius:6px;
@@ -104,7 +148,21 @@
     <div id="sync-line">sincronizando...</div>
   </div>
 </div>
+<div id="view-toggle">
+  <button data-view="3d" class="active">Maquete 3D</button>
+  <button data-view="plantas">Plantas por pavimento</button>
+</div>
 <div id="hint">arraste para girar · pinça/roda para zoom</div>
+
+<div id="plantas-view">
+  <div id="plantas-tabs"></div>
+  <div id="plantas-body"></div>
+  <div id="plantas-legend">
+    <span><i style="background:#cabfae"></i> não iniciado</span>
+    <span><i style="background:#e3b39e"></i> em execução</span>
+    <span><i style="background:#f3ede4;border:1px solid #d8cfc2"></i> concluído/acabamento</span>
+  </div>
+</div>
 
 <div id="panel">
   <div id="panel-handle">
@@ -149,9 +207,35 @@ const FLOORS = {
   pav2:   {w:8.6, d:5.7,  h:3, terraceD:4.65}
 };
 
+// Plantas esquemáticas por pavimento — áreas somam o total do Quadro de Áreas do
+// projeto aprovado; a disposição dos ambientes é aproximada (proporcional à área),
+// não reproduz as coordenadas exatas do desenho CAD.
+const FLOOR_PLANS = {
+  terreo: { label:'Térreo', area:89, rooms:[
+    {name:'Garagem', area:18.00}, {name:'Sala', area:29.60}, {name:'Cozinha', area:8.00},
+    {name:'Lavabo', area:2.16}, {name:'Despensa', area:2.88}, {name:'Suíte', area:14.00},
+    {name:'Banheiro suíte', area:3.24}, {name:'Circulação', area:11.12},
+  ]},
+  pav1: { label:'1º Pavimento', area:89, rooms:[
+    {name:'Quarto Master', area:16.17}, {name:'Banheiro master', area:3.71},
+    {name:'Closet', area:4.00}, {name:'Escritório', area:4.88},
+    {name:'Quarto 1', area:17.03}, {name:'Quarto 2', area:16.78},
+    {name:'Circulação', area:9.12}, {name:'Banheiro', area:3.65},
+    {name:'Varanda coberta', area:9.14}, {name:'Hall', area:4.52},
+  ]},
+  pav2: { label:'2º Pavimento', area:49, rooms:[
+    {name:'Sala', area:28.85}, {name:'Quarto 1', area:16.15}, {name:'Banheiro', area:4.00},
+    {name:'Varanda descoberta', area:37.85, extra:true},
+  ]},
+  cobertura: { label:'Cobertura', area:null, rooms:[
+    {name:'Telhado — fibrocimento (8–9,86%)', area:56.4},
+    {name:'Laje impermeabilizada (2º pav.)', area:37.85, extra:true},
+  ]},
+};
+
 // ---------- Versão ----------
 // Histórico completo de versões: ver CHANGELOG.md nesta mesma pasta.
-const APP_VERSION = '1.9';
+const APP_VERSION = '2.0';
 function renderVersionBadge(){
   const badge = document.getElementById('version-badge');
   if(badge) badge.textContent = 'v'+APP_VERSION;
@@ -364,6 +448,15 @@ function lerpColor(hexA, hexB, t){
   return a.lerp(b, Math.max(0,Math.min(1,t)));
 }
 
+function getFloorFrac(floorId){
+  const ov = manualOverride[floorId];
+  const base = ov !== null && ov !== undefined ? ov : (progress.alvenaria||0);
+  return Math.min(1, Math.max(0, base/100));
+}
+function getAcabT(){
+  return Math.min(1, Math.max(0, (progress.acabamento||0)/100));
+}
+
 function buildScene(){
   scene.remove(buildGroup);
   buildGroup = new THREE.Group();
@@ -479,7 +572,95 @@ function buildScene(){
   }
 
   scene.add(buildGroup);
+
+  const plantasEl = document.getElementById('plantas-view');
+  if(plantasEl && plantasEl.classList.contains('open')) renderPlantas();
 }
+
+let currentFloorTab = 'terreo';
+
+function pctColor(frac){
+  // 0 = cru (não iniciado), 0.5 = em execução, 1 = acabamento (branco)
+  if(frac <= 0) return '#cabfae';
+  const raw = [0xca,0xbf,0xae], mid = [0xe3,0xb3,0x9e], fin = [0xf3,0xed,0xe4];
+  const t = Math.min(1, frac);
+  const a = t < 0.5 ? raw : mid, b = t < 0.5 ? mid : fin;
+  const localT = t < 0.5 ? t*2 : (t-0.5)*2;
+  const c = a.map((v,i)=> Math.round(v + (b[i]-v)*localT));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+
+function renderPlantasTabs(){
+  const el = document.getElementById('plantas-tabs');
+  el.innerHTML = '';
+  Object.keys(FLOOR_PLANS).forEach(id=>{
+    const btn = document.createElement('button');
+    btn.textContent = FLOOR_PLANS[id].label;
+    btn.className = id===currentFloorTab ? 'active' : '';
+    btn.addEventListener('click', ()=>{ currentFloorTab = id; renderPlantasTabs(); renderFloorPlan(id); });
+    el.appendChild(btn);
+  });
+}
+
+function renderFloorPlan(floorId){
+  const plan = FLOOR_PLANS[floorId];
+  const body = document.getElementById('plantas-body');
+
+  let frac, subtitle;
+  if(floorId === 'cobertura'){
+    frac = Math.min(1, Math.max(0,(progress.cobertura||0)/100));
+    subtitle = `Cobertura · ${Math.round(frac*100)}% executado`;
+  } else {
+    frac = getFloorFrac(floorId);
+    const isPreview = manualOverride[floorId] !== null && manualOverride[floorId] !== undefined;
+    subtitle = `${plan.area} m² · alvenaria ${Math.round(frac*100)}%${isPreview?' (prévia manual)':''}`;
+  }
+  const acabT = getAcabT();
+  // blend: alvenaria define o quanto "preenchido" está; acabamento clareia mais ainda
+  const effFrac = floorId==='cobertura' ? frac : Math.min(1, frac*0.75 + acabT*0.4);
+
+  body.innerHTML = `
+    <div class="floor-title">${plan.label}</div>
+    <div class="floor-sub">${subtitle}</div>
+    <div class="room-grid" id="room-grid"></div>
+  `;
+  const grid = document.getElementById('room-grid');
+  const totalArea = plan.rooms.reduce((s,r)=>s+r.area,0);
+  plan.rooms.forEach(r=>{
+    const box = document.createElement('div');
+    box.className = 'room-box';
+    const growPct = Math.max(8, (r.area/totalArea)*100);
+    box.style.flex = `1 1 ${growPct}%`;
+    box.style.background = r.extra ? '#eef1ea' : pctColor(effFrac);
+    box.innerHTML = `<div class="rname">${r.name}</div>
+      <div class="rarea">${r.area.toFixed(2)} m²</div>
+      <div class="rpct">${r.extra ? '—' : Math.round(effFrac*100)+'%'}</div>`;
+    grid.appendChild(box);
+  });
+}
+
+function renderPlantas(){
+  renderPlantasTabs();
+  renderFloorPlan(currentFloorTab);
+}
+
+document.querySelectorAll('#view-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#view-toggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const view = b.getAttribute('data-view');
+    const plantasEl = document.getElementById('plantas-view');
+    const legendEl = document.getElementById('plantas-legend');
+    if(view === 'plantas'){
+      plantasEl.classList.add('open');
+      legendEl.classList.add('open');
+      renderPlantas();
+    } else {
+      plantasEl.classList.remove('open');
+      legendEl.classList.remove('open');
+    }
+  });
+});
 
 // ---------- Câmera / controles manuais ----------
 let camTarget = new THREE.Vector3(0,3,0);
