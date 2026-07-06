@@ -82,6 +82,16 @@
   }
   #view-toggle button.active{ background:var(--coral); border-color:var(--coral-dk); color:#fff; }
 
+  #floor-toggle{
+    position:fixed; top:112px; left:14px; z-index:5; display:flex; gap:6px; flex-wrap:wrap; max-width:260px;
+  }
+  #floor-toggle button{
+    font-family:inherit; font-size:10.5px; padding:5px 9px; border-radius:14px;
+    border:1px solid rgba(255,255,255,.2); background:rgba(20,17,15,.5); color:rgba(246,242,236,.85);
+    cursor:pointer;
+  }
+  #floor-toggle button.active{ background:var(--coral); border-color:var(--coral-dk); color:#fff; }
+
   #plantas-view{
     position:fixed; inset:0; display:none; background:var(--paper);
     padding:100px 16px 200px; overflow-y:auto; color:var(--ink);
@@ -151,6 +161,13 @@
 <div id="view-toggle">
   <button data-view="3d" class="active">Maquete 3D</button>
   <button data-view="plantas">Plantas por pavimento</button>
+</div>
+<div id="floor-toggle">
+  <button data-floor="all" class="active">Edifício completo</button>
+  <button data-floor="terreo">Térreo</button>
+  <button data-floor="pav1">1º Pavimento</button>
+  <button data-floor="pav2">2º Pavimento</button>
+  <button data-floor="cobertura">Cobertura</button>
 </div>
 <div id="hint">arraste para girar · pinça/roda para zoom</div>
 
@@ -235,7 +252,7 @@ const FLOOR_PLANS = {
 
 // ---------- Versão ----------
 // Histórico completo de versões: ver CHANGELOG.md nesta mesma pasta.
-const APP_VERSION = '2.0';
+const APP_VERSION = '2.1';
 function renderVersionBadge(){
   const badge = document.getElementById('version-badge');
   if(badge) badge.textContent = 'v'+APP_VERSION;
@@ -374,7 +391,81 @@ function renderOverridePanel(){
   });
 }
 
-// ---------- Cena Three.js ----------
+let selectedFloor = 'all';
+
+function buildIsolatedFloor(floorId){
+  scene.remove(buildGroup);
+  buildGroup = new THREE.Group();
+
+  const rawColor = 0xcabfae, whiteColor = 0xf3ede4, stone = 0x6f6559, black = 0x222222;
+  const acabT = getAcabT();
+  const wallColor = lerpColor(rawColor, whiteColor, acabT);
+
+  if(floorId === 'cobertura'){
+    const frac = Math.min(1, Math.max(0,(progress.cobertura||0)/100));
+    const roofW = FLOORS.pav2.w+0.6, roofD = FLOORS.pav2.d+0.6;
+    if(frac > 0.01){
+      const roof = new THREE.Mesh(
+        new THREE.ConeGeometry(Math.max(roofW,roofD)/1.55, 1.1*frac, 4, 1),
+        new THREE.MeshStandardMaterial({color: lerpColor(0xa6a099,0x9a9186,acabT), roughness:.9})
+      );
+      roof.rotation.y = Math.PI/4;
+      roof.scale.set(roofW/roofD>1? roofW/roofD:1, 1, roofD/roofW>1? roofD/roofW:1);
+      roof.position.set(0, 0.55*frac, 0);
+      buildGroup.add(roof);
+    }
+    if(frac < 0.98){
+      const ghost = box(roofW, 1.1, roofD, 0xd98a6f, 0.12, true);
+      ghost.position.set(0, 0.55, 0);
+      buildGroup.add(ghost);
+    }
+    const lbl = makeLabel('COBERTURA', Math.round(frac*100)+'% · fibrocimento');
+    lbl.position.set(0, 2.3, 0);
+    buildGroup.add(lbl);
+    scene.add(buildGroup);
+    camTarget.set(0, 1, 0); radius = 12;
+    updateCam();
+    return;
+  }
+
+  const dims = FLOORS[floorId];
+  const frac = getFloorFrac(floorId);
+  const isPreview = manualOverride[floorId] !== null && manualOverride[floorId] !== undefined;
+  const wallH = dims.h * frac;
+
+  // base/laje do pavimento
+  const slab = box(dims.w+0.2, 0.15, dims.d+0.2, 0x8a8378);
+  slab.position.set(0, -0.075, 0);
+  buildGroup.add(slab);
+
+  if(wallH > 0.03){
+    const wall = box(dims.w, wallH, dims.d, wallColor);
+    wall.position.set(0, wallH/2, 0);
+    buildGroup.add(wall);
+    if(acabT > 0.02){
+      const band = box(dims.w+0.05, Math.min(0.6,wallH), dims.d+0.05, stone, Math.min(1,acabT));
+      band.position.set(0, Math.min(0.3,wallH/2), 0);
+      buildGroup.add(band);
+    }
+  }
+  if(frac < 0.98){
+    const ghost = box(dims.w, dims.h*(1-frac), dims.d, 0xd98a6f, 0.14, true);
+    ghost.position.set(0, wallH+dims.h*(1-frac)/2, 0);
+    buildGroup.add(ghost);
+  }
+
+  const names = {terreo:'TÉRREO · 89 m²', pav1:'1º PAV · 89 m²', pav2:'2º PAV · 49 m²'};
+  const lbl = makeLabel(names[floorId], Math.round(frac*100)+'% alvenaria'+(isPreview?' (prévia)':(frac===0?' (ainda não iniciado)':'')));
+  lbl.position.set(0, dims.h+0.9, 0);
+  buildGroup.add(lbl);
+
+  scene.add(buildGroup);
+  camTarget.set(0, dims.h/2, 0);
+  radius = Math.max(dims.w, dims.d) * 1.5;
+  updateCam();
+}
+
+// ---------- Cena Three.js (edifício completo) ----------
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1c1815);
 scene.fog = new THREE.Fog(0x1c1815, 30, 70);
@@ -450,7 +541,10 @@ function lerpColor(hexA, hexB, t){
 
 function getFloorFrac(floorId){
   const ov = manualOverride[floorId];
-  const base = ov !== null && ov !== undefined ? ov : (progress.alvenaria||0);
+  if(ov !== null && ov !== undefined) return Math.min(1, Math.max(0, ov/100));
+  // O item "Alvenaria" do Tracker hoje só reflete avanço real no térreo
+  // (8 fiadas em todas as paredes do térreo). 1º e 2º pav ainda não começaram.
+  const base = floorId === 'terreo' ? (progress.alvenaria||0) : 0;
   return Math.min(1, Math.max(0, base/100));
 }
 function getAcabT(){
@@ -458,6 +552,7 @@ function getAcabT(){
 }
 
 function buildScene(){
+  if(selectedFloor !== 'all'){ buildIsolatedFloor(selectedFloor); return; }
   scene.remove(buildGroup);
   buildGroup = new THREE.Group();
 
@@ -501,11 +596,7 @@ function buildScene(){
     });
   }
 
-  const wallFracFor = floorId => {
-    const ov = manualOverride[floorId];
-    const base = ov !== null && ov !== undefined ? ov : (p.alvenaria||0);
-    return Math.min(1, Math.max(0, base/100));
-  };
+  const wallFracFor = floorId => getFloorFrac(floorId);
 
   function addFloor(dims, label, floorId, zOffset=0){
     const frac = wallFracFor(floorId);
@@ -644,6 +735,16 @@ function renderPlantas(){
   renderFloorPlan(currentFloorTab);
 }
 
+document.querySelectorAll('#floor-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#floor-toggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    selectedFloor = b.getAttribute('data-floor');
+    if(selectedFloor === 'all'){ radius = 22; theta = Math.PI/4; phi = 1.05; camTarget.set(0,3,0); }
+    buildScene();
+  });
+});
+
 document.querySelectorAll('#view-toggle button').forEach(b=>{
   b.addEventListener('click', ()=>{
     document.querySelectorAll('#view-toggle button').forEach(x=>x.classList.remove('active'));
@@ -651,13 +752,16 @@ document.querySelectorAll('#view-toggle button').forEach(b=>{
     const view = b.getAttribute('data-view');
     const plantasEl = document.getElementById('plantas-view');
     const legendEl = document.getElementById('plantas-legend');
+    const floorToggleEl = document.getElementById('floor-toggle');
     if(view === 'plantas'){
       plantasEl.classList.add('open');
       legendEl.classList.add('open');
+      floorToggleEl.style.display = 'none';
       renderPlantas();
     } else {
       plantasEl.classList.remove('open');
       legendEl.classList.remove('open');
+      floorToggleEl.style.display = 'flex';
     }
   });
 });
