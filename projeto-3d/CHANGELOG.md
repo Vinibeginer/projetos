@@ -17,3 +17,4 @@ Convenção: **X.0** = mudança maior (nova funcionalidade principal) ·
 | 1.6 | 04/07/2026 | Histórico de versões retirado da página de visualização para não poluir a interface; passa a ser mantido só aqui no `CHANGELOG.md`. Mantido apenas o badge com a versão atual no topo da página. | Claude |
 | 1.7 | 04/07/2026 | Adicionadas meta tags de no-cache na página (mesmo problema já visto no Tracker: navegador/CDN servindo versão antiga em cache). Ajuda o navegador a sempre buscar a versão mais recente. | Claude |
 | 1.8 | 04/07/2026 | Painel inferior passa a ficar recolhido por padrão (só uma alça visível), para não cobrir a maquete 3D. Toque na alça para abrir/fechar. | Claude |
+| 1.9 | 04/07/2026 | Correção: "Medido/confirmado (CAIXA)" volta a mostrar só o que tem comprovante de medição (8,23%), sem somar a estimativa de executado-não-medido. Essa estimativa passa a aparecer separada, igual ao Tracker. | Claude |

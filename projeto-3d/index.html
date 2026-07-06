@@ -98,7 +98,8 @@
     <div class="sub">Av. Projetada, Q.H, Lote 38 — Res. Village, Campos dos Goytacazes/RJ</div>
   </div>
   <div id="stat-box">
-    Avanço reconhecido (CAIXA)<br><b id="stat-total">--%</b>
+    Medido/confirmado (CAIXA)<br><b id="stat-total">--%</b>
+    <div id="stat-exec" style="font-size:10px;opacity:.75;margin-top:3px;">Executado, não medido: ~--%</div>
     <div id="stat-pci" style="font-size:10px;opacity:.65;margin-top:2px;">PCI teórico: --%</div>
     <div id="sync-line">sincronizando...</div>
   </div>
@@ -150,7 +151,7 @@ const FLOORS = {
 
 // ---------- Versão ----------
 // Histórico completo de versões: ver CHANGELOG.md nesta mesma pasta.
-const APP_VERSION = '1.8';
+const APP_VERSION = '1.9';
 function renderVersionBadge(){
   const badge = document.getElementById('version-badge');
   if(badge) badge.textContent = 'v'+APP_VERSION;
@@ -201,9 +202,12 @@ function computeStagesFromItems(items, medConfirmadoPct, escala){
   items.forEach(it=>{ if(!it.locked){ execNovoPci += it.pciPct*it.exec/100; } });
   const m = Math.min(100, medConfirmadoPct||0);
   const e = Math.min(Math.max(0, execNovoPci*(escala||0.7533)), 100-m);
-  out.total = m + e;
+  // Medido/confirmado (m) e executado-mas-não-medido (e) ficam SEPARADOS,
+  // igual ao Tracker — nunca somados num único "reconhecido", pra não
+  // misturar o que tem comprovante com o que é só estimativa.
+  out.total = m;               // "reconhecido" = só o que está confirmado por medição
   out.medido = m;
-  out.executadoNaoMedido = e;
+  out.executadoNaoMedido = e;  // estimativa do que ainda será medido, mostrado à parte
   out.syncedAt = new Date().toISOString();
   return out;
 }
@@ -237,6 +241,7 @@ function setSyncStatus(ok){
   if(ok){ el.textContent = 'sincronizado · ' + when; el.className = 'ok'; }
   else{ el.textContent = 'offline · usando última cópia salva'; el.className = 'err'; }
   document.getElementById('stat-total').textContent = (progress.total||0).toFixed(1) + '%';
+  document.getElementById('stat-exec').textContent = 'Executado, não medido: ~' + (progress.executadoNaoMedido||0).toFixed(1) + '%';
   document.getElementById('stat-pci').textContent = 'PCI teórico: ' + (progress.pciTeorico||0).toFixed(1) + '%';
 }
 
