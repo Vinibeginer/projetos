@@ -216,11 +216,18 @@ const OVERRIDE_KEY = 'obra-mariara-manual-override';
 let manualOverride = {terreo:44, pav1:null, pav2:null};
 
 const STAGES = [
-  {id:'fundacao',    label:'Fundação',          ids:[2]},
-  {id:'estrutura',   label:'Estrutura (pilares/vigas)', ids:[3]},
-  {id:'alvenaria',   label:'Alvenaria (3 pavimentos)',  ids:[4]},
-  {id:'cobertura',   label:'Cobertura',         ids:[7]},
-  {id:'acabamento',  label:'Acabamentos e instalações', ids:[5,6,8,9,10,11,12,13,14,15,16,17,18,19,20]},
+  {id:'fundacao',    label:'Fundação',               ids:[1,2],             inicio:'04/05/2026', fim:'30/05/2026', status:'concluido', medicao:'1ª ✓'},
+  {id:'impermeab',   label:'Impermeabilização',       ids:[8],               inicio:'01/06/2026', fim:'07/09/2026', status:'andamento', medicao:'2ª'},
+  {id:'estrutura',   label:'Estrutura (pilares/vigas)',ids:[3],              inicio:'22/06/2026', fim:'03/08/2026', status:'andamento', medicao:'2ª'},
+  {id:'alvenaria',   label:'Alvenaria térreo',        ids:[4],               inicio:'22/06/2026', fim:'03/08/2026', status:'andamento', medicao:'2ª'},
+  {id:'laje',        label:'Laje térreo',             ids:[],                inicio:'03/08/2026', fim:'17/08/2026', status:'pendente',  medicao:'2ª'},
+  {id:'esgoto',      label:'Esgoto + hidráulica',     ids:[16,17,171],       inicio:'17/08/2026', fim:'31/08/2026', status:'parcial',   medicao:'2ª'},
+  {id:'eletrica',    label:'Elétrica (infra)',         ids:[15],              inicio:'31/08/2026', fim:'07/09/2026', status:'parcial',   medicao:'2ª'},
+  {id:'cobertura',   label:'Cobertura + esquadrias',  ids:[5,6,7],           inicio:'07/09/2026', fim:'26/10/2026', status:'pendente',  medicao:'3ª'},
+  {id:'revestimento',label:'Chapisco + reboco',       ids:[9,11],            inicio:'26/10/2026', fim:'12/02/2027', status:'pendente',  medicao:'4ª'},
+  {id:'piso',        label:'Contrapiso + piso',       ids:[13,20],           inicio:'12/02/2027', fim:'22/03/2027', status:'pendente',  medicao:'4ª'},
+  {id:'acabamento',  label:'Acabamentos + louças',    ids:[10,12,14,18,19],  inicio:'22/03/2027', fim:'30/03/2027', status:'pendente',  medicao:'4ª'},
+  {id:'pav12',       label:'1º e 2º pavimento',       ids:[],                inicio:'A definir',  fim:'A definir',  status:'contratar', medicao:'5ª–7ª'},
 ];
 
 const LOT = {w:9, d:20};
@@ -367,16 +374,21 @@ function setSyncStatus(ok){
 }
 
 function renderPanel(){
-  const el = document.getElementById('stages');
-  el.innerHTML = '';
+  const ST={concluido:{l:'Concluido',c:'#22c97e'},andamento:{l:'Em andamento',c:'#f59e0b'},parcial:{l:'Parcial',c:'#3b82f6'},pendente:{l:'Pendente',c:'#8d8579'},contratar:{l:'A contratar',c:'#d98a6f'}};
+  const el=document.getElementById('stages');
+  el.innerHTML='';
   STAGES.forEach(s=>{
-    const pct = Math.min(100, Math.max(0, progress[s.id] || 0));
-    const row = document.createElement('div');
-    row.className = 'stage';
-    row.innerHTML = `<div class="bar-wrap">
-        <div class="lbl"><span>${s.label}</span><b>${pct.toFixed(1)}%</b></div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%"></div></div>
-      </div>`;
+    const pct=Math.min(100,Math.max(0,progress[s.id]||0));
+    const st=ST[s.status]||ST.pendente;
+    const bar=s.status==='concluido'?100:s.status==='contratar'?0:pct;
+    const row=document.createElement('div');
+    row.className='stage';
+    row.innerHTML='<div class="bar-wrap">'+
+      '<div class="lbl"><span>'+s.label+'</span><b style="color:'+st.c+'">'+st.l+'</b></div>'+
+      '<div style="font-size:10px;color:#8d8579;margin-bottom:3px">'+s.inicio+' → '+s.fim+' &nbsp;·&nbsp; Med. '+s.medicao+'</div>'+
+      '<div class="bar-bg"><div class="bar-fill" style="width:'+bar+'%;background:'+st.c+'"></div></div>'+
+      '<div style="text-align:right;font-size:10px;color:#8d8579;margin-top:1px">'+(s.status==='contratar'?'—':bar.toFixed(0)+'%')+'</div>'+
+    '</div>';
     el.appendChild(row);
   });
 }
