@@ -1505,8 +1505,8 @@ const VERSOES = [
 const ADMIN_HASH  = '9cb3c126406a1b510b3b615d1c0fb9a511bf73b4699cdfcc1bbb66c73f09ef78'; // hash de "obra2026"
 const STORAGE_KEY = 'tracker_obra_vinicius_v2';
 const BASE_OBRA   = 372888;
-const MED_PCT     = 8.23;
-const MED_VAL     = 30623;
+const MED_PCT     = 25.35;
+const MED_VAL     = 94341;
 
 /* ══ AUTENTICAÇÃO ══════════════════════════════════════════ */
 let isAdmin = false;
@@ -2494,6 +2494,7 @@ function removerMat(idx) {
 /* ══ MEDIÇÕES CONFIRMADAS ════════════════════════════════════ */
 const MEDICOES_DEF = [
   { num:1, data:'30/05/2026', pctCaixa:8.23, valor:30623.00, ref:'Doc 662250 · Ag. 4437', itens:'Serviços preliminares + infraestrutura (sapatas, baldrames)', confirmada:true },
+  { num:2, data:'03/07/2026', pctCaixa:17.12, valor:63718.00, ref:'PLS assinada RT João Carlos + Vinícius 06/07/2026', itens:'Supra 35% + Alvenaria 40% + Impermeab 60% + Elétrica 30% + Hidráulica 20% + Esgoto 100% + Outros 20%', confirmada:true },
 ];
 
 let medicoesConfirmadas = JSON.parse(JSON.stringify(MEDICOES_DEF));
