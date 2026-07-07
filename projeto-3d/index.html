@@ -65,8 +65,13 @@ svg{max-width:100%;max-height:100%;}
 
 <div id="panel">
   <div id="ph">
-    <div class="t1">OBRA MARIÁRA · MAQUETE</div>
-    <div class="t2">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div>
+        <div class="t1">OBRA MARIÁRA · MAQUETE</div>
+        <div class="t2">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div>
+      </div>
+      <span id="ver-badge" style="font-size:9px;color:#d98a6f;border:1px solid rgba(217,138,111,.4);border-radius:3px;padding:2px 6px;white-space:nowrap">v2.0</span>
+    </div>
   </div>
   <div class="stats">
     <div class="stat"><div class="k">PLS acum.</div><div class="v">25,35%</div></div>
@@ -89,9 +94,15 @@ svg{max-width:100%;max-height:100%;}
     <button class="btn" data-f="pav2" onclick="setFloor('pav2')">2º Pav.</button>
     <button class="btn" data-f="empilhado" onclick="setFloor('empilhado')">Empilhado</button>
     <div class="sep"></div>
-    <button class="btn on" data-v="se" onclick="setCam('se')">Vista SE</button>
-    <button class="btn" data-v="sw" onclick="setCam('sw')">Vista SW</button>
-    <button class="btn" data-v="topo" onclick="setCam('topo')">Planta</button>
+    <button class="btn" onclick="rotate(-45)" title="Girar anti-horário">⟲ 45°</button>
+    <button class="btn" onclick="rotate(45)" title="Girar horário">⟳ 45°</button>
+    <span id="ang-label" style="font-size:9px;color:rgba(255,255,255,.4);min-width:34px;text-align:center">0°</span>
+    <div class="sep"></div>
+    <button class="btn" onclick="tilt(-1)" title="Menos inclinação">▽</button>
+    <button class="btn" onclick="tilt(1)" title="Mais inclinação">△</button>
+    <div class="sep"></div>
+    <button class="btn" data-v="topo" onclick="setCam('topo')">Planta 2D</button>
+    <button class="btn on" data-v="iso" onclick="setCam('iso')">Isométrica</button>
   </div>
   <div id="svgwrap"><svg id="iso" xmlns="http://www.w3.org/2000/svg"></svg></div>
   <div id="leg">
@@ -147,22 +158,42 @@ const FLOORS = {
   }
 };
 
-// ═══ PROJEÇÃO ISOMÉTRICA ═════════════════════════════════════════
-const COS30 = Math.cos(Math.PI/6), SIN30 = 0.5;
+// ═══ PROJEÇÃO ISOMÉTRICA COM ROTAÇÃO ═════════════════════════════
 let SCALE = 30;
-let camMode = 'se';   // 'se' | 'sw' | 'topo'
+let camMode = 'iso';    // 'iso' | 'topo'
 let floorMode = 'terreo';
+let rotAngle = 0;       // rotação em graus (passos de 45)
+let tiltLevel = 2;      // 0=rasante, 1=baixa, 2=iso padrão, 3=alta, 4=quase topo
+const TILTS = [0.20, 0.35, 0.50, 0.70, 0.88]; // fator vertical
+
+const CX = 4.35, CZ = 5.5; // centro de rotação (centro da casa)
+
+function rotPt(x, z) {
+  const a = rotAngle * Math.PI / 180;
+  const dx = x - CX, dz = z - CZ;
+  return [
+    dx * Math.cos(a) - dz * Math.sin(a) + CX,
+    dx * Math.sin(a) + dz * Math.cos(a) + CZ
+  ];
+}
 
 function proj(x, y, z) {
+  const [rx, rz] = rotPt(x, z);
   if (camMode === 'topo') {
-    return [x * SCALE, z * SCALE];
+    return [rx * SCALE, rz * SCALE];
   }
-  // Vista SE: padrão. Vista SW: espelha x
-  const px = camMode === 'sw' ? -x : x;
+  const tilt = TILTS[tiltLevel];
+  const COS30 = Math.cos(Math.PI/6);
   return [
-    (px - z) * COS30 * SCALE,
-    (px + z) * SIN30 * SCALE - y * SCALE
+    (rx - rz) * COS30 * SCALE,
+    (rx + rz) * tilt * SCALE - y * SCALE * (1 - tilt * 0.35)
   ];
+}
+
+// Profundidade para ordem do pintor (menor = mais atrás)
+function depthOf(x, z, w, d) {
+  const [rx, rz] = rotPt(x + w/2, z + d/2);
+  return rx + rz;
 }
 
 function poly(points) {
@@ -208,18 +239,27 @@ function drawBox(x, z, w, d, y0, y1, colors, opts = {}) {
     return svg;
   }
 
-  // Faces visíveis (vista SE): topo, frente (sul, z), lado leste (x+w)
-  // Vista SW: topo, frente (sul), lado oeste (x)
-  // topo
+  // Com rotação livre: desenhar as 4 faces laterais, deixando o
+  // painter's algorithm entre faces da MESMA caixa resolver por ordem fixa:
+  // desenhar primeiro as 2 faces de trás, depois as 2 da frente.
+  // Determinar quais faces estão de frente pela profundidade dos centros.
+  const faces = [
+    {pts:[A0,B0,B,A], cx:(x+w/2), cz:z,     col:colors.side1}, // sul
+    {pts:[B0,C0,C,B], cx:(x+w),   cz:z+d/2, col:colors.side2}, // leste
+    {pts:[C0,D0,D,C], cx:(x+w/2), cz:z+d,   col:colors.side1}, // norte
+    {pts:[D0,A0,A,D], cx:x,       cz:z+d/2, col:colors.side2}, // oeste
+  ];
+  // Ordenar faces por profundidade (menor primeiro = atrás)
+  faces.sort((f1,f2) => {
+    const [r1x,r1z] = rotPt(f1.cx, f1.cz);
+    const [r2x,r2z] = rotPt(f2.cx, f2.cz);
+    return (r1x+r1z) - (r2x+r2z);
+  });
+  faces.forEach(f => {
+    svg += `<polygon points="${poly(f.pts)}" fill="${f.col}" fill-opacity="${fillOp}" stroke="${strokeCol}" stroke-width="${strokeW}" ${dash}/>`;
+  });
+  // Topo por último (sempre visível de cima)
   svg += `<polygon points="${poly([A,B,C,D])}" fill="${colors.top}" fill-opacity="${fillOp}" stroke="${strokeCol}" stroke-width="${strokeW}" ${dash}/>`;
-  // frente (sul, face em z) — sempre visível nas duas vistas
-  svg += `<polygon points="${poly([A0,B0,B,A])}" fill="${colors.side1}" fill-opacity="${fillOp}" stroke="${strokeCol}" stroke-width="${strokeW}" ${dash}/>`;
-  // lateral visível
-  if (camMode === 'se') {
-    svg += `<polygon points="${poly([B0,C0,C,B])}" fill="${colors.side2}" fill-opacity="${fillOp}" stroke="${strokeCol}" stroke-width="${strokeW}" ${dash}/>`;
-  } else {
-    svg += `<polygon points="${poly([A0,D0,D,A])}" fill="${colors.side2}" fill-opacity="${fillOp}" stroke="${strokeCol}" stroke-width="${strokeW}" ${dash}/>`;
-  }
   return svg;
 }
 
@@ -250,25 +290,10 @@ function render() {
       {top:'#5c564d', side1:'#4a453d', side2:'#3b372f'},
       {ghost: isGhostFloor && floorMode==='empilhado'});
 
-    // Ordenar cômodos: pintor (de trás para frente)
-    // Vista SE: atrás = maior z, menor x → ordenar por (z+d) desc, depois x asc... 
-    // Chave robusta: -(x + z + w + d) para SE ; para SW: -( (extW - x - w) + z ...)
-    const sorted = [...fl.rooms].sort((a, b) => {
-      const depthA = camMode==='sw' ? (fl.ext.w-a[3]-a[5]) + a[4] : a[3] + a[4];
-      const depthB = camMode==='sw' ? (fl.ext.w-b[3]-b[5]) + b[4] : b[3] + b[4];
-      return depthB + (camMode==='topo'?0:0) - depthA;
-    });
-    // Para o pintor correto na isométrica SE: desenhar primeiro os de MAIOR (z) e MAIOR (x)?
-    // Regra validada: quem está mais "atrás" na tela tem maior (x+z) na vista SE... 
-    // Na proj SE, y_tela cresce com (x+z). Objetos com MENOR y_tela (topo da tela) ficam atrás.
-    // → desenhar por (x+z) ascendente = de trás (menor x+z... não!)
-    // proj: iy = (x+z)*sin30 - y  → MENOR (x+z) = mais ALTO na tela = mais atrás
-    // → desenhar primeiro quem tem MENOR (x+z + w+d como desempate)
-    sorted.sort((a,b) => {
-      const ka = camMode==='sw' ? ((fl.ext.w-a[3]-a[5]) + a[4]) : (a[3] + a[4]);
-      const kb = camMode==='sw' ? ((fl.ext.w-b[3]-b[5]) + b[4]) : (b[3] + b[4]);
-      return ka - kb;
-    });
+    // Ordem do pintor: menor depth (rx+rz rotacionado) = mais atrás = desenha primeiro
+    const sorted = [...fl.rooms].sort((a, b) =>
+      depthOf(a[3], a[4], a[5], a[6]) - depthOf(b[3], b[4], b[5], b[6])
+    );
 
     sorted.forEach(([id, name, area, x, z, w, d, exec]) => {
       const hExec = WALL_H * exec / 100;
@@ -329,6 +354,16 @@ function setFloor(f) {
 function setCam(c) {
   camMode = c;
   document.querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v===c));
+  render();
+}
+function rotate(deg) {
+  rotAngle = (rotAngle + deg + 360) % 360;
+  document.getElementById('ang-label').textContent = rotAngle + '°';
+  if (camMode !== 'topo') camMode = 'iso';
+  render();
+}
+function tilt(dir) {
+  tiltLevel = Math.max(0, Math.min(TILTS.length-1, tiltLevel + dir));
   render();
 }
 
