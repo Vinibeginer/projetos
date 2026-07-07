@@ -70,7 +70,7 @@ svg{max-width:100%;max-height:100%;}
         <div class="t1">OBRA MARIÁRA · MAQUETE</div>
         <div class="t2">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div>
       </div>
-      <span id="ver-badge" style="font-size:9px;color:#d98a6f;border:1px solid rgba(217,138,111,.4);border-radius:3px;padding:2px 6px;white-space:nowrap">v2.0</span>
+      <span id="ver-badge" style="font-size:9px;color:#d98a6f;border:1px solid rgba(217,138,111,.4);border-radius:3px;padding:2px 6px;white-space:nowrap">v2.1</span>
     </div>
   </div>
   <div class="stats">
@@ -124,36 +124,36 @@ const FLOORS = {
   terreo: {
     label:'Térreo · 89m²', ext:{w:8.70, d:10.95},
     rooms: [
-      // id, nome, área, x, z, w, d, exec%
-      ['garagem','Garagem',      18.00, 0.00, 0.00, 4.00, 4.50, 40],
-      ['sala',   'Sala',         29.60, 4.15, 0.00, 4.55, 6.50, 40],
-      ['lavabo', 'Lavabo',        2.16, 0.00, 4.65, 2.40, 0.90,  0],
-      ['circ',   'Circulação',    2.50, 2.40, 4.65, 1.60, 0.90,  0],
-      ['cozinha','Cozinha',      14.00, 0.00, 5.70, 4.00, 3.50, 35],
-      ['quarto', 'Quarto',       11.74, 4.15, 6.65, 4.55, 2.58, 35],
-      ['despen', 'Despensa',      1.76, 0.00, 9.20, 1.35, 1.30, 35],
-      ['sbanh',  'Suíte (banh.)', 2.88, 1.50, 9.20, 1.65, 1.75, 35],
+      // id, nome, área, x, z, w, d, exec% — coordenadas contínuas (paredes compartilhadas)
+      ['garagem','Garagem',      18.00, 0.000, 0.000, 4.075, 4.575, 40],
+      ['sala',   'Sala',         29.60, 4.075, 0.000, 4.625, 6.575, 40],
+      ['lavabo', 'Lavabo',        2.16, 0.000, 4.575, 2.475, 1.050,  0],
+      ['circ',   'Circulação',    2.50, 2.475, 4.575, 1.600, 1.050,  0],
+      ['cozinha','Cozinha',      14.00, 0.000, 5.625, 4.075, 3.650, 35],
+      ['quarto', 'Quarto',       11.74, 4.075, 6.575, 4.625, 2.700, 35],
+      ['despen', 'Despensa',      1.76, 0.000, 9.275, 1.500, 1.675, 35],
+      ['sbanh',  'Suíte (banh.)', 2.88, 1.500, 9.275, 1.725, 1.675, 35],
     ]
   },
   pav1: {
     label:'1º Pavimento · 65m² — A contratar', ext:{w:8.70, d:10.45},
     rooms: [
-      ['master','Quarto Master',   16.17, 0.00, 0.00, 4.00, 4.04, 0],
-      ['q1',    'Quarto 1',        17.40, 4.15, 0.00, 4.55, 3.82, 0],
-      ['q2',    'Quarto 2',        19.79, 0.00, 4.19, 4.00, 4.95, 0],
-      ['circ1', 'Circulação',       9.12, 4.15, 4.04, 4.55, 2.11, 0],
-      ['cl1',   'Closet 1',         4.00, 4.15, 6.30, 2.00, 2.00, 0],
-      ['cl2',   'Closet 2',         4.88, 6.30, 6.30, 2.40, 2.03, 0],
-      ['banh1', 'Banheiro',         3.65, 4.15, 8.50, 2.20, 1.66, 0],
-      ['sbanh1','Suíte (banh.)',    3.71, 0.00, 9.30, 4.00, 0.93, 0],
-      ['varan', 'Varanda coberta',  9.14, 4.15, 9.40, 4.55, 1.05, 0],
+      ['master','Quarto Master',   16.17, 0.000, 0.000, 4.075, 4.100, 0],
+      ['q1',    'Quarto 1',        17.40, 4.075, 0.000, 4.625, 4.100, 0],
+      ['q2',    'Quarto 2',        19.79, 0.000, 4.100, 4.075, 4.150, 0],
+      ['circ1', 'Circulação',       9.12, 4.075, 4.100, 2.325, 4.150, 0],
+      ['cl1',   'Closet 1',         4.00, 6.400, 4.100, 2.300, 2.075, 0],
+      ['cl2',   'Closet 2',         4.88, 6.400, 6.175, 2.300, 2.075, 0],
+      ['sbanh1','Suíte (banh.)',    3.71, 0.000, 8.250, 4.075, 1.100, 0],
+      ['banh1', 'Banheiro',         3.65, 4.075, 8.250, 4.625, 1.100, 0],
+      ['varan', 'Varanda coberta',  9.14, 0.000, 9.350, 8.700, 1.100, 0],
     ]
   },
   pav2: {
     label:'2º Pavimento · 46m² — A contratar', ext:{w:8.70, d:7.79},
     rooms: [
-      ['area2','Área social',     28.85, 0.00, 0.00, 8.70, 3.32, 0],
-      ['var2', 'Varanda descob.', 37.85, 0.00, 3.47, 8.70, 4.32, 0],
+      ['area2','Área social',     28.85, 0.000, 0.000, 8.700, 3.470, 0],
+      ['var2', 'Varanda descob.', 37.85, 0.000, 3.470, 8.700, 4.320, 0],
     ]
   }
 };
@@ -319,6 +319,17 @@ function render() {
         [yOff, yOff+WALL_H].forEach(py => allPts.push(proj(px,py,pz)));
       });
     });
+
+    // Contorno externo forte da casa (footprint)
+    if (camMode !== 'topo') {
+      const fw = fl.ext.w, fd = fl.ext.d;
+      const c1=proj(0,yOff,0), c2=proj(fw,yOff,0), c3=proj(fw,yOff,fd), c4=proj(0,yOff,fd);
+      content += `<polygon points="${poly([c1,c2,c3,c4])}" fill="none" stroke="rgba(246,242,236,0.5)" stroke-width="2"/>`;
+    } else {
+      const fw = fl.ext.w, fd = fl.ext.d;
+      const c1=proj(0,0,0), c2=proj(fw,0,0), c3=proj(fw,0,fd), c4=proj(0,0,fd);
+      content += `<polygon points="${poly([c1,c2,c3,c4])}" fill="none" stroke="rgba(246,242,236,0.6)" stroke-width="2.5"/>`;
+    }
 
     // Labels por cima de tudo (só no modo pavimento único)
     if (floorMode !== 'empilhado') {
