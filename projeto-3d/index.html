@@ -6,653 +6,448 @@
 <title>Obra Mariára — Maquete 3D</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-  :root{
-    --ink:#2b2622; --paper:#f6f2ec; --coral:#d98a6f; --coral-dk:#b5674e;
-    --stone:#8d8579; --line:#d8cfc2; --green:#22c97e; --amber:#f59e0b;
-    --blue:#3b82f6; --bg:#1a1714;
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html,body{height:100%;background:var(--bg);font-family:'Courier New',monospace;overflow:hidden;}
-  #canvas-wrap{position:fixed;inset:0;}
-  canvas{display:block;touch-action:none;}
-
-  /* HUD topo */
-  #hud-top{
-    position:fixed;top:0;left:0;right:0;padding:10px 14px;
-    background:linear-gradient(180deg,rgba(20,17,15,.92),transparent);
-    color:var(--paper);pointer-events:none;
-    display:flex;justify-content:space-between;align-items:flex-start;
-  }
-  .title{font-size:15px;font-weight:bold;color:var(--coral);letter-spacing:.05em;}
-  .sub{font-size:11px;opacity:.7;margin-top:2px;}
-  #stat-box{
-    text-align:right;background:rgba(0,0,0,.5);border:1px solid rgba(255,255,255,.12);
-    border-radius:8px;padding:8px 12px;pointer-events:none;min-width:160px;
-  }
-  .stat-line{font-size:11px;opacity:.8;margin-bottom:3px;}
-  .stat-val{color:var(--coral);font-weight:bold;}
-
-  /* Painel lateral */
-  #panel{
-    position:fixed;right:0;top:0;bottom:0;width:240px;
-    background:rgba(20,17,15,.94);border-left:1px solid rgba(255,255,255,.08);
-    display:flex;flex-direction:column;overflow:hidden;
-  }
-  #panel-header{
-    padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.08);
-    color:var(--coral);font-size:12px;font-weight:bold;letter-spacing:.05em;
-  }
-  #floor-tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.08);}
-  .ftab{
-    flex:1;padding:8px 4px;font-size:10px;font-family:'Courier New',monospace;
-    background:transparent;border:none;color:rgba(255,255,255,.5);cursor:pointer;
-    letter-spacing:.03em;transition:all .2s;
-  }
-  .ftab.active,.ftab:hover{background:rgba(217,138,111,.15);color:var(--coral);}
-  #panel-body{flex:1;overflow-y:auto;padding:10px;}
-  #panel-body::-webkit-scrollbar{width:4px;}
-  #panel-body::-webkit-scrollbar-thumb{background:rgba(255,255,255,.15);border-radius:2px;}
-
-  .room-card{
-    margin-bottom:8px;padding:8px 10px;
-    background:rgba(255,255,255,.04);border-radius:6px;
-    border-left:3px solid var(--stone);
-  }
-  .room-card.status-concluido{border-left-color:var(--green);}
-  .room-card.status-andamento{border-left-color:var(--amber);}
-  .room-card.status-pendente{border-left-color:var(--stone);}
-  .room-name{font-size:11px;font-weight:bold;color:var(--paper);margin-bottom:4px;}
-  .room-area{font-size:10px;color:var(--stone);margin-bottom:5px;}
-  .room-bar-bg{height:4px;background:rgba(255,255,255,.1);border-radius:2px;}
-  .room-bar-fill{height:100%;border-radius:2px;transition:width .5s;}
-  .room-pct{text-align:right;font-size:10px;margin-top:2px;color:var(--stone);}
-
-  .stage-card{
-    margin-bottom:6px;padding:8px 10px;
-    background:rgba(255,255,255,.03);border-radius:6px;
-    border-left:3px solid var(--stone);
-  }
-  .stage-card.concluido{border-left-color:var(--green);}
-  .stage-card.andamento{border-left-color:var(--amber);}
-  .stage-card.parcial{border-left-color:var(--blue);}
-  .stage-card.contratar{border-left-color:var(--coral);}
-  .stage-name{font-size:11px;font-weight:bold;color:var(--paper);margin-bottom:2px;}
-  .stage-date{font-size:9px;color:var(--stone);margin-bottom:4px;}
-  .stage-med{font-size:9px;color:var(--coral);}
-  .stage-bar-bg{height:3px;background:rgba(255,255,255,.1);border-radius:2px;margin-top:4px;}
-  .stage-bar-fill{height:100%;border-radius:2px;}
-
-  /* Controles */
-  #controls{
-    position:fixed;bottom:0;left:0;right:240px;
-    padding:10px 14px;background:linear-gradient(0deg,rgba(20,17,15,.88),transparent);
-    display:flex;gap:8px;align-items:center;flex-wrap:wrap;
-  }
-  .btn{
-    padding:6px 12px;font-family:'Courier New',monospace;font-size:11px;
-    background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);
-    color:var(--paper);border-radius:5px;cursor:pointer;transition:all .2s;letter-spacing:.03em;
-  }
-  .btn:hover,.btn.active{background:rgba(217,138,111,.25);border-color:var(--coral);color:var(--coral);}
-  #view-label{font-size:10px;color:var(--stone);margin-left:8px;}
-  
-  /* Legenda */
-  #legend{
-    position:fixed;bottom:50px;left:14px;
-    background:rgba(20,17,15,.8);border:1px solid rgba(255,255,255,.08);
-    border-radius:6px;padding:8px 10px;font-size:10px;color:var(--paper);
-  }
-  .leg-item{display:flex;align-items:center;gap:6px;margin-bottom:4px;}
-  .leg-dot{width:10px;height:10px;border-radius:2px;flex-shrink:0;}
-
-  @media(max-width:600px){
-    #panel{width:100%;top:auto;height:50%;border-left:none;border-top:1px solid rgba(255,255,255,.08);}
-    #controls{right:0;bottom:50%;}
-  }
+:root{--coral:#d98a6f;--paper:#f6f2ec;--stone:#8d8579;--green:#22c97e;--amber:#f59e0b;--blue:#3b82f6;--bg:#1a1714;}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;background:var(--bg);font-family:'Courier New',monospace;overflow:hidden;}
+canvas{display:block;touch-action:none;}
+#wrap{position:fixed;inset:0;}
+#hud{position:fixed;top:0;left:0;right:260px;padding:10px 14px;
+  background:linear-gradient(180deg,rgba(20,17,15,.9),transparent);
+  color:var(--paper);pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start;}
+.title{font-size:14px;font-weight:bold;color:var(--coral);}
+.sub{font-size:10px;opacity:.65;margin-top:2px;}
+#stats{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 11px;min-width:150px;text-align:right;}
+.sl{font-size:10px;opacity:.75;margin-bottom:2px;}.sv{color:var(--coral);font-weight:bold;}
+/* painel */
+#panel{position:fixed;right:0;top:0;bottom:0;width:260px;background:rgba(18,15,13,.96);
+  border-left:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;}
+#ph{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.07);color:var(--coral);font-size:11px;font-weight:bold;letter-spacing:.06em;}
+#tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07);}
+.tab{flex:1;padding:7px 3px;font-size:10px;font-family:inherit;background:transparent;border:none;
+  color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.03em;transition:.15s;}
+.tab.on,.tab:hover{background:rgba(217,138,111,.12);color:var(--coral);}
+#pb{flex:1;overflow-y:auto;padding:8px;}
+#pb::-webkit-scrollbar{width:3px;}
+#pb::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px;}
+.card{margin-bottom:7px;padding:7px 9px;background:rgba(255,255,255,.03);border-radius:5px;border-left:3px solid var(--stone);}
+.cn{font-size:11px;font-weight:bold;color:var(--paper);margin-bottom:2px;}
+.ca{font-size:9px;color:var(--stone);margin-bottom:4px;}
+.bg{height:4px;background:rgba(255,255,255,.08);border-radius:2px;}
+.fill{height:100%;border-radius:2px;transition:width .6s;}
+.pp{text-align:right;font-size:9px;color:var(--stone);margin-top:1px;}
+/* controles */
+#ctrl{position:fixed;bottom:0;left:0;right:260px;padding:8px 12px;
+  background:linear-gradient(0deg,rgba(18,15,13,.9),transparent);
+  display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.btn{padding:5px 11px;font-family:inherit;font-size:10px;letter-spacing:.04em;
+  background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--paper);
+  border-radius:4px;cursor:pointer;transition:.15s;}
+.btn:hover,.btn.on{background:rgba(217,138,111,.2);border-color:var(--coral);color:var(--coral);}
+.hint{font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;}
+/* legenda */
+#leg{position:fixed;bottom:46px;left:12px;background:rgba(18,15,13,.82);
+  border:1px solid rgba(255,255,255,.07);border-radius:5px;padding:7px 9px;}
+.li{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:9px;color:rgba(255,255,255,.6);}
+.ld{width:9px;height:9px;border-radius:2px;}
+@media(max-width:600px){
+  #panel{width:100%;top:auto;height:45%;border-left:none;border-top:1px solid rgba(255,255,255,.07);}
+  #hud,#ctrl,#leg{right:0;}
+}
 </style>
 </head>
 <body>
-<div id="canvas-wrap"></div>
-
-<!-- HUD topo -->
-<div id="hud-top">
-  <div>
-    <div class="title">OBRA MARIÁRA · 3D</div>
-    <div class="sub">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div>
-  </div>
-  <div id="stat-box">
-    <div class="stat-line">PLS acumulado: <span class="stat-val" id="s-pls">25,35%</span></div>
-    <div class="stat-line">Liberado: <span class="stat-val" id="s-lib">R$ 30.623</span></div>
-    <div class="stat-line">2ª med. est.: <span class="stat-val" id="s-est">~R$ 63.718</span></div>
-    <div class="stat-line">Saldo CAIXA: <span class="stat-val" id="s-saldo">R$ 342.265</span></div>
+<div id="wrap"></div>
+<div id="hud">
+  <div><div class="title">OBRA MARIÁRA · 3D</div><div class="sub">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div></div>
+  <div id="stats">
+    <div class="sl">PLS acum.: <span class="sv" id="s1">25,35%</span></div>
+    <div class="sl">Liberado: <span class="sv" id="s2">R$ 30.623</span></div>
+    <div class="sl">2ª med. est.: <span class="sv" id="s3">~R$ 63.718</span></div>
+    <div class="sl">Saldo: <span class="sv" id="s4">R$ 342.265</span></div>
   </div>
 </div>
-
-<!-- Controles -->
-<div id="controls">
-  <button class="btn active" id="btn-all" onclick="setView('all')">Todos</button>
-  <button class="btn" id="btn-terreo" onclick="setView('terreo')">Térreo</button>
-  <button class="btn" id="btn-pav1" onclick="setView('pav1')">1º Pav.</button>
-  <button class="btn" id="btn-pav2" onclick="setView('pav2')">2º Pav.</button>
-  <button class="btn" id="btn-iso" onclick="setCam('iso')">Iso</button>
-  <button class="btn" id="btn-top" onclick="setCam('top')">Topo</button>
-  <button class="btn" id="btn-front" onclick="setCam('front')">Frente</button>
-  <span id="view-label">Arraste para girar · Scroll para zoom</span>
+<div id="ctrl">
+  <button class="btn on" onclick="setV('all')">Todos</button>
+  <button class="btn" onclick="setV('terreo')">Térreo</button>
+  <button class="btn" onclick="setV('pav1')">1º Pav.</button>
+  <button class="btn" onclick="setV('pav2')">2º Pav.</button>
+  <button class="btn" onclick="setC('iso')">Iso</button>
+  <button class="btn" onclick="setC('top')">Topo</button>
+  <button class="btn" onclick="setC('front')">Frente</button>
+  <span class="hint">Arraste · Scroll zoom</span>
 </div>
-
-<!-- Legenda -->
-<div id="legend">
-  <div class="leg-item"><div class="leg-dot" style="background:#22c97e"></div>Concluído</div>
-  <div class="leg-item"><div class="leg-dot" style="background:#f59e0b"></div>Em andamento</div>
-  <div class="leg-item"><div class="leg-dot" style="background:#d98a6f;opacity:.4"></div>Pendente</div>
-  <div class="leg-item"><div class="leg-dot" style="background:#3b82f6;opacity:.3;border:1px dashed #3b82f6"></div>A construir</div>
+<div id="leg">
+  <div class="li"><div class="ld" style="background:#22c97e"></div>Concluído</div>
+  <div class="li"><div class="ld" style="background:#f59e0b"></div>Em andamento</div>
+  <div class="li"><div class="ld" style="background:#3b82f6"></div>Parcial</div>
+  <div class="li"><div class="ld" style="background:#6b7280;opacity:.5"></div>Pendente</div>
+  <div class="li"><div class="ld" style="background:#d98a6f;opacity:.35;border:1px dashed #d98a6f"></div>A construir</div>
 </div>
-
-<!-- Painel lateral -->
 <div id="panel">
-  <div id="panel-header">AVANÇO DA OBRA</div>
-  <div id="floor-tabs">
-    <button class="ftab active" onclick="showTab('rooms')">Cômodos</button>
-    <button class="ftab" onclick="showTab('stages')">Etapas</button>
-    <button class="ftab" onclick="showTab('cronograma')">Datas</button>
+  <div id="ph">AVANÇO DA OBRA</div>
+  <div id="tabs">
+    <button class="tab on" onclick="showTab('comodos')">Cômodos</button>
+    <button class="tab" onclick="showTab('etapas')">Etapas</button>
+    <button class="tab" onclick="showTab('medicoes')">Medições</button>
   </div>
-  <div id="panel-body"></div>
+  <div id="pb"></div>
 </div>
-
 <script>
-// ── DADOS DA OBRA ──────────────────────────────────────────────
-// Baseado na planta aprovada (Processo 56954 · Planta 934)
-// Cotas extraídas do projeto: largura total 8.70m, profundidade 8.60m (térreo)
+// ══ DADOS DA PLANTA (cotas reais do projeto aprovado) ══════════════
+// Térreo: 8.70m × 10.95m
+// Cotas extraídas da planta (Processo 56954 · Planta 934)
+// Divisória vertical em x=4.15 (4.00m útil + 0.15 parede)
+// Coordenadas: x=leste, z=norte (z=0 = frente/sul/portão)
 
-const OBRA = {
-  pls: 25.35,
-  liberado: 30623,
-  estimado2: 63718,
-  saldo: 342265,
-};
-
-// Pavimentos — dimensões reais em metros
-const FLOORS = {
-  terreo: { label:'Térreo',        w:8.70, d:8.60, h:2.80, y:0    },
-  pav1:   { label:'1º Pavimento',  w:8.70, d:8.60, h:2.80, y:2.95 },
-  pav2:   { label:'2º Pavimento',  w:8.70, d:5.70, h:2.80, y:5.90 },
-};
-
-// Cômodos do térreo — coordenadas reais (x,z) a partir do canto SW, em metros
-// Origem (0,0) = canto inferior esquerdo da planta
-// X = leste, Z = norte (profundidade)
-// Parede divisória vertical em x=4.15 (4.00m + 0.15 parede)
-// Parede divisória horizontal em z=5.85 (garagem/cozinha) e z=7.45 (suite/despensa)
-const ROOMS = {
-  terreo: [
-    // Esquerda (x: 0.15 a 4.00)
-    { id:'garagem',   name:'Garagem',         area:18.00, x:0.15, z:0.15, w:3.85, d:5.55, exec:40, cor:0x607d8b },
-    { id:'cozinha',   name:'Cozinha',          area:14.00, x:0.15, z:5.85, w:3.85, d:2.60, exec:35, cor:0xf9a825 },
-    { id:'despensa',  name:'Despensa',         area:1.76,  x:0.15, z:8.60-1.90-0.15, w:1.35, d:1.75, exec:35, cor:0xff8f00 },
-    { id:'suite_b',   name:'Suíte (banh.)',    area:2.88,  x:1.65, z:8.60-1.90-0.15, w:2.35, d:1.75, exec:35, cor:0xad1457 },
-    // Direita (x: 4.30 a 8.55)
-    { id:'sala',      name:'Sala',             area:29.60, x:4.30, z:0.15, w:4.25, d:6.10, exec:40, cor:0x2e7d32 },
-    { id:'quarto',    name:'Quarto',           area:11.74, x:4.30, z:6.40, w:4.25, d:2.05, exec:35, cor:0x1565c0 },
-    // Lavabo (entre cozinha e sala)
-    { id:'lavabo',    name:'Lavabo',           area:2.16,  x:0.15, z:8.45-0.65, w:3.85, d:0.65, exec:0,  cor:0x6a1b9a },
-  ],
-  pav1: [
-    { id:'master',    name:'Quarto Master',    area:16.17, x:0.15, z:0.15, w:4.10, d:4.00, exec:0, cor:0x4a148c },
-    { id:'quarto1',   name:'Quarto 1',         area:17.40, x:4.45, z:0.15, w:4.10, d:4.20, exec:0, cor:0x1a237e },
-    { id:'quarto2',   name:'Quarto 2',         area:19.79, x:0.15, z:4.30, w:4.10, d:4.15, exec:0, cor:0x006064 },
-    { id:'circ',      name:'Circulação',       area:9.12,  x:4.45, z:4.30, w:2.20, d:4.15, exec:0, cor:0x37474f },
-    { id:'closet1',   name:'Closet 1',         area:4.00,  x:6.80, z:4.30, w:1.75, d:2.00, exec:0, cor:0x4e342e },
-    { id:'closet2',   name:'Closet 2',         area:4.88,  x:6.80, z:6.45, w:1.75, d:2.00, exec:0, cor:0x4e342e },
-    { id:'banh',      name:'Banheiro',         area:3.65,  x:4.45, z:8.60-0.15-1.65, w:2.20, d:1.65, exec:0, cor:0x880e4f },
-    { id:'suite_m',   name:'Suíte (banh.)',    area:3.71,  x:0.15, z:8.60-0.15-1.65, w:4.10, d:1.65, exec:0, cor:0xad1457 },
-    { id:'varanda',   name:'Varanda coberta',  area:9.14,  x:0.15, z:8.60-0.15-1.65-2.20, w:8.55, d:2.20, exec:0, cor:0x33691e },
-  ],
-  pav2: [
-    { id:'sala2',     name:'Área social',      area:28.85, x:0.15, z:0.15, w:8.40, d:3.60, exec:0, cor:0x37474f },
-    { id:'varanda2',  name:'Varanda descoberta',area:37.85,x:0.15, z:3.90, w:8.40, d:5.00, exec:0, cor:0x1b5e20 },
-  ],
-};
-
-// Etapas do cronograma
-const STAGES = [
-  {id:'fundacao',    label:'Fundação',                 inicio:'04/05/2026', fim:'30/05/2026', status:'concluido', medicao:'1ª ✓', pct:100},
-  {id:'impermeab',   label:'Impermeabilização',        inicio:'01/06/2026', fim:'07/09/2026', status:'andamento', medicao:'2ª',   pct:60},
-  {id:'estrutura',   label:'Estrutura (pilares/vigas)',inicio:'22/06/2026', fim:'03/08/2026', status:'andamento', medicao:'2ª',   pct:35},
-  {id:'alvenaria',   label:'Alvenaria térreo',         inicio:'22/06/2026', fim:'03/08/2026', status:'andamento', medicao:'2ª',   pct:40},
-  {id:'laje',        label:'Laje térreo',              inicio:'03/08/2026', fim:'17/08/2026', status:'pendente',  medicao:'2ª',   pct:0},
-  {id:'esgoto',      label:'Esgoto + hidráulica',      inicio:'17/08/2026', fim:'31/08/2026', status:'parcial',   medicao:'2ª',   pct:30},
-  {id:'eletrica',    label:'Elétrica (infra)',          inicio:'31/08/2026', fim:'07/09/2026', status:'parcial',   medicao:'2ª',   pct:30},
-  {id:'cobertura',   label:'Cobertura + esquadrias',   inicio:'07/09/2026', fim:'26/10/2026', status:'pendente',  medicao:'3ª',   pct:0},
-  {id:'revestimento',label:'Chapisco + reboco',        inicio:'26/10/2026', fim:'12/02/2027', status:'pendente',  medicao:'4ª',   pct:0},
-  {id:'piso',        label:'Contrapiso + piso',        inicio:'12/02/2027', fim:'22/03/2027', status:'pendente',  medicao:'4ª',   pct:0},
-  {id:'acabamento',  label:'Acabamentos + louças',     inicio:'22/03/2027', fim:'30/03/2027', status:'pendente',  medicao:'4ª',   pct:0},
-  {id:'pav12',       label:'1º e 2º pavimento',        inicio:'A definir',  fim:'A definir',  status:'contratar', medicao:'5ª–7ª',pct:0},
+const ROOMS_TERREO = [
+  // id, nome, área, x, z, w, d, exec%, cor hex
+  ['garagem', 'Garagem',          18.00, 0.00, 0.00, 4.00, 4.50, 40, 0x546e7a],
+  ['sala',    'Sala',             29.60, 4.15, 0.00, 4.55, 6.50, 40, 0x2e7d32],
+  ['lavabo',  'Lavabo',            2.16, 0.00, 4.65, 2.40, 0.90,  0, 0x6a1b9a],
+  ['circ',    'Circulação',        2.50, 2.40, 4.65, 1.60, 0.90,  0, 0x37474f],
+  ['cozinha', 'Cozinha',          14.00, 0.00, 5.70, 4.00, 3.50, 35, 0xe65100],
+  ['quarto',  'Quarto',           11.74, 4.15, 6.65, 4.55, 2.58, 35, 0x1565c0],
+  ['despen',  'Despensa',          1.76, 0.00, 9.20, 1.35, 1.30, 35, 0x4e342e],
+  ['sbanh',   'Suíte (banh.)',     2.88, 1.50, 9.20, 1.65, 1.75, 35, 0x880e4f],
 ];
 
-const STATUS_COLOR = {
-  concluido:'#22c97e', andamento:'#f59e0b', parcial:'#3b82f6',
-  pendente:'#6b7280', contratar:'#d98a6f',
-};
-const STATUS_LABEL = {
-  concluido:'✅ Concluído', andamento:'🔨 Em andamento', parcial:'⚡ Parcial',
-  pendente:'⏳ Pendente', contratar:'📋 A contratar',
+const ROOMS_PAV1 = [
+  ['master',  'Quarto Master',    16.17, 0.00, 0.00, 4.00, 4.04,  0, 0x4a148c],
+  ['q1',      'Quarto 1',         17.40, 4.15, 0.00, 4.55, 3.82,  0, 0x1a237e],
+  ['q2',      'Quarto 2',         19.79, 0.00, 4.19, 4.00, 4.95,  0, 0x006064],
+  ['circ1',   'Circulação',        9.12, 4.15, 4.00, 4.55, 2.00,  0, 0x37474f],
+  ['cl1',     'Closet 1',          4.00, 4.15, 6.15, 2.00, 2.00,  0, 0x4e342e],
+  ['cl2',     'Closet 2',          4.88, 6.30, 6.15, 2.40, 2.03,  0, 0x4e342e],
+  ['banh1',   'Banheiro',          3.65, 4.15, 8.30, 2.20, 1.66,  0, 0x880e4f],
+  ['sbanh1',  'Suíte (banh.)',     3.71, 0.00, 8.30, 4.00, 0.93,  0, 0xad1457],
+  ['varanda', 'Varanda coberta',   9.14, 0.00, 9.40, 8.70, 1.05,  0, 0x33691e],
+];
+
+const ROOMS_PAV2 = [
+  ['area2',   'Área social',      28.85, 0.00, 0.00, 8.70, 3.32,  0, 0x37474f],
+  ['var2',    'Varanda desc.',    37.85, 0.00, 3.47, 8.70, 4.35,  0, 0x1b5e20],
+];
+
+const FLOORS_DEF = {
+  terreo: {label:'Térreo',       w:8.70, d:10.95, h:2.80, y:0,    rooms:ROOMS_TERREO},
+  pav1:   {label:'1º Pavimento', w:8.70, d:10.45, h:2.80, y:2.95, rooms:ROOMS_PAV1},
+  pav2:   {label:'2º Pavimento', w:8.70, d:7.79,  h:2.80, y:5.90, rooms:ROOMS_PAV2},
 };
 
-// ── THREE.JS SETUP ─────────────────────────────────────────────
-const scene    = new THREE.Scene();
+const STAGES = [
+  {label:'Fundação',             inicio:'04/05/2026',fim:'30/05/2026',status:'concluido',medicao:'1ª ✓',pct:100},
+  {label:'Impermeabilização',    inicio:'01/06/2026',fim:'07/09/2026',status:'andamento',medicao:'2ª',  pct:60},
+  {label:'Estrutura pilares',    inicio:'22/06/2026',fim:'03/08/2026',status:'andamento',medicao:'2ª',  pct:35},
+  {label:'Alvenaria térreo',     inicio:'22/06/2026',fim:'03/08/2026',status:'andamento',medicao:'2ª',  pct:40},
+  {label:'Laje térreo',          inicio:'03/08/2026',fim:'17/08/2026',status:'pendente', medicao:'2ª',  pct:0},
+  {label:'Esgoto + hidráulica',  inicio:'17/08/2026',fim:'31/08/2026',status:'parcial',  medicao:'2ª',  pct:30},
+  {label:'Elétrica (infra)',     inicio:'31/08/2026',fim:'07/09/2026',status:'parcial',  medicao:'2ª',  pct:30},
+  {label:'Cobertura+esquadrias', inicio:'07/09/2026',fim:'26/10/2026',status:'pendente', medicao:'3ª',  pct:0},
+  {label:'Chapisco+reboco',      inicio:'26/10/2026',fim:'12/02/2027',status:'pendente', medicao:'4ª',  pct:0},
+  {label:'Contrapiso+piso',      inicio:'12/02/2027',fim:'22/03/2027',status:'pendente', medicao:'4ª',  pct:0},
+  {label:'Acabamentos+louças',   inicio:'22/03/2027',fim:'30/03/2027',status:'pendente', medicao:'4ª',  pct:0},
+  {label:'1º e 2º pavimento',    inicio:'A definir', fim:'A definir', status:'contratar',medicao:'5–7ª',pct:0},
+];
+
+const MEDS = [
+  {n:'1ª ✓',data:'30/05/2026',pls:'8,23%', val:'R$ 30.623',  status:'concluido'},
+  {n:'2ª ~', data:'03/07/2026',pls:'17,12%',val:'~R$ 63.718', status:'andamento'},
+  {n:'3ª',   data:'26/10/2026',pls:'7,10%', val:'~R$ 26.475', status:'pendente'},
+  {n:'4ª',   data:'30/03/2027',pls:'25,02%',val:'~R$ 93.297', status:'pendente'},
+  {n:'5–7ª', data:'A definir', pls:'39,00%',val:'~R$145.387', status:'contratar'},
+];
+
+const SC = {concluido:'#22c97e',andamento:'#f59e0b',parcial:'#3b82f6',pendente:'#6b7280',contratar:'#d98a6f'};
+const SL = {concluido:'✅ Concluído',andamento:'🔨 Em andamento',parcial:'⚡ Parcial',pendente:'⏳ Pendente',contratar:'📋 A contratar'};
+
+// ══ THREE.JS ══════════════════════════════════════════════════════
+const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1714);
-scene.fog = new THREE.Fog(0x1a1714, 40, 80);
+scene.fog = new THREE.FogExp2(0x1a1714, 0.018);
 
-const camera = new THREE.PerspectiveCamera(40, window.innerWidth/window.innerHeight, 0.1, 200);
+const W = window.innerWidth, H = window.innerHeight;
+const camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 200);
 const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.setSize(W, H);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+document.getElementById('wrap').appendChild(renderer.domElement);
 
 // Luzes
-scene.add(new THREE.AmbientLight(0xfff5e0, 0.5));
-const sun = new THREE.DirectionalLight(0xfff5e0, 1.0);
-sun.position.set(15, 25, 10);
+scene.add(new THREE.AmbientLight(0xfff5e0, 0.45));
+const sun = new THREE.DirectionalLight(0xfff8e7, 1.1);
+sun.position.set(20, 30, 15);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
-sun.shadow.camera.near = 1;
-sun.shadow.camera.far = 60;
-sun.shadow.camera.left = sun.shadow.camera.bottom = -20;
-sun.shadow.camera.right = sun.shadow.camera.top = 20;
+sun.shadow.mapSize.set(2048,2048);
+['left','right','top','bottom'].forEach((s,i)=>sun.shadow.camera[s]=[-18,18,18,-18][i]);
+sun.shadow.camera.far = 80;
 scene.add(sun);
-const fill = new THREE.DirectionalLight(0x88aacc, 0.35);
-fill.position.set(-10, 8, -10);
-scene.add(fill);
+scene.add(Object.assign(new THREE.DirectionalLight(0x8899cc,0.3),{position:{set:()=>{}}}).position.set(-8,6,-8) && new THREE.DirectionalLight(0x8899cc,0.3));
+const fill = new THREE.DirectionalLight(0x8899cc,0.3); fill.position.set(-8,6,-8); scene.add(fill);
 
-// Terreno
-const ground = new THREE.Mesh(
-  new THREE.PlaneGeometry(80, 80),
-  new THREE.MeshStandardMaterial({color:0x1f1c1a, roughness:1})
-);
-ground.rotation.x = -Math.PI/2;
-ground.receiveShadow = true;
-scene.add(ground);
+// Chão
+const gnd = new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshStandardMaterial({color:0x1a1714,roughness:1}));
+gnd.rotation.x=-Math.PI/2; gnd.receiveShadow=true; scene.add(gnd);
 
-// Lote (9m x 20m)
-const lot = new THREE.Mesh(
-  new THREE.PlaneGeometry(9, 20),
-  new THREE.MeshStandardMaterial({color:0x2d3a1e, roughness:1})
-);
-lot.rotation.x = -Math.PI/2;
-lot.position.set(4.35, 0.005, 10);
-lot.receiveShadow = true;
-scene.add(lot);
+// Lote 9×20m — posicionado com canto SW em (0,0,0)
+const lot = new THREE.Mesh(new THREE.PlaneGeometry(9,20),new THREE.MeshStandardMaterial({color:0x243318,roughness:1}));
+lot.rotation.x=-Math.PI/2; lot.position.set(4.5,0.003,10); lot.receiveShadow=true; scene.add(lot);
+const lotE = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(9,0.01,20)),new THREE.LineBasicMaterial({color:0xd98a6f,opacity:.4,transparent:true}));
+lotE.position.set(4.5,0.003,10); scene.add(lotE);
 
-// Borda do lote
-const lotEdges = new THREE.LineSegments(
-  new THREE.EdgesGeometry(new THREE.BoxGeometry(9, 0.01, 20)),
-  new THREE.LineBasicMaterial({color:0xd98a6f, opacity:0.5, transparent:true})
-);
-lotEdges.position.set(4.35, 0.005, 10);
-scene.add(lotEdges);
+// ══ CÂMERA ════════════════════════════════════════════════════════
+let theta=0.65, phi=0.58, radius=20;
+const target = new THREE.Vector3(4.35, 2.5, 5.5);
+let drag=false, mx=0, my=0;
 
-// ── CÂMERA E CONTROLES ─────────────────────────────────────────
-let camTheta = Math.PI/4, camPhi = Math.PI/4, camRadius = 22;
-let camTarget = new THREE.Vector3(4.35, 2, 4.3);
-let isDragging = false, lastMX = 0, lastMY = 0;
-
-function updateCam(){
-  const x = camTarget.x + camRadius * Math.sin(camPhi) * Math.sin(camTheta);
-  const y = camTarget.y + camRadius * Math.cos(camPhi);
-  const z = camTarget.z + camRadius * Math.sin(camPhi) * Math.cos(camTheta);
-  camera.position.set(x, y, z);
-  camera.lookAt(camTarget);
+function updCam(){
+  camera.position.set(
+    target.x + radius*Math.sin(phi)*Math.sin(theta),
+    target.y + radius*Math.cos(phi),
+    target.z + radius*Math.sin(phi)*Math.cos(theta)
+  );
+  camera.lookAt(target);
 }
-updateCam();
+updCam();
 
-renderer.domElement.addEventListener('mousedown', e=>{isDragging=true; lastMX=e.clientX; lastMY=e.clientY;});
-window.addEventListener('mouseup', ()=>isDragging=false);
-window.addEventListener('mousemove', e=>{
-  if(!isDragging) return;
-  const dx = e.clientX - lastMX, dy = e.clientY - lastMY;
-  camTheta -= dx * 0.008;
-  camPhi = Math.max(0.08, Math.min(Math.PI/2-0.02, camPhi + dy*0.006));
-  lastMX = e.clientX; lastMY = e.clientY;
-  updateCam();
+const el = renderer.domElement;
+el.addEventListener('mousedown',e=>{drag=true;mx=e.clientX;my=e.clientY;});
+window.addEventListener('mouseup',()=>drag=false);
+window.addEventListener('mousemove',e=>{
+  if(!drag)return;
+  theta-=(e.clientX-mx)*0.007; phi=Math.max(0.06,Math.min(1.52,phi+(e.clientY-my)*0.006));
+  mx=e.clientX;my=e.clientY;updCam();
 });
-renderer.domElement.addEventListener('wheel', e=>{
-  camRadius = Math.max(4, Math.min(40, camRadius + e.deltaY * 0.02));
-  updateCam(); e.preventDefault();
-}, {passive:false});
+el.addEventListener('wheel',e=>{radius=Math.max(3,Math.min(45,radius+e.deltaY*.018));updCam();e.preventDefault();},{passive:false});
 
-// Touch
-let t0x=0,t0y=0,tDist0=0;
-renderer.domElement.addEventListener('touchstart', e=>{
-  if(e.touches.length===1){isDragging=true; t0x=e.touches[0].clientX; t0y=e.touches[0].clientY;}
-  if(e.touches.length===2){const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY; tDist0=Math.hypot(dx,dy);}
+let t0x=0,t0y=0,td0=0;
+el.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;}if(e.touches.length===2){const d=e.touches;td0=Math.hypot(d[0].clientX-d[1].clientX,d[0].clientY-d[1].clientY);}},{passive:true});
+window.addEventListener('touchend',()=>drag=false);
+window.addEventListener('touchmove',e=>{
+  if(e.touches.length===1&&drag){theta-=(e.touches[0].clientX-t0x)*0.007;phi=Math.max(0.06,Math.min(1.52,phi+(e.touches[0].clientY-t0y)*0.006));t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;updCam();}
+  if(e.touches.length===2){const d=e.touches;const dist=Math.hypot(d[0].clientX-d[1].clientX,d[0].clientY-d[1].clientY);radius=Math.max(3,Math.min(45,radius*(td0/dist)));td0=dist;updCam();}
 },{passive:true});
-window.addEventListener('touchend', ()=>isDragging=false);
-window.addEventListener('touchmove', e=>{
-  if(e.touches.length===1 && isDragging){
-    const dx=e.touches[0].clientX-t0x, dy=e.touches[0].clientY-t0y;
-    camTheta-=dx*0.008; camPhi=Math.max(0.08,Math.min(Math.PI/2-0.02,camPhi+dy*0.006));
-    t0x=e.touches[0].clientX; t0y=e.touches[0].clientY; updateCam();
-  }
-  if(e.touches.length===2){
-    const dx=e.touches[0].clientX-e.touches[1].clientX,dy=e.touches[0].clientY-e.touches[1].clientY;
-    const dist=Math.hypot(dx,dy); camRadius=Math.max(4,Math.min(40,camRadius*(tDist0/dist))); tDist0=dist; updateCam();
-  }
-},{passive:true});
+window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
 
-window.addEventListener('resize', ()=>{
-  camera.aspect = window.innerWidth/window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, window.innerHeight);
-});
-
-function setCam(mode){
-  document.querySelectorAll('#controls .btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('btn-'+mode)?.classList.add('active');
-  if(mode==='iso'){ camTheta=Math.PI/4; camPhi=Math.PI/4; camRadius=22; camTarget.set(4.35,2,4.3); }
-  if(mode==='top'){ camTheta=0; camPhi=0.05; camRadius=18; camTarget.set(4.35,0,4.3); }
-  if(mode==='front'){ camTheta=0; camPhi=Math.PI/3; camRadius=18; camTarget.set(4.35,3,4.3); }
-  updateCam();
+// ══ HELPERS ═══════════════════════════════════════════════════════
+function mkBox(w,h,d,col,op=1,wire=false){
+  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wire?new THREE.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:op}):new THREE.MeshStandardMaterial({color:col,roughness:.8,metalness:.02,transparent:op<1,opacity:op}));
+  m.castShadow=!wire;m.receiveShadow=!wire;return m;
+}
+function mkEdge(w,h,d,col,op=1){
+  return new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,h,d)),new THREE.LineBasicMaterial({color:col,transparent:op<1,opacity:op}));
+}
+function mkLabel(txt,sub,col='#d98a6f'){
+  const c=document.createElement('canvas');c.width=512;c.height=110;
+  const x=c.getContext('2d');
+  x.fillStyle='rgba(16,13,11,0.9)';x.beginPath();x.roundRect(0,0,512,110,10);x.fill();
+  x.strokeStyle=col;x.lineWidth=2;x.beginPath();x.roundRect(2,2,508,106,10);x.stroke();
+  x.fillStyle='#f6f2ec';x.font='bold 28px Courier New';x.fillText(txt,16,42);
+  x.fillStyle=col;x.font='20px Courier New';x.fillText(sub,16,80);
+  const t=new THREE.CanvasTexture(c);
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
+  s.scale.set(3.2,.77,1);return s;
 }
 
-// ── HELPERS ────────────────────────────────────────────────────
-function box(w, h, d, color, opacity=1, wire=false){
-  const geo = new THREE.BoxGeometry(w, h, d);
-  const mat = wire
-    ? new THREE.MeshBasicMaterial({color, wireframe:true, transparent:true, opacity})
-    : new THREE.MeshStandardMaterial({color, roughness:.82, metalness:.02, transparent:opacity<1, opacity});
-  const m = new THREE.Mesh(geo, mat);
-  m.castShadow = !wire; m.receiveShadow = !wire;
-  return m;
+// Cor de parede: tijolo cru → rebocado
+function wallColor(acabPct){
+  const a=new THREE.Color(0xc8b89a),b=new THREE.Color(0xede8e0);
+  return a.lerp(b,Math.min(1,acabPct/100));
 }
 
-function makeLabel(line1, line2, color='#d98a6f'){
-  const cnv = document.createElement('canvas');
-  cnv.width = 512; cnv.height = 128;
-  const ctx = cnv.getContext('2d');
-  ctx.fillStyle = 'rgba(20,17,15,0.88)';
-  ctx.beginPath(); ctx.roundRect(0,0,512,128,12); ctx.fill();
-  ctx.strokeStyle = color; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.roundRect(2,2,508,124,12); ctx.stroke();
-  ctx.fillStyle = '#f6f2ec'; ctx.font='bold 30px Courier New'; ctx.fillText(line1, 18, 48);
-  ctx.fillStyle = color;    ctx.font='22px Courier New';       ctx.fillText(line2, 18, 88);
-  const tex = new THREE.CanvasTexture(cnv);
-  const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true, depthTest:false}));
-  spr.scale.set(3.5, 0.88, 1);
-  return spr;
+// ══ CENA ══════════════════════════════════════════════════════════
+let grp=new THREE.Group(); scene.add(grp);
+let view='all';
+
+function buildAll(){
+  scene.remove(grp); grp=new THREE.Group();
+
+  if(view!=='all'){ buildFloor(view,0); scene.add(grp); return; }
+
+  // Todos os pavimentos empilhados
+  Object.entries(FLOORS_DEF).forEach(([id,fl])=> buildFloorStack(id,fl));
+  buildCobertura();
+  scene.add(grp);
+  target.set(4.35,3,5.5); radius=22; updCam();
 }
 
-function lerp3Color(hex, t){
-  // tijolo cru → rebocado branco
-  const raw  = new THREE.Color(0xcabfae);
-  const white= new THREE.Color(0xf0ebe2);
-  return raw.lerp(white, Math.max(0,Math.min(1,t)));
+function buildFloorStack(id,fl){
+  const yB=fl.y;
+  const wc=wallColor(0); // acabamento ainda 0%
+
+  // Laje
+  const slab=mkBox(fl.w,0.15,fl.d,0x6a6358);
+  slab.position.set(fl.w/2,yB-0.075,fl.d/2); grp.add(slab);
+
+  if(!fl.rooms){return;}
+
+  fl.rooms.forEach(([rid,rn,ra,rx,rz,rw,rd,rexec,rcor])=>{
+    const wallH=fl.h*(rexec/100);
+    const cx=rx+rw/2, cz=rz+rd/2;
+    const isTerreo=(id==='terreo');
+
+    if(rexec>0){
+      // Parede executada
+      const wall=mkBox(rw,Math.max(0.05,wallH),rd,wc);
+      wall.position.set(cx,yB+wallH/2,cz); grp.add(wall);
+      // Borda colorida identificando o cômodo
+      const edge=mkEdge(rw,Math.max(0.05,wallH),rd,rcor,.7);
+      edge.position.set(cx,yB+wallH/2,cz); grp.add(edge);
+    }
+
+    // Ghost — parte a construir
+    if(rexec<100){
+      const gh=fl.h-wallH;
+      const ghost=mkBox(rw,Math.max(0.05,gh),rd,rcor,.07,true);
+      ghost.position.set(cx,yB+wallH+gh/2,cz); grp.add(ghost);
+    }
+  });
+
+  // Label do pavimento
+  const lbl=mkLabel(fl.label+' · '+fl.w+'×'+fl.d+'m',
+    id==='terreo'?'Alvenaria: 40% · Estrutura: 35%':'A construir',
+    id==='terreo'?'#f59e0b':'#6b7280');
+  lbl.position.set(fl.w/2,yB+fl.h+.85,fl.d/2); grp.add(lbl);
 }
 
-// ── CONSTRUÇÃO DA CENA ─────────────────────────────────────────
-let buildGroup = new THREE.Group();
-scene.add(buildGroup);
+function buildFloor(id,yOff){
+  const fl=FLOORS_DEF[id];
+  const wc=wallColor(0);
 
-// Avanço global por item do tracker
-const progress = {
-  alvenaria:    40,  // item 4  — PLS 40%
-  estrutura:    35,  // item 3  — PLS 35%
-  impermeab:    60,  // item 8  — PLS 60%
-  eletrica:     30,  // item 15 — PLS 30%
-  hidraulica:   20,  // item 16 — PLS 20%
-  esgoto:      100,  // item 17 — 100%
-  cobertura:     0,
-  revestimento:  0,
-  acabamento:    0,
-  piso:          0,
-};
+  // Laje
+  const slab=mkBox(fl.w,.15,fl.d,0x6a6358);
+  slab.position.set(fl.w/2,-.075,fl.d/2); grp.add(slab);
 
-let currentView = 'all';
-
-function buildScene(){
-  scene.remove(buildGroup);
-  buildGroup = new THREE.Group();
-
-  if(currentView !== 'all'){
-    buildFloorDetailed(currentView);
-    scene.add(buildGroup);
+  if(!fl.rooms){
+    const ghost=mkBox(fl.w,fl.h,fl.d,0xd98a6f,.07,true);
+    ghost.position.set(fl.w/2,fl.h/2,fl.d/2); grp.add(ghost);
+    const lbl=mkLabel(fl.label,'A construir','#d98a6f');
+    lbl.position.set(fl.w/2,fl.h+.85,fl.d/2); grp.add(lbl);
+    target.set(fl.w/2,fl.h/2,fl.d/2); radius=Math.max(fl.w,fl.d)*1.7; updCam();
     return;
   }
 
-  // Vista completa — 3 pavimentos empilhados
-  buildFloorFull('terreo', 0);
-  buildFloorFull('pav1',   2.95);
-  buildFloorFull('pav2',   5.90);
-  buildCobertura(8.70);
+  fl.rooms.forEach(([rid,rn,ra,rx,rz,rw,rd,rexec,rcor])=>{
+    const wallH=fl.h*(rexec/100);
+    const cx=rx+rw/2, cz=rz+rd/2;
 
-  scene.add(buildGroup);
-  camTarget.set(4.35, 3, 4.3);
-  camRadius = 22;
-  updateCam();
-}
-
-function buildFloorFull(floorId, yBase){
-  const fl = FLOORS[floorId];
-  const rooms = ROOMS[floorId];
-  const alvPct = (floorId==='terreo' ? progress.alvenaria : 0) / 100;
-  const acabPct = progress.acabamento / 100;
-  const wallColor = lerp3Color(0xcabfae, acabPct);
-
-  // Laje/base
-  const slab = box(fl.w, 0.15, fl.d, 0x7a7268);
-  slab.position.set(fl.w/2, yBase - 0.075, fl.d/2);
-  buildGroup.add(slab);
-
-  if(rooms && alvPct > 0.01){
-    // Renderizar cada cômodo como bloco separado
-    rooms.forEach(r => {
-      const roomPct = Math.min(1, alvPct + (r.exec/100 - alvPct) * 0.5);
-      const wallH = fl.h * Math.max(0.02, r.exec/100);
-      const cx = r.x + r.w/2;
-      const cz = r.z + r.d/2;
-
-      // Paredes do cômodo
-      if(wallH > 0.05){
-        const wallM = box(r.w, wallH, r.d, wallColor);
-        wallM.position.set(cx, yBase + wallH/2, cz);
-        buildGroup.add(wallM);
-
-        // Borda colorida do cômodo (identifica o ambiente)
-        const edge = new THREE.LineSegments(
-          new THREE.EdgesGeometry(new THREE.BoxGeometry(r.w, wallH, r.d)),
-          new THREE.LineBasicMaterial({color:r.cor, opacity:0.6, transparent:true})
-        );
-        edge.position.set(cx, yBase + wallH/2, cz);
-        buildGroup.add(edge);
-      }
-
-      // Ghost (parte não executada)
-      if(r.exec < 100){
-        const ghostH = fl.h * (1 - r.exec/100);
-        const ghostY = yBase + fl.h*r.exec/100 + ghostH/2;
-        const ghost = box(r.w, Math.max(0.05, ghostH), r.d, r.cor, 0.08, true);
-        ghost.position.set(cx, ghostY, cz);
-        buildGroup.add(ghost);
-      }
-    });
-  } else if(alvPct <= 0.01) {
-    // Pavimento não iniciado — ghost completo
-    const ghost = box(fl.w, fl.h, fl.d, 0xd98a6f, 0.07, true);
-    ghost.position.set(fl.w/2, yBase + fl.h/2, fl.d/2);
-    buildGroup.add(ghost);
-  }
-
-  // Label do pavimento
-  const lbl = makeLabel(
-    fl.label + ' · ' + fl.w + 'x' + fl.d + 'm',
-    floorId==='terreo' ? 'Alvenaria: '+progress.alvenaria+'% · PLS 25,35%'
-                       : 'A contratar — pendente laje térreo',
-    floorId==='terreo' ? '#f59e0b' : '#6b7280'
-  );
-  lbl.position.set(fl.w/2, yBase + fl.h + 0.9, fl.d/2);
-  buildGroup.add(lbl);
-}
-
-function buildFloorDetailed(floorId){
-  const fl = FLOORS[floorId];
-  const rooms = ROOMS[floorId];
-  const acabPct = progress.acabamento / 100;
-  const wallColor = lerp3Color(0xcabfae, acabPct);
-
-  // Laje
-  const slab = box(fl.w, 0.15, fl.d, 0x7a7268);
-  slab.position.set(fl.w/2, -0.075, fl.d/2);
-  buildGroup.add(slab);
-
-  // Cada cômodo detalhado
-  if(rooms) rooms.forEach(r => {
-    const wallH = fl.h * Math.max(0.02, r.exec/100);
-    const cx = r.x + r.w/2;
-    const cz = r.z + r.d/2;
-
-    if(r.exec > 0){
-      // Parede executada
-      const wallM = box(r.w, wallH, r.d, wallColor);
-      wallM.position.set(cx, wallH/2, cz);
-      buildGroup.add(wallM);
+    if(rexec>0){
+      const wall=mkBox(rw,Math.max(0.04,wallH),rd,wc);
+      wall.position.set(cx,wallH/2,cz); grp.add(wall);
+      const edge=mkEdge(rw,Math.max(0.04,wallH),rd,rcor,.9);
+      edge.position.set(cx,wallH/2,cz); grp.add(edge);
+      // Linha de topo da parede
+      const top=mkEdge(rw,.03,rd,rcor,1);
+      top.position.set(cx,wallH,cz); grp.add(top);
     }
 
-    // Ghost da parte não executada
-    if(r.exec < 100){
-      const ghostH = fl.h * (1 - r.exec/100);
-      const ghostY = fl.h * r.exec/100 + ghostH/2;
-      const ghost = box(r.w, Math.max(0.05, ghostH), r.d, r.cor, 0.12, true);
-      ghost.position.set(cx, ghostY, cz);
-      buildGroup.add(ghost);
-
-      // Contorno sólido fino no topo do executado
-      if(r.exec > 0){
-        const line = new THREE.LineSegments(
-          new THREE.EdgesGeometry(new THREE.BoxGeometry(r.w+0.02, 0.04, r.d+0.02)),
-          new THREE.LineBasicMaterial({color:r.cor})
-        );
-        line.position.set(cx, wallH+0.02, cz);
-        buildGroup.add(line);
-      }
+    // Ghost
+    const gh=fl.h*(1-rexec/100);
+    if(gh>.02){
+      const ghost=mkBox(rw,gh,rd,rcor,.1,true);
+      ghost.position.set(cx,fl.h*(rexec/100)+gh/2,cz); grp.add(ghost);
     }
 
     // Label do cômodo
-    const lbl = makeLabel(r.name, r.area+'m²  '+r.exec+'%', '#'+r.cor.toString(16).padStart(6,'0'));
-    lbl.scale.set(2.2, 0.55, 1);
-    lbl.position.set(cx, fl.h + 0.7, cz);
-    buildGroup.add(lbl);
+    const lbl=mkLabel(rn,ra+'m²  '+rexec+'%','#'+rcor.toString(16).padStart(6,'0'));
+    lbl.scale.set(1.8,.45,1);
+    lbl.position.set(cx,fl.h+.55,cz); grp.add(lbl);
   });
 
-  camTarget.set(fl.w/2, fl.h/2, fl.d/2);
-  camRadius = Math.max(fl.w, fl.d) * 1.6;
-  updateCam();
+  target.set(fl.w/2,fl.h/2,fl.d/2); radius=Math.max(fl.w,fl.d)*1.65; updCam();
 }
 
-function buildCobertura(yBase){
-  // Cobertura ghost
-  const ghost = box(8.70, 0.5, 8.60, 0xd98a6f, 0.06, true);
-  ghost.position.set(4.35, yBase + 0.25, 4.3);
-  buildGroup.add(ghost);
-  const lbl = makeLabel('Cobertura', 'Pendente · 3ª medição', '#6b7280');
-  lbl.position.set(4.35, yBase + 1.2, 4.3);
-  buildGroup.add(lbl);
+function buildCobertura(){
+  const ghost=mkBox(8.70,.4,10.95,0xd98a6f,.05,true);
+  ghost.position.set(4.35,8.70+.2,5.5); grp.add(ghost);
+  const lbl=mkLabel('Cobertura','Pendente · fibrocimento','#6b7280');
+  lbl.position.set(4.35,9.8,5.5); grp.add(lbl);
 }
 
-function setView(v){
-  currentView = v;
-  document.querySelectorAll('#controls .btn').forEach(b=>b.classList.remove('active'));
-  document.getElementById('btn-'+v)?.classList.add('active');
-  buildScene();
+function setV(v){
+  view=v;
+  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
+  document.querySelector('[onclick="setV(\''+v+'\')"]')?.classList.add('on');
+  buildAll();
+}
+function setC(m){
+  if(m==='iso'){theta=0.65;phi=0.58;radius=20;target.set(4.35,2.5,5.5);}
+  if(m==='top'){theta=0;phi=0.06;radius=18;target.set(4.35,0,5.5);}
+  if(m==='front'){theta=0;phi=Math.PI/3;radius=18;target.set(4.35,3,5.5);}
+  updCam();
 }
 
-buildScene();
+buildAll();
 
-// ── PAINEL LATERAL ─────────────────────────────────────────────
-let currentTab = 'rooms';
-let currentFloor = 'terreo';
-
-function showTab(tab){
-  currentTab = tab;
-  document.querySelectorAll('.ftab').forEach((b,i)=>{
-    b.classList.toggle('active', ['rooms','stages','cronograma'][i]===tab);
-  });
-  renderPanel();
+// ══ PAINEL ════════════════════════════════════════════════════════
+let tab='comodos';
+function showTab(t){
+  tab=t;
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('on',['comodos','etapas','medicoes'][i]===t));
+  renderPainel();
 }
 
-function renderPanel(){
-  const el = document.getElementById('panel-body');
-  if(currentTab === 'rooms') renderRooms(el);
-  if(currentTab === 'stages') renderStages(el);
-  if(currentTab === 'cronograma') renderCronograma(el);
+function renderPainel(){
+  const el=document.getElementById('pb');
+  if(tab==='comodos') el.innerHTML=renderComodos();
+  if(tab==='etapas')  el.innerHTML=renderEtapas();
+  if(tab==='medicoes')el.innerHTML=renderMedicoes();
 }
 
-function renderRooms(el){
-  const rooms = ROOMS.terreo;
-  const html = '<div style="font-size:10px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Térreo — 89m²</div>' +
-    rooms.map(r => {
-      const c = r.exec===100?'concluido':r.exec>0?'andamento':'pendente';
-      const cor = STATUS_COLOR[c];
-      return '<div class="room-card status-'+c+'" style="border-left-color:'+cor+'">' +
-        '<div class="room-name">'+r.name+'</div>' +
-        '<div class="room-area">'+r.area+'m² · '+r.w.toFixed(2)+'×'+r.d.toFixed(2)+'m</div>' +
-        '<div class="room-bar-bg"><div class="room-bar-fill" style="width:'+r.exec+'%;background:'+cor+'"></div></div>' +
-        '<div class="room-pct">'+r.exec+'%</div>' +
+function renderComodos(){
+  return '<div style="font-size:9px;color:#6b7280;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Térreo — 89m²</div>'+
+    ROOMS_TERREO.map(([id,n,a,x,z,w,d,ex,cor])=>{
+      const c=ex===100?'concluido':ex>0?'andamento':'pendente';
+      const color=SC[c]; const hexcor='#'+cor.toString(16).padStart(6,'0');
+      return '<div class="card" style="border-left-color:'+hexcor+'">'+
+        '<div class="cn">'+n+'</div>'+
+        '<div class="ca">'+a+'m²  ·  '+w.toFixed(2)+'×'+d.toFixed(2)+'m</div>'+
+        '<div class="bg"><div class="fill" style="width:'+ex+'%;background:'+color+'"></div></div>'+
+        '<div class="pp">'+ex+'%  ·  '+SL[c]+'</div>'+
       '</div>';
-    }).join('') +
-    '<div style="font-size:10px;color:#6b7280;margin:12px 0 8px;text-transform:uppercase;letter-spacing:.05em">1º e 2º Pavimento</div>' +
-    '<div class="room-card" style="border-left-color:#d98a6f;padding:12px">' +
-      '<div class="room-name" style="color:#d98a6f">📋 A contratar</div>' +
-      '<div class="room-area">Aguardando conclusão do térreo</div>' +
-      '<div class="room-area">Início estimado: após mar/2027</div>' +
+    }).join('')+
+    '<div style="font-size:9px;color:#6b7280;margin:10px 0 7px;text-transform:uppercase;letter-spacing:.05em">1º e 2º Pav. — A contratar</div>'+
+    '<div class="card" style="border-left-color:#d98a6f;padding:10px">'+
+      '<div class="cn" style="color:#d98a6f">📋 Aguardando contratação</div>'+
+      '<div class="ca" style="margin-top:4px">Início após conclusão do térreo (~mar/2027)</div>'+
     '</div>';
-  el.innerHTML = html;
 }
 
-function renderStages(el){
-  el.innerHTML = STAGES.map(s => {
-    const c = STATUS_COLOR[s.status];
-    return '<div class="stage-card '+s.status+'" style="border-left-color:'+c+'">' +
-      '<div class="stage-name">'+s.label+'</div>' +
-      '<div class="stage-date">'+s.inicio+' → '+s.fim+'</div>' +
-      '<div style="display:flex;justify-content:space-between;align-items:center">' +
-        '<div class="stage-med">Med. '+s.medicao+'</div>' +
-        '<span style="font-size:10px;color:'+c+';font-weight:bold">'+STATUS_LABEL[s.status]+'</span>' +
-      '</div>' +
-      '<div class="stage-bar-bg"><div class="stage-bar-fill" style="width:'+s.pct+'%;background:'+c+'"></div></div>' +
+function renderEtapas(){
+  return STAGES.map(s=>{
+    const c=SC[s.status];
+    return '<div class="card" style="border-left-color:'+c+'">'+
+      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
+        '<div class="cn">'+s.label+'</div>'+
+        '<span style="font-size:9px;color:'+c+';font-weight:bold;white-space:nowrap;margin-left:4px">Med.'+s.medicao+'</span>'+
+      '</div>'+
+      '<div class="ca">'+s.inicio+' → '+s.fim+'</div>'+
+      '<div class="bg"><div class="fill" style="width:'+s.pct+'%;background:'+c+'"></div></div>'+
+      '<div class="pp">'+s.pct+'%  ·  '+SL[s.status]+'</div>'+
     '</div>';
   }).join('');
 }
 
-function renderCronograma(el){
-  const meds = [
-    {n:'1ª ✓', data:'30/05/2026', pls:'8,23%',  val:'R$ 30.623',  status:'concluido'},
-    {n:'2ª ~', data:'03/07/2026', pls:'17,12%', val:'~R$ 63.718', status:'andamento'},
-    {n:'3ª',   data:'26/10/2026', pls:'7,10%',  val:'~R$ 26.475', status:'pendente'},
-    {n:'4ª',   data:'30/03/2027', pls:'25,02%', val:'~R$ 93.297', status:'pendente'},
-    {n:'5ª–7ª',data:'A definir', pls:'39,00%', val:'~R$ 145.387',status:'contratar'},
-  ];
-  el.innerHTML = '<div style="font-size:10px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Medições CAIXA · Base R$ 372.888</div>' +
-    meds.map(m=>{
-      const c = STATUS_COLOR[m.status];
-      return '<div class="stage-card '+m.status+'" style="border-left-color:'+c+'">' +
-        '<div style="display:flex;justify-content:space-between">' +
-          '<div class="stage-name">'+m.n+' medição</div>' +
-          '<div style="font-size:10px;font-weight:bold;color:'+c+'">'+m.pls+'</div>' +
-        '</div>' +
-        '<div class="stage-date">'+m.data+'</div>' +
-        '<div style="font-size:11px;color:#f6f2ec;margin-top:2px">'+m.val+'</div>' +
+function renderMedicoes(){
+  return '<div style="font-size:9px;color:#6b7280;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Base R$ 372.888</div>'+
+    MEDS.map(m=>{
+      const c=SC[m.status];
+      return '<div class="card" style="border-left-color:'+c+'">'+
+        '<div style="display:flex;justify-content:space-between">'+
+          '<div class="cn">'+m.n+' medição</div>'+
+          '<span style="font-size:10px;color:'+c+';font-weight:bold">'+m.pls+'</span>'+
+        '</div>'+
+        '<div class="ca">'+m.data+'</div>'+
+        '<div style="font-size:11px;color:#f6f2ec;margin-top:3px">'+m.val+'</div>'+
+        '<div class="pp">'+SL[m.status]+'</div>'+
       '</div>';
     }).join('');
 }
 
-renderPanel();
+renderPainel();
 
-// Loop de render
-(function animate(){
-  requestAnimationFrame(animate);
-  renderer.render(scene, camera);
-})();
+(function loop(){requestAnimationFrame(loop);renderer.render(scene,camera);})();
 </script>
 </body>
 </html>
