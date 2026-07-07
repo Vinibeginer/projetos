@@ -1454,7 +1454,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.40';
+const APP_VERSION = '1.41';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1497,6 +1497,7 @@ const VERSOES = [
   { v:'1.38', data:'24/06/2026', autor:'Claude', desc:'Item 20: exec corrigido para 0% — docs iniciais já capturados no item 1, muro frontal não iniciado, docs finais (habite-se/CND/averbação) pendentes' },
   { v:'1.39', data:'24/06/2026', autor:'Claude', desc:'Item 4: exec 11% (6 fiadas térreo 23–28/06) · Item 13: exec 12% (concreto magro térreo 80,14m²) · estimativa próx. med. ~R$15.549' },
   { v:'1.40', data:'28/06/2026', autor:'Claude', desc:'Item 4: exec 15% — 8 fiadas em todas as paredes do térreo até 27/06 · estimativa medição sexta ~R$16.418' },
+  { v:'1.41', data:'06/07/2026', autor:'Claude', desc:'Itens PCI atualizados conforme PLS 2ª med (03/07/2026): Supra 35%, Alvenaria 40%, Impermeab 60%, Elétrica 30%, Hidráulica 20%, Esgoto 100% · estimativa ~R$ 63.904' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1585,26 +1586,27 @@ function aplicarPerfil() {
 
 /* ══ DADOS ══════════════════════════════════════════════════ */
 const ITENS_DEFAULT = [
-  { id:1,   desc:'Barracão + ligações provisórias + projetos',                     pciPct:3.64,  exec:100, locked:true,  prevExec:0, obs:'Concluído.' },
-  { id:2,   desc:'Infraestrutura (sapatas, baldrames, alicerce — 3 pavimentos)',   pciPct:7.07,  exec:100, locked:true,  prevExec:0, obs:'Fundações dimensionadas para os 3 pavimentos (227m²). Concluído.' },
-  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)',      pciPct:14.56, exec:0,   locked:false, prevExec:25, obs:'Inclui pilares e vigas do térreo, 1º e 2º pavimento + escada interna. Previsão: ~25% ao longo de 4 semanas (22/06–18/07/2026).' },
-  { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',               pciPct:8.14,  exec:15,  locked:false, prevExec:0, obs:'8 fiadas previstas em todas as paredes do térreo até 27/06/2026 — ~44% do térreo × 1/3 dos pavimentos ≈ 15%. Falta: complemento térreo + 1º e 2º pav.' },
-  { id:5,   desc:'Esquadrias — 22 portas (P1–P9) e 18 janelas (J1–J7)',           pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Portas: P1×4, P2×9, P3×1, P4×1, P5×2, P6×2, P7×1, P8×1, P9×1. Janelas: J1×4, J2×5, J3×2, J4×1, J5×2, J6×2, J7×2.' },
-  { id:6,   desc:'Vidros, plásticos e guarda-corpos',                             pciPct:1.07,  exec:0,   locked:false, prevExec:0,  obs:'Guarda-corpo preto varanda coberta + varanda descoberta. Vidros das janelas.' },
-  { id:7,   desc:'Cobertura — telha fibrocimento, platibanda e laje 2º pav.',     pciPct:2.57,  exec:0,   locked:false, prevExec:0,  obs:'Telha fibrocimento c/ platibanda sobre 1ºpav. Laje impermeabilizada 2ºpav (varanda descoberta 37,85m²) inclinação 9,86%.' },
-  { id:8,   desc:'Impermeabilizações',                                            pciPct:2.57,  exec:100, locked:true,  prevExec:0,  obs:'Baldrames 100% — medido na 1ª medição CAIXA. Falta: laje 2ºpav e varanda descoberta (itens da 4ª/5ª medição).' },
-  { id:9,   desc:'Revestimentos internos — chapisco e reboco (3 pavimentos)',     pciPct:8.14,  exec:0,   locked:false, prevExec:0,  obs:'Área estimada: ~505,62m² térreo + ~320m² 1ºpav. Após conclusão da alvenaria.' },
-  { id:10,  desc:'Forros — laje+forro térreo e 1º pavimento',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Laje+forro linha popular conforme PCI.' },
-  { id:11,  desc:'Revestimentos externos — fachada e muro',                       pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Fachada frontal: pedra moledo + pintura algodão egípcio (coral). Laterais e fundos: pintura branca. Muro frontal: chapisco+reboco+pintura.' },
-  { id:12,  desc:'Pinturas internas e externas',                                  pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Interna: branca. Externa: algodão egípcio (coral) na fachada. Guarda-corpos: preto.' },
-  { id:13,  desc:'Pisos e rodapés — térreo (80,14m²), 1ºpav (87,86m²) e varanda (37,85m²)', pciPct:10.28, exec:12, locked:false, prevExec:0, obs:'Concreto magro executado em todo o térreo (80,14m²) — base do piso definitivo. ~39% da área total × 30% do serviço de piso = ~12%. Contrapiso definitivo e revestimento pendentes.' },
-  { id:14,  desc:'Acabamentos — soleiras, peitoris e rodapés',                    pciPct:1.28,  exec:0,   locked:false, prevExec:0,  obs:'Soleiras de todas as portas e peitoris de todas as janelas J1–J7.' },
-  { id:15,  desc:'Instalações elétricas (3 pavimentos)',                          pciPct:4.07,  exec:10,  locked:false, prevExec:0,  obs:'Padrão de energia instalado (10%). Falta: infra interna térreo, 1ºpav e 2ºpav, quadro de distribuição e circuitos.', novo:true },
-  { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                        pciPct:4.07,  exec:0,   locked:false, prevExec:0,  obs:'Nenhum ramal executado. Falta: térreo, 1ºpav (2 banheiros) e complementos.' },
-  { id:17,  desc:'Instalações de esgoto e águas pluviais (3 pavimentos)',         pciPct:4.07,  exec:23,  locked:false, prevExec:0,  obs:'Esgoto térreo 100% concluído (ramais internos, caixa de gordura, ligação rede pública) — ~1/3 do esgoto total (3 pav.). Pendente: esgoto 1ºpav e 2ºpav (aguarda lajes) + rede pluvial completa (calhas, rufos, drenos cobertura e varanda 37,85m²).' },
-  { id:18,  desc:'Louças e metais',                                               pciPct:4.71,  exec:0,   locked:false, prevExec:0,  obs:'Térreo: lavabo, suíte, cozinha americana. 1ºpav: banheiro social, suíte master, 2 closets.' },
-  { id:19,  desc:'Complementos — limpeza final e calafete',                       pciPct:1.50,  exec:0,   locked:false, prevExec:0,  obs:'Final de obra — após conclusão de todos os pavimentos.' },
-  { id:20,  desc:'Outros — muro frontal e documentação',                          pciPct:7.49,  exec:0,   locked:false, prevExec:0,  obs:'Muro frontal: chapisco, emboço, pintura, fundação, estrutura CA e portão de ferro (R$19.981). Documentação final: habite-se, CND e averbação (R$15.000) — pendente conclusão da obra. Docs iniciais já capturados no item 1.' },
+  { id:1,   desc:'Serviços preliminares e gerais (barracão + ligações prov.)', pciPct:3.64,  exec:100, locked:true,  prevExec:0, obs:'100% concluído — medido na 1ª medição CAIXA.' },
+  { id:2,   desc:'Infraestrutura (sapatas, baldrames)',                        pciPct:7.07,  exec:100, locked:true,  prevExec:0, obs:'100% concluído — medido na 1ª medição CAIXA.' },
+  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)', pciPct:14.56, exec:35,  locked:false, prevExec:0, obs:'35% conforme PLS 03/07/2026 — pilares e vigas térreo em andamento.' },
+  { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',           pciPct:8.14,  exec:40,  locked:false, prevExec:0, obs:'40% conforme PLS 03/07/2026 — alvenaria térreo em andamento.' },
+  { id:5,   desc:'Esquadrias (22 portas + 18 janelas)',                        pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:6,   desc:'Vidros, plásticos e guarda-corpos',                         pciPct:1.07,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:7,   desc:'Cobertura (telhas, platibanda, laje 2ºpav)',                pciPct:2.57,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:8,   desc:'Impermeabilizações',                                        pciPct:2.57,  exec:60,  locked:false, prevExec:0, obs:'60% conforme PLS 03/07/2026 — cinta impermeabilizada. Falta laje 2ºpav e varanda.' },
+  { id:9,   desc:'Revestimentos internos (chapisco + reboco)',                 pciPct:8.14,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:10,  desc:'Forros',                                                     pciPct:1.28,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:11,  desc:'Revestimentos externos e fachada',                          pciPct:4.07,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:12,  desc:'Pinturas',                                                   pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:13,  desc:'Pisos e rodapés (~205m²)',                                  pciPct:10.28, exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:14,  desc:'Acabamentos (soleiras, peitoris)',                           pciPct:1.28,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:15,  desc:'Instalações elétricas (3 pavimentos)',                       pciPct:4.07,  exec:30,  locked:false, prevExec:0, obs:'30% conforme PLS 03/07/2026 — padrão + infra início.' },
+  { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                     pciPct:4.07,  exec:20,  locked:false, prevExec:0, obs:'20% conforme PLS 03/07/2026 — ramais parciais térreo.' },
+  { id:17,  desc:'Instalações de esgoto sanitário',                           pciPct:2.70,  exec:100, locked:false, prevExec:0, obs:'Térreo 100% — esgoto + caixa de gordura + ligação rua.' },
+  { id:171, desc:'Rede de águas pluviais',                                     pciPct:1.37,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:18,  desc:'Louças e metais',                                            pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:19,  desc:'Complementos (limpeza, calafete)',                           pciPct:1.50,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
+  { id:20,  desc:'Concreto magro / contrapiso',                               pciPct:1.28,  exec:100, locked:false, prevExec:0, obs:'Concreto magro 100% concluído. Contrapiso definitivo após alvenaria.' },
 ];
 
 const HISTORICO_DEFAULT = [
@@ -1614,6 +1616,7 @@ const HISTORICO_DEFAULT = [
   { data:'19/06/2026', desc:'Padrão de energia instalado (elétrica 10%)', deltaPct:0.41, deltaVal:1529, prev:false, obs:'Poste padrão + instalação elétrica. Falta infra interna 3 pavimentos.' },
   { data:'22/06/2026', desc:'Hidráulica zerada: nenhum ramal executado (correção de lançamento)', deltaPct:0, deltaVal:0, prev:false, obs:'Item 16 corrigido para 0% — ramais internos não executados.' },
   { data:'22/06–18/07/2026', desc:'[Previsão] Entijolamento (alvenaria) + enchimento de colunas (pilares)', deltaPct:6.08, deltaVal:22671, prev:true, obs:'Alvenaria 30% + supraestrutura 25% — distribuído ao longo de ~4 semanas. Não é avanço de uma semana única.' },
+  { data:'03/07/2026', desc:'PLS 2ª medição entregue — acumulado 25,35% (17,12% nesta etapa)', deltaPct:17.12, deltaVal:63904, prev:false, obs:'PLS assinada pelo RT João Carlos e por Vinícius em 06/07/2026. Supra 35% + Alvenaria 40% + Impermeab. 60% + Elétrica 30% + Hidráulica 20% + Esgoto 30% + Outros 20%.' },
 ];
 
 let itens     = JSON.parse(JSON.stringify(ITENS_DEFAULT));
