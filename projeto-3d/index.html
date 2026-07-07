@@ -163,7 +163,7 @@ const SL = {concluido:'✅ Concluído',andamento:'🔨 Em andamento',parcial:'�
 // ══ THREE.JS ══════════════════════════════════════════════════════
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1714);
-scene.fog = new THREE.FogExp2(0x1a1714, 0.018);
+scene.fog = new THREE.Fog(0x1a1714, 35, 75);
 
 const W = window.innerWidth, H = window.innerHeight;
 const camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 200);
@@ -180,7 +180,7 @@ const sun = new THREE.DirectionalLight(0xfff8e7, 1.1);
 sun.position.set(20, 30, 15);
 sun.castShadow = true;
 sun.shadow.mapSize.set(2048,2048);
-['left','right','top','bottom'].forEach((s,i)=>sun.shadow.camera[s]=[-18,18,18,-18][i]);
+sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;
 sun.shadow.camera.far = 80;
 scene.add(sun);
 scene.add(Object.assign(new THREE.DirectionalLight(0x8899cc,0.3),{position:{set:()=>{}}}).position.set(-8,6,-8) && new THREE.DirectionalLight(0x8899cc,0.3));
@@ -241,10 +241,10 @@ function mkEdge(w,h,d,col,op=1){
 function mkLabel(txt,sub,col='#d98a6f'){
   const c=document.createElement('canvas');c.width=512;c.height=110;
   const x=c.getContext('2d');
-  x.fillStyle='rgba(16,13,11,0.9)';x.beginPath();x.roundRect(0,0,512,110,10);x.fill();
-  x.strokeStyle=col;x.lineWidth=2;x.beginPath();x.roundRect(2,2,508,106,10);x.stroke();
-  x.fillStyle='#f6f2ec';x.font='bold 28px Courier New';x.fillText(txt,16,42);
-  x.fillStyle=col;x.font='20px Courier New';x.fillText(sub,16,80);
+  x.fillStyle='rgba(16,13,11,0.9)';x.fillRect(0,0,512,110);
+  x.strokeStyle=col;x.lineWidth=2;x.strokeRect(2,2,508,106);
+  x.fillStyle='#f6f2ec';x.font='bold 26px Courier New';x.fillText(txt,14,40);
+  x.fillStyle=col;x.font='19px Courier New';x.fillText(sub,14,76);
   const t=new THREE.CanvasTexture(c);
   const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
   s.scale.set(3.2,.77,1);return s;
