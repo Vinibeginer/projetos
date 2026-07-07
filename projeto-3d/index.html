@@ -242,15 +242,21 @@ const FLOORS = {
 // disposição geral do desenho — garagem/sala na frente, quartos no fundo, etc.),
 // não reproduz as coordenadas exatas do CAD.
 const FLOOR_PLANS = {
-  terreo: { label:'Térreo', area:89, cols:4, rows:4, rooms:[
-    {name:'Garagem', area:18.00, col:[1,3], row:[1,4]},
-    {name:'Sala', area:29.60, col:[3,5], row:[1,3]},
-    {name:'Cozinha', area:8.00, col:[3,4], row:[3,4]},
-    {name:'Despensa', area:2.88, col:[4,5], row:[3,4]},
-    {name:'Suíte', area:14.00, col:[1,3], row:[4,5]},
-    {name:'Banheiro suíte', area:3.24, col:[3,4], row:[4,5]},
-    {name:'Lavabo / Circulação', area:13.28, col:[4,5], row:[4,5]},
-  ]},
+  terreo: { label:'Térreo', area:89,
+    cols:12, rows:16,
+    // Grid proporcional — col≈0.72m, row≈0.54m
+    // Planta: largura 8.70m, profundidade 8.60m
+    // Divisória vertical em col 6 (x=4.00m) | Divisória horizontal em row 10 (y=5.70m)
+    rooms:[
+      {name:'Garagem',          area:18.00, col:[0,6],  row:[2,10], cor:'#b0bec5'},
+      {name:'Cozinha',          area:14.00, col:[0,6],  row:[10,16],cor:'#ffe082'},
+      {name:'Sala',             area:29.60, col:[6,12], row:[2,12], cor:'#a5d6a7'},
+      {name:'Quarto',           area:11.74, col:[6,12], row:[12,16],cor:'#90caf9'},
+      {name:'Lavabo',           area:2.16,  col:[0,2],  row:[0,2],  cor:'#ce93d8'},
+      {name:'Despensa',         area:1.76,  col:[2,4],  row:[0,2],  cor:'#ffcc80'},
+      {name:'Suíte (banheiro)', area:2.88,  col:[4,6],  row:[0,2],  cor:'#f48fb1'},
+    ]
+  },
   pav1: { label:'1º Pavimento', area:89, cols:4, rows:5, rooms:[
     {name:'Quarto Master', area:16.17, col:[1,3], row:[1,3]},
     {name:'Quarto 1', area:17.03, col:[3,5], row:[1,3]},
