@@ -2,89 +2,99 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Obra Mariára — Maquete 3D</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
-:root{--coral:#d98a6f;--paper:#f6f2ec;--stone:#8d8579;--green:#22c97e;--amber:#f59e0b;--blue:#3b82f6;--bg:#1a1714;}
+:root{
+  --coral:#d98a6f; --paper:#f6f2ec; --stone:#8d8579;
+  --green:#22c97e; --amber:#f59e0b; --blue:#3b82f6;
+  --bg:#1a1714; --panel:#13110f;
+}
 *{box-sizing:border-box;margin:0;padding:0;}
-html,body{height:100%;background:var(--bg);font-family:'Courier New',monospace;overflow:hidden;}
-canvas{display:block;touch-action:none;}
-#wrap{position:fixed;inset:0;}
-#hud{position:fixed;top:0;left:0;right:260px;padding:10px 14px;
-  background:linear-gradient(180deg,rgba(20,17,15,.9),transparent);
-  color:var(--paper);pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start;}
-.title{font-size:14px;font-weight:bold;color:var(--coral);}
-.sub{font-size:10px;opacity:.65;margin-top:2px;}
-#stats{background:rgba(0,0,0,.55);border:1px solid rgba(255,255,255,.1);border-radius:7px;padding:7px 11px;min-width:150px;text-align:right;}
-.sl{font-size:10px;opacity:.75;margin-bottom:2px;}.sv{color:var(--coral);font-weight:bold;}
-/* painel */
-#panel{position:fixed;right:0;top:0;bottom:0;width:260px;background:rgba(18,15,13,.96);
-  border-left:1px solid rgba(255,255,255,.07);display:flex;flex-direction:column;}
-#ph{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.07);color:var(--coral);font-size:11px;font-weight:bold;letter-spacing:.06em;}
+body{background:var(--bg);font-family:'Courier New',monospace;display:flex;height:100vh;overflow:hidden;}
+
+/* PAINEL LATERAL */
+#panel{width:260px;min-width:260px;background:var(--panel);border-right:1px solid rgba(255,255,255,.07);
+  display:flex;flex-direction:column;overflow:hidden;}
+#ph{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,.07);
+  color:var(--coral);font-size:12px;font-weight:bold;letter-spacing:.06em;}
+.stats{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.07);}
+.sl{font-size:10px;color:rgba(255,255,255,.55);margin-bottom:3px;}
+.sv{color:var(--coral);font-weight:bold;}
 #tabs{display:flex;border-bottom:1px solid rgba(255,255,255,.07);}
-.tab{flex:1;padding:7px 3px;font-size:10px;font-family:inherit;background:transparent;border:none;
-  color:rgba(255,255,255,.4);cursor:pointer;letter-spacing:.03em;transition:.15s;}
-.tab.on,.tab:hover{background:rgba(217,138,111,.12);color:var(--coral);}
-#pb{flex:1;overflow-y:auto;padding:8px;}
+.tab{flex:1;padding:8px 3px;font-size:10px;font-family:inherit;background:transparent;
+  border:none;color:rgba(255,255,255,.35);cursor:pointer;letter-spacing:.03em;transition:.15s;}
+.tab.on,.tab:hover{background:rgba(217,138,111,.1);color:var(--coral);}
+#pb{flex:1;overflow-y:auto;padding:8px 10px;}
 #pb::-webkit-scrollbar{width:3px;}
-#pb::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:2px;}
-.card{margin-bottom:7px;padding:7px 9px;background:rgba(255,255,255,.03);border-radius:5px;border-left:3px solid var(--stone);}
+#pb::-webkit-scrollbar-thumb{background:rgba(255,255,255,.1);border-radius:2px;}
+.card{margin-bottom:7px;padding:8px 10px;background:rgba(255,255,255,.03);
+  border-radius:5px;border-left:3px solid var(--stone);}
 .cn{font-size:11px;font-weight:bold;color:var(--paper);margin-bottom:2px;}
-.ca{font-size:9px;color:var(--stone);margin-bottom:4px;}
+.ca{font-size:9px;color:var(--stone);margin-bottom:5px;}
 .bg{height:4px;background:rgba(255,255,255,.08);border-radius:2px;}
-.fill{height:100%;border-radius:2px;transition:width .6s;}
-.pp{text-align:right;font-size:9px;color:var(--stone);margin-top:1px;}
-/* controles */
-#ctrl{position:fixed;bottom:0;left:0;right:260px;padding:8px 12px;
-  background:linear-gradient(0deg,rgba(18,15,13,.9),transparent);
-  display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.bf{height:100%;border-radius:2px;transition:width .6s;}
+.pp{text-align:right;font-size:9px;color:var(--stone);margin-top:2px;}
+
+/* ÁREA 3D */
+#view{flex:1;display:flex;flex-direction:column;overflow:hidden;}
+#toolbar{padding:8px 12px;background:rgba(0,0,0,.3);display:flex;gap:6px;align-items:center;flex-wrap:wrap;border-bottom:1px solid rgba(255,255,255,.05);}
 .btn{padding:5px 11px;font-family:inherit;font-size:10px;letter-spacing:.04em;
   background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.12);color:var(--paper);
   border-radius:4px;cursor:pointer;transition:.15s;}
 .btn:hover,.btn.on{background:rgba(217,138,111,.2);border-color:var(--coral);color:var(--coral);}
-.hint{font-size:9px;color:rgba(255,255,255,.3);margin-left:6px;}
-/* legenda */
-#leg{position:fixed;bottom:46px;left:12px;background:rgba(18,15,13,.82);
-  border:1px solid rgba(255,255,255,.07);border-radius:5px;padding:7px 9px;}
-.li{display:flex;align-items:center;gap:5px;margin-bottom:3px;font-size:9px;color:rgba(255,255,255,.6);}
-.ld{width:9px;height:9px;border-radius:2px;}
-@media(max-width:600px){
-  #panel{width:100%;top:auto;height:45%;border-left:none;border-top:1px solid rgba(255,255,255,.07);}
-  #hud,#ctrl,#leg{right:0;}
+.hint{font-size:9px;color:rgba(255,255,255,.25);margin-left:4px;}
+#scene-wrap{flex:1;display:flex;align-items:center;justify-content:center;
+  perspective:1200px;overflow:hidden;background:radial-gradient(ellipse at 50% 60%,#252018 0%,#1a1714 70%);}
+#scene{transform-style:preserve-3d;position:relative;cursor:grab;}
+#scene:active{cursor:grabbing;}
+
+/* CÔMODOS */
+.room{position:absolute;transform-style:preserve-3d;}
+.face{position:absolute;backface-visibility:hidden;}
+.face-top{transform:rotateX(90deg);}
+.face-front{transform:translateZ(0px);}
+.face-back{}
+.face-left{transform:rotateY(-90deg);}
+.face-right{transform:rotateY(90deg);}
+.room-label{
+  position:absolute;pointer-events:none;
+  background:rgba(16,13,11,.88);border:1px solid rgba(255,255,255,.15);
+  border-radius:4px;padding:3px 7px;font-size:10px;color:var(--paper);
+  white-space:nowrap;transform:translateZ(2px);
+}
+.room-pct-bar{
+  position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:rgba(255,255,255,.1);border-radius:0 0 2px 2px;overflow:hidden;
+}
+.room-pct-fill{height:100%;}
+
+/* Legenda */
+#leg{padding:8px 12px;background:rgba(0,0,0,.2);display:flex;gap:12px;flex-wrap:wrap;border-top:1px solid rgba(255,255,255,.05);}
+.li{display:flex;align-items:center;gap:5px;font-size:9px;color:rgba(255,255,255,.5);}
+.ld{width:10px;height:10px;border-radius:2px;}
+
+/* Ghost (não executado) */
+.ghost{border:1px dashed rgba(255,255,255,.15) !important;background:rgba(255,255,255,.03) !important;}
+
+@media(max-width:700px){
+  body{flex-direction:column;}
+  #panel{width:100%;min-width:0;height:45%;border-right:none;border-top:1px solid rgba(255,255,255,.07);}
+  #view{height:55%;}
 }
 </style>
 </head>
 <body>
-<div id="wrap"></div>
-<div id="hud">
-  <div><div class="title">OBRA MARIÁRA · 3D</div><div class="sub">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div></div>
-  <div id="stats">
-    <div class="sl">PLS acum.: <span class="sv" id="s1">25,35%</span></div>
-    <div class="sl">Liberado: <span class="sv" id="s2">R$ 30.623</span></div>
-    <div class="sl">2ª med. est.: <span class="sv" id="s3">~R$ 63.718</span></div>
-    <div class="sl">Saldo: <span class="sv" id="s4">R$ 342.265</span></div>
-  </div>
-</div>
-<div id="ctrl">
-  <button class="btn on" onclick="setV('all')">Todos</button>
-  <button class="btn" onclick="setV('terreo')">Térreo</button>
-  <button class="btn" onclick="setV('pav1')">1º Pav.</button>
-  <button class="btn" onclick="setV('pav2')">2º Pav.</button>
-  <button class="btn" onclick="setC('iso')">Iso</button>
-  <button class="btn" onclick="setC('top')">Topo</button>
-  <button class="btn" onclick="setC('front')">Frente</button>
-  <span class="hint">Arraste · Scroll zoom</span>
-</div>
-<div id="leg">
-  <div class="li"><div class="ld" style="background:#22c97e"></div>Concluído</div>
-  <div class="li"><div class="ld" style="background:#f59e0b"></div>Em andamento</div>
-  <div class="li"><div class="ld" style="background:#3b82f6"></div>Parcial</div>
-  <div class="li"><div class="ld" style="background:#6b7280;opacity:.5"></div>Pendente</div>
-  <div class="li"><div class="ld" style="background:#d98a6f;opacity:.35;border:1px dashed #d98a6f"></div>A construir</div>
-</div>
+
+<!-- PAINEL -->
 <div id="panel">
-  <div id="ph">AVANÇO DA OBRA</div>
+  <div id="ph">OBRA MARIÁRA</div>
+  <div class="stats">
+    <div class="sl">PLS acumulado: <span class="sv">25,35%</span></div>
+    <div class="sl">Liberado CAIXA: <span class="sv">R$ 30.623</span></div>
+    <div class="sl">2ª med. estimada: <span class="sv">~R$ 63.718</span></div>
+    <div class="sl">Saldo disponível: <span class="sv">R$ 342.265</span></div>
+  </div>
   <div id="tabs">
     <button class="tab on" onclick="showTab('comodos')">Cômodos</button>
     <button class="tab" onclick="showTab('etapas')">Etapas</button>
@@ -92,295 +102,295 @@ canvas{display:block;touch-action:none;}
   </div>
   <div id="pb"></div>
 </div>
+
+<!-- ÁREA 3D -->
+<div id="view">
+  <div id="toolbar">
+    <button class="btn on" onclick="setFloor('all')">Todos</button>
+    <button class="btn" onclick="setFloor('terreo')">Térreo</button>
+    <button class="btn" onclick="setFloor('pav1')">1º Pav.</button>
+    <button class="btn" onclick="setFloor('pav2')">2º Pav.</button>
+    <span style="border-left:1px solid rgba(255,255,255,.1);height:16px;margin:0 2px"></span>
+    <button class="btn" onclick="setAngle(35,-30)">Isométrico</button>
+    <button class="btn" onclick="setAngle(90,0)">Topo</button>
+    <button class="btn" onclick="setAngle(0,0)">Frente</button>
+    <span class="hint">Arraste para girar</span>
+  </div>
+  <div id="scene-wrap">
+    <div id="scene"></div>
+  </div>
+  <div id="leg">
+    <div class="li"><div class="ld" style="background:#22c97e"></div>Concluído</div>
+    <div class="li"><div class="ld" style="background:#f59e0b"></div>Em andamento</div>
+    <div class="li"><div class="ld" style="background:#3b82f6"></div>Parcial</div>
+    <div class="li"><div class="ld" style="background:#546e7a;opacity:.5"></div>Pendente</div>
+    <div class="li"><div class="ld" style="background:transparent;border:1px dashed rgba(255,255,255,.3)"></div>A construir</div>
+  </div>
+</div>
+
 <script>
-// ══ DADOS DA PLANTA (cotas reais do projeto aprovado) ══════════════
-// Térreo: 8.70m × 10.95m
-// Cotas extraídas da planta (Processo 56954 · Planta 934)
-// Divisória vertical em x=4.15 (4.00m útil + 0.15 parede)
-// Coordenadas: x=leste, z=norte (z=0 = frente/sul/portão)
+// ══ ESCALA: 1 metro = 40px ══════════════════════════════════════
+const S = 40;
 
-const ROOMS_TERREO = [
-  // id, nome, área, x, z, w, d, exec%, cor hex
-  ['garagem', 'Garagem',          18.00, 0.00, 0.00, 4.00, 4.50, 40, 0x546e7a],
-  ['sala',    'Sala',             29.60, 4.15, 0.00, 4.55, 6.50, 40, 0x2e7d32],
-  ['lavabo',  'Lavabo',            2.16, 0.00, 4.65, 2.40, 0.90,  0, 0x6a1b9a],
-  ['circ',    'Circulação',        2.50, 2.40, 4.65, 1.60, 0.90,  0, 0x37474f],
-  ['cozinha', 'Cozinha',          14.00, 0.00, 5.70, 4.00, 3.50, 35, 0xe65100],
-  ['quarto',  'Quarto',           11.74, 4.15, 6.65, 4.55, 2.58, 35, 0x1565c0],
-  ['despen',  'Despensa',          1.76, 0.00, 9.20, 1.35, 1.30, 35, 0x4e342e],
-  ['sbanh',   'Suíte (banh.)',     2.88, 1.50, 9.20, 1.65, 1.75, 35, 0x880e4f],
-];
+// ══ DADOS DA PLANTA (cotas reais em metros) ══════════════════════
+// Térreo 8.70m × 10.95m
+// Coordenadas: x=leste (direita), z=norte (fundo), y=altura
+// Origem (0,0,0) = canto SW (frente-esquerda) da construção
 
-const ROOMS_PAV1 = [
-  ['master',  'Quarto Master',    16.17, 0.00, 0.00, 4.00, 4.04,  0, 0x4a148c],
-  ['q1',      'Quarto 1',         17.40, 4.15, 0.00, 4.55, 3.82,  0, 0x1a237e],
-  ['q2',      'Quarto 2',         19.79, 0.00, 4.19, 4.00, 4.95,  0, 0x006064],
-  ['circ1',   'Circulação',        9.12, 4.15, 4.00, 4.55, 2.00,  0, 0x37474f],
-  ['cl1',     'Closet 1',          4.00, 4.15, 6.15, 2.00, 2.00,  0, 0x4e342e],
-  ['cl2',     'Closet 2',          4.88, 6.30, 6.15, 2.40, 2.03,  0, 0x4e342e],
-  ['banh1',   'Banheiro',          3.65, 4.15, 8.30, 2.20, 1.66,  0, 0x880e4f],
-  ['sbanh1',  'Suíte (banh.)',     3.71, 0.00, 8.30, 4.00, 0.93,  0, 0xad1457],
-  ['varanda', 'Varanda coberta',   9.14, 0.00, 9.40, 8.70, 1.05,  0, 0x33691e],
-];
-
-const ROOMS_PAV2 = [
-  ['area2',   'Área social',      28.85, 0.00, 0.00, 8.70, 3.32,  0, 0x37474f],
-  ['var2',    'Varanda desc.',    37.85, 0.00, 3.47, 8.70, 4.35,  0, 0x1b5e20],
-];
-
-const FLOORS_DEF = {
-  terreo: {label:'Térreo',       w:8.70, d:10.95, h:2.80, y:0,    rooms:ROOMS_TERREO},
-  pav1:   {label:'1º Pavimento', w:8.70, d:10.45, h:2.80, y:2.95, rooms:ROOMS_PAV1},
-  pav2:   {label:'2º Pavimento', w:8.70, d:7.79,  h:2.80, y:5.90, rooms:ROOMS_PAV2},
+const ROOMS = {
+  terreo: [
+    // [id, nome, área, x, z, w, d, exec%, r, g, b]
+    ['garagem', 'Garagem',          18.00, 0.00, 0.00, 4.00, 4.50,  40, 84, 110, 122],
+    ['sala',    'Sala',             29.60, 4.15, 0.00, 4.55, 6.50,  40, 46, 125, 50],
+    ['lavabo',  'Lavabo',            2.16, 0.00, 4.65, 2.40, 0.90,   0, 106, 27, 154],
+    ['circ',    'Circulação',        2.50, 2.40, 4.65, 1.60, 0.90,   0, 55, 71, 79],
+    ['cozinha', 'Cozinha',          14.00, 0.00, 5.70, 4.00, 3.50,  35, 230, 81, 0],
+    ['quarto',  'Quarto',           11.74, 4.15, 6.65, 4.55, 2.58,  35, 21, 101, 192],
+    ['despen',  'Despensa',          1.76, 0.00, 9.20, 1.35, 1.30,  35, 78, 52, 46],
+    ['sbanh',   'Suíte (banh.)',     2.88, 1.50, 9.20, 1.65, 1.75,  35, 136, 14, 79],
+  ],
+  pav1: [
+    ['master',  'Quarto Master',    16.17, 0.00, 0.00, 4.00, 4.04,   0, 74, 20, 140],
+    ['q1',      'Quarto 1',         17.40, 4.15, 0.00, 4.55, 3.82,   0, 26, 35, 126],
+    ['q2',      'Quarto 2',         19.79, 0.00, 4.19, 4.00, 4.95,   0, 0,  96, 100],
+    ['circ1',   'Circulação',        9.12, 4.15, 4.04, 4.55, 2.11,   0, 55, 71, 79],
+    ['cl1',     'Closet 1',          4.00, 4.15, 6.15, 2.00, 2.00,   0, 78, 52, 46],
+    ['cl2',     'Closet 2',          4.88, 6.30, 6.15, 2.40, 2.03,   0, 78, 52, 46],
+    ['banh1',   'Banheiro',          3.65, 4.15, 8.30, 2.20, 1.66,   0, 136, 14, 79],
+    ['sbanh1',  'Suíte (banh.)',     3.71, 0.00, 8.30, 4.00, 0.93,   0, 136, 14, 79],
+    ['varanda', 'Varanda coberta',   9.14, 0.00, 9.40, 8.55, 1.05,   0, 51, 105, 30],
+  ],
+  pav2: [
+    ['area2',   'Área social',      28.85, 0.00, 0.00, 8.55, 3.32,   0, 55, 71, 79],
+    ['var2',    'Varanda desc.',    37.85, 0.00, 3.47, 8.55, 4.35,   0, 27, 94, 32],
+  ],
 };
 
-const STAGES = [
-  {label:'Fundação',             inicio:'04/05/2026',fim:'30/05/2026',status:'concluido',medicao:'1ª ✓',pct:100},
-  {label:'Impermeabilização',    inicio:'01/06/2026',fim:'07/09/2026',status:'andamento',medicao:'2ª',  pct:60},
-  {label:'Estrutura pilares',    inicio:'22/06/2026',fim:'03/08/2026',status:'andamento',medicao:'2ª',  pct:35},
-  {label:'Alvenaria térreo',     inicio:'22/06/2026',fim:'03/08/2026',status:'andamento',medicao:'2ª',  pct:40},
-  {label:'Laje térreo',          inicio:'03/08/2026',fim:'17/08/2026',status:'pendente', medicao:'2ª',  pct:0},
-  {label:'Esgoto + hidráulica',  inicio:'17/08/2026',fim:'31/08/2026',status:'parcial',  medicao:'2ª',  pct:30},
-  {label:'Elétrica (infra)',     inicio:'31/08/2026',fim:'07/09/2026',status:'parcial',  medicao:'2ª',  pct:30},
-  {label:'Cobertura+esquadrias', inicio:'07/09/2026',fim:'26/10/2026',status:'pendente', medicao:'3ª',  pct:0},
-  {label:'Chapisco+reboco',      inicio:'26/10/2026',fim:'12/02/2027',status:'pendente', medicao:'4ª',  pct:0},
-  {label:'Contrapiso+piso',      inicio:'12/02/2027',fim:'22/03/2027',status:'pendente', medicao:'4ª',  pct:0},
-  {label:'Acabamentos+louças',   inicio:'22/03/2027',fim:'30/03/2027',status:'pendente', medicao:'4ª',  pct:0},
-  {label:'1º e 2º pavimento',    inicio:'A definir', fim:'A definir', status:'contratar',medicao:'5–7ª',pct:0},
-];
+const FLOOR_Y = {terreo:0, pav1:2.95, pav2:5.90};
+const FLOOR_LABEL = {terreo:'Térreo', pav1:'1º Pavimento', pav2:'2º Pavimento'};
+const WALL_H = 2.80; // altura de parede em metros
 
-const MEDS = [
-  {n:'1ª ✓',data:'30/05/2026',pls:'8,23%', val:'R$ 30.623',  status:'concluido'},
-  {n:'2ª ~', data:'03/07/2026',pls:'17,12%',val:'~R$ 63.718', status:'andamento'},
-  {n:'3ª',   data:'26/10/2026',pls:'7,10%', val:'~R$ 26.475', status:'pendente'},
-  {n:'4ª',   data:'30/03/2027',pls:'25,02%',val:'~R$ 93.297', status:'pendente'},
-  {n:'5–7ª', data:'A definir', pls:'39,00%',val:'~R$145.387', status:'contratar'},
-];
+// ══ ESTADO DA CÂMERA ════════════════════════════════════════════
+let rotX = 35, rotY = -30, scale = 1;
+let dragging = false, lastX = 0, lastY = 0;
+let currentFloor = 'all';
 
-const SC = {concluido:'#22c97e',andamento:'#f59e0b',parcial:'#3b82f6',pendente:'#6b7280',contratar:'#d98a6f'};
-const SL = {concluido:'✅ Concluído',andamento:'🔨 Em andamento',parcial:'⚡ Parcial',pendente:'⏳ Pendente',contratar:'📋 A contratar'};
-
-// ══ THREE.JS ══════════════════════════════════════════════════════
-const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x1a1714);
-scene.fog = new THREE.Fog(0x1a1714, 35, 75);
-
-const W = window.innerWidth, H = window.innerHeight;
-const camera = new THREE.PerspectiveCamera(38, W/H, 0.1, 200);
-const renderer = new THREE.WebGLRenderer({antialias:true});
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
-renderer.setSize(W, H);
-renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-document.getElementById('wrap').appendChild(renderer.domElement);
-
-// Luzes
-scene.add(new THREE.AmbientLight(0xfff5e0, 0.45));
-const sun = new THREE.DirectionalLight(0xfff8e7, 1.1);
-sun.position.set(20, 30, 15);
-sun.castShadow = true;
-sun.shadow.mapSize.set(2048,2048);
-sun.shadow.camera.left=-18;sun.shadow.camera.right=18;sun.shadow.camera.top=18;sun.shadow.camera.bottom=-18;
-sun.shadow.camera.far = 80;
-scene.add(sun);
-scene.add(Object.assign(new THREE.DirectionalLight(0x8899cc,0.3),{position:{set:()=>{}}}).position.set(-8,6,-8) && new THREE.DirectionalLight(0x8899cc,0.3));
-const fill = new THREE.DirectionalLight(0x8899cc,0.3); fill.position.set(-8,6,-8); scene.add(fill);
-
-// Chão
-const gnd = new THREE.Mesh(new THREE.PlaneGeometry(80,80),new THREE.MeshStandardMaterial({color:0x1a1714,roughness:1}));
-gnd.rotation.x=-Math.PI/2; gnd.receiveShadow=true; scene.add(gnd);
-
-// Lote 9×20m — posicionado com canto SW em (0,0,0)
-const lot = new THREE.Mesh(new THREE.PlaneGeometry(9,20),new THREE.MeshStandardMaterial({color:0x243318,roughness:1}));
-lot.rotation.x=-Math.PI/2; lot.position.set(4.5,0.003,10); lot.receiveShadow=true; scene.add(lot);
-const lotE = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(9,0.01,20)),new THREE.LineBasicMaterial({color:0xd98a6f,opacity:.4,transparent:true}));
-lotE.position.set(4.5,0.003,10); scene.add(lotE);
-
-// ══ CÂMERA ════════════════════════════════════════════════════════
-let theta=0.65, phi=0.58, radius=20;
-const target = new THREE.Vector3(4.35, 2.5, 5.5);
-let drag=false, mx=0, my=0;
-
-function updCam(){
-  camera.position.set(
-    target.x + radius*Math.sin(phi)*Math.sin(theta),
-    target.y + radius*Math.cos(phi),
-    target.z + radius*Math.sin(phi)*Math.cos(theta)
-  );
-  camera.lookAt(target);
+// ══ CORES ════════════════════════════════════════════════════════
+function execColor(exec, r, g, b) {
+  if (exec === 0)   return `rgba(${r},${g},${b},0.12)`;
+  if (exec === 100) return `rgb(34,201,126)`;
+  if (exec >= 60)   return `rgba(245,158,11,0.85)`;
+  if (exec >= 30)   return `rgba(59,130,246,0.75)`;
+  return `rgba(${r},${g},${b},0.65)`;
 }
-updCam();
-
-const el = renderer.domElement;
-el.addEventListener('mousedown',e=>{drag=true;mx=e.clientX;my=e.clientY;});
-window.addEventListener('mouseup',()=>drag=false);
-window.addEventListener('mousemove',e=>{
-  if(!drag)return;
-  theta-=(e.clientX-mx)*0.007; phi=Math.max(0.06,Math.min(1.52,phi+(e.clientY-my)*0.006));
-  mx=e.clientX;my=e.clientY;updCam();
-});
-el.addEventListener('wheel',e=>{radius=Math.max(3,Math.min(45,radius+e.deltaY*.018));updCam();e.preventDefault();},{passive:false});
-
-let t0x=0,t0y=0,td0=0;
-el.addEventListener('touchstart',e=>{if(e.touches.length===1){drag=true;t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;}if(e.touches.length===2){const d=e.touches;td0=Math.hypot(d[0].clientX-d[1].clientX,d[0].clientY-d[1].clientY);}},{passive:true});
-window.addEventListener('touchend',()=>drag=false);
-window.addEventListener('touchmove',e=>{
-  if(e.touches.length===1&&drag){theta-=(e.touches[0].clientX-t0x)*0.007;phi=Math.max(0.06,Math.min(1.52,phi+(e.touches[0].clientY-t0y)*0.006));t0x=e.touches[0].clientX;t0y=e.touches[0].clientY;updCam();}
-  if(e.touches.length===2){const d=e.touches;const dist=Math.hypot(d[0].clientX-d[1].clientX,d[0].clientY-d[1].clientY);radius=Math.max(3,Math.min(45,radius*(td0/dist)));td0=dist;updCam();}
-},{passive:true});
-window.addEventListener('resize',()=>{camera.aspect=window.innerWidth/window.innerHeight;camera.updateProjectionMatrix();renderer.setSize(window.innerWidth,window.innerHeight);});
-
-// ══ HELPERS ═══════════════════════════════════════════════════════
-function mkBox(w,h,d,col,op=1,wire=false){
-  const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),wire?new THREE.MeshBasicMaterial({color:col,wireframe:true,transparent:true,opacity:op}):new THREE.MeshStandardMaterial({color:col,roughness:.8,metalness:.02,transparent:op<1,opacity:op}));
-  m.castShadow=!wire;m.receiveShadow=!wire;return m;
+function execBorder(exec, r, g, b) {
+  if (exec === 0)   return `rgba(${r},${g},${b},0.3)`;
+  if (exec === 100) return 'rgba(34,201,126,0.9)';
+  if (exec >= 60)   return 'rgba(245,158,11,0.9)';
+  if (exec >= 30)   return 'rgba(59,130,246,0.9)';
+  return `rgba(${r},${g},${b},0.8)`;
 }
-function mkEdge(w,h,d,col,op=1){
-  return new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(w,h,d)),new THREE.LineBasicMaterial({color:col,transparent:op<1,opacity:op}));
-}
-function mkLabel(txt,sub,col='#d98a6f'){
-  const c=document.createElement('canvas');c.width=512;c.height=110;
-  const x=c.getContext('2d');
-  x.fillStyle='rgba(16,13,11,0.9)';x.fillRect(0,0,512,110);
-  x.strokeStyle=col;x.lineWidth=2;x.strokeRect(2,2,508,106);
-  x.fillStyle='#f6f2ec';x.font='bold 26px Courier New';x.fillText(txt,14,40);
-  x.fillStyle=col;x.font='19px Courier New';x.fillText(sub,14,76);
-  const t=new THREE.CanvasTexture(c);
-  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
-  s.scale.set(3.2,.77,1);return s;
+function statusColor(exec) {
+  if (exec === 100) return '#22c97e';
+  if (exec >= 60)   return '#f59e0b';
+  if (exec >= 30)   return '#3b82f6';
+  if (exec > 0)     return '#d98a6f';
+  return '#6b7280';
 }
 
-// Cor de parede: tijolo cru → rebocado
-function wallColor(acabPct){
-  const a=new THREE.Color(0xc8b89a),b=new THREE.Color(0xede8e0);
-  return a.lerp(b,Math.min(1,acabPct/100));
-}
+// ══ CONSTRUÇÃO DA CENA ══════════════════════════════════════════
+function buildScene() {
+  const scene = document.getElementById('scene');
+  scene.innerHTML = '';
 
-// ══ CENA ══════════════════════════════════════════════════════════
-let grp=new THREE.Group(); scene.add(grp);
-let view='all';
+  const floors = currentFloor === 'all'
+    ? ['terreo','pav1','pav2']
+    : [currentFloor];
 
-function buildAll(){
-  scene.remove(grp); grp=new THREE.Group();
+  // Centro da cena para rotação
+  const cx = 4.35 * S, cz = 5.5 * S;
 
-  if(view!=='all'){ buildFloor(view,0); scene.add(grp); return; }
+  floors.forEach(floorId => {
+    const rooms = ROOMS[floorId];
+    const yBase = FLOOR_Y[floorId] * S;
+    if (!rooms) return;
 
-  // Todos os pavimentos empilhados
-  Object.entries(FLOORS_DEF).forEach(([id,fl])=> buildFloorStack(id,fl));
-  buildCobertura();
-  scene.add(grp);
-  target.set(4.35,3,5.5); radius=22; updCam();
-}
+    // Laje
+    const slabH = 0.15 * S;
+    const lw = (floorId === 'pav2' ? 8.55 : 8.70) * S;
+    const ld = (floorId === 'terreo' ? 10.95 : floorId === 'pav1' ? 10.45 : 7.79) * S;
+    addBox(scene, cx - lw/2, -yBase - slabH, cz - ld/2, lw, slabH, ld,
+      'rgba(100,96,90,0.9)', 'rgba(120,116,110,0.8)', cx, cz);
 
-function buildFloorStack(id,fl){
-  const yB=fl.y;
-  const wc=wallColor(0); // acabamento ainda 0%
+    // Cômodos
+    rooms.forEach(([id, name, area, rx, rz, rw, rd, exec, r, g, b]) => {
+      const wallH_exec = WALL_H * (exec / 100) * S;
+      const wallH_ghost = WALL_H * (1 - exec/100) * S;
+      const px = rx * S - cx;
+      const pz = rz * S - cz;
+      const pw = rw * S;
+      const pd = rd * S;
 
-  // Laje
-  const slab=mkBox(fl.w,0.15,fl.d,0x6a6358);
-  slab.position.set(fl.w/2,yB-0.075,fl.d/2); grp.add(slab);
+      // Parte executada
+      if (exec > 0) {
+        const col = execColor(exec, r, g, b);
+        const brd = execBorder(exec, r, g, b);
+        addBox(scene, px - cx + cx, -yBase - wallH_exec, pz - cz + cz,
+          pw, wallH_exec, pd, col, brd, cx, cz, name, exec, area, r, g, b);
+      }
 
-  if(!fl.rooms){return;}
-
-  fl.rooms.forEach(([rid,rn,ra,rx,rz,rw,rd,rexec,rcor])=>{
-    const wallH=fl.h*(rexec/100);
-    const cx=rx+rw/2, cz=rz+rd/2;
-    const isTerreo=(id==='terreo');
-
-    if(rexec>0){
-      // Parede executada
-      const wall=mkBox(rw,Math.max(0.05,wallH),rd,wc);
-      wall.position.set(cx,yB+wallH/2,cz); grp.add(wall);
-      // Borda colorida identificando o cômodo
-      const edge=mkEdge(rw,Math.max(0.05,wallH),rd,rcor,.7);
-      edge.position.set(cx,yB+wallH/2,cz); grp.add(edge);
-    }
-
-    // Ghost — parte a construir
-    if(rexec<100){
-      const gh=fl.h-wallH;
-      const ghost=mkBox(rw,Math.max(0.05,gh),rd,rcor,.07,true);
-      ghost.position.set(cx,yB+wallH+gh/2,cz); grp.add(ghost);
-    }
+      // Ghost (parte não executada)
+      if (exec < 100 && wallH_ghost > 2) {
+        addBox(scene, px - cx + cx, -yBase - wallH_exec - wallH_ghost, pz - cz + cz,
+          pw, wallH_ghost, pd,
+          `rgba(${r},${g},${b},0.05)`,
+          `rgba(${r},${g},${b},0.18)`,
+          cx, cz, exec === 0 ? name : null, exec, area, r, g, b, true);
+      }
+    });
   });
 
-  // Label do pavimento
-  const lbl=mkLabel(fl.label+' · '+fl.w+'×'+fl.d+'m',
-    id==='terreo'?'Alvenaria: 40% · Estrutura: 35%':'A construir',
-    id==='terreo'?'#f59e0b':'#6b7280');
-  lbl.position.set(fl.w/2,yB+fl.h+.85,fl.d/2); grp.add(lbl);
+  applyTransform();
 }
 
-function buildFloor(id,yOff){
-  const fl=FLOORS_DEF[id];
-  const wc=wallColor(0);
+function addBox(scene, x, y, z, w, h, d, bg, border, cx, cz, label=null, exec=null, area=null, r=0, g=0, b=0, isGhost=false) {
+  const wrap = document.createElement('div');
+  wrap.style.cssText = `position:absolute;width:${w}px;height:${h}px;transform-style:preserve-3d;
+    transform:translate3d(${x}px,${y}px,${z}px);`;
 
-  // Laje
-  const slab=mkBox(fl.w,.15,fl.d,0x6a6358);
-  slab.position.set(fl.w/2,-.075,fl.d/2); grp.add(slab);
+  const faces = [
+    // top: rotateX(90deg) translateZ(-h/2)
+    {t:`rotateX(90deg) translateZ(${-h/2}px)`, w, h:d, bright:1.0},
+    // front (z=0): translateZ(d/2) — sul/frente
+    {t:`translateZ(${d/2}px)`,                  w, h, bright:0.85},
+    // back: rotateY(180deg) translateZ(d/2)
+    {t:`rotateY(180deg) translateZ(${d/2}px)`,  w, h, bright:0.65},
+    // left: rotateY(-90deg) translateZ(w/2)
+    {t:`rotateY(-90deg) translateZ(${w/2}px)`,  w:d, h, bright:0.75},
+    // right: rotateY(90deg) translateZ(w/2)
+    {t:`rotateY(90deg) translateZ(${w/2}px)`,   w:d, h, bright:0.90},
+  ];
 
-  if(!fl.rooms){
-    const ghost=mkBox(fl.w,fl.h,fl.d,0xd98a6f,.07,true);
-    ghost.position.set(fl.w/2,fl.h/2,fl.d/2); grp.add(ghost);
-    const lbl=mkLabel(fl.label,'A construir','#d98a6f');
-    lbl.position.set(fl.w/2,fl.h+.85,fl.d/2); grp.add(lbl);
-    target.set(fl.w/2,fl.h/2,fl.d/2); radius=Math.max(fl.w,fl.d)*1.7; updCam();
-    return;
+  faces.forEach(({t, w:fw, h:fh, bright}) => {
+    const face = document.createElement('div');
+    face.style.cssText = `position:absolute;width:${fw}px;height:${fh}px;
+      background:${isGhost ? `rgba(${r},${g},${b},0.04)` : bg};
+      border:1px solid ${isGhost ? `rgba(${r},${g},${b},0.2)` : border};
+      transform-origin:0 0;transform:${t};
+      filter:brightness(${bright});
+      ${isGhost ? 'border-style:dashed;' : ''}`;
+    if (!isGhost) face.style.backdropFilter = 'none';
+    wrap.appendChild(face);
+  });
+
+  // Label no topo
+  if (label && !isGhost && exec !== null && h > 10) {
+    const lbl = document.createElement('div');
+    const sc = statusColor(exec);
+    lbl.style.cssText = `position:absolute;bottom:0;left:0;right:0;
+      background:rgba(16,13,11,0.82);border-top:2px solid ${sc};
+      padding:2px 5px;font-size:9px;font-family:'Courier New',monospace;
+      color:#f6f2ec;transform:translateZ(${d/2+1}px);white-space:nowrap;overflow:hidden;`;
+    lbl.innerHTML = `<span style="color:${sc};font-weight:bold">${label}</span> ${area}m² · ${exec}%`;
+    wrap.appendChild(lbl);
+  } else if (label && isGhost && exec === 0) {
+    const lbl = document.createElement('div');
+    lbl.style.cssText = `position:absolute;top:30%;left:0;right:0;text-align:center;
+      font-size:9px;font-family:'Courier New',monospace;color:rgba(255,255,255,0.25);
+      transform:translateZ(${d/2+1}px);`;
+    lbl.textContent = label;
+    wrap.appendChild(lbl);
   }
 
-  fl.rooms.forEach(([rid,rn,ra,rx,rz,rw,rd,rexec,rcor])=>{
-    const wallH=fl.h*(rexec/100);
-    const cx=rx+rw/2, cz=rz+rd/2;
+  scene.appendChild(wrap);
+}
 
-    if(rexec>0){
-      const wall=mkBox(rw,Math.max(0.04,wallH),rd,wc);
-      wall.position.set(cx,wallH/2,cz); grp.add(wall);
-      const edge=mkEdge(rw,Math.max(0.04,wallH),rd,rcor,.9);
-      edge.position.set(cx,wallH/2,cz); grp.add(edge);
-      // Linha de topo da parede
-      const top=mkEdge(rw,.03,rd,rcor,1);
-      top.position.set(cx,wallH,cz); grp.add(top);
-    }
+// ══ ROTAÇÃO ══════════════════════════════════════════════════════
+function applyTransform() {
+  const scene = document.getElementById('scene');
+  scene.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg) scale(${scale})`;
+}
 
-    // Ghost
-    const gh=fl.h*(1-rexec/100);
-    if(gh>.02){
-      const ghost=mkBox(rw,gh,rd,rcor,.1,true);
-      ghost.position.set(cx,fl.h*(rexec/100)+gh/2,cz); grp.add(ghost);
-    }
+function setAngle(rx, ry) {
+  rotX = rx; rotY = ry;
+  applyTransform();
+}
 
-    // Label do cômodo
-    const lbl=mkLabel(rn,ra+'m²  '+rexec+'%','#'+rcor.toString(16).padStart(6,'0'));
-    lbl.scale.set(1.8,.45,1);
-    lbl.position.set(cx,fl.h+.55,cz); grp.add(lbl);
+function setFloor(f) {
+  currentFloor = f;
+  document.querySelectorAll('.btn').forEach(b => {
+    b.classList.toggle('on', b.textContent.toLowerCase().includes(
+      f==='all'?'todos':f==='terreo'?'térreo':f==='pav1'?'1º':f==='pav2'?'2º':'?'
+    ));
   });
-
-  target.set(fl.w/2,fl.h/2,fl.d/2); radius=Math.max(fl.w,fl.d)*1.65; updCam();
+  buildScene();
 }
 
-function buildCobertura(){
-  const ghost=mkBox(8.70,.4,10.95,0xd98a6f,.05,true);
-  ghost.position.set(4.35,8.70+.2,5.5); grp.add(ghost);
-  const lbl=mkLabel('Cobertura','Pendente · fibrocimento','#6b7280');
-  lbl.position.set(4.35,9.8,5.5); grp.add(lbl);
-}
+// Drag para rotacionar
+const wrap = document.getElementById('scene-wrap');
+wrap.addEventListener('mousedown', e => { dragging=true; lastX=e.clientX; lastY=e.clientY; });
+window.addEventListener('mouseup', () => dragging=false);
+window.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  rotY += (e.clientX - lastX) * 0.4;
+  rotX -= (e.clientY - lastY) * 0.3;
+  rotX = Math.max(-10, Math.min(85, rotX));
+  lastX=e.clientX; lastY=e.clientY;
+  applyTransform();
+});
 
-function setV(v){
-  view=v;
-  document.querySelectorAll('.btn').forEach(b=>b.classList.remove('on'));
-  document.querySelector('[onclick="setV(\''+v+'\')"]')?.classList.add('on');
-  buildAll();
-}
-function setC(m){
-  if(m==='iso'){theta=0.65;phi=0.58;radius=20;target.set(4.35,2.5,5.5);}
-  if(m==='top'){theta=0;phi=0.06;radius=18;target.set(4.35,0,5.5);}
-  if(m==='front'){theta=0;phi=Math.PI/3;radius=18;target.set(4.35,3,5.5);}
-  updCam();
-}
+// Touch
+let tX=0, tY=0, pinch0=0;
+wrap.addEventListener('touchstart', e => {
+  if (e.touches.length===1) { dragging=true; tX=e.touches[0].clientX; tY=e.touches[0].clientY; }
+  if (e.touches.length===2) { pinch0=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY); }
+}, {passive:true});
+window.addEventListener('touchend', () => dragging=false);
+window.addEventListener('touchmove', e => {
+  if (e.touches.length===1 && dragging) {
+    rotY += (e.touches[0].clientX-tX)*0.4;
+    rotX -= (e.touches[0].clientY-tY)*0.3;
+    rotX = Math.max(-10,Math.min(85,rotX));
+    tX=e.touches[0].clientX; tY=e.touches[0].clientY;
+    applyTransform();
+  }
+  if (e.touches.length===2) {
+    const d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
+    scale = Math.max(0.4, Math.min(2.5, scale*(d/pinch0)));
+    pinch0=d; applyTransform();
+  }
+}, {passive:true});
 
-buildAll();
+wrap.addEventListener('wheel', e => {
+  scale = Math.max(0.4, Math.min(2.5, scale - e.deltaY*0.001));
+  applyTransform(); e.preventDefault();
+}, {passive:false});
 
-// ══ PAINEL ════════════════════════════════════════════════════════
+// ══ PAINEL LATERAL ══════════════════════════════════════════════
+const STAGES = [
+  {l:'Fundação',             s:'concluido',i:'04/05/2026',f:'30/05/2026',m:'1ª ✓',p:100},
+  {l:'Impermeabilização',    s:'andamento',i:'01/06/2026',f:'07/09/2026',m:'2ª',  p:60},
+  {l:'Estrutura (pilares)',  s:'andamento',i:'22/06/2026',f:'03/08/2026',m:'2ª',  p:35},
+  {l:'Alvenaria térreo',     s:'andamento',i:'22/06/2026',f:'03/08/2026',m:'2ª',  p:40},
+  {l:'Laje térreo',          s:'pendente', i:'03/08/2026',f:'17/08/2026',m:'2ª',  p:0},
+  {l:'Esgoto + hidráulica',  s:'parcial',  i:'17/08/2026',f:'31/08/2026',m:'2ª',  p:30},
+  {l:'Elétrica (infra)',     s:'parcial',  i:'31/08/2026',f:'07/09/2026',m:'2ª',  p:30},
+  {l:'Cobertura+esquadrias', s:'pendente', i:'07/09/2026',f:'26/10/2026',m:'3ª',  p:0},
+  {l:'Chapisco+reboco',      s:'pendente', i:'26/10/2026',f:'12/02/2027',m:'4ª',  p:0},
+  {l:'Contrapiso+piso',      s:'pendente', i:'12/02/2027',f:'22/03/2027',m:'4ª',  p:0},
+  {l:'Acabamentos+louças',   s:'pendente', i:'22/03/2027',f:'30/03/2027',m:'4ª',  p:0},
+  {l:'1º e 2º pavimento',    s:'contratar',i:'A definir', f:'A definir', m:'5–7ª',p:0},
+];
+const MEDS = [
+  {n:'1ª ✓',d:'30/05/2026',p:'8,23%', v:'R$ 30.623',  s:'concluido'},
+  {n:'2ª ~', d:'03/07/2026',p:'17,12%',v:'~R$ 63.718', s:'andamento'},
+  {n:'3ª',   d:'26/10/2026',p:'7,10%', v:'~R$ 26.475', s:'pendente'},
+  {n:'4ª',   d:'30/03/2027',p:'25,02%',v:'~R$ 93.297', s:'pendente'},
+  {n:'5–7ª', d:'A definir', p:'39,00%',v:'~R$145.387', s:'contratar'},
+];
+const SC={concluido:'#22c97e',andamento:'#f59e0b',parcial:'#3b82f6',pendente:'#6b7280',contratar:'#d98a6f'};
+const SL={concluido:'✅ Concluído',andamento:'🔨 Em andamento',parcial:'⚡ Parcial',pendente:'⏳ Pendente',contratar:'📋 A contratar'};
+
 let tab='comodos';
 function showTab(t){
   tab=t;
@@ -390,64 +400,58 @@ function showTab(t){
 
 function renderPainel(){
   const el=document.getElementById('pb');
-  if(tab==='comodos') el.innerHTML=renderComodos();
-  if(tab==='etapas')  el.innerHTML=renderEtapas();
-  if(tab==='medicoes')el.innerHTML=renderMedicoes();
-}
-
-function renderComodos(){
-  return '<div style="font-size:9px;color:#6b7280;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Térreo — 89m²</div>'+
-    ROOMS_TERREO.map(([id,n,a,x,z,w,d,ex,cor])=>{
-      const c=ex===100?'concluido':ex>0?'andamento':'pendente';
-      const color=SC[c]; const hexcor='#'+cor.toString(16).padStart(6,'0');
-      return '<div class="card" style="border-left-color:'+hexcor+'">'+
-        '<div class="cn">'+n+'</div>'+
-        '<div class="ca">'+a+'m²  ·  '+w.toFixed(2)+'×'+d.toFixed(2)+'m</div>'+
-        '<div class="bg"><div class="fill" style="width:'+ex+'%;background:'+color+'"></div></div>'+
-        '<div class="pp">'+ex+'%  ·  '+SL[c]+'</div>'+
+  if(tab==='comodos'){
+    el.innerHTML='<div style="font-size:9px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Térreo — 89m²</div>'+
+      ROOMS.terreo.map(([id,n,a,x,z,w,d,ex,r,g,b])=>{
+        const c=SC[ex===100?'concluido':ex>0?'andamento':'pendente'];
+        const hex='rgb('+r+','+g+','+b+')';
+        return '<div class="card" style="border-left-color:'+hex+'">'+
+          '<div class="cn">'+n+'</div>'+
+          '<div class="ca">'+a+'m² · '+w.toFixed(2)+'×'+d.toFixed(2)+'m</div>'+
+          '<div class="bg"><div class="bf" style="width:'+ex+'%;background:'+c+'"></div></div>'+
+          '<div class="pp">'+ex+'% · '+SL[ex===100?'concluido':ex>0?'andamento':'pendente']+'</div>'+
+        '</div>';
+      }).join('')+
+      '<div style="font-size:9px;color:#6b7280;margin:10px 0 7px;text-transform:uppercase;letter-spacing:.05em">1º e 2º Pav.</div>'+
+      '<div class="card" style="border-left-color:#d98a6f">'+
+        '<div class="cn" style="color:#d98a6f">📋 A contratar</div>'+
+        '<div class="ca">Após conclusão do térreo (~mar/2027)</div>'+
       '</div>';
-    }).join('')+
-    '<div style="font-size:9px;color:#6b7280;margin:10px 0 7px;text-transform:uppercase;letter-spacing:.05em">1º e 2º Pav. — A contratar</div>'+
-    '<div class="card" style="border-left-color:#d98a6f;padding:10px">'+
-      '<div class="cn" style="color:#d98a6f">📋 Aguardando contratação</div>'+
-      '<div class="ca" style="margin-top:4px">Início após conclusão do térreo (~mar/2027)</div>'+
-    '</div>';
-}
-
-function renderEtapas(){
-  return STAGES.map(s=>{
-    const c=SC[s.status];
-    return '<div class="card" style="border-left-color:'+c+'">'+
-      '<div style="display:flex;justify-content:space-between;align-items:flex-start">'+
-        '<div class="cn">'+s.label+'</div>'+
-        '<span style="font-size:9px;color:'+c+';font-weight:bold;white-space:nowrap;margin-left:4px">Med.'+s.medicao+'</span>'+
-      '</div>'+
-      '<div class="ca">'+s.inicio+' → '+s.fim+'</div>'+
-      '<div class="bg"><div class="fill" style="width:'+s.pct+'%;background:'+c+'"></div></div>'+
-      '<div class="pp">'+s.pct+'%  ·  '+SL[s.status]+'</div>'+
-    '</div>';
-  }).join('');
-}
-
-function renderMedicoes(){
-  return '<div style="font-size:9px;color:#6b7280;margin-bottom:7px;text-transform:uppercase;letter-spacing:.05em">Base R$ 372.888</div>'+
-    MEDS.map(m=>{
-      const c=SC[m.status];
+  }
+  if(tab==='etapas'){
+    el.innerHTML=STAGES.map(s=>{
+      const c=SC[s.s];
       return '<div class="card" style="border-left-color:'+c+'">'+
         '<div style="display:flex;justify-content:space-between">'+
-          '<div class="cn">'+m.n+' medição</div>'+
-          '<span style="font-size:10px;color:'+c+';font-weight:bold">'+m.pls+'</span>'+
+          '<div class="cn">'+s.l+'</div>'+
+          '<span style="font-size:9px;color:'+c+';font-weight:bold">'+s.m+'</span>'+
         '</div>'+
-        '<div class="ca">'+m.data+'</div>'+
-        '<div style="font-size:11px;color:#f6f2ec;margin-top:3px">'+m.val+'</div>'+
-        '<div class="pp">'+SL[m.status]+'</div>'+
+        '<div class="ca">'+s.i+' → '+s.f+'</div>'+
+        '<div class="bg"><div class="bf" style="width:'+s.p+'%;background:'+c+'"></div></div>'+
+        '<div class="pp">'+s.p+'% · '+SL[s.s]+'</div>'+
       '</div>';
     }).join('');
+  }
+  if(tab==='medicoes'){
+    el.innerHTML='<div style="font-size:9px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Base R$ 372.888</div>'+
+      MEDS.map(m=>{
+        const c=SC[m.s];
+        return '<div class="card" style="border-left-color:'+c+'">'+
+          '<div style="display:flex;justify-content:space-between">'+
+            '<div class="cn">'+m.n+' medição</div>'+
+            '<span style="font-size:10px;color:'+c+';font-weight:bold">'+m.p+'</span>'+
+          '</div>'+
+          '<div class="ca">'+m.d+'</div>'+
+          '<div style="font-size:11px;color:#f6f2ec;margin-top:2px">'+m.v+'</div>'+
+          '<div class="pp">'+SL[m.s]+'</div>'+
+        '</div>';
+      }).join('');
+  }
 }
 
+// Inicializar
 renderPainel();
-
-(function loop(){requestAnimationFrame(loop);renderer.render(scene,camera);})();
+buildScene();
 </script>
 </body>
 </html>
