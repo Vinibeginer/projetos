@@ -521,9 +521,9 @@ textarea { resize: vertical; min-height: 60px; }
               <td style="font-size:12px;color:var(--text2)">Supra 35% + alvenaria 40% + impermeab. 60% + elétrica 30% + hidráulica 20% + esgoto + magro (PLS RT João Carlos)</td>
               <td class="right">22,73%</td>
               <td class="right" style="font-weight:600;color:var(--green)">17,12%</td>
-              <td class="right admin-only" style="font-weight:600;color:var(--green)">R$ 63.718</td>
-              <td class="right admin-only">R$ 94.341</td>
-              <td class="right admin-only">R$ 278.547</td>
+              <td class="right admin-only" style="font-weight:600;color:var(--green)">R$ 63.702</td>
+              <td class="right admin-only">R$ 94.325</td>
+              <td class="right admin-only">R$ 278.563</td>
               <td><span class="badge b-medido">CAIXA ✓</span></td>
             </tr>
             <tr>
@@ -587,7 +587,7 @@ textarea { resize: vertical; min-height: 60px; }
           </tbody>
           <tfoot class="admin-only">
             <tr>
-              <td colspan="5" style="font-weight:600">Total estimado CAIXA (7 medições) — R$ 94.341 já pagos</td>
+              <td colspan="5" style="font-weight:600">Total estimado CAIXA (7 medições) — R$ 94.325 já pagos</td>
               <td class="right" style="font-weight:600;color:var(--blue)">~R$ 359.539</td>
               <td colspan="3" style="font-size:12px;color:var(--text2)">liberações = % PLS × R$ 372.888 · retenção mín. R$ 18.644 até habite-se afeta parte da 7ª</td>
             </tr>
@@ -1454,7 +1454,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.44';
+const APP_VERSION = '1.45';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1501,6 +1501,7 @@ const VERSOES = [
   { v:'1.42', data:'06/07/2026', autor:'Claude', desc:'Estimativa 2ª medição corrigida: ~R$63.718 (17,12% PLS × R$372.888) — PLS já entrega % em escala CAIXA' },
   { v:'1.43', data:'06/07/2026', autor:'Claude', desc:'2ª medição registrada: 25,35% acumulado PLS · R$63.718 · MEDICOES_DEF e histórico atualizados' },
   { v:'1.44', data:'09/07/2026', autor:'Claude', desc:'2ª medição CONSOLIDADA — pagamento CAIXA efetuado: R$63.718 (17,12%) · acum. R$94.341 · itens PLS travados (locked) · acumulados 3ª–7ª recalculados sobre R$372.888' },
+  { v:'1.45', data:'09/07/2026', autor:'Claude', desc:'Valor real da 2ª medição: R$63.701,54 depositado pela CAIXA · acumulado R$94.324,54' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1508,7 +1509,7 @@ const ADMIN_HASH  = '9cb3c126406a1b510b3b615d1c0fb9a511bf73b4699cdfcc1bbb66c73f0
 const STORAGE_KEY = 'tracker_obra_vinicius_v2';
 const BASE_OBRA   = 372888;
 const MED_PCT     = 25.35;
-const MED_VAL     = 94341;
+const MED_VAL     = 94324.54;
 
 /* ══ AUTENTICAÇÃO ══════════════════════════════════════════ */
 let isAdmin = false;
@@ -1619,7 +1620,7 @@ const HISTORICO_DEFAULT = [
   { data:'19/06/2026', desc:'Padrão de energia instalado (elétrica 10%)', deltaPct:0.41, deltaVal:1529, prev:false, obs:'Poste padrão + instalação elétrica. Falta infra interna 3 pavimentos.' },
   { data:'22/06/2026', desc:'Hidráulica zerada: nenhum ramal executado (correção de lançamento)', deltaPct:0, deltaVal:0, prev:false, obs:'Item 16 corrigido para 0% — ramais internos não executados.' },
   { data:'22/06–18/07/2026', desc:'[Previsão] Entijolamento (alvenaria) + enchimento de colunas (pilares)', deltaPct:6.08, deltaVal:22671, prev:true, obs:'Alvenaria 30% + supraestrutura 25% — distribuído ao longo de ~4 semanas. Não é avanço de uma semana única.' },
-  { data:'03/07/2026', desc:'PLS 2ª medição entregue — acumulado 25,35% (17,12% nesta etapa)', deltaPct:17.12, deltaVal:63718, prev:false, obs:'PLS assinada pelo RT João Carlos e por Vinícius em 06/07/2026. Supra 35% + Alvenaria 40% + Impermeab. 60% + Elétrica 30% + Hidráulica 20% + Esgoto 30% + Outros 20%.' },
+  { data:'03/07/2026', desc:'PLS 2ª medição entregue — acumulado 25,35% (17,12% nesta etapa)', deltaPct:17.12, deltaVal:63701.54, prev:false, obs:'PLS assinada pelo RT João Carlos e por Vinícius em 06/07/2026. Supra 35% + Alvenaria 40% + Impermeab. 60% + Elétrica 30% + Hidráulica 20% + Esgoto 30% + Outros 20%.' },
 ];
 
 let itens     = JSON.parse(JSON.stringify(ITENS_DEFAULT));
@@ -2496,7 +2497,7 @@ function removerMat(idx) {
 /* ══ MEDIÇÕES CONFIRMADAS ════════════════════════════════════ */
 const MEDICOES_DEF = [
   { num:1, data:'30/05/2026', pctCaixa:8.23, valor:30623.00, ref:'Doc 662250 · Ag. 4437', itens:'Serviços preliminares + infraestrutura (sapatas, baldrames)', confirmada:true },
-  { num:2, data:'03/07/2026', pctCaixa:17.12, valor:63718.00, ref:'PLS assinada RT João Carlos + Vinícius 06/07/2026', itens:'Supra 35% + Alvenaria 40% + Impermeab 60% + Elétrica 30% + Hidráulica 20% + Esgoto 100% + Outros 20%', confirmada:true },
+  { num:2, data:'03/07/2026', pctCaixa:17.12, valor:63701.54, ref:'PLS assinada RT João Carlos + Vinícius 06/07/2026 · pago pela CAIXA', itens:'Supra 35% + Alvenaria 40% + Impermeab 60% + Elétrica 30% + Hidráulica 20% + Esgoto 100% + Outros 20%', confirmada:true },
 ];
 
 let medicoesConfirmadas = JSON.parse(JSON.stringify(MEDICOES_DEF));
