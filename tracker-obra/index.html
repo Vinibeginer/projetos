@@ -1454,7 +1454,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.45';
+const APP_VERSION = '1.46';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1502,6 +1502,7 @@ const VERSOES = [
   { v:'1.43', data:'06/07/2026', autor:'Claude', desc:'2ª medição registrada: 25,35% acumulado PLS · R$63.718 · MEDICOES_DEF e histórico atualizados' },
   { v:'1.44', data:'09/07/2026', autor:'Claude', desc:'2ª medição CONSOLIDADA — pagamento CAIXA efetuado: R$63.718 (17,12%) · acum. R$94.341 · itens PLS travados (locked) · acumulados 3ª–7ª recalculados sobre R$372.888' },
   { v:'1.45', data:'09/07/2026', autor:'Claude', desc:'Valor real da 2ª medição: R$63.701,54 depositado pela CAIXA · acumulado R$94.324,54' },
+  { v:'1.46', data:'09/07/2026', autor:'Claude', desc:'Item 3 (supraestrutura): físico corrigido para 0% — PLS lançou 35% antecipado (pago), mas nada executado. Divergência físico×PLS registrada no item' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1592,7 +1593,7 @@ function aplicarPerfil() {
 const ITENS_DEFAULT = [
   { id:1,   desc:'Serviços preliminares e gerais (barracão + ligações prov.)', pciPct:3.64,  exec:100, locked:true,  prevExec:0, obs:'100% concluído — medido na 1ª medição CAIXA.' },
   { id:2,   desc:'Infraestrutura (sapatas, baldrames)',                        pciPct:7.07,  exec:100, locked:true,  prevExec:0, obs:'100% concluído — medido na 1ª medição CAIXA.' },
-  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)', pciPct:14.56, exec:35,  locked:true,  prevExec:0, obs:'35% medido na 2ª medição CAIXA (PLS 03/07/2026) — pagamento efetuado.' },
+  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)', pciPct:14.56, exec:0,   locked:false, prevExec:35, obs:'⚠️ FÍSICO 0% — nada executado ainda. A PLS da 2ª medição lançou 35% (pago pela CAIXA em antecipação). Pilares/vigas do térreo a executar — o físico precisa alcançar a PLS antes da 3ª medição.' },
   { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',           pciPct:8.14,  exec:40,  locked:true,  prevExec:0, obs:'40% medido na 2ª medição CAIXA (PLS 03/07/2026) — pagamento efetuado.' },
   { id:5,   desc:'Esquadrias (22 portas + 18 janelas)',                        pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
   { id:6,   desc:'Vidros, plásticos e guarda-corpos',                         pciPct:1.07,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
