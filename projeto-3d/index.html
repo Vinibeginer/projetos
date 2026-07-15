@@ -70,19 +70,15 @@ svg{max-width:100%;max-height:100%;}
         <div class="t1">OBRA MARIÁRA · MAQUETE</div>
         <div class="t2">Av. Amaro Ribeiro Gomes, 236 · Campos/RJ</div>
       </div>
-      <span id="ver-badge" style="font-size:9px;color:#d98a6f;border:1px solid rgba(217,138,111,.4);border-radius:3px;padding:2px 6px;white-space:nowrap">v2.1</span>
+      <span id="ver-badge" style="font-size:9px;color:#d98a6f;border:1px solid rgba(217,138,111,.4);border-radius:3px;padding:2px 6px;white-space:nowrap;cursor:pointer" onclick="syncWithTracker()" title="Clique para sincronizar com o Tracker">v2.3 ⟳</span>
     </div>
   </div>
-  <div class="stats">
-    <div class="stat"><div class="k">PLS acum.</div><div class="v">25,35%</div></div>
-    <div class="stat"><div class="k">Liberado</div><div class="v">R$ 30,6k</div></div>
-    <div class="stat"><div class="k">2ª med. est.</div><div class="v">R$ 63,7k</div></div>
-    <div class="stat"><div class="k">Saldo</div><div class="v">R$ 342k</div></div>
+  <div class="stats" id="stats-bar" style="grid-template-columns:1fr;">
+    <div class="stat"><div class="k">Avanço físico (térreo)</div><div class="v" id="stat-fisico">--%</div></div>
   </div>
   <div id="tabs">
     <button class="tab on" data-t="comodos" onclick="showTab('comodos')">Cômodos</button>
     <button class="tab" data-t="etapas" onclick="showTab('etapas')">Etapas</button>
-    <button class="tab" data-t="medicoes" onclick="showTab('medicoes')">Medições</button>
   </div>
   <div id="pb"></div>
 </div>
@@ -180,7 +176,8 @@ function rotPt(x, z) {
 function proj(x, y, z) {
   const [rx, rz] = rotPt(x, z);
   if (camMode === 'topo') {
-    return [rx * SCALE, rz * SCALE];
+    // Norte para cima, frente/sul (z=0) embaixo — igual à folha aprovada
+    return [rx * SCALE, -rz * SCALE];
   }
   const tilt = TILTS[tiltLevel];
   const COS30 = Math.cos(Math.PI/6);
@@ -341,7 +338,7 @@ function render() {
     } else {
       // Label do pavimento
       content += drawLabel(fl.ext.w/2 - 2, -1.5, 4, 1, yOff + WALL_H/2,
-        fl.label.split('·')[0].trim(), fid==='terreo' ? 'PLS 25,35%' : 'A contratar',
+        fl.label.split('·')[0].trim(), fid==='terreo' ? 'Em execução' : 'A contratar',
         fid==='terreo' ? '#f59e0b' : '#8d8579');
     }
   });
@@ -378,6 +375,64 @@ function tilt(dir) {
   render();
 }
 
+// ═══ SINCRONIZAÇÃO COM O TRACKER DA OBRA (só avanço físico, sem R$) ═══
+const TRACKER_URL = '../tracker-obra/';
+// Mapeia cada etapa desta tela para o(s) item(ns) correspondentes no Tracker.
+// Quando há mais de um item, a % é a média ponderada pelo peso (pciPct) de cada um.
+const STAGE_ITEM_MAP = {
+  'Fundação': [2],
+  'Impermeabilização': [8],
+  'Estrutura (pilares)': [3],
+  'Alvenaria térreo': [4],
+  'Esgoto + hidráulica': [16, 17, 171],
+  'Elétrica (infra)': [15],
+  'Cobertura+esquadrias': [7, 5],
+  'Chapisco+reboco': [9],
+  'Contrapiso+piso': [13],
+  'Acabamentos+louças': [14, 18],
+};
+function statusFromPct(p){
+  if(p >= 100) return 'concluido';
+  if(p >= 35) return 'andamento';
+  if(p > 0) return 'parcial';
+  return 'pendente';
+}
+async function syncWithTracker(){
+  try{
+    const res = await fetch(TRACKER_URL, {cache:'no-store'});
+    const html = await res.text();
+    const re = /\{\s*id:(\d+),\s*desc:'((?:\\.|[^'\\])*)',\s*pciPct:([\d.]+),\s*exec:(\d+)/g;
+    const items = {};
+    let m;
+    while((m = re.exec(html)) !== null){
+      items[parseInt(m[1])] = { pciPct: parseFloat(m[3]), exec: parseInt(m[4]) };
+    }
+    if(Object.keys(items).length === 0) throw new Error('sem itens');
+
+    const oldAlvenariaTerreo = 40; // baseline anterior, usado só para escalar os cômodos proporcionalmente
+    STAGES.forEach(s=>{
+      const ids = STAGE_ITEM_MAP[s.l];
+      if(!ids) return;
+      let num=0, den=0;
+      ids.forEach(id=>{ const it=items[id]; if(it){ num+=it.pciPct*it.exec; den+=it.pciPct; } });
+      if(den>0){ s.s = Math.round(num/den); s.st = statusFromPct(s.s); }
+    });
+
+    const novaAlvenariaTerreo = items[4] ? items[4].exec : oldAlvenariaTerreo;
+    const fator = oldAlvenariaTerreo > 0 ? novaAlvenariaTerreo/oldAlvenariaTerreo : 1;
+    FLOORS.terreo.rooms.forEach(r=>{
+      if(r[7] > 0){ r[7] = Math.max(0, Math.min(100, Math.round(r[7]*fator))); }
+    });
+
+    document.getElementById('stat-fisico').textContent = novaAlvenariaTerreo + '%';
+  }catch(e){
+    console.error('Sync com tracker falhou:', e);
+    document.getElementById('stat-fisico').textContent = '40% (offline)';
+  }
+  renderPanel();
+  render();
+}
+
 // ═══ PAINEL ══════════════════════════════════════════════════════
 const STAGES = [
   {l:'Fundação',            s:100,st:'concluido',i:'04/05/26',f:'30/05/26',m:'1ª ✓'},
@@ -392,13 +447,6 @@ const STAGES = [
   {l:'Contrapiso+piso',     s:0,  st:'pendente', i:'12/02/27',f:'22/03/27',m:'4ª'},
   {l:'Acabamentos+louças',  s:0,  st:'pendente', i:'22/03/27',f:'30/03/27',m:'4ª'},
   {l:'1º e 2º pavimento',   s:0,  st:'contratar',i:'A definir',f:'—',      m:'5–7ª'},
-];
-const MEDS = [
-  {n:'1ª ✓', d:'30/05/2026',p:'8,23%', v:'R$ 30.623',  st:'concluido'},
-  {n:'2ª ~', d:'03/07/2026',p:'17,12%',v:'~R$ 63.718', st:'andamento'},
-  {n:'3ª',   d:'26/10/2026',p:'7,10%', v:'~R$ 26.475', st:'pendente'},
-  {n:'4ª',   d:'30/03/2027',p:'25,02%',v:'~R$ 93.297', st:'pendente'},
-  {n:'5–7ª', d:'A definir', p:'39,00%',v:'~R$ 145.387',st:'contratar'},
 ];
 const SC = {concluido:'#22c97e',andamento:'#f59e0b',parcial:'#3b82f6',pendente:'#6b7280',contratar:'#d98a6f'};
 const SL = {concluido:'✅ Concluído',andamento:'🔨 Em andamento',parcial:'⚡ Parcial',pendente:'⏳ Pendente',contratar:'📋 A contratar'};
@@ -428,22 +476,10 @@ function renderPanel() {
   if (tab === 'etapas') {
     el.innerHTML = STAGES.map(s => `
       <div class="card" style="border-left-color:${SC[s.st]}">
-        <div style="display:flex;justify-content:space-between"><div class="cn">${s.l}</div>
-          <span style="font-size:9px;color:${SC[s.st]};font-weight:bold">${s.m}</span></div>
+        <div class="cn">${s.l}</div>
         <div class="ca">${s.i} → ${s.f}</div>
         <div class="bg"><div class="bf" style="width:${s.s}%;background:${SC[s.st]}"></div></div>
         <div class="pp">${s.s}% · ${SL[s.st]}</div>
-      </div>`).join('');
-  }
-  if (tab === 'medicoes') {
-    el.innerHTML = `<div style="font-size:9px;color:#6b7280;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em">Base R$ 372.888</div>` +
-      MEDS.map(m => `
-      <div class="card" style="border-left-color:${SC[m.st]}">
-        <div style="display:flex;justify-content:space-between"><div class="cn">${m.n} medição</div>
-          <span style="font-size:10px;color:${SC[m.st]};font-weight:bold">${m.p}</span></div>
-        <div class="ca">${m.d}</div>
-        <div style="font-size:11px;color:#f6f2ec">${m.v}</div>
-        <div class="pp">${SL[m.st]}</div>
       </div>`).join('');
   }
 }
@@ -451,6 +487,7 @@ function renderPanel() {
 // Init
 renderPanel();
 render();
+syncWithTracker();
 </script>
 </body>
 </html>
