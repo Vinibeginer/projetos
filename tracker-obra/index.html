@@ -1555,7 +1555,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.48';
+const APP_VERSION = '1.49';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1606,6 +1606,7 @@ const VERSOES = [
   { v:'1.46', data:'09/07/2026', autor:'Claude', desc:'Item 3 (supraestrutura): físico corrigido para 0% — PLS lançou 35% antecipado (pago), mas nada executado. Divergência físico×PLS registrada no item' },
   { v:'1.47', data:'09/07/2026', autor:'Claude', desc:'Supraestrutura restaurada para 35% conforme PLS — a PLS assinada pelo RT é a fonte oficial de avanço da obra' },
   { v:'1.48', data:'20/07/2026', autor:'Claude', desc:'Novo bloco na aba Recursos: desembolso consolidado material + mão de obra, % do PCI, comparativo com liberado CAIXA, saldo em caixa e desvio físico×financeiro' },
+  { v:'1.49', data:'20/07/2026', autor:'Claude', desc:'Madeira/fôrma R$1.500 realocada: removida da aba Mão de obra (duplicidade) e mantida apenas em Materiais · desembolso passa a somar lançamentos tipo material de ambas as abas' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -2105,7 +2106,6 @@ const MO_PAGAMENTOS_DEF = [
   { id:2, data:'30/08/2025', dest:'Fábio de Barros da Silva', ref:'Pix complemento infraestrutura',               valor:3500,   tipo:'mo',         itemId:2  },
   { id:3, data:'13/09/2025', dest:'Fábio de Barros da Silva', ref:'Pix impermeabilização + serviços preliminares',valor:2000,   tipo:'mo',         itemId:3  },
   { id:4, data:'21/09/2025', dest:'Fábio de Barros da Silva', ref:'Pix regularização e aterro',                   valor:6325,   tipo:'mo',         itemId:11 },
-  { id:5, data:'24/09/2025', dest:'L M de Lucas Rocha Madeira Ltda', ref:'Material — madeira/fôrma',              valor:1500,   tipo:'material',   itemId:null },
   { id:6, data:'12/06/2026', dest:'Barros Rezende Construtora', ref:'Recibo 1ª etapa — esgoto + infraestrutura', valor:4700,   tipo:'mo',         itemId:6  },
   { id:7, data:'19/06/2026', dest:'Barros Rezende Construtora', ref:'Recibo saldo — esgoto + contrapiso',        valor:3965.30,tipo:'mo',         itemId:6  },
 ];
@@ -2280,7 +2280,7 @@ function buildMOSelectItens() {
 const PCI_TOTAL = 495000;
 
 function buildDesembolso() {
-  const mat   = totalMat();
+  const mat   = totalMat() + totalMaterial();  // aba Materiais + eventuais lançamentos tipo 'material' na aba MO
   const mo    = totalMOPago();
   const total = mat + mo;
 
@@ -2439,7 +2439,7 @@ const MAT_CORES = {
 };
 
 const MAT_DEF = [
-  { id:1,  data:'24/09/2025', desc:'Madeira para fôrma/escoramento',    cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104', valor:1500,    pago:'sim' },
+  { id:1,  data:'24/09/2025', desc:'Madeira para fôrma/escoramento',    cat:'Fôrmas e madeira', forn:'L M de Lucas Rocha Madeira Ltda', ref:'Pix 06346526000104 — realocado da aba MO (v1.49)', valor:1500,    pago:'sim' },
   { id:2,  data:'30/11/2024', desc:'Ferragem + radie',                   cat:'Estrutura',        forn:'Pai de Felipe Versada',          ref:'',                  valor:6780,    pago:'sim' },
   { id:3,  data:'05/06/2025', desc:'7m de brita 1',                      cat:'Estrutura',        forn:'Felipe Total Solar',             ref:'',                  valor:850,     pago:'sim' },
   { id:4,  data:'23/06/2025', desc:'Sondagem',                           cat:'Outros',           forn:'MS GEO',                         ref:'',                  valor:1850,    pago:'sim' },
