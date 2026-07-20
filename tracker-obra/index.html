@@ -745,6 +745,7 @@ textarea { resize: vertical; min-height: 60px; }
 
       <!-- ══ DESEMBOLSO CONSOLIDADO: MATERIAL + MÃO DE OBRA ══ -->
       <div class="sect-title">Desembolso realizado — material + mão de obra</div>
+      <div class="alert alert-info" style="margin-bottom:0.75rem;">Percentuais calculados sobre o <strong>saldo do financiamento destinado à obra: R$ 372.888</strong> (financiamento global R$ 454.488 menos R$ 81.600 desembolsados na aquisição do terreno). O PCI de R$ 495.000 não é usado aqui porque inclui a parcela de recursos próprios.</div>
       <div class="cards" style="margin-bottom:1rem;">
         <div class="card info">
           <div class="card-label">Materiais comprados</div>
@@ -765,9 +766,9 @@ textarea { resize: vertical; min-height: 60px; }
           <div class="card-sub" id="ds-total-sub">material + MO</div>
         </div>
         <div class="card">
-          <div class="card-label">Consumo do PCI</div>
+          <div class="card-label">Consumo do saldo p/ obra</div>
           <div class="card-value" id="ds-pct">—</div>
-          <div class="card-sub">de R$ 495.000 (custo total)</div>
+          <div class="card-sub">de R$ 372.888 (454.488 − 81.600 terreno)</div>
         </div>
         <div class="card">
           <div class="card-label">Avanço físico medido</div>
@@ -786,8 +787,8 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="progress-exec"   id="ds-bar-mo"  style="left:0%;width:0%;font-size:11px;">MO</div>
       </div>
       <div class="legend" style="margin-bottom:1rem;">
-        <span><div class="dot" style="background:var(--green-mid)"></div>Materiais — <b id="ds-leg-mat">0%</b> do PCI</span>
-        <span><div class="dot" style="background:var(--blue-mid)"></div>Mão de obra — <b id="ds-leg-mo">0%</b> do PCI</span>
+        <span><div class="dot" style="background:var(--green-mid)"></div>Materiais — <b id="ds-leg-mat">0%</b> do saldo obra</span>
+        <span><div class="dot" style="background:var(--blue-mid)"></div>Mão de obra — <b id="ds-leg-mo">0%</b> do saldo obra</span>
         <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>A desembolsar — <b id="ds-leg-falta">100%</b></span>
       </div>
 
@@ -797,7 +798,7 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <th>Natureza do gasto</th>
               <th class="right admin-only">Valor</th>
-              <th class="right">% do PCI<br><span style="font-weight:400;font-size:10px">(R$ 495.000)</span></th>
+              <th class="right">% do saldo obra<br><span style="font-weight:400;font-size:10px">(R$ 372.888)</span></th>
               <th class="right">% do total gasto</th>
               <th>Origem do recurso</th>
             </tr>
@@ -1555,7 +1556,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.49';
+const APP_VERSION = '1.50';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1607,6 +1608,7 @@ const VERSOES = [
   { v:'1.47', data:'09/07/2026', autor:'Claude', desc:'Supraestrutura restaurada para 35% conforme PLS — a PLS assinada pelo RT é a fonte oficial de avanço da obra' },
   { v:'1.48', data:'20/07/2026', autor:'Claude', desc:'Novo bloco na aba Recursos: desembolso consolidado material + mão de obra, % do PCI, comparativo com liberado CAIXA, saldo em caixa e desvio físico×financeiro' },
   { v:'1.49', data:'20/07/2026', autor:'Claude', desc:'Madeira/fôrma R$1.500 realocada: removida da aba Mão de obra (duplicidade) e mantida apenas em Materiais · desembolso passa a somar lançamentos tipo material de ambas as abas' },
+  { v:'1.50', data:'20/07/2026', autor:'Claude', desc:'Base do desembolso corrigida: percentuais passam a ser calculados sobre o saldo p/ obra R$372.888 (financiamento R$454.488 − R$81.600 do terreno) em vez do PCI R$495.000' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -2277,23 +2279,24 @@ function buildMOSelectItens() {
 }
 
 /* ══ DESEMBOLSO CONSOLIDADO — MATERIAL + MÃO DE OBRA ═══════════ */
-const PCI_TOTAL = 495000;
+/* Base = saldo global do financiamento p/ obra (R$ 454.488 − R$ 81.600 do terreno) */
+const BASE_DESEMB = BASE_OBRA;
 
 function buildDesembolso() {
   const mat   = totalMat() + totalMaterial();  // aba Materiais + eventuais lançamentos tipo 'material' na aba MO
   const mo    = totalMOPago();
   const total = mat + mo;
 
-  const pctMat   = mat   / PCI_TOTAL * 100;
-  const pctMO    = mo    / PCI_TOTAL * 100;
-  const pctTotal = total / PCI_TOTAL * 100;
+  const pctMat   = mat   / BASE_DESEMB * 100;
+  const pctMO    = mo    / BASE_DESEMB * 100;
+  const pctTotal = total / BASE_DESEMB * 100;
   const relMat   = total > 0 ? mat / total * 100 : 0;
   const relMO    = total > 0 ? mo  / total * 100 : 0;
 
   const liberado = MED_VAL;                       // acumulado pago pela CAIXA
-  const pctLib   = liberado / PCI_TOTAL * 100;
+  const pctLib   = liberado / BASE_DESEMB * 100;
   const saldo    = liberado - total;               // dinheiro em caixa ainda não gasto
-  const pctSaldo = saldo / PCI_TOTAL * 100;
+  const pctSaldo = saldo / BASE_DESEMB * 100;
 
   const fisico   = MED_PCT;                        // % PLS acumulada
   const desvio   = fisico - pctTotal;              // + = obra adiantada em relação ao gasto
@@ -2353,13 +2356,13 @@ function buildDesembolso() {
   if (al) {
     if (saldo >= 0) {
       al.className = 'alert alert-ok';
-      al.innerHTML = 'Desembolsado <strong>' + p1(pctTotal) + '</strong> do PCI (materiais ' + p1(pctMat) +
+      al.innerHTML = 'Desembolsado <strong>' + p1(pctTotal) + '</strong> do saldo p/ obra (materiais ' + p1(pctMat) +
         ' + MO ' + p1(pctMO) + '). A CAIXA já liberou <strong>' + p1(pctLib) +
         '</strong> — sobra <strong>' + p1(pctSaldo) + '</strong> em caixa' +
         (isAdmin ? ' (' + fmt(saldo) + ').' : '.');
     } else {
       al.className = 'alert alert-warn';
-      al.innerHTML = 'Desembolsado <strong>' + p1(pctTotal) + '</strong> do PCI, acima dos <strong>' + p1(pctLib) +
+      al.innerHTML = 'Desembolsado <strong>' + p1(pctTotal) + '</strong> do saldo p/ obra, acima dos <strong>' + p1(pctLib) +
         '</strong> liberados pela CAIXA. A diferença saiu de recursos próprios.';
     }
   }
