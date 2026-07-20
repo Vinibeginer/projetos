@@ -743,6 +743,107 @@ textarea { resize: vertical; min-height: 60px; }
         </div>
       </div>
 
+      <!-- ══ DESEMBOLSO CONSOLIDADO: MATERIAL + MÃO DE OBRA ══ -->
+      <div class="sect-title">Desembolso realizado — material + mão de obra</div>
+      <div class="cards" style="margin-bottom:1rem;">
+        <div class="card info">
+          <div class="card-label">Materiais comprados</div>
+          <div class="card-value admin-only" id="ds-mat">—</div>
+          <div class="card-value" id="ds-mat-pct-big">—</div>
+          <div class="card-sub" id="ds-mat-sub">—</div>
+        </div>
+        <div class="card warn">
+          <div class="card-label">Mão de obra paga</div>
+          <div class="card-value admin-only" id="ds-mo">—</div>
+          <div class="card-value" id="ds-mo-pct-big">—</div>
+          <div class="card-sub" id="ds-mo-sub">—</div>
+        </div>
+        <div class="card ok">
+          <div class="card-label">Total desembolsado</div>
+          <div class="card-value admin-only" id="ds-total">—</div>
+          <div class="card-value" id="ds-total-pct-big">—</div>
+          <div class="card-sub" id="ds-total-sub">material + MO</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Consumo do PCI</div>
+          <div class="card-value" id="ds-pct">—</div>
+          <div class="card-sub">de R$ 495.000 (custo total)</div>
+        </div>
+        <div class="card">
+          <div class="card-label">Avanço físico medido</div>
+          <div class="card-value" id="ds-fisico">—</div>
+          <div class="card-sub">PLS acumulada (CAIXA)</div>
+        </div>
+        <div class="card" id="ds-card-desvio">
+          <div class="card-label">Desvio físico × financeiro</div>
+          <div class="card-value" id="ds-desvio">—</div>
+          <div class="card-sub" id="ds-desvio-sub">—</div>
+        </div>
+      </div>
+
+      <div class="progress-wrap" style="height:32px;margin-bottom:0.4rem;">
+        <div class="progress-medido" id="ds-bar-mat" style="width:0%;font-size:11px;">Materiais</div>
+        <div class="progress-exec"   id="ds-bar-mo"  style="left:0%;width:0%;font-size:11px;">MO</div>
+      </div>
+      <div class="legend" style="margin-bottom:1rem;">
+        <span><div class="dot" style="background:var(--green-mid)"></div>Materiais — <b id="ds-leg-mat">0%</b> do PCI</span>
+        <span><div class="dot" style="background:var(--blue-mid)"></div>Mão de obra — <b id="ds-leg-mo">0%</b> do PCI</span>
+        <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>A desembolsar — <b id="ds-leg-falta">100%</b></span>
+      </div>
+
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table>
+          <thead>
+            <tr>
+              <th>Natureza do gasto</th>
+              <th class="right admin-only">Valor</th>
+              <th class="right">% do PCI<br><span style="font-weight:400;font-size:10px">(R$ 495.000)</span></th>
+              <th class="right">% do total gasto</th>
+              <th>Origem do recurso</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="font-weight:500">Materiais</td>
+              <td class="right admin-only" id="ds-t-mat">—</td>
+              <td class="right" id="ds-t-mat-pci">—</td>
+              <td class="right" id="ds-t-mat-rel">—</td>
+              <td style="font-size:12px;color:var(--text2)">CAIXA + aportes próprios</td>
+            </tr>
+            <tr>
+              <td style="font-weight:500">Mão de obra (Barros Rezende)</td>
+              <td class="right admin-only" id="ds-t-mo">—</td>
+              <td class="right" id="ds-t-mo-pci">—</td>
+              <td class="right" id="ds-t-mo-rel">—</td>
+              <td style="font-size:12px;color:var(--text2)">CAIXA — teto contratual R$ 115.000</td>
+            </tr>
+          </tbody>
+          <tfoot>
+            <tr>
+              <td style="font-weight:600">TOTAL DESEMBOLSADO</td>
+              <td class="right admin-only" style="font-weight:600" id="ds-t-total">—</td>
+              <td class="right" style="font-weight:600" id="ds-t-total-pci">—</td>
+              <td class="right" style="font-weight:600">100%</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;color:var(--text2)">Liberado pela CAIXA até agora</td>
+              <td class="right admin-only" style="font-weight:600" id="ds-t-lib">—</td>
+              <td class="right" style="font-weight:600" id="ds-t-lib-pci">—</td>
+              <td class="right admin-only" style="font-size:12px;color:var(--text2)" id="ds-t-lib-rel">—</td>
+              <td style="font-size:12px;color:var(--text2)">2 medições confirmadas</td>
+            </tr>
+            <tr>
+              <td style="font-weight:600;color:var(--amber)">Saldo em caixa (liberado − gasto)</td>
+              <td class="right admin-only" style="font-weight:600;color:var(--amber)" id="ds-t-saldo">—</td>
+              <td class="right" style="font-weight:600;color:var(--amber)" id="ds-t-saldo-pci">—</td>
+              <td colspan="2" style="font-size:12px;color:var(--text2)" id="ds-t-saldo-obs">—</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <div class="alert alert-info" id="ds-alerta" style="margin-bottom:1.5rem;">—</div>
+
       <!-- barra de composição -->
       <div class="sect-title">Composição dos recursos para a obra</div>
       <div class="progress-wrap" style="height:32px;">
@@ -1454,7 +1555,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.47';
+const APP_VERSION = '1.48';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1504,6 +1605,7 @@ const VERSOES = [
   { v:'1.45', data:'09/07/2026', autor:'Claude', desc:'Valor real da 2ª medição: R$63.701,54 depositado pela CAIXA · acumulado R$94.324,54' },
   { v:'1.46', data:'09/07/2026', autor:'Claude', desc:'Item 3 (supraestrutura): físico corrigido para 0% — PLS lançou 35% antecipado (pago), mas nada executado. Divergência físico×PLS registrada no item' },
   { v:'1.47', data:'09/07/2026', autor:'Claude', desc:'Supraestrutura restaurada para 35% conforme PLS — a PLS assinada pelo RT é a fonte oficial de avanço da obra' },
+  { v:'1.48', data:'20/07/2026', autor:'Claude', desc:'Novo bloco na aba Recursos: desembolso consolidado material + mão de obra, % do PCI, comparativo com liberado CAIXA, saldo em caixa e desvio físico×financeiro' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -2174,11 +2276,101 @@ function buildMOSelectItens() {
   });
 }
 
+/* ══ DESEMBOLSO CONSOLIDADO — MATERIAL + MÃO DE OBRA ═══════════ */
+const PCI_TOTAL = 495000;
+
+function buildDesembolso() {
+  const mat   = totalMat();
+  const mo    = totalMOPago();
+  const total = mat + mo;
+
+  const pctMat   = mat   / PCI_TOTAL * 100;
+  const pctMO    = mo    / PCI_TOTAL * 100;
+  const pctTotal = total / PCI_TOTAL * 100;
+  const relMat   = total > 0 ? mat / total * 100 : 0;
+  const relMO    = total > 0 ? mo  / total * 100 : 0;
+
+  const liberado = MED_VAL;                       // acumulado pago pela CAIXA
+  const pctLib   = liberado / PCI_TOTAL * 100;
+  const saldo    = liberado - total;               // dinheiro em caixa ainda não gasto
+  const pctSaldo = saldo / PCI_TOTAL * 100;
+
+  const fisico   = MED_PCT;                        // % PLS acumulada
+  const desvio   = fisico - pctTotal;              // + = obra adiantada em relação ao gasto
+
+  const p1 = v => v.toFixed(1).replace('.', ',') + '%';
+  const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+
+  // cards
+  set('ds-mat',   fmt(mat));
+  set('ds-mat-pct-big', p1(pctMat));
+  set('ds-mat-sub', materiais.length + ' compra(s) · ' + p1(relMat) + ' do gasto');
+  set('ds-mo',    fmt(mo));
+  set('ds-mo-pct-big', p1(pctMO));
+  set('ds-mo-sub', Math.round(mo / MO_TETO * 100) + '% do teto contratual');
+  set('ds-total', fmt(total));
+  set('ds-total-pct-big', p1(pctTotal));
+  set('ds-pct',    p1(pctTotal));
+  set('ds-fisico', p1(fisico));
+  set('ds-desvio', (desvio >= 0 ? '+' : '') + p1(desvio));
+  set('ds-desvio-sub', desvio >= 0
+      ? 'obra medida acima do desembolso'
+      : 'desembolso acima do medido');
+  const cardDesvio = document.getElementById('ds-card-desvio');
+  if (cardDesvio) cardDesvio.className = 'card ' + (desvio >= 0 ? 'ok' : 'warn');
+
+  // barra empilhada
+  const bMat = Math.min(pctMat, 100);
+  const bMO  = Math.min(pctMO, Math.max(0, 100 - bMat));
+  const barMat = document.getElementById('ds-bar-mat');
+  const barMO  = document.getElementById('ds-bar-mo');
+  if (barMat) { barMat.style.width = bMat + '%'; barMat.textContent = bMat > 7 ? 'Materiais ' + p1(pctMat) : ''; }
+  if (barMO)  { barMO.style.left = bMat + '%'; barMO.style.width = bMO + '%'; barMO.textContent = bMO > 5 ? 'MO ' + p1(pctMO) : ''; }
+  set('ds-leg-mat',   p1(pctMat));
+  set('ds-leg-mo',    p1(pctMO));
+  set('ds-leg-falta', p1(Math.max(0, 100 - pctTotal)));
+
+  // tabela
+  set('ds-t-mat',       fmt(mat));
+  set('ds-t-mat-pci',   p1(pctMat));
+  set('ds-t-mat-rel',   p1(relMat));
+  set('ds-t-mo',        fmt(mo));
+  set('ds-t-mo-pci',    p1(pctMO));
+  set('ds-t-mo-rel',    p1(relMO));
+  set('ds-t-total',     fmt(total));
+  set('ds-t-total-pci', p1(pctTotal));
+  set('ds-t-lib',       fmt(liberado));
+  set('ds-t-lib-pci',   p1(pctLib));
+  set('ds-t-lib-rel',   liberado > 0 ? p1(total / liberado * 100) + ' já aplicado' : '—');
+  set('ds-t-saldo',     fmt(saldo));
+  set('ds-t-saldo-pci', p1(pctSaldo));
+  set('ds-t-saldo-obs', saldo >= 0
+      ? 'recurso CAIXA ainda disponível para as próximas compras e pagamentos'
+      : 'gasto acima do liberado — diferença coberta por recursos próprios');
+
+  // alerta
+  const al = document.getElementById('ds-alerta');
+  if (al) {
+    if (saldo >= 0) {
+      al.className = 'alert alert-ok';
+      al.innerHTML = 'Desembolsado <strong>' + p1(pctTotal) + '</strong> do PCI (materiais ' + p1(pctMat) +
+        ' + MO ' + p1(pctMO) + '). A CAIXA já liberou <strong>' + p1(pctLib) +
+        '</strong> — sobra <strong>' + p1(pctSaldo) + '</strong> em caixa' +
+        (isAdmin ? ' (' + fmt(saldo) + ').' : '.');
+    } else {
+      al.className = 'alert alert-warn';
+      al.innerHTML = 'Desembolsado <strong>' + p1(pctTotal) + '</strong> do PCI, acima dos <strong>' + p1(pctLib) +
+        '</strong> liberados pela CAIXA. A diferença saiu de recursos próprios.';
+    }
+  }
+}
+
 function buildAllMO() {
   buildMOCards();
   buildMOPagamentos();
   buildMOItens();
   buildMOProjecao();
+  buildDesembolso();
 }
 
 function showMoTab(t, el) {
@@ -2376,6 +2568,7 @@ function buildAllMat() {
   buildMatCards();
   buildMatLista();
   buildMatCategoria();
+  buildDesembolso();
 }
 
 function showMatTab(t, el) {
