@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>(function(){try{var t=localStorage.getItem('tracker_tema');if(!t){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
@@ -34,6 +35,52 @@
   --radius:     8px;
   --radius-lg:  12px;
 }
+
+/* ══ TEMA ESCURO ══════════════════════════════════════════════ */
+html[data-theme="dark"] {
+  --bg:         #14130F;
+  --surface:    #1D1C17;
+  --surface2:   #262420;
+  --border:     #34322B;
+  --border2:    #4A4740;
+  --text:       #EDEBE4;
+  --text2:      #A5A199;
+  --text3:      #78746C;
+  --blue:       #8FC2F5;
+  --blue-bg:    #14283C;
+  --blue-mid:   #4A9BE8;
+  --green:      #5FD9B0;
+  --green-bg:   #0E2E26;
+  --green-mid:  #23B183;
+  --amber:      #F0B860;
+  --amber-bg:   #3A2B12;
+  --amber-mid:  #E8A030;
+  --red:        #F0908F;
+  --red-bg:     #3A1B1B;
+  --red-mid:    #E05C5B;
+}
+html[data-theme="dark"] body { color-scheme: dark; }
+body, .card, .header, .panel, table, .login-card, .alert, input, select, textarea {
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease;
+}
+.btn-tema {
+  background: var(--surface2); border: 1px solid var(--border);
+  color: var(--text2); border-radius: var(--radius); cursor: pointer;
+  padding: 6px 10px; font-size: 15px; line-height: 1; transition: all .15s;
+}
+.btn-tema:hover { border-color: var(--border2); color: var(--text); }
+.login-tema { position: absolute; top: 14px; right: 14px; }
+.ext-wrap { display: none; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
+.ext-wrap.visible { display: flex; }
+.ext-wrap input {
+  width: 100%; padding: 10px 12px; font-size: 14px;
+  border: 1px solid var(--border); border-radius: var(--radius);
+  background: var(--surface); color: var(--text); font-family: inherit;
+}
+.ext-wrap input:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(55,138,221,.15); }
+.ext-hint { font-size: 11px; color: var(--text3); text-align: left; line-height: 1.45; }
+#login-screen { position: relative; }
+
 
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; min-height: 100vh; }
 
@@ -315,6 +362,7 @@ textarea { resize: vertical; min-height: 60px; }
      TELA DE LOGIN
 ══════════════════════════════════════ -->
 <div id="login-screen">
+  <button class="btn-tema login-tema" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
   <div class="login-card">
     <div class="login-logo">🏗️</div>
     <h2>Acompanhamento de obra</h2>
@@ -335,6 +383,22 @@ textarea { resize: vertical; min-height: 60px; }
           <div class="opt-sub">Acesso completo com senha</div>
         </div>
       </button>
+      <button class="login-opt" onclick="mostrarExterno()">
+        <span class="opt-icon">📋</span>
+        <div>
+          <div class="opt-title" id="ext-opt-title">Criar meu controle de custos</div>
+          <div class="opt-sub" id="ext-opt-sub">Monte o controle da sua própria obra</div>
+        </div>
+      </button>
+    </div>
+
+    <div class="ext-wrap" id="ext-wrap">
+      <input type="text" id="ext-nome"  placeholder="Nome da obra ou responsável" maxlength="60" />
+      <input type="text" id="ext-orc"   placeholder="Orçamento total da obra (R$)" inputmode="decimal" />
+      <input type="text" id="ext-fin"   placeholder="Recurso disponível p/ obra (R$)" inputmode="decimal" />
+      <input type="text" id="ext-mo"    placeholder="Teto de mão de obra (R$) — opcional" inputmode="decimal" />
+      <button class="btn-login" id="ext-btn" onclick="criarControleExterno()">Criar meu controle</button>
+      <div class="ext-hint">Os dados ficam salvos apenas neste navegador, no seu dispositivo. Nada é enviado para a obra do Vinícius nem para a internet.</div>
     </div>
 
     <div class="pwd-wrap" id="pwd-wrap">
@@ -359,6 +423,7 @@ textarea { resize: vertical; min-height: 60px; }
     <div class="header-right">
       <span class="last-update" id="last-update"></span>
       <span class="badge-role" id="badge-role"></span>
+      <button class="btn-tema" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
       <button class="btn-logout" onclick="sair()">Sair</button>
     </div>
   </div>
@@ -745,7 +810,7 @@ textarea { resize: vertical; min-height: 60px; }
 
       <!-- ══ DESEMBOLSO CONSOLIDADO: MATERIAL + MÃO DE OBRA ══ -->
       <div class="sect-title">Desembolso realizado — material + mão de obra</div>
-      <div class="alert alert-info" style="margin-bottom:0.75rem;">Percentuais calculados sobre o <strong>saldo do financiamento destinado à obra: R$ 372.888</strong> (financiamento global R$ 454.488 menos R$ 81.600 desembolsados na aquisição do terreno). O PCI de R$ 495.000 não é usado aqui porque inclui a parcela de recursos próprios.</div>
+      <div class="alert alert-info" id="ds-nota-base" style="margin-bottom:0.75rem;">Percentuais calculados sobre o <strong>saldo do financiamento destinado à obra: R$ 372.888</strong> (financiamento global R$ 454.488 menos R$ 81.600 desembolsados na aquisição do terreno). O PCI de R$ 495.000 não é usado aqui porque inclui a parcela de recursos próprios.</div>
       <div class="cards" style="margin-bottom:1rem;">
         <div class="card info">
           <div class="card-label">Materiais comprados</div>
@@ -768,7 +833,7 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card">
           <div class="card-label">Consumo do saldo p/ obra</div>
           <div class="card-value" id="ds-pct">—</div>
-          <div class="card-sub">de R$ 372.888 (454.488 − 81.600 terreno)</div>
+          <div class="card-sub" id="ds-base-sub">de R$ 372.888 (454.488 − 81.600 terreno)</div>
         </div>
         <div class="card">
           <div class="card-label">Avanço físico medido</div>
@@ -798,7 +863,7 @@ textarea { resize: vertical; min-height: 60px; }
             <tr>
               <th>Natureza do gasto</th>
               <th class="right admin-only">Valor</th>
-              <th class="right">% do saldo obra<br><span style="font-weight:400;font-size:10px">(R$ 372.888)</span></th>
+              <th class="right">% do saldo obra<br><span style="font-weight:400;font-size:10px" id="ds-base-th">(R$ 372.888)</span></th>
               <th class="right">% do total gasto</th>
               <th>Origem do recurso</th>
             </tr>
@@ -846,6 +911,7 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="alert alert-info" id="ds-alerta" style="margin-bottom:1.5rem;">—</div>
 
       <!-- barra de composição -->
+      <div class="dono-only">
       <div class="sect-title">Composição dos recursos para a obra</div>
       <div class="progress-wrap" style="height:32px;">
         <div class="progress-medido" style="width:75.33%;font-size:12px;">CAIXA 75,3% · R$ 372.888</div>
@@ -1011,6 +1077,7 @@ textarea { resize: vertical; min-height: 60px; }
         💡 O FGTS já foi utilizado na quitação do terreno e <strong>não está disponível</strong> para a obra. Todo o complemento das fases finais depende exclusivamente dos recursos próprios.
       </div>
 
+      </div><!-- /dono-only -->
     </div><!-- /tab-recursos -->
 
     <!-- REGISTRAR (admin) -->
@@ -1556,7 +1623,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.50';
+const APP_VERSION = '1.51';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1609,14 +1676,113 @@ const VERSOES = [
   { v:'1.48', data:'20/07/2026', autor:'Claude', desc:'Novo bloco na aba Recursos: desembolso consolidado material + mão de obra, % do PCI, comparativo com liberado CAIXA, saldo em caixa e desvio físico×financeiro' },
   { v:'1.49', data:'20/07/2026', autor:'Claude', desc:'Madeira/fôrma R$1.500 realocada: removida da aba Mão de obra (duplicidade) e mantida apenas em Materiais · desembolso passa a somar lançamentos tipo material de ambas as abas' },
   { v:'1.50', data:'20/07/2026', autor:'Claude', desc:'Base do desembolso corrigida: percentuais passam a ser calculados sobre o saldo p/ obra R$372.888 (financiamento R$454.488 − R$81.600 do terreno) em vez do PCI R$495.000' },
+  { v:'1.51', data:'23/07/2026', autor:'Claude', desc:'Tema claro/escuro com botão no login e no header (preferência salva no navegador) · nova opção de login: usuário externo cria o próprio controle de custos, com orçamento e teto de MO próprios, dados só no navegador dele e publicação no GitHub bloqueada' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
 const ADMIN_HASH  = '9cb3c126406a1b510b3b615d1c0fb9a511bf73b4699cdfcc1bbb66c73f09ef78'; // hash de "obra2026"
-const STORAGE_KEY = 'tracker_obra_vinicius_v2';
-const BASE_OBRA   = 372888;
-const MED_PCT     = 25.35;
-const MED_VAL     = 94324.54;
+const STORAGE_KEY_DONO = 'tracker_obra_vinicius_v2';
+const STORAGE_KEY_EXT  = 'tracker_obra_externo_v1';
+let   STORAGE_KEY = STORAGE_KEY_DONO;
+let   modoExterno = false;
+let BASE_OBRA   = 372888;
+let MED_PCT     = 25.35;
+let MED_VAL     = 94324.54;
+
+/* ══ TEMA CLARO / ESCURO ═══════════════════════════════════ */
+function temaAtual() {
+  return document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+}
+function aplicarTema(t) {
+  document.documentElement.setAttribute('data-theme', t);
+  try { localStorage.setItem('tracker_tema', t); } catch(e) {}
+  document.querySelectorAll('.btn-tema').forEach(b => {
+    b.textContent = (t === 'dark') ? '☀️' : '🌙';
+    b.title = (t === 'dark') ? 'Mudar para tema claro' : 'Mudar para tema escuro';
+  });
+}
+function toggleTema() { aplicarTema(temaAtual() === 'dark' ? 'light' : 'dark'); }
+
+/* ══ CONTROLE PRÓPRIO (USUÁRIO EXTERNO) ════════════════════ */
+function numBR(s) {
+  const t = String(s || '').replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}\b)/g, '').replace(',', '.');
+  const v = parseFloat(t);
+  return isFinite(v) ? v : 0;
+}
+function configExterna() {
+  try { return (JSON.parse(localStorage.getItem(STORAGE_KEY_EXT) || '{}')).config || null; }
+  catch(e) { return null; }
+}
+function mostrarExterno() {
+  const cfg = configExterna();
+  const w = document.getElementById('ext-wrap');
+  if (cfg) {
+    document.getElementById('ext-nome').value = cfg.nome || '';
+    document.getElementById('ext-orc').value  = cfg.orcamento || '';
+    document.getElementById('ext-fin').value  = cfg.base || '';
+    document.getElementById('ext-mo').value   = cfg.moTeto || '';
+    document.getElementById('ext-btn').textContent = 'Entrar no meu controle';
+  }
+  w.classList.add('visible');
+  document.getElementById('ext-nome').focus();
+}
+function criarControleExterno() {
+  const nome = document.getElementById('ext-nome').value.trim();
+  const orc  = numBR(document.getElementById('ext-orc').value);
+  const fin  = numBR(document.getElementById('ext-fin').value) || orc;
+  const moT  = numBR(document.getElementById('ext-mo').value)  || Math.round(orc * 0.25);
+  const err  = document.getElementById('login-error');
+  if (!nome) { err.textContent = 'Informe o nome da obra ou do responsável.'; return; }
+  if (orc <= 0) { err.textContent = 'Informe o orçamento total da obra.'; return; }
+  err.textContent = '';
+
+  const anterior = configExterna();
+  const mudouBase = !anterior || anterior.orcamento !== orc || anterior.base !== fin || anterior.moTeto !== moT || anterior.nome !== nome;
+  let estado = {};
+  try { estado = JSON.parse(localStorage.getItem(STORAGE_KEY_EXT) || '{}'); } catch(e) {}
+  estado.config = { nome, orcamento: orc, base: fin, moTeto: moT, criadoEm: (anterior && anterior.criadoEm) || new Date().toISOString() };
+  if (!estado.itens) {
+    estado.itens = ITENS_DEFAULT.map(i => ({ id:i.id, desc:i.desc, pciPct:i.pciPct, exec:0, locked:false, prevExec:0, obs:'' }));
+    estado.historico = []; estado.moPagamentos = []; estado.materiais = []; estado.medicoesConfirmadas = [];
+  }
+  estado.savedAt = new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY_EXT, JSON.stringify(estado));
+  entrarExterno();
+}
+function entrarExterno() {
+  const cfg = configExterna();
+  if (!cfg) { mostrarExterno(); return; }
+  modoExterno = true;
+  isAdmin = true;                       // vê os próprios valores em R$
+  STORAGE_KEY = STORAGE_KEY_EXT;
+  BASE_OBRA = cfg.base || cfg.orcamento;
+  MO_TETO   = cfg.moTeto || 0;
+  MED_PCT   = 0;
+  MED_VAL   = 0;
+  itens     = ITENS_DEFAULT.map(i => ({ id:i.id, desc:i.desc, pciPct:i.pciPct, exec:0, locked:false, prevExec:0, obs:'' }));
+  historico = []; moPagamentos = []; materiais = []; medicoesConfirmadas = [];
+  sessionStorage.setItem('obra_role', 'externo');
+  iniciarApp();
+  aplicarModoExterno();
+}
+const TABS_EXTERNO = ['recursos','mo','mat','registrar','tabela'];
+function aplicarModoExterno() {
+  const cfg = configExterna() || {};
+  document.querySelectorAll('[onclick^="showTab("]').forEach(b => {
+    const m = /showTab\('([\w-]+)'/.exec(b.getAttribute('onclick') || '');
+    if (m) b.style.display = TABS_EXTERNO.includes(m[1]) ? '' : 'none';
+  });
+  const h1 = document.querySelector('.header-left h1');
+  const p  = document.querySelector('.header-left p');
+  if (h1) h1.textContent = 'Controle de custos — ' + (cfg.nome || 'minha obra');
+  if (p)  p.innerHTML = 'Controle pessoal · dados salvos apenas neste navegador · <span id="app-version-badge" style="font-weight:600;color:var(--blue)">v' + APP_VERSION + '</span>';
+  const badge = document.getElementById('badge-role');
+  if (badge) { badge.textContent = 'Minha obra'; badge.className = 'badge-role badge-admin'; }
+  document.querySelectorAll('.dono-only').forEach(el => el.style.display = 'none');
+  const bloco = document.getElementById('ds-nota-base');
+  if (bloco) bloco.innerHTML = 'Percentuais calculados sobre o <strong>recurso disponível para a obra: ' + fmt(BASE_OBRA) + '</strong>.';
+  showTab('recursos', document.querySelector('[onclick^="showTab(\'recursos\'"]'));
+}
 
 /* ══ AUTENTICAÇÃO ══════════════════════════════════════════ */
 let isAdmin = false;
@@ -1654,6 +1820,7 @@ function entrarVisitante() {
 
 function sair() {
   sessionStorage.removeItem('obra_role');
+  if (modoExterno) { location.reload(); return; }
   isAdmin = false;
   document.getElementById('app').style.display = 'none';
   document.getElementById('login-screen').style.display = 'flex';
@@ -2081,7 +2248,7 @@ function showTab(t, el) {
 }
 
 /* ══ MÃO DE OBRA ══════════════════════════════════════════════ */
-const MO_TETO = 115000;
+let MO_TETO = 115000;
 
 const MO_ITENS_DEF = [
   { id:1,  desc:'Serviços preliminares / barracão',         orcado:1358  },
@@ -2279,30 +2446,33 @@ function buildMOSelectItens() {
 }
 
 /* ══ DESEMBOLSO CONSOLIDADO — MATERIAL + MÃO DE OBRA ═══════════ */
-/* Base = saldo global do financiamento p/ obra (R$ 454.488 − R$ 81.600 do terreno) */
-const BASE_DESEMB = BASE_OBRA;
+/* Base = saldo do financiamento destinado à obra (dinâmica) */
 
 function buildDesembolso() {
   const mat   = totalMat() + totalMaterial();  // aba Materiais + eventuais lançamentos tipo 'material' na aba MO
   const mo    = totalMOPago();
   const total = mat + mo;
 
-  const pctMat   = mat   / BASE_DESEMB * 100;
-  const pctMO    = mo    / BASE_DESEMB * 100;
-  const pctTotal = total / BASE_DESEMB * 100;
+  const pctMat   = mat   / BASE_OBRA * 100;
+  const pctMO    = mo    / BASE_OBRA * 100;
+  const pctTotal = total / BASE_OBRA * 100;
   const relMat   = total > 0 ? mat / total * 100 : 0;
   const relMO    = total > 0 ? mo  / total * 100 : 0;
 
   const liberado = MED_VAL;                       // acumulado pago pela CAIXA
-  const pctLib   = liberado / BASE_DESEMB * 100;
+  const pctLib   = liberado / BASE_OBRA * 100;
   const saldo    = liberado - total;               // dinheiro em caixa ainda não gasto
-  const pctSaldo = saldo / BASE_DESEMB * 100;
+  const pctSaldo = saldo / BASE_OBRA * 100;
 
   const fisico   = MED_PCT;                        // % PLS acumulada
   const desvio   = fisico - pctTotal;              // + = obra adiantada em relação ao gasto
 
   const p1 = v => v.toFixed(1).replace('.', ',') + '%';
   const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
+
+  // rótulos da base (mudam no modo controle próprio)
+  set('ds-base-sub', modoExterno ? 'de ' + fmt(BASE_OBRA) : 'de R$ 372.888 (454.488 − 81.600 terreno)');
+  set('ds-base-th',  '(' + fmt(BASE_OBRA) + ')');
 
   // cards
   set('ds-mat',   fmt(mat));
@@ -2632,6 +2802,7 @@ function substituirBloco(h, marcador, novoBloco) {
 
 let _ghPublishing = false;
 async function publishToGitHub(msg) {
+  if (modoExterno) return false;   // controle próprio nunca publica no repositório da obra
   if (_ghPublishing) return false;
   _ghPublishing = true;
   try {
@@ -2863,6 +3034,8 @@ function buildVersoes() {
   const role = sessionStorage.getItem('obra_role');
   if (role === 'admin') { isAdmin = true; iniciarApp(); }
   else if (role === 'visitor') { isAdmin = false; iniciarApp(); }
+  else if (role === 'externo') { entrarExterno(); }
+  aplicarTema(temaAtual());
 })();
 
 function iniciarAppMO() {
