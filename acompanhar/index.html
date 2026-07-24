@@ -120,7 +120,7 @@ button.primario:disabled{opacity:.6;cursor:default;}
       Informações financeiras não são divulgadas aqui.
       <div class="rodape-acoes">
         <button class="btn-voltar" onclick="voltar()">Consultar outra obra</button>
-        <button class="btn-voltar" onclick="sairConsulta()">Sair</button>
+        <button class="btn-voltar" onclick="sairConsulta()">Sair para a tela de login</button>
       </div>
     </div>
   </div>
@@ -207,7 +207,9 @@ function escapar(s){
 }
 
 function sairConsulta(){
-  location.href = '../tracker-obra/';
+  // volta para a tela de login do tracker, funcionando com ou sem barra final
+  var base = location.pathname.replace(/\/acompanhar\/?[^\/]*$/, '');
+  location.href = (base || '') + '/tracker-obra/';
 }
 
 function voltar(){
