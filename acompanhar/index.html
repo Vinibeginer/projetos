@@ -88,7 +88,7 @@ button.primario:disabled{opacity:.6;cursor:default;}
       <div class="sub" id="subtitulo">Consulta pública de avanço físico</div>
     </div>
     <div class="acoes">
-      <button class="btn-sair" id="btn-sair" onclick="sairConsulta()" style="display:none">Sair</button>
+      <button class="btn-sair" id="btn-sair" onclick="sairConsulta()">↩ Sair para login</button>
       <button class="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
     </div>
   </div>
@@ -101,6 +101,9 @@ button.primario:disabled{opacity:.6;cursor:default;}
     <input id="codigo" placeholder="OBR-XXXXXX" maxlength="10" autocomplete="off" />
     <button class="primario" id="btn" onclick="consultar()">Ver andamento</button>
     <div class="erro" id="erro"></div>
+    <div style="margin-top:1rem;padding-top:.9rem;border-top:1px solid var(--border);font-size:12px;">
+      <span class="trocar" onclick="sairConsulta()">Sair para a tela de login</span>
+    </div>
   </div>
 
   <!-- resultado -->
@@ -174,7 +177,6 @@ async function consultar(){
 function mostrar(d){
   document.getElementById('busca').style.display = 'none';
   document.getElementById('painel').classList.add('on');
-  document.getElementById('btn-sair').style.display = '';
   document.getElementById('titulo').textContent = d.nome || 'Obra';
   document.getElementById('subtitulo').textContent = 'Código ' + d.tag + ' · avanço físico';
 
@@ -215,7 +217,6 @@ function sairConsulta(){
 function voltar(){
   document.getElementById('painel').classList.remove('on');
   document.getElementById('busca').style.display = '';
-  document.getElementById('btn-sair').style.display = 'none';
   document.getElementById('titulo').textContent = 'Acompanhamento de obra';
   document.getElementById('subtitulo').textContent = 'Consulta pública de avanço físico';
   document.getElementById('codigo').value = '';
