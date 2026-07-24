@@ -68,6 +68,15 @@ button.primario:disabled{opacity:.6;cursor:default;}
 .rodape{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);
   font-size:11px;color:var(--text3);text-align:center;line-height:1.7;}
 .trocar{color:var(--blue);cursor:pointer;text-decoration:underline;}
+.btn-sair{background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+  border-radius:var(--radius);cursor:pointer;padding:6px 12px;font-size:12px;font-family:inherit;
+  transition:all .15s;}
+.btn-sair:hover{border-color:var(--border2);color:var(--text);}
+.acoes{display:flex;gap:8px;align-items:center;}
+.rodape-acoes{display:flex;gap:10px;justify-content:center;margin-top:1rem;}
+.btn-voltar{padding:9px 18px;font-size:13px;font-family:inherit;background:var(--surface);
+  border:1px solid var(--border);color:var(--text);border-radius:var(--radius);cursor:pointer;}
+.btn-voltar:hover{border-color:var(--border2);}
 </style>
 </head>
 <body>
@@ -78,7 +87,10 @@ button.primario:disabled{opacity:.6;cursor:default;}
       <h1 id="titulo">Acompanhamento de obra</h1>
       <div class="sub" id="subtitulo">Consulta pública de avanço físico</div>
     </div>
-    <button class="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
+    <div class="acoes">
+      <button class="btn-sair" id="btn-sair" onclick="sairConsulta()" style="display:none">Sair</button>
+      <button class="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
+    </div>
   </div>
 
   <!-- busca por código -->
@@ -105,8 +117,11 @@ button.primario:disabled{opacity:.6;cursor:default;}
 
     <div class="rodape">
       Esta página mostra apenas o percentual de execução de cada etapa.<br>
-      Informações financeiras não são divulgadas aqui.<br><br>
-      <span class="trocar" onclick="voltar()">Consultar outra obra</span>
+      Informações financeiras não são divulgadas aqui.
+      <div class="rodape-acoes">
+        <button class="btn-voltar" onclick="voltar()">Consultar outra obra</button>
+        <button class="btn-voltar" onclick="sairConsulta()">Sair</button>
+      </div>
     </div>
   </div>
 
@@ -159,6 +174,7 @@ async function consultar(){
 function mostrar(d){
   document.getElementById('busca').style.display = 'none';
   document.getElementById('painel').classList.add('on');
+  document.getElementById('btn-sair').style.display = '';
   document.getElementById('titulo').textContent = d.nome || 'Obra';
   document.getElementById('subtitulo').textContent = 'Código ' + d.tag + ' · avanço físico';
 
@@ -190,9 +206,14 @@ function escapar(s){
   });
 }
 
+function sairConsulta(){
+  location.href = '../tracker-obra/';
+}
+
 function voltar(){
   document.getElementById('painel').classList.remove('on');
   document.getElementById('busca').style.display = '';
+  document.getElementById('btn-sair').style.display = 'none';
   document.getElementById('titulo').textContent = 'Acompanhamento de obra';
   document.getElementById('subtitulo').textContent = 'Consulta pública de avanço físico';
   document.getElementById('codigo').value = '';
