@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Acompanhamento de obra</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>(function(){try{var t=localStorage.getItem('tracker_tema');if(!t){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
+<style>
+:root{
+  --bg:#F7F6F3; --surface:#FFFFFF; --surface2:#F1EFE9; --border:#E2DFD8; --border2:#C8C5BC;
+  --text:#1A1916; --text2:#6B6860; --text3:#9E9C97;
+  --blue:#185FA5; --blue-bg:#E6F1FB; --blue-mid:#378ADD;
+  --green:#0F6E56; --green-mid:#1D9E75; --amber:#854F0B; --amber-mid:#EF9F27;
+  --radius:8px; --radius-lg:12px;
+}
+html[data-theme="dark"]{
+  --bg:#14130F; --surface:#1D1C17; --surface2:#262420; --border:#34322B; --border2:#4A4740;
+  --text:#EDEBE4; --text2:#A5A199; --text3:#78746C;
+  --blue:#8FC2F5; --blue-bg:#14283C; --blue-mid:#4A9BE8;
+  --green:#5FD9B0; --green-mid:#23B183; --amber:#F0B860; --amber-mid:#E8A030;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:var(--bg);
+  color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;
+  transition:background-color .18s,color .18s;}
+.wrap{max-width:780px;margin:0 auto;padding:1.5rem 1.25rem 3rem;}
+.topo{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.5rem;}
+.btn-tema{background:var(--surface2);border:1px solid var(--border);color:var(--text2);
+  border-radius:var(--radius);cursor:pointer;padding:6px 10px;font-size:15px;line-height:1;}
+h1{font-size:20px;font-weight:600;letter-spacing:-.01em;}
+.sub{font-size:12px;color:var(--text2);margin-top:3px;}
+
+/* busca */
+.busca{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:1.5rem;text-align:center;max-width:420px;margin:3rem auto;}
+.busca .ic{font-size:34px;margin-bottom:.5rem;}
+.busca h2{font-size:17px;margin-bottom:.35rem;}
+.busca p{font-size:12px;color:var(--text2);margin-bottom:1.1rem;}
+input{width:100%;padding:11px 12px;font-size:16px;font-family:inherit;text-align:center;
+  letter-spacing:2px;text-transform:uppercase;border:1px solid var(--border);
+  border-radius:var(--radius);background:var(--surface);color:var(--text);margin-bottom:.6rem;}
+input:focus{outline:none;border-color:var(--blue-mid);box-shadow:0 0 0 3px rgba(55,138,221,.15);}
+button.primario{width:100%;padding:11px;font-size:14px;font-family:inherit;font-weight:500;
+  background:var(--blue);color:#fff;border:none;border-radius:var(--radius);cursor:pointer;}
+button.primario:disabled{opacity:.6;cursor:default;}
+.erro{color:var(--amber);font-size:12px;margin-top:.7rem;min-height:1em;}
+
+/* resultado */
+.painel{display:none;}
+.painel.on{display:block;}
+.destaque{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:1.25rem;margin-bottom:1.25rem;}
+.rotulo{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;}
+.numero{font-size:38px;font-weight:600;letter-spacing:-.02em;color:var(--green);line-height:1.1;margin:.2rem 0 .1rem;}
+.barra{height:12px;background:var(--surface2);border-radius:6px;overflow:hidden;margin-top:.9rem;}
+.barra > div{height:100%;background:linear-gradient(90deg,var(--green-mid),var(--green));
+  border-radius:6px;transition:width .8s ease;}
+.secao{font-size:12px;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;
+  margin:1.5rem 0 .6rem;}
+.item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:9px 12px;margin-bottom:6px;}
+.item .lin{display:flex;justify-content:space-between;align-items:baseline;gap:10px;}
+.item .nome{font-size:13px;}
+.item .pct{font-size:13px;font-weight:600;white-space:nowrap;}
+.item .mini{height:5px;background:var(--surface2);border-radius:3px;margin-top:5px;overflow:hidden;}
+.item .mini > div{height:100%;border-radius:3px;transition:width .6s ease;}
+.rodape{margin-top:2rem;padding-top:1rem;border-top:1px solid var(--border);
+  font-size:11px;color:var(--text3);text-align:center;line-height:1.7;}
+.trocar{color:var(--blue);cursor:pointer;text-decoration:underline;}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="topo">
+    <div>
+      <h1 id="titulo">Acompanhamento de obra</h1>
+      <div class="sub" id="subtitulo">Consulta pública de avanço físico</div>
+    </div>
+    <button class="btn-tema" onclick="alternarTema()" title="Alternar tema">🌙</button>
+  </div>
+
+  <!-- busca por código -->
+  <div class="busca" id="busca">
+    <div class="ic">🏗️</div>
+    <h2>Informe o código da obra</h2>
+    <p>O código é fornecido pelo responsável pela obra</p>
+    <input id="codigo" placeholder="OBR-XXXXXX" maxlength="10" autocomplete="off" />
+    <button class="primario" id="btn" onclick="consultar()">Ver andamento</button>
+    <div class="erro" id="erro"></div>
+  </div>
+
+  <!-- resultado -->
+  <div class="painel" id="painel">
+    <div class="destaque">
+      <div class="rotulo">Avanço físico da obra</div>
+      <div class="numero" id="pct-geral">—</div>
+      <div class="sub" id="atualizado"></div>
+      <div class="barra"><div id="barra-geral" style="width:0%"></div></div>
+    </div>
+
+    <div class="secao">Etapas</div>
+    <div id="lista"></div>
+
+    <div class="rodape">
+      Esta página mostra apenas o percentual de execução de cada etapa.<br>
+      Informações financeiras não são divulgadas aqui.<br><br>
+      <span class="trocar" onclick="voltar()">Consultar outra obra</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+'use strict';
+const SB_URL  = 'https://qazbyotibhqrwbuvmdza.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhemJ5b3RpYmhxcndidXZtZHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MjEzNjcsImV4cCI6MjEwMDM5NzM2N30.YzlSaoUz1G2Or0hIn_yYOghbqRGSj7t1oUcIWohBnps';
+const sb = window.supabase.createClient(SB_URL, SB_ANON);
+
+function alternarTema(){
+  const atual = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+  const novo = atual === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', novo);
+  try { localStorage.setItem('tracker_tema', novo); } catch(e){}
+  document.querySelector('.btn-tema').textContent = novo === 'dark' ? '☀️' : '🌙';
+}
+(function(){ 
+  const t = document.documentElement.getAttribute('data-theme');
+  document.querySelector('.btn-tema').textContent = t === 'dark' ? '☀️' : '🌙';
+})();
+
+function corDe(p){
+  if (p >= 100) return 'var(--green)';
+  if (p > 0)    return 'var(--amber-mid)';
+  return 'var(--border2)';
+}
+function pct(v){ return (Math.round(v * 10) / 10).toFixed(1).replace('.', ',') + '%'; }
+
+async function consultar(){
+  const cod = (document.getElementById('codigo').value || '').trim().toUpperCase();
+  const err = document.getElementById('erro');
+  const btn = document.getElementById('btn');
+  if (!cod) { err.textContent = 'Digite o código da obra.'; return; }
+  err.textContent = ''; btn.disabled = true; btn.textContent = 'Consultando...';
+  try {
+    const { data, error } = await sb.rpc('avanco_publico', { p_tag: cod });
+    if (error) { err.textContent = 'Não foi possível consultar agora. Tente novamente.'; return; }
+    if (!data) { err.textContent = 'Nenhuma obra encontrada com esse código.'; return; }
+    mostrar(data);
+    history.replaceState(null, '', '?c=' + encodeURIComponent(cod));
+  } catch(e) {
+    err.textContent = 'Falha de conexão. Verifique a internet.';
+  } finally {
+    btn.disabled = false; btn.textContent = 'Ver andamento';
+  }
+}
+
+function mostrar(d){
+  document.getElementById('busca').style.display = 'none';
+  document.getElementById('painel').classList.add('on');
+  document.getElementById('titulo').textContent = d.nome || 'Obra';
+  document.getElementById('subtitulo').textContent = 'Código ' + d.tag + ' · avanço físico';
+
+  const g = Number(d.pct_geral) || 0;
+  document.getElementById('pct-geral').textContent = pct(g);
+  setTimeout(function(){ document.getElementById('barra-geral').style.width = Math.min(100, g) + '%'; }, 60);
+
+  if (d.atualizado_em) {
+    const dt = new Date(d.atualizado_em);
+    document.getElementById('atualizado').textContent =
+      'Atualizado em ' + dt.toLocaleDateString('pt-BR');
+  }
+
+  const itens = (d.itens || []).filter(function(i){ return Number(i.peso) > 0; });
+  document.getElementById('lista').innerHTML = itens.map(function(i){
+    const e = Number(i.exec) || 0;
+    const c = corDe(e);
+    return '<div class="item"><div class="lin">' +
+      '<span class="nome">' + escapar(i.descricao) + '</span>' +
+      '<span class="pct" style="color:' + c + '">' + pct(e) + '</span></div>' +
+      '<div class="mini"><div style="width:' + Math.min(100, e) + '%;background:' + c + '"></div></div>' +
+    '</div>';
+  }).join('') || '<div class="item"><span class="nome">Nenhuma etapa cadastrada ainda.</span></div>';
+}
+
+function escapar(s){
+  return String(s || '').replace(/[&<>"]/g, function(c){
+    return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c];
+  });
+}
+
+function voltar(){
+  document.getElementById('painel').classList.remove('on');
+  document.getElementById('busca').style.display = '';
+  document.getElementById('titulo').textContent = 'Acompanhamento de obra';
+  document.getElementById('subtitulo').textContent = 'Consulta pública de avanço físico';
+  document.getElementById('codigo').value = '';
+  history.replaceState(null, '', location.pathname);
+}
+
+document.getElementById('codigo').addEventListener('keydown', function(e){
+  if (e.key === 'Enter') consultar();
+});
+
+/* abre direto se vier ?c=OBR-XXXXXX na URL */
+(function(){
+  const p = new URLSearchParams(location.search);
+  const c = p.get('c') || p.get('codigo');
+  if (c) { document.getElementById('codigo').value = c.toUpperCase(); consultar(); }
+})();
+</script>
+</body>
+</html>
