@@ -1,0 +1,62 @@
+# Aplica no Supabase, automaticamente, todo arquivo .sql novo
+# adicionado em supabase/migrations/.
+#
+# Cada arquivo roda UMA única vez — o controle fica na tabela
+# public.migracoes, dentro do próprio banco.
+name: Aplicar migrações no Supabase
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/**.sql'
+  workflow_dispatch:
+
+jobs:
+  migrar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Instalar cliente PostgreSQL
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq postgresql-client
+
+      - name: Aplicar migrações pendentes
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DB:-}" ]; then
+            echo "ERRO: o segredo SUPABASE_DB_URL não está configurado no repositório."
+            exit 1
+          fi
+
+          psql "$DB" -v ON_ERROR_STOP=1 -q -c \
+            "create table if not exists public.migracoes (
+               arquivo text primary key,
+               aplicada_em timestamptz not null default now()
+             );"
+
+          aplicadas=0
+          for f in $(ls -1 supabase/migrations/*.sql 2>/dev/null | sort); do
+            nome=$(basename "$f")
+            ja=$(psql "$DB" -tAc "select 1 from public.migracoes where arquivo = '$nome'")
+            if [ "$ja" = "1" ]; then
+              echo "=  $nome  (já aplicada, ignorando)"
+              continue
+            fi
+            echo "-> aplicando $nome"
+            psql "$DB" -v ON_ERROR_STOP=1 --single-transaction -f "$f"
+            psql "$DB" -q -c "insert into public.migracoes (arquivo) values ('$nome')"
+            echo "OK $nome"
+            aplicadas=$((aplicadas+1))
+          done
+
+          echo ""
+          echo "Migrações aplicadas nesta execução: $aplicadas"
+
+      - name: Conferir estado do banco
+        env:
+          DB: ${{ secrets.SUPABASE_DB_URL }}
+        run: |
+          psql "$DB" -c "select arquivo, aplicada_em from public.migracoes order by aplicada_em;"
