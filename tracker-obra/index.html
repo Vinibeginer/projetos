@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>(function(){try{var t=localStorage.getItem('tracker_tema');if(!t){t=(window.matchMedia&&window.matchMedia('(prefers-color-scheme: dark)').matches)?'dark':'light';}document.documentElement.setAttribute('data-theme',t);}catch(e){}})();</script>
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -70,6 +71,23 @@ body, .card, .header, .panel, table, .login-card, .alert, input, select, textare
 }
 .btn-tema:hover { border-color: var(--border2); color: var(--text); }
 .login-tema { position: absolute; top: 14px; right: 14px; }
+.obra-bar { display: flex; gap: 6px; padding: 8px 1.5rem; background: var(--surface2);
+  border-bottom: 1px solid var(--border); overflow-x: auto; align-items: center; }
+.obra-tab { display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
+  padding: 6px 12px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); cursor: pointer; white-space: nowrap; font-family: inherit;
+  color: var(--text2); transition: all .15s; }
+.obra-tab:hover { border-color: var(--border2); }
+.obra-tab.on { background: var(--blue-bg); border-color: var(--blue-mid); color: var(--blue); }
+.obra-nome  { font-size: 13px; font-weight: 600; }
+.obra-tag   { font-size: 10px; opacity: .7; letter-spacing: .5px; }
+.obra-papel { font-size: 9px; color: var(--amber); }
+.obra-tab.novo { flex-direction: row; align-items: center; font-size: 12px; color: var(--text3); border-style: dashed; }
+.sync-badge { margin-left: auto; font-size: 11px; color: var(--text3); white-space: nowrap; padding-left: 10px; }
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.55);
+  align-items: center; justify-content: center; z-index: 100; padding: 1.5rem; }
+.overlay.visible { display: flex; }
+.link-acao { color: var(--blue); cursor: pointer; text-decoration: underline; }
 .ext-wrap { display: none; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
 .ext-wrap.visible { display: flex; }
 .ext-wrap input {
@@ -365,54 +383,40 @@ textarea { resize: vertical; min-height: 60px; }
   <button class="btn-tema login-tema" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
   <div class="login-card">
     <div class="login-logo">🏗️</div>
-    <h2>Acompanhamento de obra</h2>
-    <p>Vinícius Sampaio Ornellas · Campos/RJ</p>
+    <h2 id="au-titulo">Controle de obra</h2>
+    <p id="au-sub">Entre com sua conta para acessar suas obras</p>
 
-    <div class="login-options">
-      <button class="login-opt" onclick="entrarVisitante()">
-        <span class="opt-icon">👁️</span>
-        <div>
-          <div class="opt-title">Visualizar andamento</div>
-          <div class="opt-sub">Acesso público — percentuais de avanço</div>
-        </div>
-      </button>
-      <button class="login-opt" onclick="mostrarSenha()">
-        <span class="opt-icon">🔐</span>
-        <div>
-          <div class="opt-title">Administrador da obra</div>
-          <div class="opt-sub">Acesso completo com senha</div>
-        </div>
-      </button>
-      <button class="login-opt" onclick="mostrarExterno()">
-        <span class="opt-icon">📋</span>
-        <div>
-          <div class="opt-title" id="ext-opt-title">Criar meu controle de custos</div>
-          <div class="opt-sub" id="ext-opt-sub">Monte o controle da sua própria obra</div>
-        </div>
-      </button>
-    </div>
-
-    <div class="ext-wrap" id="ext-wrap">
-      <input type="text" id="ext-nome"  placeholder="Nome da obra ou responsável" maxlength="60" />
-      <input type="text" id="ext-orc"   placeholder="Orçamento total da obra (R$)" inputmode="decimal" />
-      <input type="text" id="ext-fin"   placeholder="Recurso disponível p/ obra (R$)" inputmode="decimal" />
-      <input type="text" id="ext-mo"    placeholder="Teto de mão de obra (R$) — opcional" inputmode="decimal" />
-      <button class="btn-login" id="ext-btn" onclick="criarControleExterno()">Criar meu controle</button>
-      <div class="ext-hint">Os dados ficam salvos apenas neste navegador, no seu dispositivo. Nada é enviado para a obra do Vinícius nem para a internet.</div>
-    </div>
-
-    <div class="pwd-wrap" id="pwd-wrap">
-      <input type="password" id="pwd-input" placeholder="Senha" maxlength="30"
-        onkeydown="if(event.key==='Enter') entrarAdmin()" autocomplete="current-password" />
-      <button class="btn-login" onclick="entrarAdmin()">Entrar como administrador</button>
+    <div class="ext-wrap visible" id="auth-wrap">
+      <input type="text"     id="au-nome"  placeholder="Seu nome" autocomplete="name" style="display:none" />
+      <input type="email"    id="au-email" placeholder="E-mail" autocomplete="email" />
+      <input type="password" id="au-senha" placeholder="Senha" autocomplete="current-password" />
+      <button class="btn-login" id="au-btn" onclick="autenticar()">Entrar</button>
+      <div class="ext-hint" id="au-hint">
+        Ainda não tem conta? <span class="link-acao" onclick="alternarModoAuth()">Criar agora</span>
+      </div>
     </div>
     <div class="login-error" id="login-error"></div>
   </div>
 </div>
 
-<!-- ══════════════════════════════════════
-     APP PRINCIPAL
-══════════════════════════════════════ -->
+<!-- criação de obra -->
+<div class="overlay" id="ov-obra">
+  <div class="login-card">
+    <div class="login-logo">🏠</div>
+    <h2>Nova obra</h2>
+    <p>Informe os valores que servem de base para os percentuais</p>
+    <div class="ext-wrap visible">
+      <input type="text" id="no-nome" placeholder="Nome da obra" maxlength="60" />
+      <input type="text" id="no-orc"  placeholder="Orçamento total (R$)" inputmode="decimal" />
+      <input type="text" id="no-base" placeholder="Recurso disponível p/ obra (R$)" inputmode="decimal" />
+      <input type="text" id="no-mo"   placeholder="Teto de mão de obra (R$) — opcional" inputmode="decimal" />
+      <button class="btn-login" onclick="criarObra()">Criar obra</button>
+      <div class="login-error" id="no-erro"></div>
+      <div class="ext-hint"><span class="link-acao" id="no-cancelar" onclick="fecharNovaObra()">Cancelar</span></div>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
   <div class="header">
@@ -424,9 +428,11 @@ textarea { resize: vertical; min-height: 60px; }
       <span class="last-update" id="last-update"></span>
       <span class="badge-role" id="badge-role"></span>
       <button class="btn-tema" onclick="toggleTema()" title="Alternar tema claro/escuro" aria-label="Alternar tema">🌙</button>
-      <button class="btn-logout" onclick="sair()">Sair</button>
+      <button class="btn-logout" onclick="sairConta()">Sair</button>
     </div>
   </div>
+
+  <div class="obra-bar" id="obra-bar"></div>
 
   <div class="container">
 
@@ -1623,7 +1629,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '1.51';
+const APP_VERSION = '2.00';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1677,6 +1683,7 @@ const VERSOES = [
   { v:'1.49', data:'20/07/2026', autor:'Claude', desc:'Madeira/fôrma R$1.500 realocada: removida da aba Mão de obra (duplicidade) e mantida apenas em Materiais · desembolso passa a somar lançamentos tipo material de ambas as abas' },
   { v:'1.50', data:'20/07/2026', autor:'Claude', desc:'Base do desembolso corrigida: percentuais passam a ser calculados sobre o saldo p/ obra R$372.888 (financiamento R$454.488 − R$81.600 do terreno) em vez do PCI R$495.000' },
   { v:'1.51', data:'23/07/2026', autor:'Claude', desc:'Tema claro/escuro com botão no login e no header (preferência salva no navegador) · nova opção de login: usuário externo cria o próprio controle de custos, com orçamento e teto de MO próprios, dados só no navegador dele e publicação no GitHub bloqueada' },
+  { v:'2.00', data:'24/07/2026', autor:'Claude', desc:'Dados migrados para a nuvem (Supabase): login por e-mail e senha, cadastro aberto, várias obras por conta com código único (tag) e abas para alternar, gravação no banco em vez do navegador, acesso público removido e token do GitHub retirado do código' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1688,6 +1695,307 @@ let   modoExterno = false;
 let BASE_OBRA   = 372888;
 let MED_PCT     = 25.35;
 let MED_VAL     = 94324.54;
+
+/* ══ NUVEM — SUPABASE ══════════════════════════════════════ */
+const SB_URL  = 'https://qazbyotibhqrwbuvmdza.supabase.co';
+const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhemJ5b3RpYmhxcndidXZtZHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MjEzNjcsImV4cCI6MjEwMDM5NzM2N30.YzlSaoUz1G2Or0hIn_yYOghbqRGSj7t1oUcIWohBnps';
+
+let sb = null, usuario = null, obraAtual = null, minhasObras = [], podeEditar = false, modoCadastro = false;
+
+function sbClient() {
+  if (!sb && window.supabase) sb = window.supabase.createClient(SB_URL, SB_ANON);
+  return sb;
+}
+function erroLogin(msg, alvo) {
+  const e = document.getElementById(alvo || 'login-error');
+  if (e) e.textContent = msg || '';
+}
+function traduzErro(err) {
+  const m = (err && err.message || '').toLowerCase();
+  if (m.includes('invalid login')) return 'E-mail ou senha incorretos.';
+  if (m.includes('already registered') || m.includes('already been')) return 'Este e-mail já tem conta. Tente entrar.';
+  if (m.includes('password') && m.includes('6'))  return 'A senha precisa ter ao menos 6 caracteres.';
+  if (m.includes('email') && m.includes('confirm')) return 'Confirme o e-mail antes de entrar.';
+  if (m.includes('rate limit')) return 'Muitas tentativas. Aguarde um minuto.';
+  return (err && err.message) || 'Não foi possível concluir.';
+}
+
+/* ── datas: banco usa AAAA-MM-DD, o app usa DD/MM/AAAA ── */
+function isoData(br) {
+  if (!br) return null;
+  const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(String(br));
+  return m ? m[3] + '-' + m[2] + '-' + m[1] : null;
+}
+function brData(iso) {
+  if (!iso) return '';
+  const m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
+  return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso);
+}
+
+/* ── autenticação ── */
+function alternarModoAuth() {
+  modoCadastro = !modoCadastro;
+  document.getElementById('au-nome').style.display = modoCadastro ? '' : 'none';
+  document.getElementById('au-titulo').textContent = modoCadastro ? 'Criar conta' : 'Controle de obra';
+  document.getElementById('au-sub').textContent    = modoCadastro ? 'Monte o controle de custos da sua obra' : 'Entre com sua conta para acessar suas obras';
+  document.getElementById('au-btn').textContent    = modoCadastro ? 'Criar conta' : 'Entrar';
+  document.getElementById('au-hint').innerHTML     = modoCadastro
+    ? 'Já tem conta? <span class="link-acao" onclick="alternarModoAuth()">Entrar</span>'
+    : 'Ainda não tem conta? <span class="link-acao" onclick="alternarModoAuth()">Criar agora</span>';
+  erroLogin('');
+}
+
+async function autenticar() {
+  const c = sbClient();
+  if (!c) { erroLogin('Sem conexão com o servidor. Verifique a internet e recarregue.'); return; }
+  const email = (document.getElementById('au-email').value || '').trim();
+  const senha = document.getElementById('au-senha').value || '';
+  const nome  = (document.getElementById('au-nome').value || '').trim();
+  if (!email || !senha) { erroLogin('Informe e-mail e senha.'); return; }
+  if (modoCadastro && !nome) { erroLogin('Informe seu nome.'); return; }
+
+  const btn = document.getElementById('au-btn');
+  btn.disabled = true; btn.textContent = 'Aguarde...'; erroLogin('');
+  try {
+    if (modoCadastro) {
+      const { data, error } = await c.auth.signUp({ email, password: senha, options: { data: { nome } } });
+      if (error) { erroLogin(traduzErro(error)); return; }
+      if (!data.session) { erroLogin('Conta criada. Confirme o link enviado para o seu e-mail e depois entre.'); alternarModoAuth(); return; }
+    } else {
+      const { error } = await c.auth.signInWithPassword({ email, password: senha });
+      if (error) { erroLogin(traduzErro(error)); return; }
+    }
+    await aposLogin();
+  } catch (e) {
+    erroLogin(traduzErro(e));
+  } finally {
+    btn.disabled = false;
+    btn.textContent = modoCadastro ? 'Criar conta' : 'Entrar';
+  }
+}
+
+async function aposLogin() {
+  const c = sbClient();
+  const { data } = await c.auth.getUser();
+  usuario = data && data.user;
+  await carregarMinhasObras();
+}
+
+async function carregarMinhasObras() {
+  const c = sbClient();
+  const { data, error } = await c.rpc('minhas_obras');
+  if (error) { erroLogin('Erro ao carregar obras: ' + error.message); return; }
+  minhasObras = data || [];
+  if (!minhasObras.length) { mostrarNovaObra(true); return; }
+  const ult = localStorage.getItem('obra_ultima');
+  const alvo = minhasObras.find(o => o.id === ult) || minhasObras[0];
+  await abrirObra(alvo.id);
+}
+
+/* ── criação de obra ── */
+function mostrarNovaObra(primeira) {
+  document.getElementById('ov-obra').classList.add('visible');
+  document.getElementById('no-cancelar').style.display = primeira ? 'none' : '';
+  document.getElementById('no-nome').focus();
+}
+function fecharNovaObra() {
+  document.getElementById('ov-obra').classList.remove('visible');
+  erroLogin('', 'no-erro');
+}
+async function criarObra() {
+  const c = sbClient();
+  const nome = (document.getElementById('no-nome').value || '').trim();
+  const orc  = numBR(document.getElementById('no-orc').value);
+  const base = numBR(document.getElementById('no-base').value) || orc;
+  const moT  = numBR(document.getElementById('no-mo').value)   || Math.round(orc * 0.25);
+  if (!nome) { erroLogin('Informe o nome da obra.', 'no-erro'); return; }
+  if (orc <= 0) { erroLogin('Informe o orçamento total.', 'no-erro'); return; }
+  erroLogin('', 'no-erro');
+
+  const { data, error } = await c.from('obras')
+    .insert({ dono: usuario.id, nome: nome, orcamento: orc, base_obra: base, mo_teto: moT })
+    .select().single();
+  if (error) { erroLogin('Erro ao criar: ' + error.message, 'no-erro'); return; }
+
+  fecharNovaObra();
+  ['no-nome','no-orc','no-base','no-mo'].forEach(id => document.getElementById(id).value = '');
+  await carregarMinhasObrasEAbrir(data.id);
+}
+async function carregarMinhasObrasEAbrir(id) {
+  const c = sbClient();
+  const { data } = await c.rpc('minhas_obras');
+  minhasObras = data || [];
+  await abrirObra(id);
+}
+
+/* ── abrir obra e carregar dados ── */
+async function abrirObra(id) {
+  obraAtual = minhasObras.find(o => o.id === id);
+  if (!obraAtual) return;
+  podeEditar = (obraAtual.papel === 'dono' || obraAtual.papel === 'editor');
+  isAdmin    = podeEditar;
+  localStorage.setItem('obra_ultima', id);
+  STORAGE_KEY = 'tracker_obra_' + id;
+  BASE_OBRA   = Number(obraAtual.base_obra) || 0;
+  MO_TETO     = Number(obraAtual.mo_teto)   || 0;
+  marcarSync('baixando');
+  await baixarDados();
+  iniciarApp();
+  ajustarCabecalhoObra();
+  renderObraBar();
+  marcarSync('ok');
+}
+
+async function baixarDados() {
+  const c = sbClient(), oid = obraAtual.id;
+  const [it, mt, mo, md, hs] = await Promise.all([
+    c.from('itens').select('*').eq('obra_id', oid).order('ordem'),
+    c.from('materiais').select('*').eq('obra_id', oid).order('id'),
+    c.from('mo_pagamentos').select('*').eq('obra_id', oid).order('id'),
+    c.from('medicoes').select('*').eq('obra_id', oid).order('numero'),
+    c.from('historico').select('*').eq('obra_id', oid).order('id')
+  ]);
+  itens = (it.data || []).map(r => ({ id: r.ordem || r.id, desc: r.descricao, pciPct: +r.pci_pct,
+    exec: +r.exec_pct, locked: !!r.travado, prevExec: +r.prev_pct, obs: r.obs || '' }));
+  materiais = (mt.data || []).map(r => ({ id: r.id, data: brData(r.data), desc: r.descricao,
+    cat: r.categoria, forn: r.fornecedor, ref: r.referencia, valor: +r.valor, pago: r.pago ? 'sim' : 'nao' }));
+  moPagamentos = (mo.data || []).map(r => ({ id: r.id, data: brData(r.data), dest: r.destinatario,
+    ref: r.referencia, valor: +r.valor, tipo: r.tipo, itemId: r.item_id }));
+  medicoesConfirmadas = (md.data || []).map(r => ({ num: r.numero, data: brData(r.data),
+    pctCaixa: +r.pct_caixa, valor: +r.valor, ref: r.referencia, itens: r.itens_desc, confirmada: !!r.confirmada }));
+  historico = (hs.data || []).map(r => ({ data: r.data_txt || brData(r.data), desc: r.descricao,
+    deltaPct: +r.delta_pct, deltaVal: +r.delta_valor, prev: !!r.previsao, obs: r.obs || '' }));
+
+  if (!itens.length) itens = ITENS_DEFAULT.map(i => ({ id: i.id, desc: i.desc, pciPct: i.pciPct,
+    exec: 0, locked: false, prevExec: 0, obs: '' }));
+
+  const conf = medicoesConfirmadas.filter(m => m.confirmada);
+  MED_PCT = conf.reduce((s, m) => s + (+m.pctCaixa || 0), 0);
+  MED_VAL = conf.reduce((s, m) => s + (+m.valor || 0), 0);
+  espelharLocal();
+}
+
+function espelharLocal() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ itens: itens, historico: historico,
+      moPagamentos: moPagamentos, materiais: materiais, medicoesConfirmadas: medicoesConfirmadas,
+      savedAt: new Date().toISOString() }));
+  } catch (e) {}
+}
+
+/* ── envio para a nuvem ── */
+let _syncTimer = null;
+function marcarSync(estado) {
+  const el = document.getElementById('sync-badge');
+  if (!el) return;
+  const txt = { salvando: 'salvando...', baixando: 'carregando...', ok: 'salvo na nuvem', erro: 'falha ao salvar' };
+  el.textContent = txt[estado] || '';
+  el.style.color = estado === 'erro' ? 'var(--red)' : 'var(--text3)';
+}
+function sincronizarNuvem() {
+  if (!obraAtual || !podeEditar) return;
+  clearTimeout(_syncTimer);
+  marcarSync('salvando');
+  _syncTimer = setTimeout(enviarTudo, 900);
+}
+async function repor(tabela, oid, linhas) {
+  const c = sbClient();
+  const d = await c.from(tabela).delete().eq('obra_id', oid);
+  if (d.error) throw d.error;
+  if (linhas.length) {
+    const i = await c.from(tabela).insert(linhas);
+    if (i.error) throw i.error;
+  }
+}
+async function enviarTudo() {
+  if (!obraAtual || !podeEditar) return;
+  const oid = obraAtual.id;
+  try {
+    await repor('itens', oid, itens.map(i => ({ obra_id: oid, ordem: i.id, descricao: i.desc,
+      pci_pct: i.pciPct || 0, exec_pct: i.exec || 0, travado: !!i.locked, prev_pct: i.prevExec || 0, obs: i.obs || '' })));
+    await repor('materiais', oid, materiais.map(m => ({ obra_id: oid, data: isoData(m.data), descricao: m.desc,
+      categoria: m.cat, fornecedor: m.forn, referencia: m.ref, valor: m.valor || 0, pago: (m.pago === 'sim' || m.pago === true) })));
+    await repor('mo_pagamentos', oid, moPagamentos.map(p => ({ obra_id: oid, data: isoData(p.data), destinatario: p.dest,
+      referencia: p.ref, valor: p.valor || 0, tipo: p.tipo || 'mo', item_id: p.itemId || null })));
+    await repor('medicoes', oid, medicoesConfirmadas.map(m => ({ obra_id: oid, numero: m.num, data: isoData(m.data),
+      pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada })));
+    await repor('historico', oid, historico.map(h => ({ obra_id: oid, data: isoData(h.data), data_txt: h.data,
+      descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' })));
+    marcarSync('ok');
+  } catch (e) {
+    marcarSync('erro');
+    console.error('Falha ao sincronizar:', e);
+  }
+}
+
+/* ── abas de obra ── */
+function semDados() { return (materiais.length + moPagamentos.length) === 0; }
+function renderObraBar() {
+  const el = document.getElementById('obra-bar');
+  if (!el) return;
+  let h = minhasObras.map(function (o) {
+    const on = (obraAtual && o.id === obraAtual.id) ? ' on' : '';
+    const papel = (o.papel !== 'dono') ? '<span class="obra-papel">somente leitura</span>' : '';
+    return '<button class="obra-tab' + on + '" onclick="abrirObra(\'' + o.id + '\')">' +
+      '<span class="obra-nome">' + o.nome + '</span>' +
+      '<span class="obra-tag">' + o.tag + '</span>' + papel + '</button>';
+  }).join('');
+  h += '<button class="obra-tab novo" onclick="mostrarNovaObra(false)">+ Nova obra</button>';
+  if (podeEditar && semDados()) {
+    h += '<button class="obra-tab novo" onclick="importarDadosLocais()">Importar dados desta página</button>';
+  }
+  h += '<span class="sync-badge" id="sync-badge"></span>';
+  el.innerHTML = h;
+}
+function ajustarCabecalhoObra() {
+  const h1 = document.querySelector('.header-left h1');
+  const p  = document.querySelector('.header-left p');
+  if (h1 && obraAtual) h1.textContent = 'Tracker de obra — ' + obraAtual.nome;
+  if (p && obraAtual) {
+    p.innerHTML = 'Código ' + obraAtual.tag + ' · ' + (podeEditar ? 'acesso de edição' : 'somente leitura') +
+      ' · <span id="app-version-badge" style="font-weight:600;color:var(--blue)">v' + APP_VERSION + '</span>';
+  }
+  const badge = document.getElementById('badge-role');
+  if (badge) {
+    badge.textContent = podeEditar ? 'Editando' : 'Leitura';
+    badge.className = 'badge-role ' + (podeEditar ? 'badge-admin' : 'badge-visitor');
+  }
+}
+
+/* ── importar os dados que estão nesta página / no navegador ── */
+async function importarDadosLocais() {
+  if (!podeEditar) return;
+  if (!confirm('Importar os dados desta página para a obra "' + obraAtual.nome + '"? O conteúdo atual da obra na nuvem será substituído.')) return;
+  itens               = JSON.parse(JSON.stringify(ITENS_DEFAULT));
+  historico           = JSON.parse(JSON.stringify(HISTORICO_DEFAULT));
+  moPagamentos        = JSON.parse(JSON.stringify(MO_PAGAMENTOS_DEF));
+  materiais           = JSON.parse(JSON.stringify(MAT_DEF));
+  medicoesConfirmadas = JSON.parse(JSON.stringify(MEDICOES_DEF));
+  try {
+    const raw = localStorage.getItem('tracker_obra_vinicius_v2');
+    if (raw) {
+      const s = JSON.parse(raw);
+      if (s.itens)               itens = s.itens;
+      if (s.historico)           historico = s.historico;
+      if (s.moPagamentos)        moPagamentos = s.moPagamentos;
+      if (s.materiais)           materiais = s.materiais;
+      if (s.medicoesConfirmadas) medicoesConfirmadas = s.medicoesConfirmadas;
+    }
+  } catch (e) {}
+  marcarSync('salvando');
+  await enviarTudo();
+  await baixarDados();
+  iniciarApp();
+  ajustarCabecalhoObra();
+  renderObraBar();
+}
+
+async function sairConta() {
+  const c = sbClient();
+  if (c) { try { await c.auth.signOut(); } catch (e) {} }
+  localStorage.removeItem('obra_ultima');
+  location.reload();
+}
 
 /* ══ TEMA CLARO / ESCURO ═══════════════════════════════════ */
 function temaAtual() {
@@ -1901,8 +2209,7 @@ let itens     = JSON.parse(JSON.stringify(ITENS_DEFAULT));
 let historico = JSON.parse(JSON.stringify(HISTORICO_DEFAULT));
 
 function salvar() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify({ itens, historico, savedAt: new Date().toISOString() }));
-  atualizarTimestamp();
+  espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
 }
 function carregar() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -2298,12 +2605,7 @@ const MO_PROJECAO_DEF = [
 let moPagamentos = JSON.parse(JSON.stringify(MO_PAGAMENTOS_DEF));
 
 function salvarMO() {
-  const raw = localStorage.getItem(STORAGE_KEY);
-  const estado = raw ? JSON.parse(raw) : {};
-  estado.moPagamentos = moPagamentos;
-  estado.savedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
-  atualizarTimestamp();
+  espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
 }
 
 function carregarMO() {
@@ -2642,12 +2944,7 @@ const MAT_DEF = [
 let materiais = JSON.parse(JSON.stringify(MAT_DEF));
 
 function salvarMat() {
-  const raw    = localStorage.getItem(STORAGE_KEY);
-  const estado = raw ? JSON.parse(raw) : {};
-  estado.materiais = materiais;
-  estado.savedAt   = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
-  atualizarTimestamp();
+  espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
 }
 function carregarMat() {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -2754,7 +3051,7 @@ function showMatTab(t, el) {
 }
 
 /* ══ GITHUB AUTO-PUBLISH ══════════════════════════════════════ */
-const GH_TOKEN = ['ghp_dyqengVIOevM2vLdCrJ', '5af55v2564p1Z2HYi'].join('');
+const GH_TOKEN = ''; // removido — a gravação agora é no Supabase, não no repositório
 const GH_REPO  = 'Vinibeginer/tracker-obra';
 const GH_FILE  = 'index.html';
 
@@ -2802,7 +3099,8 @@ function substituirBloco(h, marcador, novoBloco) {
 
 let _ghPublishing = false;
 async function publishToGitHub(msg) {
-  if (modoExterno) return false;   // controle próprio nunca publica no repositório da obra
+  return false;   // desativado: os dados agora vivem no Supabase
+  /* eslint-disable no-unreachable */
   if (_ghPublishing) return false;
   _ghPublishing = true;
   try {
@@ -2872,12 +3170,7 @@ const MEDICOES_DEF = [
 let medicoesConfirmadas = JSON.parse(JSON.stringify(MEDICOES_DEF));
 
 function salvarMedicoes() {
-  const raw    = localStorage.getItem(STORAGE_KEY);
-  const estado = raw ? JSON.parse(raw) : {};
-  estado.medicoesConfirmadas = medicoesConfirmadas;
-  estado.savedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(estado));
-  atualizarTimestamp();
+  espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
 }
 
 function carregarMedicoes() {
@@ -3031,11 +3324,12 @@ function buildVersoes() {
 
 
 (function init() {
-  const role = sessionStorage.getItem('obra_role');
-  if (role === 'admin') { isAdmin = true; iniciarApp(); }
-  else if (role === 'visitor') { isAdmin = false; iniciarApp(); }
-  else if (role === 'externo') { entrarExterno(); }
   aplicarTema(temaAtual());
+  const c = sbClient();
+  if (!c) { erroLogin('Não foi possível carregar a conexão com o servidor. Recarregue a página.'); return; }
+  c.auth.getSession().then(function (r) {
+    if (r && r.data && r.data.session) { aposLogin(); }
+  });
 })();
 
 function iniciarAppMO() {
