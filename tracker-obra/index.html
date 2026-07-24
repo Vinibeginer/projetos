@@ -88,6 +88,10 @@ body, .card, .header, .panel, table, .login-card, .alert, input, select, textare
   align-items: center; justify-content: center; z-index: 100; padding: 1.5rem; }
 .overlay.visible { display: flex; }
 .link-acao { color: var(--blue); cursor: pointer; text-decoration: underline; }
+.divisor { display: flex; align-items: center; gap: 10px; margin: 1.1rem 0 .9rem;
+  color: var(--text3); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.divisor::before, .divisor::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+#cons-cod { text-align: center; letter-spacing: 3px; text-transform: uppercase; font-weight: 600; }
 .ext-wrap { display: none; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
 .ext-wrap.visible { display: flex; }
 .ext-wrap input {
@@ -396,6 +400,22 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
     </div>
     <div class="login-error" id="login-error"></div>
+
+    <div class="divisor"><span>ou</span></div>
+
+    <button class="login-opt" onclick="mostrarConsulta()">
+      <span class="opt-icon">🔍</span>
+      <div>
+        <div class="opt-title">Consultar obra</div>
+        <div class="opt-sub">Ver o avanço físico com o código, sem login</div>
+      </div>
+    </button>
+
+    <div class="ext-wrap" id="cons-wrap" style="margin-top:.7rem">
+      <input type="text" id="cons-cod" placeholder="OBR-XXXXXX" maxlength="10" autocomplete="off" />
+      <button class="btn-login" onclick="consultarObra()">Ver andamento</button>
+      <div class="ext-hint">Mostra apenas o percentual de execução das etapas. Nenhum dado financeiro é exibido.</div>
+    </div>
   </div>
 </div>
 
@@ -1629,7 +1649,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '2.00';
+const APP_VERSION = '2.01';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1684,6 +1704,7 @@ const VERSOES = [
   { v:'1.50', data:'20/07/2026', autor:'Claude', desc:'Base do desembolso corrigida: percentuais passam a ser calculados sobre o saldo p/ obra R$372.888 (financiamento R$454.488 − R$81.600 do terreno) em vez do PCI R$495.000' },
   { v:'1.51', data:'23/07/2026', autor:'Claude', desc:'Tema claro/escuro com botão no login e no header (preferência salva no navegador) · nova opção de login: usuário externo cria o próprio controle de custos, com orçamento e teto de MO próprios, dados só no navegador dele e publicação no GitHub bloqueada' },
   { v:'2.00', data:'24/07/2026', autor:'Claude', desc:'Dados migrados para a nuvem (Supabase): login por e-mail e senha, cadastro aberto, várias obras por conta com código único (tag) e abas para alternar, gravação no banco em vez do navegador, acesso público removido e token do GitHub retirado do código' },
+  { v:'2.01', data:'24/07/2026', autor:'Claude', desc:'Tela de login ganha a opção Consultar obra: com o código (OBR-XXXXXX) qualquer pessoa vê o avanço físico das etapas, sem login e sem nenhum dado financeiro' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1730,6 +1751,19 @@ function brData(iso) {
   if (!iso) return '';
   const m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
   return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso);
+}
+
+/* ── consulta pública por código (sem login) ── */
+function mostrarConsulta() {
+  const w = document.getElementById('cons-wrap');
+  w.classList.add('visible');
+  erroLogin('');
+  document.getElementById('cons-cod').focus();
+}
+function consultarObra() {
+  const c = (document.getElementById('cons-cod').value || '').trim().toUpperCase();
+  if (!c) { erroLogin('Digite o código da obra.'); return; }
+  location.href = '../acompanhar/?c=' + encodeURIComponent(c);
 }
 
 /* ── autenticação ── */
@@ -3325,6 +3359,10 @@ function buildVersoes() {
 
 (function init() {
   aplicarTema(temaAtual());
+  const cc = document.getElementById('cons-cod');
+  if (cc) cc.addEventListener('keydown', function (e) { if (e.key === 'Enter') consultarObra(); });
+  const se = document.getElementById('au-senha');
+  if (se) se.addEventListener('keydown', function (e) { if (e.key === 'Enter') autenticar(); });
   const c = sbClient();
   if (!c) { erroLogin('Não foi possível carregar a conexão com o servidor. Recarregue a página.'); return; }
   c.auth.getSession().then(function (r) {
