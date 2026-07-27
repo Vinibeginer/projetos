@@ -398,6 +398,9 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="ext-hint" id="au-hint">
         Ainda não tem conta? <span class="link-acao" onclick="alternarModoAuth()">Criar agora</span>
       </div>
+      <div class="ext-hint" id="au-esqueci" style="margin-top:4px">
+        Esqueceu a senha? <span class="link-acao" onclick="recuperarSenha()">Recuperar por e-mail</span>
+      </div>
     </div>
     <div class="login-error" id="login-error"></div>
 
@@ -415,6 +418,21 @@ textarea { resize: vertical; min-height: 60px; }
       <input type="text" id="cons-cod" placeholder="OBR-XXXXXX" maxlength="10" autocomplete="off" />
       <button class="btn-login" onclick="consultarObra()">Ver andamento</button>
       <div class="ext-hint">Mostra apenas o percentual de execução das etapas. Nenhum dado financeiro é exibido.</div>
+    </div>
+  </div>
+</div>
+
+<!-- redefinir senha (aberto pelo link do e-mail) -->
+<div class="overlay" id="ov-senha">
+  <div class="login-card">
+    <div class="login-logo">🔑</div>
+    <h2>Definir nova senha</h2>
+    <p>Digite a nova senha da sua conta</p>
+    <div class="ext-wrap visible">
+      <input type="password" id="ns-senha1" placeholder="Nova senha (mín. 6 caracteres)" autocomplete="new-password" />
+      <input type="password" id="ns-senha2" placeholder="Repita a nova senha" autocomplete="new-password" />
+      <button class="btn-login" onclick="salvarNovaSenha()">Salvar senha</button>
+      <div class="login-error" id="ns-erro"></div>
     </div>
   </div>
 </div>
@@ -1649,7 +1667,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '2.01';
+const APP_VERSION = '2.02';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1705,6 +1723,7 @@ const VERSOES = [
   { v:'1.51', data:'23/07/2026', autor:'Claude', desc:'Tema claro/escuro com botão no login e no header (preferência salva no navegador) · nova opção de login: usuário externo cria o próprio controle de custos, com orçamento e teto de MO próprios, dados só no navegador dele e publicação no GitHub bloqueada' },
   { v:'2.00', data:'24/07/2026', autor:'Claude', desc:'Dados migrados para a nuvem (Supabase): login por e-mail e senha, cadastro aberto, várias obras por conta com código único (tag) e abas para alternar, gravação no banco em vez do navegador, acesso público removido e token do GitHub retirado do código' },
   { v:'2.01', data:'24/07/2026', autor:'Claude', desc:'Tela de login ganha a opção Consultar obra: com o código (OBR-XXXXXX) qualquer pessoa vê o avanço físico das etapas, sem login e sem nenhum dado financeiro' },
+  { v:'2.02', data:'24/07/2026', autor:'Claude', desc:'Recuperação de senha: link Esqueci a senha na tela de login envia e-mail (Supabase) com link seguro; ao voltar, abre tela para definir nova senha' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1751,6 +1770,35 @@ function brData(iso) {
   if (!iso) return '';
   const m = /(\d{4})-(\d{2})-(\d{2})/.exec(String(iso));
   return m ? m[3] + '/' + m[2] + '/' + m[1] : String(iso);
+}
+
+/* ── recuperação de senha ── */
+async function recuperarSenha() {
+  const c = sbClient();
+  if (!c) { erroLogin('Sem conexão com o servidor. Recarregue a página.'); return; }
+  const email = (document.getElementById('au-email').value || '').trim();
+  if (!email) { erroLogin('Digite seu e-mail no campo acima e clique novamente em "Recuperar por e-mail".'); return; }
+  erroLogin('');
+  const alvo = location.origin + location.pathname + '?recuperar=1';
+  const { error } = await c.auth.resetPasswordForEmail(email, { redirectTo: alvo });
+  if (error) { erroLogin(traduzErro(error)); return; }
+  erroLogin('Enviamos um link para ' + email + '. Abra o e-mail e clique nele para definir a nova senha.');
+}
+
+async function salvarNovaSenha() {
+  const c = sbClient();
+  const s1 = document.getElementById('ns-senha1').value || '';
+  const s2 = document.getElementById('ns-senha2').value || '';
+  const err = document.getElementById('ns-erro');
+  if (s1.length < 6) { err.textContent = 'A senha precisa ter ao menos 6 caracteres.'; return; }
+  if (s1 !== s2) { err.textContent = 'As duas senhas não são iguais.'; return; }
+  err.textContent = '';
+  const { error } = await c.auth.updateUser({ password: s1 });
+  if (error) { err.textContent = traduzErro(error); return; }
+  document.getElementById('ov-senha').classList.remove('visible');
+  // limpa o parâmetro da URL e segue para o app já logado
+  history.replaceState(null, '', location.pathname);
+  await aposLogin();
 }
 
 /* ── consulta pública por código (sem login) ── */
@@ -3365,7 +3413,15 @@ function buildVersoes() {
   if (se) se.addEventListener('keydown', function (e) { if (e.key === 'Enter') autenticar(); });
   const c = sbClient();
   if (!c) { erroLogin('Não foi possível carregar a conexão com o servidor. Recarregue a página.'); return; }
+  // quando o usuário volta pelo link do e-mail, o Supabase dispara este evento
+  c.auth.onAuthStateChange(function (evento) {
+    if (evento === 'PASSWORD_RECOVERY') {
+      document.getElementById('ov-senha').classList.add('visible');
+    }
+  });
+  const querRecuperar = new URLSearchParams(location.search).get('recuperar');
   c.auth.getSession().then(function (r) {
+    if (querRecuperar) return;            // aguarda o evento de recuperação, não entra no app
     if (r && r.data && r.data.session) { aposLogin(); }
   });
 })();
