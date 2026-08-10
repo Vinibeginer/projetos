@@ -1,12 +1,11 @@
 # Mantém o projeto Supabase ativo.
 # O plano gratuito pausa o banco após 7 dias sem nenhuma consulta.
-# Este agendamento faz uma chamada inofensiva duas vezes por semana.
+# Este agendamento faz uma chamada inofensiva todos os dias.
 name: Manter Supabase ativo
 
 on:
   schedule:
-    - cron: '17 12 * * 1'   # segunda-feira, 12:17 UTC (09:17 em Brasília)
-    - cron: '17 12 * * 5'   # sexta-feira,  12:17 UTC (09:17 em Brasília)
+    - cron: '17 12 * * *'   # todo dia, 12:17 UTC (09:17 em Brasília)
   workflow_dispatch:         # permite rodar na mão pelo site do GitHub
 
 jobs:
@@ -29,3 +28,4 @@ jobs:
             --retry 3 --retry-delay 20 --max-time 60
           echo ""
           echo "Sinal de vida enviado com sucesso."
+
