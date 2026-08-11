@@ -490,7 +490,7 @@ textarea { resize: vertical; min-height: 60px; }
       <div class="card warn">
         <div class="card-label">Estimativa próx. medição (% CAIXA)</div>
         <div class="card-value" id="c-novo">—</div>
-        <div class="card-sub" id="c-novo-sub">% PCI × 0,7533 · só executados · sem previsões</div>
+        <div class="card-sub" id="c-novo-sub">% PCI executado · só executados · sem previsões</div>
       </div>
       <div class="card admin-only">
         <div class="card-label">Saldo CAIXA disponível</div>
@@ -603,7 +603,7 @@ textarea { resize: vertical; min-height: 60px; }
               <th>Data prevista</th>
               <th>Etapas principais</th>
               <th class="right">% PCI</th>
-              <th class="right">% CAIXA<br><span style="font-weight:400;font-size:10px">(×0,7533)</span></th>
+              <th class="right">% CAIXA<br><span style="font-weight:400;font-size:10px">(= % PCI)</span></th>
               <th class="right admin-only">Liberação</th>
               <th class="right admin-only">Acum.</th>
               <th class="right admin-only">Saldo</th>
@@ -1244,7 +1244,7 @@ textarea { resize: vertical; min-height: 60px; }
       <!-- estimativa próxima medição -->
       <div class="sect-title">Estimativa — próxima medição (pendente vistoria)</div>
       <div class="alert alert-warn" style="margin-bottom:0.75rem;">
-        Valores <strong>estimados</strong> — itens executados × PCI × fator 0,7533 (escala CAIXA/obra). Linhas em cinza = previsão pendente. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
+        Valores <strong>estimados</strong> — itens executados × % PCI, aplicado diretamente sobre a base CAIXA (R$ 372.888), validado com os valores reais liberados nas medições 1 e 2. Linhas em cinza = previsão pendente. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
       </div>
       <div class="table-wrap">
         <table class="resumo-table">
@@ -1667,7 +1667,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '2.02';
+const APP_VERSION = '2.03';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1724,6 +1724,7 @@ const VERSOES = [
   { v:'2.00', data:'24/07/2026', autor:'Claude', desc:'Dados migrados para a nuvem (Supabase): login por e-mail e senha, cadastro aberto, várias obras por conta com código único (tag) e abas para alternar, gravação no banco em vez do navegador, acesso público removido e token do GitHub retirado do código' },
   { v:'2.01', data:'24/07/2026', autor:'Claude', desc:'Tela de login ganha a opção Consultar obra: com o código (OBR-XXXXXX) qualquer pessoa vê o avanço físico das etapas, sem login e sem nenhum dado financeiro' },
   { v:'2.02', data:'24/07/2026', autor:'Claude', desc:'Recuperação de senha: link Esqueci a senha na tela de login envia e-mail (Supabase) com link seguro; ao voltar, abre tela para definir nova senha' },
+  { v:'2.03', data:'11/08/2026', autor:'Claude', desc:'Correção da fórmula de conversão CAIXA: fator ×0,7533 removido — validado com valores reais das medições 1 (R$30.622,88 / 8,23% PCI) e 2 (R$63.701,54 / 17,12% PCI na etapa), confirmando que % CAIXA = % PCI executado, aplicado direto sobre a base R$372.888' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -2414,10 +2415,9 @@ function recalcular() {
     }
   });
 
-  // % CAIXA = % PCI × 0,7533
-  const ESCALA = 0.7533;
-  const execNovoCaixa = execNovo * ESCALA;           // executado não medido → estimativa próx. medição
-  const prevCaixa     = prevAcum * ESCALA;           // com previsões incluídas
+  // % CAIXA = % PCI (validado com Medição 1 e 2: valor liberado = % PCI da etapa × BASE_OBRA, sem fator de conversão)
+  const execNovoCaixa = execNovo;                    // executado não medido → estimativa próx. medição
+  const prevCaixa     = prevAcum;                    // com previsões incluídas
   const novoVal       = execNovoCaixa / 100 * BASE_OBRA;
   const prevAdic      = Math.max(0, (prevCaixa - execNovoCaixa) / 100 * BASE_OBRA);
   const execVal       = execNovo / 100 * BASE_OBRA;
@@ -2425,13 +2425,13 @@ function recalcular() {
   // cards
   document.getElementById('c-exec').textContent     = fmtP(execNovo);
   document.getElementById('c-exec-sub').textContent = isAdmin
-    ? `~${fmt(execVal)} · → ${fmtP(execNovoCaixa)} CAIXA (×0,7533)`
-    : `→ ${fmtP(execNovoCaixa)} CAIXA estimado (×0,7533)`;
+    ? `~${fmt(execVal)} · → ${fmtP(execNovoCaixa)} CAIXA`
+    : `→ ${fmtP(execNovoCaixa)} CAIXA estimado`;
 
   document.getElementById('c-novo').textContent    = '~' + fmtP(execNovoCaixa);
   document.getElementById('c-novo-sub').innerHTML  = isAdmin
-    ? `~${fmt(novoVal)} · % PCI × 0,7533 · só executados`
-    : '% PCI × 0,7533 · só itens executados';
+    ? `~${fmt(novoVal)} · % PCI executado · só executados`
+    : '% PCI executado · só itens executados';
 
   if (isAdmin) {
     const saldoConfirmado = BASE_OBRA - MED_VAL;
@@ -2472,16 +2472,15 @@ function recalcular() {
 }
 
 function buildMedicao(execNovo, execNovoCaixa, novoVal) {
-  const ESCALA = 0.7533;
   const tb = document.getElementById('medicao-tbody');
   tb.innerHTML = '';
   itens.forEach(item => {
     if (item.locked) return; // já medido — não entra na estimativa
     if (item.exec === 0 && item.prevExec === 0) return;
     const execPct  = item.pciPct * item.exec / 100;
-    const execCaixa= execPct * ESCALA;
+    const execCaixa= execPct;
     const prevPct  = item.prevExec > 0 && item.exec < 100 ? item.pciPct * item.prevExec / 100 : 0;
-    const prevCaixa= prevPct * ESCALA;
+    const prevCaixa= prevPct;
     const isPrev   = item.exec === 0 && item.prevExec > 0;
     const [cls,lbl]= statusBadge(item);
     const tr = document.createElement('tr');
@@ -2573,7 +2572,7 @@ function registrar() {
     item.prevExec = 0; item.novo = false;
     if (obs) item.obs = obs;
     const deltaPci  = item.pciPct*(item.exec-ant)/100;
-    const deltaCaixa= deltaPci * 0.7533;
+    const deltaCaixa= deltaPci;
     const deltaVal  = deltaCaixa/100*BASE_OBRA;
     historico.push({ data:dateStr, desc:`${item.desc} (${ant}% → ${item.exec}%)`, deltaPct:deltaPci, deltaVal, prev:false, obs });
     msgEl.textContent = `✓ ${item.desc} → ${item.exec}% · +${fmtP(deltaPci)} PCI · ~+${fmtP(deltaCaixa)} CAIXA · ~${fmt(deltaVal)}`;
