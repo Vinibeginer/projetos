@@ -187,7 +187,7 @@ function box(w,h,d,color,opts={}){
 }
 function place(mesh,x,y,z,ry=0){ mesh.position.set(x,y,z); mesh.rotation.y=ry; sceneGroup.add(mesh); return mesh; }
 
-function makeLabel(text){
+function makeLabel(text, scale){
   const c = document.createElement('canvas'); c.width=420; c.height=90;
   const ctx = c.getContext('2d');
   ctx.fillStyle='rgba(20,17,15,.82)'; ctx.beginPath(); ctx.roundRect(0,0,420,90,12); ctx.fill();
@@ -195,7 +195,8 @@ function makeLabel(text){
   ctx.fillStyle='#f6f2ec'; ctx.font='bold 30px Courier New'; ctx.fillText(text, 18, 55);
   const tex = new THREE.CanvasTexture(c);
   const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true}));
-  spr.scale.set(2.6,0.56,1);
+  const s = scale || 1;
+  spr.scale.set(2.6*s,0.56*s,1);
   return spr;
 }
 
@@ -264,7 +265,7 @@ function furnShelf(cx,cz,w,ry){
 const FURNITURE = {
   terreo: {
     garagem: (x,z,w,d)=> furnCar(x+w/2, z+d*0.62, 0),
-    sala: (x,z,w,d)=>{ furnSofa(x+w*0.28, z+d*0.22, 2.2, Math.PI/2); furnTable(x+w*0.55, z+d*0.35, 1.1, 0.6); },
+    sala: (x,z,w,d)=>{ furnSofa(x+0.55, z+d*0.28, 2.2, Math.PI/2); furnTable(x+1.7, z+d*0.28, 1.0, 0.6); },
     cozinha: (x,z,w,d)=> furnKitchenCounter(x+0.32, z+d/2, d-0.4, Math.PI/2),
     quarto: (x,z,w,d)=>{ furnBed(x+w*0.35, z+d*0.35, 0); furnWardrobe(x+w-0.35, z+d*0.7, 0.6, 1.8, Math.PI/2); },
     sbanh: (x,z,w,d)=> furnToiletShower(x, z, w, d, 0),
@@ -360,13 +361,16 @@ function buildFloor(floorId){
   buildWindows(floor, started);
 
   // piso de cada cômodo (textura real) + rótulo + mobília (só se o pavimento já começou)
-  floor.rooms.forEach(([id,name,area,x,z,w,d,type])=>{
+  floor.rooms.forEach(([id,name,area,x,z,w,d,type], idx)=>{
     const mat = started ? floorMaterialFor(type,w,d) : new THREE.MeshStandardMaterial({color:0xb7ada0, roughness:1});
     const f = new THREE.Mesh(new THREE.BoxGeometry(w-0.04, 0.03, d-0.04), mat);
     place(f, x+w/2, 0.02, z+d/2);
 
-    const lbl = makeLabel(name);
-    place(lbl, x+w/2, WALL_H-0.3, z+d/2);
+    const minSide = Math.min(w,d);
+    const lblScale = Math.max(0.42, Math.min(1, minSide/2.2));
+    const lbl = makeLabel(name, lblScale);
+    const lblH = WALL_H - 0.3 - (idx%3)*0.32; // intercala altura pra reduzir sobreposição entre vizinhos
+    place(lbl, x+w/2, lblH, z+d/2);
 
     if(started && FURNITURE[floorId] && FURNITURE[floorId][id]){
       FURNITURE[floorId][id](x,z,w,d);
