@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Plantas Corrigidas — Obra Mariára</title>
+<style>
+  body{font-family:'Courier New',monospace;background:#f6f2ec;margin:0;padding:24px;color:#2b2622;}
+  h1{font-size:18px;color:#b5674e;margin-bottom:4px;}
+  .sub{font-size:12px;opacity:.7;margin-bottom:24px;}
+  .floors{display:flex;gap:28px;flex-wrap:wrap;}
+  .floor-block{background:#fff;border:1px solid #d8cfc2;border-radius:8px;padding:14px;}
+  .floor-block h2{font-size:13px;color:#b5674e;margin:0 0 2px;}
+  .floor-block .area{font-size:11px;opacity:.65;margin-bottom:10px;}
+  .note{font-size:10.5px;background:#fdf3ef;border:1px dashed #d98a6f;border-radius:6px;padding:8px 10px;margin-top:8px;max-width:280px;}
+  svg{display:block;}
+  .room-fill{fill:#f3ede4;stroke:#2b2622;stroke-width:2;}
+  .room-label{font-family:'Courier New',monospace;font-size:11px;font-weight:bold;fill:#2b2622;text-anchor:middle;}
+  .room-area{font-family:'Courier New',monospace;font-size:9px;fill:#6b6459;text-anchor:middle;}
+  .ext-wall{fill:none;stroke:#2b2622;stroke-width:4;}
+  .front-tag{font-size:10px;fill:#b5674e;font-weight:bold;text-anchor:middle;}
+</style>
+</head>
+<body>
+<h1>Plantas 2D corrigidas — conferência antes de publicar</h1>
+<div class="sub">Escala aplicada a partir das áreas e cotas reais do projeto aprovado. Frente da casa (rua) sempre na parte de baixo do desenho, Norte para cima. · <a href="./index.html" style="color:#b5674e;">← Voltar</a></div>
+<div class="floors" id="floors"></div>
+
+<script>
+const SCALE = 16; // px por metro
+
+const FLOORS = {
+  terreo: {
+    label:'Térreo', area:'89,00 m²', ext:{w:8.70,d:10.95},
+    rooms:[
+      ['Garagem',18.00,0,0,4.075,4.575],
+      ['Sala',29.60,4.075,0,4.625,6.575],
+      ['Lavabo',2.16,0,4.575,2.475,1.050],
+      ['Circulação',2.50,2.475,4.575,1.600,1.050],
+      ['Cozinha',14.00,0,5.625,4.075,3.650],
+      ['Quarto',11.74,4.075,6.575,4.625,2.700],
+      ['Despensa',1.76,0,9.275,1.500,1.675],
+      ['Suíte (banh.)',2.88,1.500,9.275,1.725,1.675],
+    ]
+  },
+  pav1: {
+    label:'1º Pavimento', area:'89,00 m²', ext:{w:8.70,d:10.45},
+    rooms:[
+      ['Varanda coberta',9.14,0,0,8.70,1.05],
+      ['Quarto 1',17.40,0,1.05,4.00,4.35],
+      ['Quarto 2',19.79,4.15,1.05,4.55,4.35],
+      ['Circulação',9.12,0,5.40,8.70,1.05],
+      ['Closet',4.00,0,6.45,3.00,1.333],
+      ['Suíte (banh.)',3.71,0,7.783,3.00,1.237],
+      ['Banheiro',3.65,0,9.02,3.00,1.217],
+      ['Escritório',4.88,3.15,6.45,5.55,0.879],
+      ['Quarto Master',16.17,3.15,7.329,5.55,2.914],
+    ]
+  },
+  pav2: {
+    label:'2º Pavimento', area:'49,00 m² construída + 37,85 m² varanda descoberta', ext:{w:8.70,d:9.98},
+    rooms:[
+      ['Varanda descoberta',37.85,0,0,8.70,4.35],
+      ['Varanda coberta',49.00,0,4.35,8.70,5.63],
+    ]
+  }
+};
+
+function buildFloorSVG(floor){
+  const pad = 30;
+  const W = floor.ext.w*SCALE + pad*2;
+  const H = floor.ext.d*SCALE + pad*2 + 20;
+  let svg = `<svg width="${W}" height="${H}">`;
+  // contorno externo
+  svg += `<rect class="ext-wall" x="${pad}" y="${pad}" width="${floor.ext.w*SCALE}" height="${floor.ext.d*SCALE}"/>`;
+  floor.rooms.forEach(([name,area,x,z,w,d])=>{
+    const rx = pad + x*SCALE, ry = pad + z*SCALE, rw = w*SCALE, rh = d*SCALE;
+    svg += `<rect class="room-fill" x="${rx}" y="${ry}" width="${rw}" height="${rh}"/>`;
+    svg += `<text class="room-label" x="${rx+rw/2}" y="${ry+rh/2-4}">${name}</text>`;
+    svg += `<text class="room-area" x="${rx+rw/2}" y="${ry+rh/2+10}">${area.toFixed(2)} m²</text>`;
+  });
+  svg += `<text class="front-tag" x="${W/2}" y="${H-6}">↓ FRENTE / RUA ↓</text>`;
+  svg += `</svg>`;
+  return svg;
+}
+
+const el = document.getElementById('floors');
+Object.values(FLOORS).forEach(floor=>{
+  const block = document.createElement('div');
+  block.className = 'floor-block';
+  block.innerHTML = `<h2>${floor.label}</h2><div class="area">${floor.area}</div>` + buildFloorSVG(floor);
+  el.appendChild(block);
+});
+</script>
+
+<div class="note">
+Correções feitas nesta versão (comparado ao que estava publicado):<br>
+• 1º pav.: Quarto Master estava na frente — corrigido para o fundo<br>
+• 1º pav.: Quarto 1 e Quarto 2 estavam com os lados trocados<br>
+• 1º pav.: "Closet 2" não existe — era o Escritório, mal identificado<br>
+• 2º pav.: varanda descoberta e coberta divididas conforme quadro de áreas (49,00 + 37,85 m²)
+</div>
+</body>
+</html>
