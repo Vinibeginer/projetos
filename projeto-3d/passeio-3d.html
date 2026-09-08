@@ -202,44 +202,44 @@ function makeLabel(text){
 // ── Móveis simples e paramétricos ──
 function furnBed(cx,cz,ry){
   const g = new THREE.Group();
-  g.add(Object.assign(box(1.6,0.35,2.0,WOOD),{position:new THREE.Vector3(0,0.175,0)}));
-  g.add(Object.assign(box(1.55,0.18,1.9,0xe8e3da),{position:new THREE.Vector3(0,0.44,0)}));
-  g.add(Object.assign(box(1.55,0.4,0.15,WOOD),{position:new THREE.Vector3(0,0.4,-0.95-0.075)}));
+  g.add((function(m){m.position.set(0,0.175,0);return m;})(box(1.6,0.35,2.0,WOOD)));
+  g.add((function(m){m.position.set(0,0.44,0);return m;})(box(1.55,0.18,1.9,0xe8e3da)));
+  g.add((function(m){m.position.set(0,0.4,-0.95-0.075);return m;})(box(1.55,0.4,0.15,WOOD)));
   const p1 = box(0.35,0.12,0.5,0xffffff); p1.position.set(-0.5,0.6,-0.7); g.add(p1);
   const p2 = box(0.35,0.12,0.5,0xffffff); p2.position.set(0.5,0.6,-0.7); g.add(p2);
   g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
 }
 function furnWardrobe(cx,cz,w,d,ry){
   const g = new THREE.Group();
-  g.add(Object.assign(box(w,2.0,d,WOOD,{roughness:.6}),{position:new THREE.Vector3(0,1.0,0)}));
+  g.add((function(m){m.position.set(0,1.0,0);return m;})(box(w,2.0,d,WOOD,{roughness:.6})));
   g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
 }
 function furnSofa(cx,cz,w,ry){
   const g = new THREE.Group();
-  g.add(Object.assign(box(w,0.4,0.85,FABRIC),{position:new THREE.Vector3(0,0.2,0)}));
-  g.add(Object.assign(box(w,0.5,0.18,FABRIC),{position:new THREE.Vector3(0,0.45,-0.33)}));
-  g.add(Object.assign(box(0.18,0.5,0.85,FABRIC),{position:new THREE.Vector3(-w/2+0.09,0.45,0)}));
-  g.add(Object.assign(box(0.18,0.5,0.85,FABRIC),{position:new THREE.Vector3(w/2-0.09,0.45,0)}));
+  g.add((function(m){m.position.set(0,0.2,0);return m;})(box(w,0.4,0.85,FABRIC)));
+  g.add((function(m){m.position.set(0,0.45,-0.33);return m;})(box(w,0.5,0.18,FABRIC)));
+  g.add((function(m){m.position.set(-w/2+0.09,0.45,0);return m;})(box(0.18,0.5,0.85,FABRIC)));
+  g.add((function(m){m.position.set(w/2-0.09,0.45,0);return m;})(box(0.18,0.5,0.85,FABRIC)));
   g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
 }
 function furnTable(cx,cz,w,d){
   const g = new THREE.Group();
-  g.add(Object.assign(box(w,0.06,d,WOOD),{position:new THREE.Vector3(0,0.42,0)}));
+  g.add((function(m){m.position.set(0,0.42,0);return m;})(box(w,0.06,d,WOOD)));
   const legs=[[w/2-0.05,d/2-0.05],[-w/2+0.05,d/2-0.05],[w/2-0.05,-d/2+0.05],[-w/2+0.05,-d/2+0.05]];
   legs.forEach(([x,z])=>{ const l=box(0.06,0.42,0.06,DARK); l.position.set(x,0.21,z); g.add(l); });
   g.position.set(cx,0,cz); sceneGroup.add(g);
 }
 function furnKitchenCounter(cx,cz,w,ry){
   const g = new THREE.Group();
-  g.add(Object.assign(box(w,0.9,0.6,0xece6dd),{position:new THREE.Vector3(0,0.45,0)}));
-  g.add(Object.assign(box(w,0.04,0.62,0x555555),{position:new THREE.Vector3(0,0.92,0)}));
+  g.add((function(m){m.position.set(0,0.45,0);return m;})(box(w,0.9,0.6,0xece6dd)));
+  g.add((function(m){m.position.set(0,0.92,0);return m;})(box(w,0.04,0.62,0x555555)));
   const stove = box(0.55,0.05,0.5,0x2a2a2a); stove.position.set(-w/2+0.4,0.95,0); g.add(stove);
   g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
 }
 function furnCar(cx,cz,ry){
   const g = new THREE.Group();
-  g.add(Object.assign(box(1.8,0.55,4.2,0x3b5b7a,{metalness:.4,roughness:.4}),{position:new THREE.Vector3(0,0.55,0)}));
-  g.add(Object.assign(box(1.5,0.5,2.1,0x25384a,{metalness:.4,roughness:.3}),{position:new THREE.Vector3(0,1.05,-0.2)}));
+  g.add((function(m){m.position.set(0,0.55,0);return m;})(box(1.8,0.55,4.2,0x3b5b7a,{metalness:.4,roughness:.4})));
+  g.add((function(m){m.position.set(0,1.05,-0.2);return m;})(box(1.5,0.5,2.1,0x25384a,{metalness:.4,roughness:.3})));
   [[-0.85,0.3,1.3],[0.85,0.3,1.3],[-0.85,0.3,-1.3],[0.85,0.3,-1.3]].forEach(([x,y,z])=>{
     const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.24,16), new THREE.MeshStandardMaterial({color:0x111111}));
     w.rotation.z = Math.PI/2; w.position.set(x,y,z); g.add(w);
