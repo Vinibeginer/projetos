@@ -2582,7 +2582,6 @@ function registrar() {
   msgEl.className = 'msg';
   document.getElementById('inp-obs').value = '';
   salvar(); buildTable(); buildLog();
-  ghPublish('msg-reg', tipo==='prev' ? `Previsão: ${item.desc} → ${pctVal}%` : `Avanço: ${item.desc} → ${item.exec}%`);
 }
 
 function confirmarPrevisao(id) {
@@ -2966,7 +2965,6 @@ function registrarPagamentoMO() {
   document.getElementById('mo-inp-valor').value = '';
   document.getElementById('mo-inp-ref').value   = '';
   salvarMO(); buildAllMO();
-  ghPublish('mo-msg', `MO: pagamento de ${fmt(valor)} registrado para ${destNome}`);
 }
 
 function removerPagMO(idx) {
@@ -3233,7 +3231,6 @@ function registrarMaterial() {
   document.getElementById('mat-inp-forn').value=''; document.getElementById('mat-inp-ref').value='';
   salvarMat(); buildAllMat();
   msg.textContent = `✓ ${desc} — ${fmt(valor)} salvo.`; msg.className='msg';
-  ghPublish('mat-msg', `Material adicionado: ${desc} — ${fmt(valor)}`);
 }
 function removerMat(idx) {
   if (!confirm('Remover esta compra?')) return;
@@ -3364,7 +3361,6 @@ function confirmarMedicao() {
   buildMedicoesConfirmadas();
   buildLog();
   recalcular();
-  ghPublish('med-msg', `${num}ª Medição CAIXA confirmada — ${fmt(valor)}`);
 }
 
 function removerMedicao(idx) {
