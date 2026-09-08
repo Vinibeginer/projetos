@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>Obra Mariára — Passeio 3D</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+  :root{ --ink:#2b2622; --paper:#f6f2ec; --coral:#d98a6f; --coral-dk:#b5674e; --stone:#8d8579; --line:#d8cfc2; }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:#1c1815;font-family:'Courier New',monospace;overflow:hidden;}
+  #canvas-wrap{position:fixed;inset:0;}
+  canvas{display:block;touch-action:none;}
+  #top{
+    position:fixed;top:0;left:0;right:0;padding:10px 14px;
+    background:linear-gradient(180deg, rgba(20,17,15,.88), rgba(20,17,15,0));
+    color:var(--paper);font-size:12px;display:flex;justify-content:space-between;align-items:flex-start;
+    pointer-events:none;
+  }
+  #top .title{font-size:14px;font-weight:bold;color:var(--coral);}
+  #top .sub{opacity:.7;margin-top:2px;max-width:230px;}
+  a.back{pointer-events:auto;color:var(--paper);background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.2);
+    border-radius:14px;padding:5px 11px;font-size:11px;text-decoration:none;}
+  #floor-toggle{
+    position:fixed;top:70px;left:14px;z-index:5;display:flex;gap:6px;
+  }
+  #floor-toggle button{
+    font-family:inherit;font-size:11px;padding:6px 11px;border-radius:14px;
+    border:1px solid rgba(255,255,255,.25);background:rgba(20,17,15,.55);color:var(--paper);cursor:pointer;
+  }
+  #floor-toggle button.active{background:var(--coral);border-color:var(--coral-dk);color:#fff;}
+  #hint{position:fixed;bottom:12px;left:0;right:0;text-align:center;color:rgba(255,255,255,.55);font-size:11px;pointer-events:none;}
+  #legend{
+    position:fixed;top:70px;right:14px;background:rgba(20,17,15,.6);border:1px solid rgba(255,255,255,.15);
+    border-radius:8px;padding:8px 10px;color:var(--paper);font-size:10.5px;max-width:150px;
+  }
+  #legend b{color:var(--coral);display:block;margin-bottom:4px;}
+</style>
+</head>
+<body>
+<div id="canvas-wrap"></div>
+<div id="top">
+  <div>
+    <div class="title">Passeio 3D — Ambientes</div>
+    <div class="sub">Formato real de cada cômodo (projeto aprovado), com móveis de referência</div>
+  </div>
+  <a class="back" href="./index.html">← Voltar</a>
+</div>
+<div id="floor-toggle">
+  <button data-f="terreo" class="active">Térreo</button>
+  <button data-f="pav1">1º Pav.</button>
+  <button data-f="pav2">2º Pav.</button>
+</div>
+<div id="legend">
+  <b>Aviso</b>
+  Ambientes na posição/proporção reais do projeto. Móveis são referência genérica de tamanho, não o mobiliário definitivo. Paredes internas não representadas — só o contorno externo do pavimento.
+</div>
+<div id="hint">arraste para girar · roda/pinça para zoom · toque num pavimento acima pra trocar</div>
+
+<script>
+// ═══ Dados reais de cada pavimento (mesmas coordenadas do projeto aprovado) ═══
+const WALL_H = 2.80;
+const FLOORS = {
+  terreo: {
+    label:'Térreo', ext:{w:8.70, d:10.95},
+    rooms: [
+      ['garagem','Garagem',      18.00, 0.000, 0.000, 4.075, 4.575, 'garagem'],
+      ['sala',   'Sala',         29.60, 4.075, 0.000, 4.625, 6.575, 'sala'],
+      ['lavabo', 'Lavabo',        2.16, 0.000, 4.575, 2.475, 1.050, 'lavabo'],
+      ['circ',   'Circulação',    2.50, 2.475, 4.575, 1.600, 1.050, null],
+      ['cozinha','Cozinha',      14.00, 0.000, 5.625, 4.075, 3.650, 'cozinha'],
+      ['quarto', 'Quarto',       11.74, 4.075, 6.575, 4.625, 2.700, 'quarto'],
+      ['despen', 'Despensa',      1.76, 0.000, 9.275, 1.500, 1.675, null],
+      ['sbanh',  'Suíte (banh.)', 2.88, 1.500, 9.275, 1.725, 1.675, 'banheiro'],
+    ]
+  },
+  pav1: {
+    label:'1º Pavimento', ext:{w:8.70, d:10.45},
+    rooms: [
+      ['master','Quarto Master',   16.17, 0.000, 0.000, 4.075, 4.100, 'quarto'],
+      ['q1',    'Quarto 1',        17.40, 4.075, 0.000, 4.625, 4.100, 'quarto'],
+      ['q2',    'Quarto 2',        19.79, 0.000, 4.100, 4.075, 4.150, 'quarto'],
+      ['circ1', 'Circulação',       9.12, 4.075, 4.100, 2.325, 4.150, null],
+      ['cl1',   'Closet 1',         4.00, 6.400, 4.100, 2.300, 2.075, 'closet'],
+      ['cl2',   'Closet 2',         4.88, 6.400, 6.175, 2.300, 2.075, 'closet'],
+      ['sbanh1','Suíte (banh.)',    3.71, 0.000, 8.250, 4.075, 1.100, 'banheiro'],
+      ['banh1', 'Banheiro',         3.65, 4.075, 8.250, 4.625, 1.100, 'banheiro'],
+      ['varan', 'Varanda coberta',  9.14, 0.000, 9.350, 8.700, 1.100, null],
+    ]
+  },
+  pav2: {
+    label:'2º Pavimento', ext:{w:8.70, d:7.79},
+    rooms: [
+      ['area2','Área social',     28.85, 0.000, 0.000, 8.700, 3.470, 'sala'],
+      ['var2', 'Varanda descob.', 37.85, 0.000, 3.470, 8.700, 4.320, null],
+    ]
+  }
+};
+const FLOOR_STATUS = { terreo:'em execução', pav1:'a contratar', pav2:'a contratar' };
+
+// ═══ Cena ═══
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0x1c1815);
+scene.fog = new THREE.Fog(0x1c1815, 25, 60);
+const camera = new THREE.PerspectiveCamera(45, innerWidth/innerHeight, 0.1, 200);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+document.getElementById('canvas-wrap').appendChild(renderer.domElement);
+
+scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+const sun = new THREE.DirectionalLight(0xfff2e0, 0.85);
+sun.position.set(10,18,8);
+scene.add(sun);
+
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(60,60), new THREE.MeshStandardMaterial({color:0x241f1b, roughness:1}));
+ground.rotation.x = -Math.PI/2;
+scene.add(ground);
+
+let sceneGroup = new THREE.Group();
+scene.add(sceneGroup);
+
+const ROOM_FLOOR_COLOR = {
+  garagem:0xb9b3a8, sala:0xd8c39f, cozinha:0xc9cdd1, quarto:0xd9c9ad,
+  banheiro:0xcfe0e0, lavabo:0xcfe0e0, closet:0xe0d6c2, default:0xdcd3c2
+};
+const WALL_COLOR = 0xf3ede4, BAND_COLOR = 0xd98a6f, DARK = 0x2c2a28, WOOD = 0x8a6644, FABRIC = 0x64778c, METAL=0xb7bcc2;
+
+function box(w,h,d,color,opts={}){
+  const geo = new THREE.BoxGeometry(w,h,d);
+  const mat = new THREE.MeshStandardMaterial({color, roughness:opts.roughness??0.85, metalness:opts.metalness??0});
+  return new THREE.Mesh(geo,mat);
+}
+function place(mesh,x,y,z,ry=0){ mesh.position.set(x,y,z); mesh.rotation.y=ry; sceneGroup.add(mesh); return mesh; }
+
+function makeLabel(text){
+  const c = document.createElement('canvas'); c.width=420; c.height=90;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle='rgba(20,17,15,.82)'; ctx.beginPath(); ctx.roundRect(0,0,420,90,12); ctx.fill();
+  ctx.strokeStyle='#d98a6f'; ctx.lineWidth=3; ctx.beginPath(); ctx.roundRect(2,2,416,86,12); ctx.stroke();
+  ctx.fillStyle='#f6f2ec'; ctx.font='bold 30px Courier New'; ctx.fillText(text, 18, 55);
+  const tex = new THREE.CanvasTexture(c);
+  const spr = new THREE.Sprite(new THREE.SpriteMaterial({map:tex, transparent:true}));
+  spr.scale.set(2.6,0.56,1);
+  return spr;
+}
+
+// ── Móveis simples e paramétricos ──
+function furnBed(cx,cz,ry){
+  const g = new THREE.Group();
+  g.add(Object.assign(box(1.6,0.35,2.0,WOOD),{position:new THREE.Vector3(0,0.175,0)}));
+  g.add(Object.assign(box(1.55,0.18,1.9,0xe8e3da),{position:new THREE.Vector3(0,0.44,0)}));
+  g.add(Object.assign(box(1.55,0.4,0.15,WOOD),{position:new THREE.Vector3(0,0.4,-0.95-0.075)}));
+  const p1 = box(0.35,0.12,0.5,0xffffff); p1.position.set(-0.5,0.6,-0.7); g.add(p1);
+  const p2 = box(0.35,0.12,0.5,0xffffff); p2.position.set(0.5,0.6,-0.7); g.add(p2);
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+function furnWardrobe(cx,cz,w,d,ry){
+  const g = new THREE.Group();
+  g.add(Object.assign(box(w,2.0,d,WOOD,{roughness:.6}),{position:new THREE.Vector3(0,1.0,0)}));
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+function furnSofa(cx,cz,w,ry){
+  const g = new THREE.Group();
+  g.add(Object.assign(box(w,0.4,0.85,FABRIC),{position:new THREE.Vector3(0,0.2,0)}));
+  g.add(Object.assign(box(w,0.5,0.18,FABRIC),{position:new THREE.Vector3(0,0.45,-0.33)}));
+  g.add(Object.assign(box(0.18,0.5,0.85,FABRIC),{position:new THREE.Vector3(-w/2+0.09,0.45,0)}));
+  g.add(Object.assign(box(0.18,0.5,0.85,FABRIC),{position:new THREE.Vector3(w/2-0.09,0.45,0)}));
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+function furnTable(cx,cz,w,d){
+  const g = new THREE.Group();
+  g.add(Object.assign(box(w,0.06,d,WOOD),{position:new THREE.Vector3(0,0.42,0)}));
+  const legs=[[w/2-0.05,d/2-0.05],[-w/2+0.05,d/2-0.05],[w/2-0.05,-d/2+0.05],[-w/2+0.05,-d/2+0.05]];
+  legs.forEach(([x,z])=>{ const l=box(0.06,0.42,0.06,DARK); l.position.set(x,0.21,z); g.add(l); });
+  g.position.set(cx,0,cz); sceneGroup.add(g);
+}
+function furnKitchenCounter(cx,cz,w,ry){
+  const g = new THREE.Group();
+  g.add(Object.assign(box(w,0.9,0.6,0xece6dd),{position:new THREE.Vector3(0,0.45,0)}));
+  g.add(Object.assign(box(w,0.04,0.62,0x555555),{position:new THREE.Vector3(0,0.92,0)}));
+  const stove = box(0.55,0.05,0.5,0x2a2a2a); stove.position.set(-w/2+0.4,0.95,0); g.add(stove);
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+function furnCar(cx,cz,ry){
+  const g = new THREE.Group();
+  g.add(Object.assign(box(1.8,0.55,4.2,0x3b5b7a,{metalness:.4,roughness:.4}),{position:new THREE.Vector3(0,0.55,0)}));
+  g.add(Object.assign(box(1.5,0.5,2.1,0x25384a,{metalness:.4,roughness:.3}),{position:new THREE.Vector3(0,1.05,-0.2)}));
+  [[-0.85,0.3,1.3],[0.85,0.3,1.3],[-0.85,0.3,-1.3],[0.85,0.3,-1.3]].forEach(([x,y,z])=>{
+    const w = new THREE.Mesh(new THREE.CylinderGeometry(0.32,0.32,0.24,16), new THREE.MeshStandardMaterial({color:0x111111}));
+    w.rotation.z = Math.PI/2; w.position.set(x,y,z); g.add(w);
+  });
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+function furnToiletShower(cx,cz,w,d,ry){
+  const g = new THREE.Group();
+  const base = new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.22,0.38,16), new THREE.MeshStandardMaterial({color:0xffffff}));
+  base.position.set(-w/2+0.3,0.19,-d/2+0.3); g.add(base);
+  const tank = box(0.36,0.3,0.15,0xffffff); tank.position.set(-w/2+0.3,0.5,-d/2+0.12); g.add(tank);
+  const shower = box(Math.min(0.9,w-0.5),0.02,Math.min(0.9,d-0.5),0xcfe0e0,{roughness:.2});
+  shower.position.set(w/2-0.5,0.01,d/2-0.5); g.add(shower);
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+function furnShelf(cx,cz,w,ry){
+  const g = new THREE.Group();
+  for(let i=0;i<3;i++){ const s=box(w,0.04,0.4,WOOD); s.position.set(0,0.4+i*0.5,0); g.add(s); }
+  g.position.set(cx,0,cz); g.rotation.y=ry; sceneGroup.add(g);
+}
+
+const FURNITURE = {
+  terreo: {
+    garagem: (x,z,w,d)=> furnCar(x+w/2, z+d*0.62, 0),
+    sala: (x,z,w,d)=>{ furnSofa(x+w*0.28, z+d*0.22, 2.2, Math.PI/2); furnTable(x+w*0.55, z+d*0.35, 1.1, 0.6); },
+    cozinha: (x,z,w,d)=> furnKitchenCounter(x+0.32, z+d/2, d-0.4, Math.PI/2),
+    quarto: (x,z,w,d)=>{ furnBed(x+w*0.35, z+d*0.35, 0); furnWardrobe(x+w-0.35, z+d*0.7, 0.6, 1.8, Math.PI/2); },
+    sbanh: (x,z,w,d)=> furnToiletShower(x, z, w, d, 0),
+    despen: (x,z,w,d)=> furnShelf(x+w/2, z+0.25, w-0.3, 0),
+    lavabo: (x,z,w,d)=> furnToiletShower(x, z, w, d, 0),
+  },
+  pav1: {
+    master: (x,z,w,d)=>{ furnBed(x+w*0.4, z+d*0.4, 0); furnWardrobe(x+w-0.35, z+d*0.75, 0.6, 1.6, Math.PI/2); },
+    q1: (x,z,w,d)=> furnBed(x+w*0.4, z+d*0.4, 0),
+    q2: (x,z,w,d)=> furnBed(x+w*0.4, z+d*0.4, 0),
+    cl1: (x,z,w,d)=> furnWardrobe(x+w/2, z+d/2, w-0.3, d-0.3, 0),
+    cl2: (x,z,w,d)=> furnWardrobe(x+w/2, z+d/2, w-0.3, d-0.3, 0),
+    sbanh1: (x,z,w,d)=> furnToiletShower(x, z, w, d, 0),
+    banh1: (x,z,w,d)=> furnToiletShower(x, z, w, d, 0),
+  },
+  pav2: {
+    area2: (x,z,w,d)=>{ furnSofa(x+w*0.25, z+d*0.4, 2.4, Math.PI/2); },
+  }
+};
+
+function buildFloor(floorId){
+  scene.remove(sceneGroup);
+  sceneGroup = new THREE.Group();
+  const floor = FLOORS[floorId];
+  const started = FLOOR_STATUS[floorId] === 'em execução';
+
+  // laje / piso da edificação (envelope externo)
+  const slab = box(floor.ext.w+0.1, 0.15, floor.ext.d+0.1, 0x8a8378);
+  place(slab, floor.ext.w/2, -0.075, floor.ext.d/2);
+
+  // paredes externas (perímetro do pavimento)
+  const t = 0.15;
+  const wallMat = started ? WALL_COLOR : 0xcabfae;
+  place(box(floor.ext.w+t, WALL_H, t, wallMat), floor.ext.w/2, WALL_H/2, -t/2);
+  place(box(floor.ext.w+t, WALL_H, t, wallMat), floor.ext.w/2, WALL_H/2, floor.ext.d+t/2);
+  place(box(t, WALL_H, floor.ext.d+t, wallMat), -t/2, WALL_H/2, floor.ext.d/2);
+  place(box(t, WALL_H, floor.ext.d+t, wallMat), floor.ext.w+t/2, WALL_H/2, floor.ext.d/2);
+  // faixa coral na fachada, só onde já foi construído
+  if(started){
+    const band = box(floor.ext.w+0.2, 0.5, 0.05, BAND_COLOR);
+    place(band, floor.ext.w/2, 1.2, -0.05);
+  }
+
+  // piso de cada cômodo + rótulo + mobília (só se o pavimento já começou)
+  floor.rooms.forEach(([id,name,area,x,z,w,d,type])=>{
+    const color = ROOM_FLOOR_COLOR[type] || ROOM_FLOOR_COLOR.default;
+    const f = box(w-0.04, 0.03, d-0.04, started ? color : 0xb7ada0, {roughness:1});
+    place(f, x+w/2, 0.02, z+d/2);
+
+    const lbl = makeLabel(name);
+    place(lbl, x+w/2, WALL_H-0.3, z+d/2);
+
+    if(started && FURNITURE[floorId] && FURNITURE[floorId][id]){
+      FURNITURE[floorId][id](x,z,w,d);
+    }
+  });
+
+  scene.add(sceneGroup);
+}
+
+// ═══ Câmera (arrastar + zoom) ═══
+let camTarget = new THREE.Vector3(4.3,1.2,5.5);
+let radius=16, theta=Math.PI/4, phi=1.15;
+function updateCam(){
+  camera.position.x = camTarget.x + radius*Math.sin(phi)*Math.sin(theta);
+  camera.position.y = camTarget.y + radius*Math.cos(phi);
+  camera.position.z = camTarget.z + radius*Math.sin(phi)*Math.cos(theta);
+  camera.lookAt(camTarget);
+}
+updateCam();
+let dragging=false,lastX=0,lastY=0;
+const dom = renderer.domElement;
+function pDown(x,y){dragging=true;lastX=x;lastY=y;}
+function pMove(x,y){ if(!dragging) return; theta-=(x-lastX)*0.006; phi=Math.max(0.3,Math.min(1.5,phi-(y-lastY)*0.006)); lastX=x;lastY=y; updateCam(); }
+function pUp(){dragging=false;}
+dom.addEventListener('mousedown', e=>pDown(e.clientX,e.clientY));
+window.addEventListener('mousemove', e=>pMove(e.clientX,e.clientY));
+window.addEventListener('mouseup', pUp);
+dom.addEventListener('touchstart', e=>{const t=e.touches[0]; pDown(t.clientX,t.clientY);}, {passive:true});
+dom.addEventListener('touchmove', e=>{const t=e.touches[0]; pMove(t.clientX,t.clientY);}, {passive:true});
+dom.addEventListener('touchend', pUp);
+dom.addEventListener('wheel', e=>{ radius=Math.max(4,Math.min(35,radius+e.deltaY*0.02)); updateCam(); }, {passive:true});
+let pinch=null;
+dom.addEventListener('touchstart', e=>{ if(e.touches.length===2){ const dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY; pinch=Math.hypot(dx,dy);} }, {passive:true});
+dom.addEventListener('touchmove', e=>{ if(e.touches.length===2 && pinch){ const dx=e.touches[0].clientX-e.touches[1].clientX, dy=e.touches[0].clientY-e.touches[1].clientY; const d=Math.hypot(dx,dy); radius=Math.max(4,Math.min(35,radius+(pinch-d)*0.03)); pinch=d; updateCam(); } }, {passive:true});
+
+document.querySelectorAll('#floor-toggle button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('#floor-toggle button').forEach(x=>x.classList.remove('active'));
+    b.classList.add('active');
+    const f = b.getAttribute('data-f');
+    buildFloor(f);
+    const fl = FLOORS[f];
+    camTarget.set(fl.ext.w/2, 1.2, fl.ext.d/2);
+    radius = Math.max(fl.ext.w, fl.ext.d) * 1.15;
+    updateCam();
+  });
+});
+
+window.addEventListener('resize', ()=>{ camera.aspect=innerWidth/innerHeight; camera.updateProjectionMatrix(); renderer.setSize(innerWidth,innerHeight); });
+function animate(){ requestAnimationFrame(animate); renderer.render(scene,camera); }
+animate();
+buildFloor('terreo');
+</script>
+</body>
+</html>
