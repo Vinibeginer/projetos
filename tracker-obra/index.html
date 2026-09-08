@@ -1968,12 +1968,14 @@ function espelharLocal() {
 
 /* ── envio para a nuvem ── */
 let _syncTimer = null;
-function marcarSync(estado) {
+function marcarSync(estado, detalhe) {
   const el = document.getElementById('sync-badge');
   if (!el) return;
   const txt = { salvando: 'salvando...', baixando: 'carregando...', ok: 'salvo na nuvem', erro: 'falha ao salvar' };
   el.textContent = txt[estado] || '';
+  if (estado === 'erro' && detalhe) el.textContent += ': ' + detalhe;
   el.style.color = estado === 'erro' ? 'var(--red)' : 'var(--text3)';
+  el.title = estado === 'erro' && detalhe ? detalhe : '';
 }
 function sincronizarNuvem() {
   if (!obraAtual || !podeEditar) return;
@@ -2006,7 +2008,7 @@ async function enviarTudo() {
       descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' })));
     marcarSync('ok');
   } catch (e) {
-    marcarSync('erro');
+    marcarSync('erro', (e && (e.message || e.error_description || e.hint)) || String(e));
     console.error('Falha ao sincronizar:', e);
   }
 }
