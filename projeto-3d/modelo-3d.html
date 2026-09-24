@@ -1,0 +1,490 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Obra Mariára 3D</title>
+<meta name="description" content="Modelo 3D interativo da Obra Mariára: térreo, 1º e 2º pavimento com as medidas do Quadro de Áreas.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600&family=Barlow+Semi+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#eef0ec; --surface:#ffffff; --ink:#1f2622; --muted:#5d6962; --line:#d6dcd6;
+  --accent:#2f6f5e; --accent-ink:#ffffff; --accent-soft:#dcebe5;
+  --scene:#dfe5e0; --label-bg:rgba(255,255,255,.92); --label-ink:#1f2622;
+  --f-ui:"Barlow",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-head:"Barlow Semi Condensed","Barlow",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    color-scheme:dark;
+    --bg:#141a17; --surface:#1c2320; --ink:#e5ebe7; --muted:#97a39c; --line:#2d3833;
+    --accent:#72c3a9; --accent-ink:#0f1a16; --accent-soft:#223a32;
+    --scene:#111614; --label-bg:rgba(24,31,28,.92); --label-ink:#e5ebe7;
+  }
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#141a17; --surface:#1c2320; --ink:#e5ebe7; --muted:#97a39c; --line:#2d3833;
+  --accent:#72c3a9; --accent-ink:#0f1a16; --accent-soft:#223a32;
+  --scene:#111614; --label-bg:rgba(24,31,28,.92); --label-ink:#e5ebe7;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:14px;line-height:1.45}
+.app{display:grid;grid-template-rows:auto 1fr;height:100%;padding-inline:16px;padding-block:12px;gap:12px}
+header{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+h1{font-family:var(--f-head);font-weight:700;font-size:22px;margin:0;letter-spacing:.01em;text-wrap:balance}
+.sub{color:var(--muted);font-size:13px}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 330px;gap:12px;min-height:0}
+.viewer-col{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:inline-flex;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:2px}
+.seg button,.tbtn{font:500 13px var(--f-ui);color:var(--ink);background:transparent;border:0;border-radius:6px;padding:6px 11px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.tbtn{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 11px}
+.tbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--ink)}
+button:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.viewer{position:relative;flex:1;min-height:320px;border-radius:10px;overflow:hidden;border:1px solid var(--line);background:var(--scene);touch-action:none}
+.viewer canvas{display:block}
+.hint{position:absolute;left:10px;bottom:8px;font-size:12px;color:var(--muted);pointer-events:none;background:var(--label-bg);padding:3px 8px;border-radius:6px}
+.loading{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);font-size:13px}
+.lbl{font:500 11.5px var(--f-ui);color:var(--label-ink);background:var(--label-bg);border:1px solid var(--line);border-radius:5px;padding:2px 6px;white-space:nowrap;cursor:pointer;user-select:none}
+.lbl small{font-family:var(--f-num);font-size:10px;color:var(--muted);margin-left:4px}
+.lbl.sel{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.lbl.street{background:transparent;border:0;color:var(--muted);font-family:var(--f-head);font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:default}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12px;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:12px;height:12px;border-radius:3px;border:1px solid rgba(0,0,0,.18);flex:none}
+
+aside{background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:auto;min-height:0;display:flex;flex-direction:column}
+.card{padding:14px 16px;border-bottom:1px solid var(--line)}
+.eyebrow{font:600 11px var(--f-head);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.selname{font-family:var(--f-head);font-weight:700;font-size:20px;margin:2px 0 8px}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:13px}
+.kv dt{color:var(--muted)}
+.kv dd{margin:0;font-family:var(--f-num);font-variant-numeric:tabular-nums;text-align:right}
+.floor-h{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin:14px 0 4px}
+.floor-h:first-of-type{margin-top:6px}
+.floor-h b{font-family:var(--f-head);font-size:15px}
+.floor-h span{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.rooms{list-style:none;margin:0;padding:0}
+.rooms button{width:100%;display:grid;grid-template-columns:12px 1fr auto;gap:8px;align-items:center;text-align:left;background:none;border:0;border-radius:6px;padding:5px 6px;font:400 13px var(--f-ui);color:var(--ink);cursor:pointer}
+.rooms button:hover{background:var(--bg)}
+.rooms button[aria-current="true"]{background:var(--accent-soft)}
+.rooms .a{font-family:var(--f-num);font-size:12px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.notes{font-size:12.5px;color:var(--muted);margin:0;padding-left:18px}
+.notes li+li{margin-top:4px}
+
+@media (max-width:860px){
+  html,body{height:auto}
+  .app{height:auto}
+  .main{grid-template-columns:1fr}
+  .viewer{height:62svh;flex:none}
+  aside{overflow:visible}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+
+<div class="app">
+  <header>
+    <h1>Obra Mariára 3D</h1>
+    <div class="sub">Térreo, 1º e 2º pavimento · medidas do Quadro de Áreas · frente para a rua</div>
+  </header>
+  <div class="main">
+    <div class="viewer-col">
+      <div class="toolbar">
+        <div class="seg" role="group" aria-label="Pavimento">
+          <button id="f-all" data-floor="all" aria-pressed="true">Todos</button>
+          <button id="f-0" data-floor="0" aria-pressed="false">Térreo</button>
+          <button id="f-1" data-floor="1" aria-pressed="false">1º Pav.</button>
+          <button id="f-2" data-floor="2" aria-pressed="false">2º Pav.</button>
+        </div>
+        <button class="tbtn" id="t-explode" aria-pressed="true">Separar pavimentos</button>
+        <button class="tbtn" id="t-cut" aria-pressed="false">Paredes baixas</button>
+        <button class="tbtn" id="t-labels" aria-pressed="true">Nomes</button>
+        <button class="tbtn" id="t-reset">Recentralizar</button>
+      </div>
+      <div class="viewer" id="viewer">
+        <div class="loading" id="loading">Carregando modelo 3D…</div>
+        <div class="hint">Arraste para girar · pinça ou roda para zoom · dois dedos para mover · toque num cômodo</div>
+      </div>
+      <div class="legend" id="legend"></div>
+    </div>
+    <aside>
+      <div class="card" id="sel-card"></div>
+      <div class="card">
+        <div class="eyebrow">Quadro de áreas</div>
+        <div id="quadro"></div>
+      </div>
+      <div class="card">
+        <div class="eyebrow">Premissas do modelo</div>
+        <ul class="notes">
+          <li>Pé-direito de 2,70 m, laje de 15 cm e paredes de 12 cm (valores típicos, não constam no arquivo).</li>
+          <li>Os três pavimentos estão alinhados pela frente da casa (rua).</li>
+          <li>Portas e janelas não aparecem porque o arquivo não informa a posição delas. A frente da garagem foi deixada aberta para o portão.</li>
+          <li>Varandas têm guarda-corpo de vidro de 1,05 m. A varanda coberta do 2º pavimento tem laje e pilares nos cantos.</li>
+          <li>No térreo, o canto dos fundos à direita (atrás do quarto) não tem cômodo no arquivo e aparece como área livre.</li>
+        </ul>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
+
+// ---------- Dados (planta-obra-mariara.md) ----------
+const TYPES = {
+  social:  { nome:'Social',            cor:'#e8d7ba' },
+  intimo:  { nome:'Quartos / estar',   cor:'#c6d4e6' },
+  molhado: { nome:'Cozinha e banheiros', cor:'#b5dad3' },
+  circ:    { nome:'Circulação',        cor:'#e9e3d6' },
+  garagem: { nome:'Garagem',           cor:'#cbcbc5' },
+  varanda: { nome:'Varanda coberta',   cor:'#cadfb1' },
+  descob:  { nome:'Varanda descoberta',cor:'#e2ecd2' },
+};
+const FLOORS = [
+  { nome:'Térreo', area:'89,00 m²', rooms:[
+    ['Garagem',18.00,0,0,4.075,4.575,'garagem',{open:['front']}],
+    ['Sala',29.60,4.075,0,4.625,6.575,'social'],
+    ['Lavabo',2.16,0,4.575,2.475,1.050,'molhado'],
+    ['Circulação',2.50,2.475,4.575,1.600,1.050,'circ'],
+    ['Cozinha',14.00,0,5.625,4.075,3.650,'molhado'],
+    ['Quarto',11.74,4.075,6.575,4.625,2.700,'intimo'],
+    ['Despensa',1.76,0,9.275,1.500,1.675,'molhado'],
+    ['Suíte (banh.)',2.88,1.500,9.275,1.725,1.675,'molhado'],
+  ]},
+  { nome:'1º Pavimento', area:'89,00 m²', rooms:[
+    ['Varanda coberta',9.14,0,0,8.700,1.050,'varanda'],
+    ['Quarto 1',17.40,0,1.050,4.000,4.350,'intimo'],
+    ['Quarto 2',19.79,4.150,1.050,4.550,4.350,'intimo'],
+    ['Circulação',9.12,0,5.400,8.700,1.050,'circ'],
+    ['Closet',4.00,0,6.450,3.000,1.333,'intimo'],
+    ['Suíte (banh.)',3.71,0,7.783,3.000,1.237,'molhado'],
+    ['Banheiro',3.65,0,9.020,3.000,1.217,'molhado'],
+    ['Escritório',4.88,3.150,6.450,5.550,0.879,'intimo'],
+    ['Quarto Master',16.17,3.150,7.329,5.550,2.914,'intimo'],
+  ]},
+  { nome:'2º Pavimento', area:'49,00 m² + 37,85 m² descoberta', rooms:[
+    ['Varanda descoberta',37.85,0,0,8.700,4.350,'descob'],
+    ['Varanda coberta',49.00,0,4.350,8.700,5.630,'varanda',{roof:true}],
+  ]},
+];
+const WALL_H = 2.70, SLAB = 0.15, FLOOR_TO_FLOOR = WALL_H + SLAB, T = 0.12;
+const CUT_H = 1.0, RAIL_H = 1.05, EXPLODE_GAP = 3.2;
+// x do arquivo é leste; no Three.js, olhando da rua para o fundo (+z), a direita da tela é -x
+const X = v => 8.7 - v;
+const isVaranda = t => t==='varanda' || t==='descob';
+const fmt = (n,d=2) => n.toLocaleString('pt-BR',{minimumFractionDigits:d,maximumFractionDigits:d});
+
+// ---------- Painel ----------
+const legend = document.getElementById('legend');
+legend.innerHTML = Object.values(TYPES).map(t=>`<span><i class="sw" style="background:${t.cor}"></i>${t.nome}</span>`).join('');
+
+const rooms = []; // {floor, name, area, x,z,w,d, type, mesh, label, btn}
+FLOORS.forEach((f,fi)=>f.rooms.forEach(([name,area,x,z,w,d,type,opt])=>rooms.push({floor:fi,name,area,x,z,w,d,type,opt:opt||{}})));
+
+const quadro = document.getElementById('quadro');
+FLOORS.forEach((f,fi)=>{
+  const h = document.createElement('div'); h.className='floor-h';
+  h.innerHTML = `<b>${f.nome}</b><span>${f.area}</span>`;
+  const ul = document.createElement('ul'); ul.className='rooms';
+  rooms.filter(r=>r.floor===fi).forEach(r=>{
+    const li = document.createElement('li');
+    const b = document.createElement('button');
+    b.id = `room-${fi}-${r.name.replace(/\W+/g,'')}`;
+    b.innerHTML = `<i class="sw" style="background:${TYPES[r.type].cor}"></i><span>${r.name}</span><span class="a">${fmt(r.area)} m²</span>`;
+    b.addEventListener('click',()=>select(r,true));
+    r.btn = b; li.appendChild(b); ul.appendChild(li);
+  });
+  quadro.append(h,ul);
+});
+
+const selCard = document.getElementById('sel-card');
+function renderSel(r){
+  if(!r){
+    selCard.innerHTML = `<div class="eyebrow">Resumo</div>
+      <div class="selname">3 pavimentos</div>
+      <dl class="kv">
+        <dt>Área construída</dt><dd>227,00 m²</dd>
+        <dt>Varanda descoberta</dt><dd>37,85 m²</dd>
+        <dt>Envelope</dt><dd>8,70 × 10,95 m</dd>
+        <dt>Altura até a laje do 2º</dt><dd>${fmt(3*FLOOR_TO_FLOOR)} m</dd>
+      </dl>
+      <p class="sub" style="margin:10px 0 0">Toque num cômodo no modelo ou na lista para ver as medidas.</p>`;
+    return;
+  }
+  selCard.innerHTML = `<div class="eyebrow">${FLOORS[r.floor].nome}</div>
+    <div class="selname">${r.name}</div>
+    <dl class="kv">
+      <dt>Área (Quadro de Áreas)</dt><dd>${fmt(r.area)} m²</dd>
+      <dt>Largura × profundidade</dt><dd>${fmt(r.w,3)} × ${fmt(r.d,3)} m</dd>
+      <dt>Área pelas medidas</dt><dd>${fmt(r.w*r.d)} m²</dd>
+      <dt>Perímetro</dt><dd>${fmt(2*(r.w+r.d))} m</dd>
+      <dt>Posição (x, z)</dt><dd>${fmt(r.x,3)}, ${fmt(r.z,3)}</dd>
+    </dl>
+    <button class="tbtn" id="clear-sel" style="margin-top:10px">Ver resumo da casa</button>`;
+  document.getElementById('clear-sel').addEventListener('click',()=>select(null));
+}
+renderSel(null);
+
+// ---------- Cena ----------
+const viewer = document.getElementById('viewer');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+viewer.appendChild(renderer.domElement);
+const labelRenderer = new CSS2DRenderer();
+labelRenderer.domElement.style.cssText='position:absolute;inset:0;pointer-events:none';
+viewer.appendChild(labelRenderer.domElement);
+document.getElementById('loading').remove();
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(40,1,0.1,300);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.maxPolarAngle = Math.PI*0.495;
+controls.minDistance = 4; controls.maxDistance = 70;
+
+scene.add(new THREE.HemisphereLight(0xffffff,0x8a8f86,1.1));
+const sun = new THREE.DirectionalLight(0xffffff,1.6);
+sun.position.set(-12,24,-14);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048,2048);
+Object.assign(sun.shadow.camera,{left:-16,right:16,top:16,bottom:-16,near:1,far:80});
+sun.shadow.bias = -0.0004;
+sun.target.position.set(4.35,0,5.5);
+scene.add(sun, sun.target);
+
+// terreno
+const ground = new THREE.Mesh(new THREE.PlaneGeometry(40,40), new THREE.MeshStandardMaterial({color:0xa9b59f,roughness:1}));
+ground.rotation.x = -Math.PI/2; ground.position.set(4.35,-0.001,5.5); ground.receiveShadow = true;
+scene.add(ground);
+const calcada = new THREE.Mesh(new THREE.BoxGeometry(14,0.04,1.6), new THREE.MeshStandardMaterial({color:0xc9c6bd,roughness:1}));
+calcada.position.set(4.35,0.02,-1.0); calcada.receiveShadow = true; scene.add(calcada);
+const rua = new THREE.Mesh(new THREE.PlaneGeometry(40,6), new THREE.MeshStandardMaterial({color:0x5b5f60,roughness:1}));
+rua.rotation.x=-Math.PI/2; rua.position.set(4.35,0.001,-4.8); rua.receiveShadow=true; scene.add(rua);
+const streetEl = document.createElement('div'); streetEl.className='lbl street'; streetEl.textContent='Rua · frente';
+const streetLbl = new CSS2DObject(streetEl); streetLbl.position.set(4.35,0.1,-4.8); scene.add(streetLbl);
+
+const M = {
+  wall: new THREE.MeshStandardMaterial({color:0xf1eee8,roughness:.9}),
+  slab: new THREE.MeshStandardMaterial({color:0xb9b6ae,roughness:.95}),
+  glass: new THREE.MeshStandardMaterial({color:0x9fc7d6,transparent:true,opacity:.35,roughness:.1,depthWrite:false}),
+  rail: new THREE.MeshStandardMaterial({color:0x7d837f,roughness:.5,metalness:.4}),
+  edge: new THREE.LineBasicMaterial({color:0x6f7570}),
+};
+
+// ---------- Paredes: une os lados dos cômodos em segmentos contínuos ----------
+const r3 = v => Math.round(v*1000)/1000;
+function addSeg(map,k,a,b){ (map.get(k) || map.set(k,[]).get(k)).push([Math.min(a,b),Math.max(a,b)]); }
+function union(iv){
+  iv = iv.slice().sort((p,q)=>p[0]-q[0]); const out=[];
+  for(const s of iv){ const l=out[out.length-1]; if(l && s[0]<=l[1]+1e-4) l[1]=Math.max(l[1],s[1]); else out.push([...s]); }
+  return out;
+}
+function subtract(iv,cuts){
+  let res = iv;
+  for(const [c0,c1] of cuts){
+    const nx=[];
+    for(const [a,b] of res){ if(c1<=a||c0>=b){nx.push([a,b]);continue;} if(c0>a) nx.push([a,c0]); if(c1<b) nx.push([c1,b]); }
+    res = nx;
+  }
+  return res.filter(([a,b])=>b-a>0.02);
+}
+
+const levels = [];
+FLOORS.forEach((f,fi)=>{
+  const g = new THREE.Group(); scene.add(g);
+  const wallGroup = new THREE.Group(); g.add(wallGroup);
+  const roofGroup = new THREE.Group(); g.add(roofGroup);
+  const fr = rooms.filter(r=>r.floor===fi);
+  const bb = { x0:Math.min(...fr.map(r=>r.x)), x1:Math.max(...fr.map(r=>r.x+r.w)), z0:Math.min(...fr.map(r=>r.z)), z1:Math.max(...fr.map(r=>r.z+r.d)) };
+  const wH=new Map(), wV=new Map(), rH=new Map(), rV=new Map();
+
+  fr.forEach(r=>{
+    const x0=r3(r.x), x1=r3(r.x+r.w), z0=r3(r.z), z1=r3(r.z+r.d);
+    const edges = { front:['h',z0,x0,x1], back:['h',z1,x0,x1], left:['v',x0,z0,z1], right:['v',x1,z0,z1] };
+    for(const [side,[o,k,a,b]] of Object.entries(edges)){
+      if(r.opt.open?.includes(side)) continue;
+      if(isVaranda(r.type)){
+        const onEdge = o==='h' ? (k===r3(bb.z0)||k===r3(bb.z1)) : (k===r3(bb.x0)||k===r3(bb.x1));
+        if(onEdge) addSeg(o==='h'?rH:rV,k,a,b);
+      } else addSeg(o==='h'?wH:wV,k,a,b);
+    }
+    // piso
+    const top = new THREE.MeshStandardMaterial({color:TYPES[r.type].cor,roughness:.85});
+    const floor = new THREE.Mesh(new THREE.BoxGeometry(r.w,SLAB,r.d),[M.slab,M.slab,top,M.slab,M.slab,M.slab]);
+    floor.position.set(X(r.x+r.w/2),-SLAB/2+0.02,r.z+r.d/2);
+    floor.receiveShadow = true; floor.castShadow = fi>0;
+    floor.userData.room = r; r.mesh = floor; r.topMat = top;
+    g.add(floor);
+    // rótulo
+    const el = document.createElement('div'); el.className='lbl';
+    el.innerHTML = `${r.name}<small>${fmt(r.area)} m²</small>`;
+    el.style.pointerEvents='auto';
+    el.addEventListener('click',()=>select(r));
+    const lbl = new CSS2DObject(el); lbl.position.set(X(r.x+r.w/2),0.35,r.z+r.d/2);
+    g.add(lbl); r.label = lbl; r.labelEl = el;
+    // laje da varanda coberta do último pavimento + pilares
+    if(r.opt.roof){
+      const roof = new THREE.Mesh(new THREE.BoxGeometry(r.w+0.3,0.14,r.d+0.3),M.slab);
+      roof.position.set(X(r.x+r.w/2),WALL_H+0.07,r.z+r.d/2); roof.castShadow=roof.receiveShadow=true;
+      roofGroup.add(roof);
+      for(const px of [r.x+0.1,r.x+r.w-0.1]) for(const pz of [r.z+0.1,r.z+r.d-0.1]){
+        const p = new THREE.Mesh(new THREE.BoxGeometry(0.2,WALL_H,0.2),M.wall);
+        p.position.set(X(px),WALL_H/2,pz); p.castShadow=true; roofGroup.add(p);
+      }
+    }
+  });
+
+  const boxGeo = new THREE.BoxGeometry(1,1,1); boxGeo.translate(0,0.5,0);
+  const edgeGeo = new THREE.EdgesGeometry(boxGeo);
+  function wallBox(o,k,a,b){
+    const m = new THREE.Mesh(boxGeo,M.wall);
+    const len = b-a+T;
+    if(o==='h'){ m.position.set(X((a+b)/2),0,k); m.scale.set(len,WALL_H,T); }
+    else { m.position.set(X(k),0,(a+b)/2); m.scale.set(T,WALL_H,len); }
+    m.castShadow = m.receiveShadow = true;
+    m.add(new THREE.LineSegments(edgeGeo,M.edge));
+    wallGroup.add(m);
+  }
+  function railBox(o,k,a,b){
+    const glass = new THREE.Mesh(boxGeo,M.glass), bar = new THREE.Mesh(boxGeo,M.rail);
+    const len=b-a;
+    if(o==='h'){ glass.position.set(X((a+b)/2),0,k); glass.scale.set(len,RAIL_H,0.03); bar.position.set(X((a+b)/2),RAIL_H,k); bar.scale.set(len,0.05,0.06); }
+    else { glass.position.set(X(k),0,(a+b)/2); glass.scale.set(0.03,RAIL_H,len); bar.position.set(X(k),RAIL_H,(a+b)/2); bar.scale.set(0.06,0.05,len); }
+    g.add(glass,bar);
+  }
+  for(const [o,W,R] of [['h',wH,rH],['v',wV,rV]]){
+    for(const [k,iv] of W) union(iv).forEach(([a,b])=>wallBox(o,k,a,b));
+    for(const [k,iv] of R) subtract(union(iv), union(W.get(k)||[])).forEach(([a,b])=>railBox(o,k,a,b));
+  }
+  levels.push({group:g, wallGroup, roofGroup, y:0});
+});
+
+// ---------- Estado e interação ----------
+const state = { floor:'all', explode:true, cut:false, labels:true, sel:null };
+let wallH = WALL_H;
+
+function levelY(i,exp){ return i*(FLOOR_TO_FLOOR + (exp?EXPLODE_GAP:0)); }
+function applyVisibility(){
+  levels.forEach((L,i)=>{
+    const vis = state.floor==='all' || i<=state.floor;
+    L.group.visible = vis;
+    L.roofGroup.visible = !state.cut;
+  });
+  rooms.forEach(r=>{
+    const vis = state.labels && (state.floor==='all' ? true : r.floor===state.floor);
+    r.label.visible = vis && levels[r.floor].group.visible;
+  });
+}
+function focusTarget(){
+  const i = state.floor==='all' ? 1 : state.floor;
+  return new THREE.Vector3(4.35, levelY(i,state.explode)+ (state.floor==='all'?0.6:0.5), 5.2);
+}
+let camAnim = null;
+function resetCamera(){
+  const t = focusTarget();
+  const dist = state.floor==='all' ? (state.explode?30:25) : 17;
+  const dir = new THREE.Vector3(-0.55,0.62,-0.85).normalize();
+  camAnim = { fromP:camera.position.clone(), toP:t.clone().add(dir.multiplyScalar(dist)), fromT:controls.target.clone(), toT:t, k:0 };
+}
+function select(r,focus){
+  state.sel = r;
+  rooms.forEach(o=>{
+    const on = o===r;
+    o.topMat.emissive.set(on?0x2f6f5e:0x000000); o.topMat.emissiveIntensity = on?0.45:0;
+    o.labelEl.classList.toggle('sel',on);
+    o.btn.setAttribute('aria-current',on?'true':'false');
+  });
+  if(r && state.floor!=='all' && r.floor>state.floor){ setFloor(r.floor); }
+  if(r && focus){
+    const y = levelY(r.floor,state.explode);
+    const t = new THREE.Vector3(X(r.x+r.w/2),y+0.5,r.z+r.d/2);
+    const off = camera.position.clone().sub(controls.target).setLength(Math.max(9,Math.min(16,camera.position.distanceTo(controls.target))));
+    camAnim = { fromP:camera.position.clone(), toP:t.clone().add(off), fromT:controls.target.clone(), toT:t, k:0 };
+  }
+  renderSel(r);
+}
+function setFloor(f){
+  state.floor = f;
+  document.querySelectorAll('.seg button').forEach(b=>b.setAttribute('aria-pressed', String(b.dataset.floor===String(f))));
+  applyVisibility(); resetCamera();
+}
+document.querySelectorAll('.seg button').forEach(b=>b.addEventListener('click',()=>setFloor(b.dataset.floor==='all'?'all':+b.dataset.floor)));
+function toggle(id,key,after){
+  const b=document.getElementById(id);
+  b.addEventListener('click',()=>{ state[key]=!state[key]; b.setAttribute('aria-pressed',String(state[key])); applyVisibility(); after&&after(); });
+}
+toggle('t-explode','explode',resetCamera);
+toggle('t-cut','cut');
+toggle('t-labels','labels');
+document.getElementById('t-reset').addEventListener('click',resetCamera);
+
+// clique/toque em cômodo (ignora arrastes)
+const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(); let down=null;
+renderer.domElement.addEventListener('pointerdown',e=>{down=[e.clientX,e.clientY];});
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!down || Math.hypot(e.clientX-down[0],e.clientY-down[1])>6) return;
+  const rc = renderer.domElement.getBoundingClientRect();
+  ndc.set(((e.clientX-rc.left)/rc.width)*2-1, -((e.clientY-rc.top)/rc.height)*2+1);
+  ray.setFromCamera(ndc,camera);
+  const targets = rooms.filter(r=>levels[r.floor].group.visible).map(r=>r.mesh);
+  const hit = ray.intersectObjects(targets,false)[0];
+  select(hit ? hit.object.userData.room : null);
+});
+
+// tema da cena
+function applyTheme(){
+  const c = getComputedStyle(document.documentElement).getPropertyValue('--scene').trim() || '#dfe5e0';
+  scene.background = new THREE.Color(c);
+  scene.fog = new THREE.Fog(scene.background, 45, 110);
+}
+applyTheme();
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
+new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
+
+function resize(){
+  const w=viewer.clientWidth, h=viewer.clientHeight;
+  renderer.setSize(w,h); labelRenderer.setSize(w,h);
+  camera.aspect=w/h; camera.updateProjectionMatrix();
+}
+new ResizeObserver(resize).observe(viewer); resize();
+
+// posição inicial
+levels.forEach((L,i)=>{ L.y = levelY(i,state.explode); L.group.position.y = L.y; });
+applyVisibility();
+{ const t=focusTarget(); controls.target.copy(t); camera.position.copy(t).add(new THREE.Vector3(-0.55,0.62,-0.85).normalize().multiplyScalar(30)); }
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ease = k => 1-Math.pow(1-k,3);
+function tick(){
+  const lerp = reduce ? 1 : 0.14;
+  levels.forEach((L,i)=>{ L.y += (levelY(i,state.explode)-L.y)*lerp; L.group.position.y = L.y; });
+  const targetH = state.cut ? CUT_H : WALL_H;
+  wallH += (targetH-wallH)*lerp;
+  levels.forEach(L=>L.wallGroup.children.forEach(m=>m.scale.y=wallH));
+  if(camAnim){
+    camAnim.k = reduce ? 1 : Math.min(1,camAnim.k+0.045);
+    const k = ease(camAnim.k);
+    camera.position.lerpVectors(camAnim.fromP,camAnim.toP,k);
+    controls.target.lerpVectors(camAnim.fromT,camAnim.toT,k);
+    if(camAnim.k>=1) camAnim=null;
+  }
+  controls.update();
+  renderer.render(scene,camera);
+  labelRenderer.render(scene,camera);
+  requestAnimationFrame(tick);
+}
+tick();
+</script>
