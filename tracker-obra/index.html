@@ -1763,6 +1763,11 @@ function traduzErro(err) {
 }
 
 /* ── datas: banco usa AAAA-MM-DD, o app usa DD/MM/AAAA ── */
+/* escapa texto digitado pelo usuário antes de colocar em innerHTML */
+function esc(v) {
+  return String(v == null ? '' : v).replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+}
 function isoData(br) {
   if (!br) return null;
   const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(String(br));
@@ -2056,8 +2061,8 @@ function renderObraBar() {
     const on = (obraAtual && o.id === obraAtual.id) ? ' on' : '';
     const papel = (o.papel !== 'dono') ? '<span class="obra-papel">somente leitura</span>' : '';
     return '<button class="obra-tab' + on + '" onclick="abrirObra(\'' + o.id + '\')">' +
-      '<span class="obra-nome">' + o.nome + '</span>' +
-      '<span class="obra-tag">' + o.tag + '</span>' + papel + '</button>';
+      '<span class="obra-nome">' + esc(o.nome) + '</span>' +
+      '<span class="obra-tag">' + esc(o.tag) + '</span>' + papel + '</button>';
   }).join('');
   h += '<button class="obra-tab novo" onclick="mostrarNovaObra(false)">+ Nova obra</button>';
   if (podeEditar && semDados()) {
@@ -2071,7 +2076,7 @@ function ajustarCabecalhoObra() {
   const p  = document.querySelector('.header-left p');
   if (h1 && obraAtual) h1.textContent = 'Tracker de obra — ' + obraAtual.nome;
   if (p && obraAtual) {
-    p.innerHTML = 'Código ' + obraAtual.tag + ' · ' + (podeEditar ? 'acesso de edição' : 'somente leitura') +
+    p.innerHTML = 'Código ' + esc(obraAtual.tag) + ' · ' + (podeEditar ? 'acesso de edição' : 'somente leitura') +
       ' · <span id="app-version-badge" style="font-weight:600;color:var(--blue)">v' + APP_VERSION + '</span>';
   }
   const badge = document.getElementById('badge-role');
@@ -2393,7 +2398,7 @@ function buildTable() {
       ? `<em style="color:var(--text3)">${item.prevExec}%*</em>`
       : `<span style="color:${item.exec>0?'var(--blue)':'var(--text3)'}">${item.exec}%</span>`;
     const novoBadge = item.novo ? ' <span style="font-size:10px;background:var(--amber-bg);color:var(--amber);padding:1px 5px;border-radius:8px;font-weight:600;">novo</span>' : '';
-    const obsAttr   = item.obs && isAdmin ? ` title="${item.obs}"` : '';
+    const obsAttr   = item.obs && isAdmin ? ` title="${esc(item.obs)}"` : '';
     const tr = document.createElement('tr');
     tr.style.opacity = item.exec === 0 && !isPrev ? '0.45' : '1';
     if (item.novo) tr.style.background = '#FAEEDA22';
@@ -2401,7 +2406,7 @@ function buildTable() {
     if (isAdmin) {
       tr.innerHTML = `
         <td style="color:var(--text3);font-size:12px">${item.id}</td>
-        <td${obsAttr}>${item.desc}${novoBadge}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
+        <td${obsAttr}>${esc(item.desc)}${novoBadge}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
         <td class="right" style="color:var(--text2)">${fmtP(item.pciPct)}</td>
         <td class="right" style="color:var(--text2)">${fmt(item.pciPct/100*495000)}</td>
         <td class="center"><span class="badge ${cls}">${lbl}</span></td>
@@ -2410,7 +2415,7 @@ function buildTable() {
     } else {
       tr.innerHTML = `
         <td style="color:var(--text3);font-size:12px">${item.id}</td>
-        <td>${item.desc}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
+        <td>${esc(item.desc)}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
         <td class="center"><span class="badge ${cls}">${lbl}</span></td>
         <td class="center">${execLabel}</td>
         <td>${barHTML}</td>`;
@@ -2523,7 +2528,7 @@ function buildMedicao(execNovo, execNovoCaixa, novoVal) {
     tr.style.background = isPrev ? 'var(--surface2)' : '';
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${item.id}</td>
-      <td>${item.desc}${isPrev?' <em style="font-size:11px;color:var(--text3)">(previsão)</em>':''}</td>
+      <td>${esc(item.desc)}${isPrev?' <em style="font-size:11px;color:var(--text3)">(previsão)</em>':''}</td>
       <td class="right" style="color:var(--text2)">${fmtP(item.pciPct)}</td>
       <td class="right" style="font-weight:500;color:${isPrev?'var(--text3)':'var(--blue)'}">
         ${isPrev ? fmtP(prevPct) : fmtP(execPct)}
@@ -2550,7 +2555,7 @@ function buildPrevisaoRapida() {
   if (!prev.length) { el.innerHTML = '<p class="empty">Nenhuma previsão registrada.</p>'; return; }
   el.innerHTML = prev.map(i => `
     <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
-      <span style="flex:1;color:var(--text2)">${i.desc} — previsão ${i.prevExec}%</span>
+      <span style="flex:1;color:var(--text2)">${esc(i.desc)} — previsão ${i.prevExec}%</span>
       <button class="btn btn-success btn-sm" onclick="confirmarPrevisao(${i.id})">Confirmar</button>
       <button class="btn btn-ghost btn-sm"   onclick="cancelarPrevisao(${i.id})">Cancelar</button>
     </div>`).join('');
@@ -2563,11 +2568,11 @@ function buildLog() {
   historico.slice().reverse().forEach(h => {
     const d = document.createElement('div');
     d.className = 'log-entry';
-    const obsHtml = h.obs && isAdmin ? `<br><span style="font-size:11px;color:var(--text3)">${h.obs}</span>` : '';
+    const obsHtml = h.obs && isAdmin ? `<br><span style="font-size:11px;color:var(--text3)">${esc(h.obs)}</span>` : '';
     const valHtml = isAdmin && h.deltaVal > 0 ? `<span class="log-val">${fmt(h.deltaVal)}</span>` : '';
     d.innerHTML = `
-      <span class="log-date">${h.data}</span>
-      <span class="log-desc">${h.desc}${obsHtml}</span>
+      <span class="log-date">${esc(h.data)}</span>
+      <span class="log-desc">${esc(h.desc)}${obsHtml}</span>
       ${h.deltaPct > 0 ? `<span class="${h.prev?'log-prev':'log-pct'}">${h.prev?'(prev.) ':''}+${fmtP(h.deltaPct)}</span>` : ''}
       ${valHtml}`;
     el.appendChild(d);
@@ -2771,9 +2776,9 @@ function buildMOPagamentos() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${idx+1}</td>
-      <td style="white-space:nowrap">${p.data}</td>
-      <td style="color:var(--text2)">${p.dest}</td>
-      <td style="color:var(--text2);font-size:12px">${p.ref}</td>
+      <td style="white-space:nowrap">${esc(p.data)}</td>
+      <td style="color:var(--text2)">${esc(p.dest)}</td>
+      <td style="color:var(--text2);font-size:12px">${esc(p.ref)}</td>
       <td class="right" style="font-weight:600;color:var(--green)">${fmt(p.valor)}</td>
       <td class="center"><span class="badge ${cls}">${lbl}</span></td>
       <td class="center"><button class="btn btn-ghost btn-sm" onclick="removerPagMO(${idx})" style="color:var(--red);border-color:var(--red);">✕</button></td>
@@ -2805,7 +2810,7 @@ function buildMOItens() {
     tr.style.opacity = pago === 0 ? '0.5' : '1';
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${item.id}</td>
-      <td>${item.desc}</td>
+      <td>${esc(item.desc)}</td>
       <td class="right" style="color:var(--text2)">${fmt(item.orcado)}</td>
       <td class="right" style="font-weight:600;color:var(--green)">${pago > 0 ? fmt(pago) : '—'}</td>
       <td class="right" style="color:${saldo>0?'var(--amber)':'var(--green)'}">${saldo > 0 ? fmt(saldo) : '—'}</td>
@@ -2832,7 +2837,7 @@ function buildMOProjecao() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${item.id}</td>
-      <td>${item.desc}</td>
+      <td>${esc(item.desc)}</td>
       <td class="right" style="color:var(--text2)">${fmt(item.orcado)}</td>
       <td class="right">${item.prevPct}%</td>
       <td class="right" style="font-weight:600;color:var(--blue)">${fmt(estimado)}</td>
@@ -3100,12 +3105,12 @@ function buildMatLista() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${idx+1}</td>
-      <td style="white-space:nowrap;font-size:12px">${m.data}</td>
-      <td>${m.desc}</td>
+      <td style="white-space:nowrap;font-size:12px">${esc(m.data)}</td>
+      <td>${esc(m.desc)}</td>
       <td><span style="display:inline-flex;align-items:center;gap:5px;font-size:12px;">
-        <span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></span>${m.cat}
+        <span style="width:8px;height:8px;border-radius:50%;background:${cor};flex-shrink:0;"></span>${esc(m.cat)}
       </span></td>
-      <td style="color:var(--text2);font-size:12px">${m.forn || '—'}</td>
+      <td style="color:var(--text2);font-size:12px">${esc(m.forn || '—')}</td>
       <td class="right" style="font-weight:600;color:var(--blue)">${fmt(m.valor)}</td>
       <td class="center">${pagoBadge}</td>
       <td class="center">
@@ -3138,7 +3143,7 @@ function buildMatCategoria() {
       const tr  = document.createElement('tr');
       tr.innerHTML = `
         <td style="display:flex;align-items:center;gap:8px;">
-          <span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;"></span>${cat}
+          <span style="width:10px;height:10px;border-radius:3px;background:${cor};flex-shrink:0;"></span>${esc(cat)}
         </td>
         <td class="right" style="color:var(--text2)">${val.qtd}</td>
         <td class="right" style="font-weight:600">${fmt(val.total)}</td>
@@ -3312,7 +3317,7 @@ function buildMedicoesConfirmadas() {
     tr.style.background = '#E1F5EE';
     tr.innerHTML = `
       <td class="center"><span class="badge b-medido">${m.num}ª ✓</span></td>
-      <td style="font-size:12px;white-space:nowrap">${m.data}</td>
+      <td style="font-size:12px;white-space:nowrap">${esc(m.data)}</td>
       <td class="right" style="font-weight:600;color:var(--green)">${fmtP(m.pctCaixa)}</td>
       <td class="right" style="font-weight:600;color:var(--green)">${fmt(m.valor)}</td>
       <td class="right">${fmt(acum)}</td>
