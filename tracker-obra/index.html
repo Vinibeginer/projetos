@@ -1741,6 +1741,7 @@ let MED_VAL     = 94324.54;
 const SB_URL  = 'https://qazbyotibhqrwbuvmdza.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhemJ5b3RpYmhxcndidXZtZHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MjEzNjcsImV4cCI6MjEwMDM5NzM2N30.YzlSaoUz1G2Or0hIn_yYOghbqRGSj7t1oUcIWohBnps';
 
+let obraVersao = null;   // obras.atualizado_em do último carregamento/gravação
 let sb = null, usuario = null, obraAtual = null, minhasObras = [], podeEditar = false, modoCadastro = false;
 
 function sbClient() {
@@ -1913,8 +1914,12 @@ async function carregarMinhasObrasEAbrir(id) {
 
 /* ── abrir obra e carregar dados ── */
 async function abrirObra(id) {
-  obraAtual = minhasObras.find(o => o.id === id);
-  if (!obraAtual) return;
+  const alvo = minhasObras.find(o => o.id === id);
+  if (!alvo) return;
+  // grava o que estiver pendente na obra atual antes de trocar
+  if (_syncTimer) { clearTimeout(_syncTimer); _syncTimer = null; await enviarTudo(); }
+  while (_enviando) await new Promise(r => setTimeout(r, 100));
+  obraAtual = alvo;
   podeEditar = (obraAtual.papel === 'dono' || obraAtual.papel === 'editor');
   isAdmin    = podeEditar;
   localStorage.setItem('obra_ultima', id);
@@ -1931,13 +1936,15 @@ async function abrirObra(id) {
 
 async function baixarDados() {
   const c = sbClient(), oid = obraAtual.id;
-  const [it, mt, mo, md, hs] = await Promise.all([
+  const [ob, it, mt, mo, md, hs] = await Promise.all([
+    c.from('obras').select('atualizado_em').eq('id', oid).single(),
     c.from('itens').select('*').eq('obra_id', oid).order('ordem'),
     c.from('materiais').select('*').eq('obra_id', oid).order('id'),
     c.from('mo_pagamentos').select('*').eq('obra_id', oid).order('id'),
     c.from('medicoes').select('*').eq('obra_id', oid).order('numero'),
     c.from('historico').select('*').eq('obra_id', oid).order('id')
   ]);
+  obraVersao = (ob.data && ob.data.atualizado_em) || null;
   itens = (it.data || []).map(r => ({ id: r.ordem || r.id, desc: r.descricao, pciPct: +r.pci_pct,
     exec: +r.exec_pct, locked: !!r.travado, prevExec: +r.prev_pct, obs: r.obs || '' }));
   materiais = (mt.data || []).map(r => ({ id: r.id, data: brData(r.data), desc: r.descricao,
@@ -1981,7 +1988,7 @@ function sincronizarNuvem() {
   if (!obraAtual || !podeEditar) return;
   clearTimeout(_syncTimer);
   marcarSync('salvando');
-  _syncTimer = setTimeout(enviarTudo, 900);
+  _syncTimer = setTimeout(() => { _syncTimer = null; enviarTudo(); }, 900);
 }
 async function repor(tabela, oid, linhas) {
   const c = sbClient();
@@ -1992,24 +1999,51 @@ async function repor(tabela, oid, linhas) {
     if (i.error) throw i.error;
   }
 }
+function montarPayload(oid) {
+  const semId = oid === undefined;
+  const o = semId ? {} : { obra_id: oid };
+  return {
+    itens: itens.map(i => ({ ...o, ordem: i.id, descricao: i.desc,
+      pci_pct: i.pciPct || 0, exec_pct: i.exec || 0, travado: !!i.locked, prev_pct: i.prevExec || 0, obs: i.obs || '' })),
+    materiais: materiais.map(m => ({ ...o, data: isoData(m.data), descricao: m.desc,
+      categoria: m.cat, fornecedor: m.forn, referencia: m.ref, valor: m.valor || 0, pago: (m.pago === 'sim' || m.pago === true) })),
+    mo_pagamentos: moPagamentos.map(p => ({ ...o, data: isoData(p.data), destinatario: p.dest,
+      referencia: p.ref, valor: p.valor || 0, tipo: p.tipo || 'mo', item_id: p.itemId || null })),
+    medicoes: medicoesConfirmadas.map(m => ({ ...o, numero: m.num, data: isoData(m.data),
+      pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada })),
+    historico: historico.map(h => ({ ...o, data: isoData(h.data), data_txt: h.data,
+      descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' }))
+  };
+}
+/* gravação antiga, tabela por tabela — só usada se a função salvar_obra ainda não existir no banco */
+async function enviarLegado(oid) {
+  const d = montarPayload(oid);
+  for (const t of ['itens', 'materiais', 'mo_pagamentos', 'medicoes', 'historico']) await repor(t, oid, d[t]);
+}
+let _enviando = false, _reenviar = false;
 async function enviarTudo() {
   if (!obraAtual || !podeEditar) return;
+  if (_enviando) { _reenviar = true; return; }   // um envio por vez; o próximo sai logo depois
+  _enviando = true;
   const oid = obraAtual.id;
   try {
-    await repor('itens', oid, itens.map(i => ({ obra_id: oid, ordem: i.id, descricao: i.desc,
-      pci_pct: i.pciPct || 0, exec_pct: i.exec || 0, travado: !!i.locked, prev_pct: i.prevExec || 0, obs: i.obs || '' })));
-    await repor('materiais', oid, materiais.map(m => ({ obra_id: oid, data: isoData(m.data), descricao: m.desc,
-      categoria: m.cat, fornecedor: m.forn, referencia: m.ref, valor: m.valor || 0, pago: (m.pago === 'sim' || m.pago === true) })));
-    await repor('mo_pagamentos', oid, moPagamentos.map(p => ({ obra_id: oid, data: isoData(p.data), destinatario: p.dest,
-      referencia: p.ref, valor: p.valor || 0, tipo: p.tipo || 'mo', item_id: p.itemId || null })));
-    await repor('medicoes', oid, medicoesConfirmadas.map(m => ({ obra_id: oid, numero: m.num, data: isoData(m.data),
-      pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada })));
-    await repor('historico', oid, historico.map(h => ({ obra_id: oid, data: isoData(h.data), data_txt: h.data,
-      descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' })));
+    const { data, error } = await sbClient().rpc('salvar_obra',
+      { p_obra: oid, p_dados: montarPayload(), p_versao: obraVersao });
+    if (error && error.code === 'PGRST202') await enviarLegado(oid);
+    else if (error) throw error;
+    else if (obraAtual && obraAtual.id === oid) obraVersao = data;
     marcarSync('ok');
   } catch (e) {
-    marcarSync('erro', (e && (e.message || e.error_description || e.hint)) || String(e));
+    if (e && e.code === '40001') {
+      marcarSync('erro', 'a obra foi alterada em outro lugar — recarregue a página antes de continuar');
+      alert('Esta obra foi alterada em outra aba ou por outra pessoa.\n\nSuas últimas alterações NÃO foram salvas. Recarregue a página para ver a versão atual.');
+    } else {
+      marcarSync('erro', (e && (e.message || e.error_description || e.hint)) || String(e));
+    }
     console.error('Falha ao sincronizar:', e);
+  } finally {
+    _enviando = false;
+    if (_reenviar) { _reenviar = false; enviarTudo(); }
   }
 }
 
