@@ -1284,7 +1284,7 @@ textarea { resize: vertical; min-height: 60px; }
         <div class="card warn">
           <div class="card-label">Saldo restante MO</div>
           <div class="card-value" id="mo-saldo">R$ 87.510</div>
-          <div class="card-sub">teto R$ 115.000</div>
+          <div class="card-sub">teto <span class="js-mo-teto">—</span></div>
         </div>
         <div class="card info">
           <div class="card-label">Próximo pagamento est.</div>
@@ -1313,7 +1313,7 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
 
       <!-- barra de consumo do teto -->
-      <div class="sect-title">Consumo do teto de R$ 115.000</div>
+      <div class="sect-title">Consumo do teto de <span class="js-mo-teto">—</span></div>
       <div class="progress-wrap">
         <div id="mo-bar-pago" class="progress-medido" style="width:24%">R$ 27.490</div>
         <div id="mo-bar-prev" class="progress-prev"   style="left:24%;width:20%"></div>
@@ -1361,7 +1361,7 @@ textarea { resize: vertical; min-height: 60px; }
 
       <!-- POR ITEM DE SERVIÇO -->
       <div id="mo-panel-itens" class="mo-panel" style="display:none;">
-        <div class="alert alert-info">Distribuição dos pagamentos pelos itens do orçamento Barros Rezende. Teto total: R$ 115.000.</div>
+        <div class="alert alert-info">Distribuição dos pagamentos pelos itens do orçamento Barros Rezende. Teto total: <span class="js-mo-teto">—</span>.</div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -1379,7 +1379,7 @@ textarea { resize: vertical; min-height: 60px; }
             <tfoot>
               <tr>
                 <td colspan="2" style="font-weight:600;">Total</td>
-                <td class="right" style="font-weight:600;">R$ 115.000</td>
+                <td class="right js-mo-teto" style="font-weight:600;">—</td>
                 <td class="right" style="font-weight:600;color:var(--green);" id="mo-itens-pago">—</td>
                 <td class="right" style="font-weight:600;color:var(--amber);" id="mo-itens-saldo">—</td>
                 <td colspan="2"></td>
@@ -1391,7 +1391,7 @@ textarea { resize: vertical; min-height: 60px; }
 
       <!-- PROJEÇÃO -->
       <div id="mo-panel-projecao" class="mo-panel" style="display:none;">
-        <div class="alert alert-info">Estimativa dos próximos pagamentos de MO baseada no avanço físico previsto no tracker. Valores proporcionais ao orçamento Barros Rezende (teto R$ 115.000).</div>
+        <div class="alert alert-info">Estimativa dos próximos pagamentos de MO baseada no avanço físico previsto no tracker. Valores proporcionais ao orçamento Barros Rezende (teto <span class="js-mo-teto">—</span>).</div>
         <div class="table-wrap">
           <table>
             <thead>
@@ -1427,10 +1427,8 @@ textarea { resize: vertical; min-height: 60px; }
             </div>
             <div class="form-group">
               <label>Destinatário</label>
-              <select id="mo-inp-dest">
-                <option value="fabio">Fábio de Barros da Silva</option>
-                <option value="outro">Outro (descrever)</option>
-              </select>
+              <input type="text" id="mo-inp-dest" list="mo-dest-lista" placeholder="Nome de quem recebeu" />
+              <datalist id="mo-dest-lista"></datalist>
             </div>
             <div class="form-group">
               <label>Valor (R$)</label>
@@ -1720,7 +1718,8 @@ const VERSOES = [
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
 let   STORAGE_KEY = 'tracker_obra';   // redefinida por obra em abrirObra()
-let BASE_OBRA   = 372888;
+let BASE_OBRA   = 0;
+let ORCAMENTO   = 0;   // custo total (PCI) da obra aberta
 let MED_PCT     = 25.35;
 let MED_VAL     = 94324.54;
 
@@ -1917,6 +1916,7 @@ async function abrirObra(id) {
   localStorage.setItem('obra_ultima', id);
   STORAGE_KEY = 'tracker_obra_' + id;
   BASE_OBRA   = Number(obraAtual.base_obra) || 0;
+  ORCAMENTO   = Number(obraAtual.orcamento) || 0;
   MO_TETO     = Number(obraAtual.mo_teto)   || 0;
   marcarSync('baixando');
   await baixarDados();
@@ -2052,7 +2052,7 @@ function renderObraBar() {
       '<span class="obra-tag">' + esc(o.tag) + '</span>' + papel + '</button>';
   }).join('');
   h += '<button class="obra-tab novo" onclick="mostrarNovaObra(false)">+ Nova obra</button>';
-  if (podeEditar && semDados()) {
+  if (podeEditar && semDados() && localStorage.getItem('tracker_obra_vinicius_v2')) {
     h += '<button class="obra-tab novo" onclick="importarDadosLocais()">Importar dados desta página</button>';
   }
   h += '<span class="sync-badge" id="sync-badge"></span>';
@@ -2199,8 +2199,8 @@ const HISTORICO_DEFAULT = [
   { data:'03/07/2026', desc:'PLS 2ª medição entregue — acumulado 25,35% (17,12% nesta etapa)', deltaPct:17.12, deltaVal:63701.54, prev:false, obs:'PLS assinada pelo RT João Carlos e por Vinícius em 06/07/2026. Supra 35% + Alvenaria 40% + Impermeab. 60% + Elétrica 30% + Hidráulica 20% + Esgoto 30% + Outros 20%.' },
 ];
 
-let itens     = JSON.parse(JSON.stringify(ITENS_DEFAULT));
-let historico = JSON.parse(JSON.stringify(HISTORICO_DEFAULT));
+let itens     = [];
+let historico = [];
 
 function salvar() {
   espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
@@ -2278,7 +2278,7 @@ function buildTable() {
         <td style="color:var(--text3);font-size:12px">${item.id}</td>
         <td${obsAttr}>${esc(item.desc)}${novoBadge}${isPrev?' <span style="font-size:11px;color:var(--text3)">(prev.)</span>':''}</td>
         <td class="right" style="color:var(--text2)">${fmtP(item.pciPct)}</td>
-        <td class="right" style="color:var(--text2)">${fmt(item.pciPct/100*495000)}</td>
+        <td class="right" style="color:var(--text2)">${fmt(item.pciPct/100*ORCAMENTO)}</td>
         <td class="center"><span class="badge ${cls}">${lbl}</span></td>
         <td class="center">${execLabel}</td>
         <td>${barHTML}</td>`;
@@ -2510,8 +2510,8 @@ function limparPrevisoes() {
   salvar(); buildTable(); buildLog();
 }
 function confirmarLimparHistorico() {
-  if(confirm('Remover registros manuais? Os registros originais permanecem.')) {
-    historico=JSON.parse(JSON.stringify(HISTORICO_DEFAULT)); salvar(); buildLog();
+  if(confirm('Apagar TODO o histórico desta obra? Esta ação não pode ser desfeita.')) {
+    historico=[]; salvar(); buildLog();
   }
 }
 function exportarDados() {
@@ -2543,7 +2543,7 @@ function showTab(t, el) {
 }
 
 /* ══ MÃO DE OBRA ══════════════════════════════════════════════ */
-let MO_TETO = 115000;
+let MO_TETO = 0;
 
 const MO_ITENS_DEF = [
   { id:1,  desc:'Serviços preliminares / barracão',         orcado:1358  },
@@ -2590,7 +2590,7 @@ const MO_PROJECAO_DEF = [
   { id:16, desc:'Concretagem varanda',          orcado:2859,  prevPct:100, quando:'Final' },
 ];
 
-let moPagamentos = JSON.parse(JSON.stringify(MO_PAGAMENTOS_DEF));
+let moPagamentos = [];
 
 function salvarMO() {
   espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
@@ -2718,10 +2718,10 @@ function buildMOProjecao() {
   const alerta = document.getElementById('mo-proj-alerta');
   if (totalFuturo > MO_TETO) {
     alerta.className = 'alert alert-warn';
-    alerta.textContent = `⚠️ Projeção total (pago R$ ${Math.round(pago).toLocaleString('pt-BR')} + estimado R$ ${Math.round(totalProj).toLocaleString('pt-BR')}) = R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} — ultrapassa o teto de R$ 115.000 em R$ ${Math.round(totalFuturo-MO_TETO).toLocaleString('pt-BR')}.`;
+    alerta.textContent = `⚠️ Projeção total (pago R$ ${Math.round(pago).toLocaleString('pt-BR')} + estimado R$ ${Math.round(totalProj).toLocaleString('pt-BR')}) = R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} — ultrapassa o teto de ${fmt(MO_TETO)} em R$ ${Math.round(totalFuturo-MO_TETO).toLocaleString('pt-BR')}.`;
   } else {
     alerta.className = 'alert alert-ok';
-    alerta.textContent = `✅ Projeção total dentro do teto: R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} de R$ 115.000 (sobra R$ ${Math.round(MO_TETO-totalFuturo).toLocaleString('pt-BR')}).`;
+    alerta.textContent = `✅ Projeção total dentro do teto: R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} de ${fmt(MO_TETO)} (sobra R$ ${Math.round(MO_TETO-totalFuturo).toLocaleString('pt-BR')}).`;
   }
 }
 
@@ -2829,6 +2829,9 @@ function buildDesembolso() {
 }
 
 function buildAllMO() {
+  const dl = document.getElementById('mo-dest-lista');
+  if (dl) dl.innerHTML = [...new Set(moPagamentos.map(p => p.dest).filter(Boolean))].map(d => '<option value="' + esc(d) + '">').join('');
+  document.querySelectorAll('.js-mo-teto').forEach(e => e.textContent = fmt(MO_TETO));
   buildMOCards();
   buildMOPagamentos();
   buildMOItens();
@@ -2847,18 +2850,18 @@ function showMoTab(t, el) {
 
 function registrarPagamentoMO() {
   const data  = document.getElementById('mo-inp-data').value;
-  const dest  = document.getElementById('mo-inp-dest');
+  const dest  = document.getElementById('mo-inp-dest').value.trim();
   const valor = parseFloat(document.getElementById('mo-inp-valor').value.replace(',','.'));
   const tipo  = document.getElementById('mo-inp-tipo').value;
   const itemId= parseInt(document.getElementById('mo-inp-item').value) || null;
   const ref   = document.getElementById('mo-inp-ref').value.trim();
   const msg   = document.getElementById('mo-msg');
 
-  if (!data || isNaN(valor) || valor <= 0) {
-    msg.textContent='Preencha data e valor.'; msg.className='msg error'; return;
+  if (!data || !dest || isNaN(valor) || valor <= 0) {
+    msg.textContent='Preencha data, destinatário e valor.'; msg.className='msg error'; return;
   }
   const dateStr = new Date(data+'T12:00:00').toLocaleDateString('pt-BR');
-  const destNome = dest.options[dest.selectedIndex].text;
+  const destNome = dest;
   moPagamentos.push({
     id: moPagamentos.length + 1,
     data: dateStr, dest: destNome,
@@ -2927,7 +2930,7 @@ const MAT_DEF = [
   { id:24, data:'09/06/2026', desc:'Instalação padrão elétrica',         cat:'Elétrico',         forn:'Charles',                        ref:'',                  valor:550,     pago:'sim' },
 ];
 
-let materiais = JSON.parse(JSON.stringify(MAT_DEF));
+let materiais = [];
 
 function salvarMat() {
   espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
@@ -3067,7 +3070,7 @@ const MEDICOES_DEF = [
   { num:2, data:'03/07/2026', pctCaixa:17.12, valor:63701.54, ref:'PLS assinada RT João Carlos + Vinícius 06/07/2026 · pago pela CAIXA', itens:'Supra 35% + Alvenaria 40% + Impermeab 60% + Elétrica 30% + Hidráulica 20% + Esgoto 100% + Outros 20%', confirmada:true },
 ];
 
-let medicoesConfirmadas = JSON.parse(JSON.stringify(MEDICOES_DEF));
+let medicoesConfirmadas = [];
 
 function salvarMedicoes() {
   espelharLocal(); atualizarTimestamp(); sincronizarNuvem();
@@ -3104,7 +3107,7 @@ function buildMedicoesConfirmadas() {
       <td class="right">${fmt(acum)}</td>
       <td class="center"><span class="badge b-medido">Confirmado ✓</span></td>
       <td class="center admin-only">
-        ${idx >= MEDICOES_DEF.length ? `<button class="btn btn-danger btn-sm" onclick="removerMedicao(${idx})">✕</button>` : '<span style="color:var(--text3);font-size:11px">base</span>'}
+        ${podeEditar ? `<button class="btn btn-danger btn-sm" onclick="removerMedicao(${idx})">✕</button>` : ''}
       </td>
     `;
     tb.appendChild(tr);
@@ -3129,7 +3132,8 @@ function buildMedicoesConfirmadas() {
   if (cMedido) cMedido.textContent = fmtP(totalPct);
   if (cMedSub) {
     const ultima = medicoesConfirmadas[medicoesConfirmadas.length - 1];
-    cMedSub.textContent = isAdmin
+    cMedSub.textContent = !ultima ? 'nenhuma medição confirmada'
+      : isAdmin
       ? `${fmt(total)} · ${medicoesConfirmadas.length}ª med. ${ultima.data}`
       : `${medicoesConfirmadas.length}ª med. ${ultima.data}`;
   }
