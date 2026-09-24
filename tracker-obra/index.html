@@ -135,15 +135,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .login-opt .opt-icon { font-size: 20px; flex-shrink: 0; }
 .login-opt .opt-title { font-size: 14px; font-weight: 500; color: var(--text); }
 .login-opt .opt-sub   { font-size: 12px; color: var(--text2); }
-.pwd-wrap { display: none; flex-direction: column; gap: 8px; margin-bottom: 1rem; }
-.pwd-wrap.visible { display: flex; }
-.pwd-wrap input {
-  width: 100%; padding: 10px 12px; font-size: 14px;
-  border: 1px solid var(--border); border-radius: var(--radius);
-  background: var(--surface); color: var(--text); font-family: inherit;
-  text-align: center; letter-spacing: 4px;
-}
-.pwd-wrap input:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(55,138,221,0.15); }
 .btn-login {
   width: 100%; padding: 10px; font-size: 14px; font-weight: 500;
   background: var(--blue-mid); color: #fff; border: none;
@@ -1728,11 +1719,7 @@ const VERSOES = [
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
-const ADMIN_HASH  = '9cb3c126406a1b510b3b615d1c0fb9a511bf73b4699cdfcc1bbb66c73f09ef78'; // hash de "obra2026"
-const STORAGE_KEY_DONO = 'tracker_obra_vinicius_v2';
-const STORAGE_KEY_EXT  = 'tracker_obra_externo_v1';
-let   STORAGE_KEY = STORAGE_KEY_DONO;
-let   modoExterno = false;
+let   STORAGE_KEY = 'tracker_obra';   // redefinida por obra em abrirObra()
 let BASE_OBRA   = 372888;
 let MED_PCT     = 25.35;
 let MED_VAL     = 94324.54;
@@ -2141,125 +2128,8 @@ function numBR(s) {
   const v = parseFloat(t);
   return isFinite(v) ? v : 0;
 }
-function configExterna() {
-  try { return (JSON.parse(localStorage.getItem(STORAGE_KEY_EXT) || '{}')).config || null; }
-  catch(e) { return null; }
-}
-function mostrarExterno() {
-  const cfg = configExterna();
-  const w = document.getElementById('ext-wrap');
-  if (cfg) {
-    document.getElementById('ext-nome').value = cfg.nome || '';
-    document.getElementById('ext-orc').value  = cfg.orcamento || '';
-    document.getElementById('ext-fin').value  = cfg.base || '';
-    document.getElementById('ext-mo').value   = cfg.moTeto || '';
-    document.getElementById('ext-btn').textContent = 'Entrar no meu controle';
-  }
-  w.classList.add('visible');
-  document.getElementById('ext-nome').focus();
-}
-function criarControleExterno() {
-  const nome = document.getElementById('ext-nome').value.trim();
-  const orc  = numBR(document.getElementById('ext-orc').value);
-  const fin  = numBR(document.getElementById('ext-fin').value) || orc;
-  const moT  = numBR(document.getElementById('ext-mo').value)  || Math.round(orc * 0.25);
-  const err  = document.getElementById('login-error');
-  if (!nome) { err.textContent = 'Informe o nome da obra ou do responsável.'; return; }
-  if (orc <= 0) { err.textContent = 'Informe o orçamento total da obra.'; return; }
-  err.textContent = '';
-
-  const anterior = configExterna();
-  const mudouBase = !anterior || anterior.orcamento !== orc || anterior.base !== fin || anterior.moTeto !== moT || anterior.nome !== nome;
-  let estado = {};
-  try { estado = JSON.parse(localStorage.getItem(STORAGE_KEY_EXT) || '{}'); } catch(e) {}
-  estado.config = { nome, orcamento: orc, base: fin, moTeto: moT, criadoEm: (anterior && anterior.criadoEm) || new Date().toISOString() };
-  if (!estado.itens) {
-    estado.itens = ITENS_DEFAULT.map(i => ({ id:i.id, desc:i.desc, pciPct:i.pciPct, exec:0, locked:false, prevExec:0, obs:'' }));
-    estado.historico = []; estado.moPagamentos = []; estado.materiais = []; estado.medicoesConfirmadas = [];
-  }
-  estado.savedAt = new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY_EXT, JSON.stringify(estado));
-  entrarExterno();
-}
-function entrarExterno() {
-  const cfg = configExterna();
-  if (!cfg) { mostrarExterno(); return; }
-  modoExterno = true;
-  isAdmin = true;                       // vê os próprios valores em R$
-  STORAGE_KEY = STORAGE_KEY_EXT;
-  BASE_OBRA = cfg.base || cfg.orcamento;
-  MO_TETO   = cfg.moTeto || 0;
-  MED_PCT   = 0;
-  MED_VAL   = 0;
-  itens     = ITENS_DEFAULT.map(i => ({ id:i.id, desc:i.desc, pciPct:i.pciPct, exec:0, locked:false, prevExec:0, obs:'' }));
-  historico = []; moPagamentos = []; materiais = []; medicoesConfirmadas = [];
-  sessionStorage.setItem('obra_role', 'externo');
-  iniciarApp();
-  aplicarModoExterno();
-}
-const TABS_EXTERNO = ['recursos','mo','mat','registrar','tabela'];
-function aplicarModoExterno() {
-  const cfg = configExterna() || {};
-  document.querySelectorAll('[onclick^="showTab("]').forEach(b => {
-    const m = /showTab\('([\w-]+)'/.exec(b.getAttribute('onclick') || '');
-    if (m) b.style.display = TABS_EXTERNO.includes(m[1]) ? '' : 'none';
-  });
-  const h1 = document.querySelector('.header-left h1');
-  const p  = document.querySelector('.header-left p');
-  if (h1) h1.textContent = 'Controle de custos — ' + (cfg.nome || 'minha obra');
-  if (p)  p.innerHTML = 'Controle pessoal · dados salvos apenas neste navegador · <span id="app-version-badge" style="font-weight:600;color:var(--blue)">v' + APP_VERSION + '</span>';
-  const badge = document.getElementById('badge-role');
-  if (badge) { badge.textContent = 'Minha obra'; badge.className = 'badge-role badge-admin'; }
-  document.querySelectorAll('.dono-only').forEach(el => el.style.display = 'none');
-  const bloco = document.getElementById('ds-nota-base');
-  if (bloco) bloco.innerHTML = 'Percentuais calculados sobre o <strong>recurso disponível para a obra: ' + fmt(BASE_OBRA) + '</strong>.';
-  showTab('recursos', document.querySelector('[onclick^="showTab(\'recursos\'"]'));
-}
-
 /* ══ AUTENTICAÇÃO ══════════════════════════════════════════ */
 let isAdmin = false;
-
-async function hashSenha(str) {
-  const buf  = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-  return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
-}
-
-function mostrarSenha() {
-  document.getElementById('pwd-wrap').classList.add('visible');
-  document.getElementById('pwd-input').focus();
-}
-
-async function entrarAdmin() {
-  const pwd = document.getElementById('pwd-input').value;
-  if (!pwd) return;
-  const h = await hashSenha(pwd);
-  if (h === ADMIN_HASH) {
-    isAdmin = true;
-    sessionStorage.setItem('obra_role', 'admin');
-    iniciarApp();
-  } else {
-    document.getElementById('login-error').textContent = 'Senha incorreta. Tente novamente.';
-    document.getElementById('pwd-input').value = '';
-    document.getElementById('pwd-input').focus();
-  }
-}
-
-function entrarVisitante() {
-  isAdmin = false;
-  sessionStorage.setItem('obra_role', 'visitor');
-  iniciarApp();
-}
-
-function sair() {
-  sessionStorage.removeItem('obra_role');
-  if (modoExterno) { location.reload(); return; }
-  isAdmin = false;
-  document.getElementById('app').style.display = 'none';
-  document.getElementById('login-screen').style.display = 'flex';
-  document.getElementById('pwd-wrap').classList.remove('visible');
-  document.getElementById('pwd-input').value = '';
-  document.getElementById('login-error').textContent = '';
-}
 
 function iniciarApp() {
   document.getElementById('login-screen').style.display = 'none';
@@ -2631,16 +2501,13 @@ function confirmarPrevisao(id) {
   const delta = item.pciPct*(item.exec-ant)/100;
   historico.push({ data:new Date().toLocaleDateString('pt-BR'), desc:`${item.desc} confirmado (${ant}% → ${item.exec}%)`, deltaPct:delta, deltaVal:delta/100*BASE_OBRA, prev:false, obs:'Confirmado via ação rápida' });
   salvar(); buildTable(); buildLog();
-  publishToGitHub(`Previsão confirmada: ${item.desc} → ${item.exec}%`);
 }
 function cancelarPrevisao(id) {
   const item = itens.find(i=>i.id===id); if(item){item.prevExec=0;} salvar(); buildTable();
-  publishToGitHub(`Previsão cancelada: item ${id}`);
 }
 function limparPrevisoes() {
   itens.forEach(i=>{i.prevExec=0;}); historico=historico.filter(h=>!h.prev);
   salvar(); buildTable(); buildLog();
-  publishToGitHub('Previsões limpas');
 }
 function confirmarLimparHistorico() {
   if(confirm('Remover registros manuais? Os registros originais permanecem.')) {
@@ -2893,8 +2760,8 @@ function buildDesembolso() {
   const p1 = v => v.toFixed(1).replace('.', ',') + '%';
   const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
 
-  // rótulos da base (mudam no modo controle próprio)
-  set('ds-base-sub', modoExterno ? 'de ' + fmt(BASE_OBRA) : 'de R$ 372.888 (454.488 − 81.600 terreno)');
+  // rótulos da base
+  set('ds-base-sub', 'de ' + fmt(BASE_OBRA));
   set('ds-base-th',  '(' + fmt(BASE_OBRA) + ')');
 
   // cards
@@ -3011,7 +2878,6 @@ function removerPagMO(idx) {
   const desc = moPagamentos[idx].dest;
   moPagamentos.splice(idx, 1);
   salvarMO(); buildAllMO();
-  publishToGitHub(`MO: pagamento removido — ${desc}`);
 }
 
 /* ══ MATERIAIS ════════════════════════════════════════════════ */
@@ -3170,90 +3036,6 @@ function showMatTab(t, el) {
   if (t==='lista')     buildMatLista();
 }
 
-/* ══ GITHUB AUTO-PUBLISH ══════════════════════════════════════ */
-const GH_TOKEN = ''; // removido — a gravação agora é no Supabase, não no repositório
-const GH_REPO  = 'Vinibeginer/tracker-obra';
-const GH_FILE  = 'index.html';
-
-function gerarBlocoItens() {
-  const linhas = itens.map(i => {
-    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `  { id:${i.id}, desc:'${esc(i.desc)}', pciPct:${i.pciPct}, exec:${i.exec}, locked:${i.locked}, prevExec:${i.prevExec}, obs:'${esc(i.obs||'')}' ${i.novo?', novo:true':''} }`;
-  }).join(',\n');
-  return `const ITENS_DEFAULT = [\n${linhas},\n];`;
-}
-function gerarBlocoHistorico() {
-  const linhas = historico.map(h => {
-    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `  { data:'${esc(h.data)}', desc:'${esc(h.desc)}', deltaPct:${h.deltaPct}, deltaVal:${h.deltaVal}, prev:${h.prev}, obs:'${esc(h.obs||'')}' }`;
-  }).join(',\n');
-  return `const HISTORICO_DEFAULT = [\n${linhas},\n];`;
-}
-function gerarBlocoMO() {
-  const linhas = moPagamentos.map((p,i) => {
-    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `  { id:${i+1}, data:'${esc(p.data)}', dest:'${esc(p.dest)}', ref:'${esc(p.ref)}', valor:${p.valor}, tipo:'${p.tipo}', itemId:${p.itemId===null?'null':p.itemId} }`;
-  }).join(',\n');
-  return `const MO_PAGAMENTOS_DEF = [\n${linhas},\n];`;
-}
-function gerarBlocoMedicoes() {
-  const linhas = medicoesConfirmadas.map(m => {
-    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `  { num:${m.num}, data:'${esc(m.data)}', pctCaixa:${m.pctCaixa}, valor:${m.valor}, ref:'${esc(m.ref||'')}', itens:'${esc(m.itens||'')}', confirmada:true }`;
-  }).join(',\n');
-  return `const MEDICOES_DEF = [\n${linhas},\n];`;
-}
-function gerarBlocoMateriais() {
-  const linhas = materiais.map((m,i) => {
-    const esc = s => String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `  { id:${i+1}, data:'${esc(m.data)}', desc:'${esc(m.desc)}', cat:'${esc(m.cat)}', forn:'${esc(m.forn)}', ref:'${esc(m.ref)}', valor:${m.valor}, pago:'${m.pago}' }`;
-  }).join(',\n');
-  return `const MAT_DEF = [\n${linhas},\n];`;
-}
-function substituirBloco(h, marcador, novoBloco) {
-  const inicio = h.indexOf(marcador);
-  if (inicio === -1) return h;
-  const fim = h.indexOf('];', inicio) + 2;
-  return h.slice(0, inicio) + novoBloco + h.slice(fim);
-}
-
-let _ghPublishing = false;
-async function publishToGitHub(msg) {
-  return false;   // desativado: os dados agora vivem no Supabase
-  /* eslint-disable no-unreachable */
-  if (_ghPublishing) return false;
-  _ghPublishing = true;
-  try {
-    const meta = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
-      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Accept': 'application/vnd.github.v3+json' }
-    }).then(r => r.json());
-    let h = atob(meta.content.replace(/\n/g,''));
-    h = substituirBloco(h, 'const ITENS_DEFAULT',     gerarBlocoItens());
-    h = substituirBloco(h, 'const HISTORICO_DEFAULT', gerarBlocoHistorico());
-    h = substituirBloco(h, 'const MO_PAGAMENTOS_DEF', gerarBlocoMO());
-    h = substituirBloco(h, 'const MEDICOES_DEF',      gerarBlocoMedicoes());
-    h = substituirBloco(h, 'const MAT_DEF',           gerarBlocoMateriais());
-    const resp = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${GH_FILE}`, {
-      method: 'PUT',
-      headers: { 'Authorization': `token ${GH_TOKEN}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: msg || 'Tracker: atualização automática', content: btoa(unescape(encodeURIComponent(h))), sha: meta.sha })
-    });
-    return resp.ok;
-  } catch(e) { console.error('GH error:', e); return false; }
-  finally { _ghPublishing = false; }
-}
-
-function ghPublish(elId, msg) {
-  const el = document.getElementById(elId);
-  if (el) { el.textContent = (el.textContent||'') + ' Publicando...'; el.className = 'msg'; }
-  publishToGitHub(msg).then(ok => {
-    if (el) {
-      el.textContent = ok ? '✓ Salvo e publicado no GitHub!' : '✓ Salvo localmente (erro ao publicar).';
-      setTimeout(() => { el.textContent = ''; }, 4000);
-    }
-  });
-}
-
 function registrarMaterial() {
   const data  = document.getElementById('mat-inp-data').value;
   const desc  = document.getElementById('mat-inp-desc').value.trim();
@@ -3276,7 +3058,6 @@ function removerMat(idx) {
   const desc = materiais[idx].desc;
   materiais.splice(idx,1);
   salvarMat(); buildAllMat();
-  publishToGitHub(`Material removido: ${desc}`);
 }
 
 
@@ -3408,7 +3189,6 @@ function removerMedicao(idx) {
   salvarMedicoes();
   buildMedicoesConfirmadas();
   recalcular();
-  publishToGitHub(`Medição removida — índice ${idx}`);
 }
 
 /* ══ VERSÕES ══════════════════════════════════════════════════ */
