@@ -367,6 +367,8 @@ textarea { resize: vertical; min-height: 60px; }
 .b-adiant   { background: var(--amber-bg); color: var(--amber); }
 .b-material { background: var(--surface2); color: var(--text2); }
 .b-mo       { background: var(--blue-bg);  color: var(--blue);  }
+/* conteúdo escrito para a obra original: some nas demais obras */
+body:not(.obra-original-on) .obra-original { display: none !important; }
 </style>
 </head>
 <body>
@@ -507,7 +509,7 @@ textarea { resize: vertical; min-height: 60px; }
       <span style="color:var(--blue-mid);font-weight:600" id="bar-label-exec"></span>
     </div>
     <div class="legend admin-only">
-      <span><div class="dot" style="background:var(--green-mid)"></div><strong>Confirmado CAIXA</strong> — 8,23% (1ª medição)</span>
+      <span><div class="dot" style="background:var(--green-mid)"></div><strong>Confirmado CAIXA</strong></span>
       <span><div class="dot" style="background:var(--blue-mid);opacity:0.55"></div>Executado físico não medido (% CAIXA estimado)</span>
       <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>Saldo a liberar</span>
     </div>
@@ -515,14 +517,14 @@ textarea { resize: vertical; min-height: 60px; }
     <!-- TABS -->
     <div class="tabs" id="tabs-wrap">
       <button class="tab-btn active" onclick="showTab('tabela',this)">Itens da obra</button>
-      <button class="tab-btn admin-tab" onclick="showTab('cronograma',this)">Cronograma</button>
+      <button class="tab-btn admin-tab obra-original" onclick="showTab('cronograma',this)">Cronograma</button>
       <button class="tab-btn admin-tab" onclick="showTab('recursos',this)">Recursos</button>
       <button class="tab-btn admin-tab" onclick="showTab('registrar',this)">Registrar avanço</button>
       <button class="tab-btn admin-tab" onclick="showTab('medicao',this)">Resumo de medição</button>
       <button class="tab-btn" onclick="showTab('historico',this)">Histórico</button>
       <button class="tab-btn admin-tab" onclick="showTab('mo',this)">Mão de obra</button>
       <button class="tab-btn admin-tab" onclick="showTab('mat',this)">Materiais</button>
-      <button class="tab-btn admin-tab" onclick="showTab('contrato',this)">Contrato</button>
+      <button class="tab-btn admin-tab obra-original" onclick="showTab('contrato',this)">Contrato</button>
       <button class="tab-btn admin-tab" onclick="showTab('versoes',this)">Versões</button>
     </div>
 
@@ -545,7 +547,7 @@ textarea { resize: vertical; min-height: 60px; }
     </div>
 
     <!-- CRONOGRAMA (admin) -->
-    <div id="tab-cronograma" class="panel">
+    <div id="tab-cronograma" class="panel obra-original">
 
       <!-- cards resumo -->
       <div class="cards" style="margin-bottom:1.25rem;">
@@ -810,7 +812,7 @@ textarea { resize: vertical; min-height: 60px; }
     <div id="tab-recursos" class="panel">
 
       <!-- cards topo -->
-      <div class="cards" style="margin-bottom:1.25rem;">
+      <div class="cards obra-original" style="margin-bottom:1.25rem;">
         <div class="card info">
           <div class="card-label">Financiamento CAIXA (obra)</div>
           <div class="card-value">R$ 372.888</div>
@@ -947,6 +949,7 @@ textarea { resize: vertical; min-height: 60px; }
 
       <!-- barra de composição -->
       <div class="dono-only">
+      <div class="obra-original">
       <div class="sect-title">Composição dos recursos para a obra</div>
       <div class="progress-wrap" style="height:32px;">
         <div class="progress-medido" style="width:75.33%;font-size:12px;">CAIXA 75,3% · R$ 372.888</div>
@@ -1113,6 +1116,7 @@ textarea { resize: vertical; min-height: 60px; }
       </div>
 
       </div><!-- /dono-only -->
+      </div><!-- /obra-original -->
     </div><!-- /tab-recursos -->
 
     <!-- REGISTRAR (admin) -->
@@ -1235,7 +1239,7 @@ textarea { resize: vertical; min-height: 60px; }
       <!-- estimativa próxima medição -->
       <div class="sect-title">Estimativa — próxima medição (pendente vistoria)</div>
       <div class="alert alert-warn" style="margin-bottom:0.75rem;">
-        Valores <strong>estimados</strong> — itens executados × % PCI, aplicado diretamente sobre a base CAIXA (R$ 372.888), validado com os valores reais liberados nas medições 1 e 2. Linhas em cinza = previsão pendente. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
+        Valores <strong>estimados</strong> — itens executados × % PCI, aplicado diretamente sobre a base CAIXA (<span class="js-base-obra">—</span>). Linhas em cinza = previsão pendente. Só se tornam confirmados após vistoria e desbloqueio pela CAIXA.
       </div>
       <div class="table-wrap">
         <table class="resumo-table">
@@ -1286,7 +1290,7 @@ textarea { resize: vertical; min-height: 60px; }
           <div class="card-value" id="mo-saldo">R$ 87.510</div>
           <div class="card-sub">teto <span class="js-mo-teto">—</span></div>
         </div>
-        <div class="card info">
+        <div class="card info obra-original">
           <div class="card-label">Próximo pagamento est.</div>
           <div class="card-value" id="mo-proximo">R$ 23.271</div>
           <div class="card-sub">alvenaria + pilares</div>
@@ -1327,8 +1331,8 @@ textarea { resize: vertical; min-height: 60px; }
       <!-- tabs internas MO -->
       <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
         <button class="tab-btn active" id="mo-tab-btn-pagos"    onclick="showMoTab('pagos',this)">Pagamentos realizados</button>
-        <button class="tab-btn"        id="mo-tab-btn-itens"    onclick="showMoTab('itens',this)">Por item de serviço</button>
-        <button class="tab-btn"        id="mo-tab-btn-projecao" onclick="showMoTab('projecao',this)">Projeção de custos</button>
+        <button class="tab-btn obra-original" id="mo-tab-btn-itens"    onclick="showMoTab('itens',this)">Por item de serviço</button>
+        <button class="tab-btn obra-original" id="mo-tab-btn-projecao" onclick="showMoTab('projecao',this)">Projeção de custos</button>
         <button class="tab-btn"        id="mo-tab-btn-novo"     onclick="showMoTab('novo',this)">Registrar pagamento</button>
       </div>
 
@@ -1608,7 +1612,7 @@ textarea { resize: vertical; min-height: 60px; }
     </div><!-- /tab-mat -->
 
     <!-- CONTRATO (admin) -->
-    <div id="tab-contrato" class="panel">
+    <div id="tab-contrato" class="panel obra-original">
       <div class="cards" style="margin-bottom:1rem;">
         <div class="card"><div class="card-label">Contrato</div><div class="card-value" style="font-size:14px;">1.4444.2662250-5</div><div class="card-sub">assinado 06/05/2026</div></div>
         <div class="card"><div class="card-label">Financiamento CAIXA</div><div class="card-value" style="font-size:18px;">R$ 454.488</div><div class="card-sub">taxa 11,39% a.a. · SAC · TR</div></div>
@@ -1656,7 +1660,7 @@ textarea { resize: vertical; min-height: 60px; }
 
 <script>
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '2.03';
+const APP_VERSION = '2.04';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -1714,6 +1718,7 @@ const VERSOES = [
   { v:'2.01', data:'24/07/2026', autor:'Claude', desc:'Tela de login ganha a opção Consultar obra: com o código (OBR-XXXXXX) qualquer pessoa vê o avanço físico das etapas, sem login e sem nenhum dado financeiro' },
   { v:'2.02', data:'24/07/2026', autor:'Claude', desc:'Recuperação de senha: link Esqueci a senha na tela de login envia e-mail (Supabase) com link seguro; ao voltar, abre tela para definir nova senha' },
   { v:'2.03', data:'11/08/2026', autor:'Claude', desc:'Correção da fórmula de conversão CAIXA: fator ×0,7533 removido — validado com valores reais das medições 1 (R$30.622,88 / 8,23% PCI) e 2 (R$63.701,54 / 17,12% PCI na etapa), confirmando que % CAIXA = % PCI executado, aplicado direto sobre a base R$372.888' },
+  { v:'2.04', data:'24/09/2026', autor:'Claude', desc:'Gravação na nuvem em transação única com aviso de conflito entre abas/editores · textos escapados (proteção contra HTML injetado) · remoção do login antigo, modo externo e publicação no GitHub · orçamento e teto de MO vindos da obra aberta · cronograma, contrato e orçamento de MO por item exibidos só na obra original' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
@@ -1727,7 +1732,8 @@ let MED_VAL     = 94324.54;
 const SB_URL  = 'https://qazbyotibhqrwbuvmdza.supabase.co';
 const SB_ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhemJ5b3RpYmhxcndidXZtZHphIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQ4MjEzNjcsImV4cCI6MjEwMDM5NzM2N30.YzlSaoUz1G2Or0hIn_yYOghbqRGSj7t1oUcIWohBnps';
 
-let obraVersao = null;   // obras.atualizado_em do último carregamento/gravação
+let obraVersao = null;
+let obraOriginal = false;   // obras.detalhes_fixos: mostra o conteúdo escrito para a obra original   // obras.atualizado_em do último carregamento/gravação
 let sb = null, usuario = null, obraAtual = null, minhasObras = [], podeEditar = false, modoCadastro = false;
 
 function sbClient() {
@@ -1923,13 +1929,18 @@ async function abrirObra(id) {
   iniciarApp();
   ajustarCabecalhoObra();
   renderObraBar();
+  // se a aba/sub-aba aberta não existe nesta obra, volta para a inicial
+  const aberta = document.querySelector('.panel.active');
+  if (aberta && aberta.classList.contains('obra-original')) showTab('tabela', document.querySelector('[onclick^="showTab(\'tabela\'"]'));
+  if (!obraOriginal) showMoTab('pagos', document.getElementById('mo-tab-btn-pagos'));
+  document.querySelectorAll('.js-base-obra').forEach(e => e.textContent = fmt(BASE_OBRA));
   marcarSync('ok');
 }
 
 async function baixarDados() {
   const c = sbClient(), oid = obraAtual.id;
   const [ob, it, mt, mo, md, hs] = await Promise.all([
-    c.from('obras').select('atualizado_em').eq('id', oid).single(),
+    c.from('obras').select('*').eq('id', oid).single(),
     c.from('itens').select('*').eq('obra_id', oid).order('ordem'),
     c.from('materiais').select('*').eq('obra_id', oid).order('id'),
     c.from('mo_pagamentos').select('*').eq('obra_id', oid).order('id'),
@@ -1937,6 +1948,8 @@ async function baixarDados() {
     c.from('historico').select('*').eq('obra_id', oid).order('id')
   ]);
   obraVersao = (ob.data && ob.data.atualizado_em) || null;
+  obraOriginal = !!(ob.data && ob.data.detalhes_fixos);
+  document.body.classList.toggle('obra-original-on', obraOriginal);
   itens = (it.data || []).map(r => ({ id: r.ordem || r.id, desc: r.descricao, pciPct: +r.pci_pct,
     exec: +r.exec_pct, locked: !!r.travado, prevExec: +r.prev_pct, obs: r.obs || '' }));
   materiais = (mt.data || []).map(r => ({ id: r.id, data: brData(r.data), desc: r.descricao,
@@ -2614,7 +2627,7 @@ function buildMOCards() {
   const pago   = totalMOPago();
   const saldo  = MO_TETO - pago;
   const pct    = Math.round(pago / MO_TETO * 100);
-  const proxVal = MO_ITENS_DEF.find(i=>i.id===4)?.orcado || 0;
+  const proxVal = obraOriginal ? (MO_ITENS_DEF.find(i=>i.id===4)?.orcado || 0) : 0;
 
   document.getElementById('mo-total-pago').textContent     = fmt(pago);
   document.getElementById('mo-total-pago-pct').textContent  = pct + '% do teto';
@@ -2728,7 +2741,7 @@ function buildMOProjecao() {
 function buildMOSelectItens() {
   const sel = document.getElementById('mo-inp-item');
   sel.innerHTML = '<option value="">Selecionar item...</option>';
-  MO_ITENS_DEF.forEach(i => {
+  (obraOriginal ? MO_ITENS_DEF : itens).forEach(i => {
     const o = document.createElement('option');
     o.value = i.id; o.textContent = `${i.id}. ${i.desc}`;
     sel.appendChild(o);
@@ -2761,6 +2774,8 @@ function buildDesembolso() {
   const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
 
   // rótulos da base
+  const nota = document.getElementById('ds-nota-base');
+  if (nota && !obraOriginal) nota.innerHTML = 'Percentuais calculados sobre o <strong>recurso disponível para a obra: ' + fmt(BASE_OBRA) + '</strong>.';
   set('ds-base-sub', 'de ' + fmt(BASE_OBRA));
   set('ds-base-th',  '(' + fmt(BASE_OBRA) + ')');
 
