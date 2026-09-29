@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Obra — Vinícius Ornellas</title>
-<link rel="stylesheet" href="css/app.css?v=2.04">
+<link rel="stylesheet" href="css/app.css?v=2.05">
 </head>
 <body>
 
@@ -918,26 +918,58 @@
     <!-- MÃO DE OBRA (admin) -->
     <div id="tab-mo" class="panel">
 
-      <!-- cards resumo MO -->
+      <!-- frentes de serviço -->
+      <div class="mo-frentes" id="mo-frentes"></div>
+
+      <!-- resumo por frente (aba Geral) -->
+      <div id="mo-resumo" style="display:none;margin-bottom:1.25rem;">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Frente</th>
+                <th class="right">Teto</th>
+                <th class="right">Pago</th>
+                <th class="right">Saldo</th>
+                <th class="right">Consumo</th>
+                <th class="center">Pagamentos</th>
+              </tr>
+            </thead>
+            <tbody id="mo-resumo-tbody"></tbody>
+            <tfoot>
+              <tr>
+                <td style="font-weight:600;">Total</td>
+                <td class="right" style="font-weight:600;" id="mo-resumo-teto">—</td>
+                <td class="right" style="font-weight:600;color:var(--green);" id="mo-resumo-pago">—</td>
+                <td class="right" style="font-weight:600;color:var(--amber);" id="mo-resumo-saldo">—</td>
+                <td colspan="2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- cards resumo MO (frente selecionada) -->
       <div class="cards" style="margin-bottom:1.25rem;">
         <div class="card ok">
-          <div class="card-label">Total pago MO</div>
-          <div class="card-value" id="mo-total-pago">R$ 27.490</div>
+          <div class="card-label" id="mo-lbl-pago">Total pago MO</div>
+          <div class="card-value" id="mo-total-pago">—</div>
           <div class="card-sub" id="mo-total-pago-pct">24,0% do teto</div>
         </div>
         <div class="card warn">
           <div class="card-label">Saldo restante MO</div>
-          <div class="card-value" id="mo-saldo">R$ 87.510</div>
-          <div class="card-sub">teto <span class="js-mo-teto">—</span></div>
+          <div class="card-value" id="mo-saldo">—</div>
+          <div class="card-sub">teto <span class="js-mo-teto">—</span>
+            <button class="btn-link admin-only" id="mo-editar-teto" onclick="editarTetoMO()">editar</button></div>
         </div>
-        <div class="card info obra-original">
+        <div class="card info obra-original so-p1">
           <div class="card-label">Próximo pagamento est.</div>
-          <div class="card-value" id="mo-proximo">R$ 23.271</div>
+          <div class="card-value" id="mo-proximo">—</div>
           <div class="card-sub">alvenaria + pilares</div>
         </div>
         <div class="card dash">
           <div class="card-label">Consumo do teto</div>
-          <div class="card-value" id="mo-consumo-pct">24,0%</div>
+          <div class="card-value" id="mo-consumo-pct">—</div>
           <div class="card-sub" id="mo-consumo-bar-wrap" style="margin-top:6px;">
             <div style="background:var(--border);border-radius:4px;height:6px;width:100%;">
               <div id="mo-consumo-bar" style="height:6px;border-radius:4px;background:var(--green-mid);width:24%;transition:width 0.4s;"></div>
@@ -946,33 +978,35 @@
         </div>
         <div class="card">
           <div class="card-label">Material (fora do teto)</div>
-          <div class="card-value" style="font-size:16px;">R$ 1.500</div>
-          <div class="card-sub">madeira/fôrma · set/2025</div>
+          <div class="card-value" style="font-size:16px;" id="mo-material">—</div>
+          <div class="card-sub">lançado como material nesta aba</div>
         </div>
         <div class="card">
           <div class="card-label">Pagamentos registrados</div>
-          <div class="card-value" id="mo-n-pagamentos" style="font-size:18px;">7</div>
+          <div class="card-value" id="mo-n-pagamentos" style="font-size:18px;">—</div>
           <div class="card-sub">comprovantes</div>
         </div>
       </div>
 
       <!-- barra de consumo do teto -->
+      <div id="mo-bloco-teto">
       <div class="sect-title">Consumo do teto de <span class="js-mo-teto">—</span></div>
       <div class="progress-wrap">
-        <div id="mo-bar-pago" class="progress-medido" style="width:24%">R$ 27.490</div>
-        <div id="mo-bar-prev" class="progress-prev"   style="left:24%;width:20%"></div>
+        <div id="mo-bar-pago" class="progress-medido" style="width:0"></div>
+        <div id="mo-bar-prev" class="progress-prev"   style="left:0;width:0"></div>
       </div>
       <div class="legend">
         <span><div class="dot" style="background:var(--green-mid)"></div>Pago</span>
         <span><div class="dot-dash"></div>Próximos pagamentos estimados</span>
         <span><div class="dot" style="background:var(--surface2);border:1px solid var(--border2)"></div>Saldo disponível</span>
       </div>
+      </div><!-- /mo-bloco-teto -->
 
       <!-- tabs internas MO -->
       <div style="display:flex;gap:0;border-bottom:1px solid var(--border);margin-bottom:1rem;flex-wrap:wrap;">
         <button class="tab-btn active" id="mo-tab-btn-pagos"    onclick="showMoTab('pagos',this)">Pagamentos realizados</button>
-        <button class="tab-btn obra-original" id="mo-tab-btn-itens"    onclick="showMoTab('itens',this)">Por item de serviço</button>
-        <button class="tab-btn obra-original" id="mo-tab-btn-projecao" onclick="showMoTab('projecao',this)">Projeção de custos</button>
+        <button class="tab-btn obra-original so-p1" id="mo-tab-btn-itens"    onclick="showMoTab('itens',this)">Por item de serviço</button>
+        <button class="tab-btn obra-original so-p1" id="mo-tab-btn-projecao" onclick="showMoTab('projecao',this)">Projeção de custos</button>
         <button class="tab-btn"        id="mo-tab-btn-novo"     onclick="showMoTab('novo',this)">Registrar pagamento</button>
       </div>
 
@@ -988,6 +1022,7 @@
                 <th>Referência</th>
                 <th class="right">Valor</th>
                 <th class="center">Tipo</th>
+                <th class="mo-col-frente">Frente</th>
                 <th class="center">Ação</th>
               </tr>
             </thead>
@@ -996,7 +1031,7 @@
               <tr>
                 <td colspan="4" style="font-weight:600;">Total MO pago</td>
                 <td class="right" style="font-weight:600;color:var(--green);" id="mo-tfoot-total">—</td>
-                <td colspan="2"></td>
+                <td colspan="3"></td>
               </tr>
             </tfoot>
           </table>
@@ -1023,7 +1058,7 @@
             <tfoot>
               <tr>
                 <td colspan="2" style="font-weight:600;">Total</td>
-                <td class="right js-mo-teto" style="font-weight:600;">—</td>
+                <td class="right" style="font-weight:600;" id="mo-itens-orcado">—</td>
                 <td class="right" style="font-weight:600;color:var(--green);" id="mo-itens-pago">—</td>
                 <td class="right" style="font-weight:600;color:var(--amber);" id="mo-itens-saldo">—</td>
                 <td colspan="2"></td>
@@ -1087,7 +1122,11 @@
               </select>
             </div>
           </div>
-          <div class="form-grid" style="grid-template-columns:1fr 1fr;">
+          <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
+            <div class="form-group">
+              <label>Frente de serviço</label>
+              <select id="mo-inp-frente"></select>
+            </div>
             <div class="form-group">
               <label>Item do serviço</label>
               <select id="mo-inp-item">
@@ -1298,13 +1337,13 @@
   </div><!-- /container -->
 </div><!-- /app -->
 
-<script src="js/config.js?v=2.04"></script>
-<script src="js/nuvem.js?v=2.04"></script>
-<script src="js/app.js?v=2.04"></script>
-<script src="js/mao-de-obra.js?v=2.04"></script>
-<script src="js/materiais.js?v=2.04"></script>
-<script src="js/medicoes.js?v=2.04"></script>
-<script src="js/init.js?v=2.04"></script>
+<script src="js/config.js?v=2.05"></script>
+<script src="js/nuvem.js?v=2.05"></script>
+<script src="js/app.js?v=2.05"></script>
+<script src="js/mao-de-obra.js?v=2.05"></script>
+<script src="js/materiais.js?v=2.05"></script>
+<script src="js/medicoes.js?v=2.05"></script>
+<script src="js/init.js?v=2.05"></script>
 </body>
 </html>
 

@@ -1,5 +1,36 @@
 /* ══ MÃO DE OBRA ══════════════════════════════════════════════ */
-let MO_TETO = 0;
+let MO_TETO = 0;   // soma dos tetos das frentes com teto (andares)
+
+/* frentes de serviço: cada pagamento pertence a uma; 'outros' não tem teto */
+const MO_FRENTES = [
+  { id:'p1',     nome:'1º andar',        teto:true  },
+  { id:'p2',     nome:'2º andar',        teto:true  },
+  { id:'p3',     nome:'3º andar',        teto:true  },
+  { id:'outros', nome:'Outros serviços', teto:false },
+];
+let moTetos  = {};        // { p1: 91055.3, p2: 70000, p3: 70000 } — vem de obras.mo_tetos
+let moFrente = 'geral';   // frente exibida na aba ('geral' = resumo de todas)
+
+function frenteDe(p)   { return p.frente || 'p1'; }
+function nomeFrente(f) { const x = MO_FRENTES.find(y => y.id === f); return x ? x.nome : f; }
+function temTeto(f)    { return f === 'geral' || !!(MO_FRENTES.find(y => y.id === f) || {}).teto; }
+function pagamentosDa(f) { return f === 'geral' ? moPagamentos : moPagamentos.filter(p => frenteDe(p) === f); }
+function tetoDa(f) {
+  if (f === 'geral') return MO_FRENTES.filter(x => x.teto).reduce((s, x) => s + (moTetos[x.id] || 0), 0);
+  return moTetos[f] || 0;
+}
+/* pago que consome teto: MO e adiantamentos; em 'geral', só os andares */
+function pagoDa(f) {
+  const lista = f === 'geral' ? moPagamentos.filter(p => temTeto(frenteDe(p))) : pagamentosDa(f);
+  return lista.filter(p => p.tipo === 'mo' || p.tipo === 'adiantamento').reduce((s, p) => s + p.valor, 0);
+}
+function carregarTetosMO(obra) {
+  const t = (obra && obra.mo_tetos) || {};
+  moTetos = Object.keys(t).length ? Object.fromEntries(Object.entries(t).map(([k, v]) => [k, Number(v) || 0]))
+                                  : { p1: Number(obra && obra.mo_teto) || MO_TETO || 0 };
+  MO_TETO = tetoDa('geral');
+  moFrente = 'geral';
+}
 
 const MO_ITENS_DEF = [
   { id:1,  desc:'Serviços preliminares / barracão',         orcado:1358  },
@@ -67,48 +98,135 @@ function totalMaterial() {
 }
 
 function buildMOCards() {
-  const pago   = totalMOPago();
-  const saldo  = MO_TETO - pago;
-  const pct    = Math.round(pago / MO_TETO * 100);
-  const proxVal = obraOriginal ? (MO_ITENS_DEF.find(i=>i.id===4)?.orcado || 0) : 0;
+  const f      = moFrente;
+  const lista  = pagamentosDa(f);
+  const teto   = tetoDa(f);
+  const comTeto = temTeto(f) && teto > 0;
+  const pago   = temTeto(f) ? pagoDa(f) : lista.filter(p => p.tipo !== 'material').reduce((s, p) => s + p.valor, 0);
+  const saldo  = teto - pago;
+  const pct    = comTeto ? Math.round(pago / teto * 100) : 0;
+  const proxVal = obraOriginal && f === 'p1' ? (MO_ITENS_DEF.find(i=>i.id===4)?.orcado || 0) : 0;
+  const set = (id, txt) => { const e = document.getElementById(id); if (e) e.textContent = txt; };
 
-  document.getElementById('mo-total-pago').textContent     = fmt(pago);
-  document.getElementById('mo-total-pago-pct').textContent  = pct + '% do teto';
-  document.getElementById('mo-saldo').textContent          = fmt(saldo);
-  document.getElementById('mo-proximo').textContent        = fmt(proxVal);
-  document.getElementById('mo-consumo-pct').textContent    = pct + '%';
-  document.getElementById('mo-consumo-bar').style.width    = Math.min(pct,100) + '%';
-  document.getElementById('mo-consumo-bar').style.background = pct > 80 ? 'var(--red-mid)' : pct > 60 ? 'var(--amber-mid)' : 'var(--green-mid)';
-  document.getElementById('mo-n-pagamentos').textContent   = moPagamentos.length;
+  set('mo-lbl-pago', f === 'geral' ? 'Total pago MO (andares)' : 'Total pago — ' + nomeFrente(f));
+  set('mo-total-pago',    fmt(pago));
+  set('mo-total-pago-pct', comTeto ? pct + '% do teto' : 'fora do orçamento de MO');
+  set('mo-saldo',         comTeto ? fmt(saldo) : '—');
+  set('mo-proximo',       fmt(proxVal));
+  set('mo-consumo-pct',   comTeto ? pct + '%' : '—');
+  set('mo-material',      fmt(lista.filter(p => p.tipo === 'material').reduce((s, p) => s + p.valor, 0)));
+  set('mo-n-pagamentos',  lista.length);
+  document.querySelectorAll('.js-mo-teto').forEach(e => e.textContent = comTeto ? fmt(teto) : 'sem teto');
+  const bar = document.getElementById('mo-consumo-bar');
+  bar.style.width      = Math.min(pct, 100) + '%';
+  bar.style.background = pct > 80 ? 'var(--red-mid)' : pct > 60 ? 'var(--amber-mid)' : 'var(--green-mid)';
+  document.getElementById('mo-bloco-teto').style.display = comTeto ? '' : 'none';
+  const ed = document.getElementById('mo-editar-teto');
+  if (ed) ed.style.visibility = (podeEditar && f !== 'geral' && temTeto(f)) ? 'visible' : 'hidden';
+  const cardSaldo = document.getElementById('mo-saldo').closest('.card');
+  if (cardSaldo) cardSaldo.style.borderColor = comTeto && saldo < 0 ? 'var(--red)' : '';
 
-  const barPct  = Math.min(pago / MO_TETO * 100, 100);
-  const projPct = Math.min(proxVal / MO_TETO * 100, 100 - barPct);
+  const barPct  = comTeto ? Math.min(pago / teto * 100, 100) : 0;
+  const projPct = comTeto ? Math.min(proxVal / teto * 100, 100 - barPct) : 0;
   document.getElementById('mo-bar-pago').style.width = barPct + '%';
   document.getElementById('mo-bar-pago').textContent  = barPct > 6 ? fmt(pago) : '';
   document.getElementById('mo-bar-prev').style.left   = barPct + '%';
   document.getElementById('mo-bar-prev').style.width  = projPct + '%';
 }
 
+/* botões das frentes + tabela de resumo (Geral) */
+function buildMOFrentes() {
+  const wrap = document.getElementById('mo-frentes');
+  if (!wrap) return;
+  const botao = (id, nome, extra) =>
+    '<button class="mo-frente-btn' + (moFrente === id ? ' active' : '') + '" onclick="selecionarFrenteMO(\'' + id + '\')">' +
+    esc(nome) + (extra ? '<span class="mo-frente-val">' + extra + '</span>' : '') + '</button>';
+  wrap.innerHTML = botao('geral', 'Geral') + MO_FRENTES.map(x => {
+    const n = pagamentosDa(x.id).length;
+    return botao(x.id, x.nome, n ? n + ' pag.' : '');
+  }).join('');
+
+  document.getElementById('mo-resumo').style.display = moFrente === 'geral' ? '' : 'none';
+  document.querySelectorAll('.so-p1').forEach(e => e.style.display = moFrente === 'p1' ? '' : 'none');
+  const tb = document.getElementById('mo-resumo-tbody');
+  tb.innerHTML = '';
+  let tTeto = 0, tPago = 0;
+  MO_FRENTES.forEach(x => {
+    const teto = x.teto ? tetoDa(x.id) : 0;
+    const pago = x.teto ? pagoDa(x.id) : pagamentosDa(x.id).filter(p => p.tipo !== 'material').reduce((s, p) => s + p.valor, 0);
+    const pct  = teto > 0 ? Math.round(pago / teto * 100) : null;
+    tTeto += teto; tPago += pago;
+    const tr = document.createElement('tr');
+    tr.className = 'mo-resumo-linha';
+    tr.onclick = () => selecionarFrenteMO(x.id);
+    tr.innerHTML = `
+      <td style="font-weight:500">${esc(x.nome)}</td>
+      <td class="right" style="color:var(--text2)">${x.teto ? fmt(teto) : 'sem teto'}</td>
+      <td class="right" style="font-weight:600;color:var(--green)">${pago ? fmt(pago) : '—'}</td>
+      <td class="right" style="color:${teto - pago < 0 ? 'var(--red)' : 'var(--amber)'}">${x.teto ? fmt(teto - pago) : '—'}</td>
+      <td class="right">${pct === null ? '—' : pct + '%'}</td>
+      <td class="center">${pagamentosDa(x.id).length}</td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('mo-resumo-teto').textContent  = fmt(tTeto);
+  document.getElementById('mo-resumo-pago').textContent  = fmt(tPago);
+  const andares = MO_FRENTES.filter(x => x.teto).reduce((s, x) => s + pagoDa(x.id), 0);
+  document.getElementById('mo-resumo-saldo').textContent = fmt(tTeto - andares);
+}
+
+function selecionarFrenteMO(f) {
+  moFrente = f;
+  const sel = document.getElementById('mo-inp-frente');
+  if (sel && f !== 'geral') sel.value = f;
+  // detalhamento por item e projeção seguem o orçamento do 1º andar
+  const ativa = document.querySelector('[id^="mo-tab-btn-"].active');
+  if (ativa && ativa.classList.contains('so-p1') && f !== 'p1') showMoTab('pagos', document.getElementById('mo-tab-btn-pagos'));
+  buildAllMO();
+}
+
+async function editarTetoMO() {
+  if (!podeEditar || !temTeto(moFrente) || moFrente === 'geral') return;
+  const atual = tetoDa(moFrente);
+  const txt = prompt('Teto de mão de obra do ' + nomeFrente(moFrente) + ' (R$):', String(atual).replace('.', ','));
+  if (txt === null) return;
+  const v = numBR(txt);
+  if (!(v > 0)) { alert('Valor inválido.'); return; }
+  const novos = { ...moTetos, [moFrente]: v };
+  const soma  = MO_FRENTES.filter(x => x.teto).reduce((s, x) => s + (novos[x.id] || 0), 0);
+  marcarSync('salvando');
+  const { error } = await sbClient().from('obras').update({ mo_tetos: novos, mo_teto: soma }).eq('id', obraAtual.id);
+  if (error) { marcarSync('erro', error.message); alert('Não foi possível salvar o teto: ' + error.message); return; }
+  moTetos = novos; MO_TETO = soma; obraAtual.mo_teto = soma;
+  marcarSync('ok');
+  buildAllMO();
+}
+
 function buildMOPagamentos() {
   const tb = document.getElementById('mo-pagamentos-tbody');
   tb.innerHTML = '';
+  const geral = moFrente === 'geral';
+  document.querySelectorAll('.mo-col-frente').forEach(e => e.style.display = geral ? '' : 'none');
+  let n = 0;
   moPagamentos.forEach((p, idx) => {
+    if (!geral && frenteDe(p) !== moFrente) return;
+    n++;
     const [cls, lbl] = p.tipo === 'mo' ? ['b-quitado','MO'] :
                        p.tipo === 'adiantamento' ? ['b-adiant','Adiantamento'] :
                        ['b-material','Material'];
     const tr = document.createElement('tr');
     tr.innerHTML = `
-      <td style="color:var(--text3);font-size:12px">${idx+1}</td>
+      <td style="color:var(--text3);font-size:12px">${n}</td>
       <td style="white-space:nowrap">${esc(p.data)}</td>
       <td style="color:var(--text2)">${esc(p.dest)}</td>
       <td style="color:var(--text2);font-size:12px">${esc(p.ref)}</td>
       <td class="right" style="font-weight:600;color:var(--green)">${fmt(p.valor)}</td>
       <td class="center"><span class="badge ${cls}">${lbl}</span></td>
+      <td style="font-size:12px;color:var(--text2);${geral ? '' : 'display:none'}">${esc(nomeFrente(frenteDe(p)))}</td>
       <td class="center"><button class="btn btn-ghost btn-sm" onclick="removerPagMO(${idx})" style="color:var(--red);border-color:var(--red);">✕</button></td>
     `;
     tb.appendChild(tr);
   });
-  const total = totalMOPago();
+  const total = pagamentosDa(moFrente).filter(p => p.tipo !== 'material').reduce((s, p) => s + p.valor, 0);
   document.getElementById('mo-tfoot-total').textContent = fmt(total);
 }
 
@@ -118,7 +236,7 @@ function buildMOItens() {
   let totalPago = 0;
 
   MO_ITENS_DEF.forEach(item => {
-    const pagos = moPagamentos.filter(p => p.itemId === item.id && p.tipo !== 'material');
+    const pagos = pagamentosDa('p1').filter(p => p.itemId === item.id && p.tipo !== 'material');
     const pago  = pagos.reduce((s,p)=>s+p.valor,0);
     const saldo = Math.max(0, item.orcado - pago);
     const pct   = Math.min(Math.round(pago / item.orcado * 100), 100);
@@ -143,18 +261,21 @@ function buildMOItens() {
     tb.appendChild(tr);
   });
 
+  const orcado = MO_ITENS_DEF.reduce((s, i) => s + i.orcado, 0);
+  document.getElementById('mo-itens-orcado').textContent = fmt(orcado);
   document.getElementById('mo-itens-pago').textContent  = fmt(totalPago);
-  document.getElementById('mo-itens-saldo').textContent = fmt(MO_TETO - totalPago);
+  document.getElementById('mo-itens-saldo').textContent = fmt(orcado - totalPago);
 }
 
 function buildMOProjecao() {
   const tb = document.getElementById('mo-projecao-tbody');
   tb.innerHTML = '';
   let totalProj = 0;
-  const pago = totalMOPago();
+  const pago = pagoDa('p1');
+  const teto = tetoDa('p1');
 
   MO_PROJECAO_DEF.forEach(item => {
-    const jaFoi = moPagamentos.filter(p=>p.itemId===item.id && p.tipo!=='material').reduce((s,p)=>s+p.valor,0);
+    const jaFoi = pagamentosDa('p1').filter(p=>p.itemId===item.id && p.tipo!=='material').reduce((s,p)=>s+p.valor,0);
     const estimado = Math.max(0, (item.orcado * item.prevPct / 100) - jaFoi);
     totalProj += estimado;
     const tr = document.createElement('tr');
@@ -172,12 +293,12 @@ function buildMOProjecao() {
   document.getElementById('mo-proj-total').textContent = fmt(totalProj);
   const totalFuturo = pago + totalProj;
   const alerta = document.getElementById('mo-proj-alerta');
-  if (totalFuturo > MO_TETO) {
+  if (totalFuturo > teto) {
     alerta.className = 'alert alert-warn';
-    alerta.textContent = `⚠️ Projeção total (pago R$ ${Math.round(pago).toLocaleString('pt-BR')} + estimado R$ ${Math.round(totalProj).toLocaleString('pt-BR')}) = R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} — ultrapassa o teto de ${fmt(MO_TETO)} em R$ ${Math.round(totalFuturo-MO_TETO).toLocaleString('pt-BR')}.`;
+    alerta.textContent = `⚠️ Projeção total (pago R$ ${Math.round(pago).toLocaleString('pt-BR')} + estimado R$ ${Math.round(totalProj).toLocaleString('pt-BR')}) = R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} — ultrapassa o teto de ${fmt(teto)} em R$ ${Math.round(totalFuturo-teto).toLocaleString('pt-BR')}.`;
   } else {
     alerta.className = 'alert alert-ok';
-    alerta.textContent = `✅ Projeção total dentro do teto: R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} de ${fmt(MO_TETO)} (sobra R$ ${Math.round(MO_TETO-totalFuturo).toLocaleString('pt-BR')}).`;
+    alerta.textContent = `✅ Projeção total dentro do teto: R$ ${Math.round(totalFuturo).toLocaleString('pt-BR')} de ${fmt(teto)} (sobra R$ ${Math.round(teto-totalFuturo).toLocaleString('pt-BR')}).`;
   }
 }
 
@@ -228,7 +349,7 @@ function buildDesembolso() {
   set('ds-mat-sub', materiais.length + ' compra(s) · ' + p1(relMat) + ' do gasto');
   set('ds-mo',    fmt(mo));
   set('ds-mo-pct-big', p1(pctMO));
-  set('ds-mo-sub', Math.round(mo / MO_TETO * 100) + '% do teto contratual');
+  set('ds-mo-sub', MO_TETO > 0 ? Math.round(pagoDa('geral') / MO_TETO * 100) + '% do teto dos andares' : '—');
   set('ds-total', fmt(total));
   set('ds-total-pct-big', p1(pctTotal));
   set('ds-pct',    p1(pctTotal));
@@ -289,7 +410,12 @@ function buildDesembolso() {
 function buildAllMO() {
   const dl = document.getElementById('mo-dest-lista');
   if (dl) dl.innerHTML = [...new Set(moPagamentos.map(p => p.dest).filter(Boolean))].map(d => '<option value="' + esc(d) + '">').join('');
-  document.querySelectorAll('.js-mo-teto').forEach(e => e.textContent = fmt(MO_TETO));
+  const sel = document.getElementById('mo-inp-frente');
+  if (sel && !sel.options.length) {
+    sel.innerHTML = MO_FRENTES.map(x => '<option value="' + x.id + '">' + esc(x.nome) + '</option>').join('');
+    sel.value = moFrente === 'geral' ? 'p1' : moFrente;
+  }
+  buildMOFrentes();
   buildMOCards();
   buildMOPagamentos();
   buildMOItens();
@@ -324,9 +450,10 @@ function registrarPagamentoMO() {
     id: moPagamentos.length + 1,
     data: dateStr, dest: destNome,
     ref: ref || (tipo==='adiantamento' ? 'Adiantamento' : tipo==='material' ? 'Material' : 'Pagamento MO'),
-    valor, tipo, itemId
+    valor, tipo, itemId,
+    frente: document.getElementById('mo-inp-frente').value || 'p1'
   });
-  msg.textContent = `✓ Pagamento de ${fmt(valor)} registrado.`;
+  msg.textContent = `✓ Pagamento de ${fmt(valor)} registrado em ${nomeFrente(moPagamentos[moPagamentos.length-1].frente)}.`;
   msg.className = 'msg';
   setTimeout(()=>{msg.textContent='';},3000);
   document.getElementById('mo-inp-valor').value = '';
