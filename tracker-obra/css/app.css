@@ -357,3 +357,22 @@ textarea { resize: vertical; min-height: 60px; }
 .b-mo       { background: var(--blue-bg);  color: var(--blue);  }
 /* conteúdo escrito para a obra original: some nas demais obras */
 body:not(.obra-original-on) .obra-original { display: none !important; }
+
+/* ══ MÃO DE OBRA — FRENTES DE SERVIÇO ═══════════════════════ */
+.mo-frentes { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 1rem; }
+.mo-frente-btn {
+  padding: 7px 14px; font-size: 13px; font-weight: 500; font-family: inherit;
+  color: var(--text2); background: var(--surface); cursor: pointer;
+  border: 1px solid var(--border); border-radius: 999px;
+}
+.mo-frente-btn:hover { border-color: var(--blue-mid); }
+.mo-frente-btn.active { background: var(--blue-bg); color: var(--blue); border-color: var(--blue-mid); }
+.mo-frente-btn .mo-frente-val { font-weight: 400; font-size: 11px; color: var(--text3); margin-left: 6px; }
+.mo-frente-btn.active .mo-frente-val { color: var(--blue); }
+.btn-link { background: none; border: none; padding: 0 0 0 6px; font: inherit; font-size: 11px; color: var(--blue); text-decoration: underline; cursor: pointer; }
+.mo-resumo-linha { cursor: pointer; }
+.mo-resumo-linha:hover td { background: var(--surface2); }
+@media (max-width: 768px) {
+  .mo-frentes { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .mo-frente-btn { flex-shrink: 0; white-space: nowrap; font-size: 12px; padding: 6px 12px; }
+}

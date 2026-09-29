@@ -202,7 +202,7 @@ async function abrirObra(id) {
   // se a aba/sub-aba aberta não existe nesta obra, volta para a inicial
   const aberta = document.querySelector('.panel.active');
   if (aberta && aberta.classList.contains('obra-original')) showTab('tabela', document.querySelector('[onclick^="showTab(\'tabela\'"]'));
-  if (!obraOriginal) showMoTab('pagos', document.getElementById('mo-tab-btn-pagos'));
+  showMoTab('pagos', document.getElementById('mo-tab-btn-pagos'));
   document.querySelectorAll('.js-base-obra').forEach(e => e.textContent = fmt(BASE_OBRA));
   marcarSync('ok');
 }
@@ -219,13 +219,14 @@ async function baixarDados() {
   ]);
   obraVersao = (ob.data && ob.data.atualizado_em) || null;
   obraOriginal = !!(ob.data && ob.data.detalhes_fixos);
+  carregarTetosMO(ob.data);
   document.body.classList.toggle('obra-original-on', obraOriginal);
   itens = (it.data || []).map(r => ({ id: r.ordem || r.id, desc: r.descricao, pciPct: +r.pci_pct,
     exec: +r.exec_pct, locked: !!r.travado, prevExec: +r.prev_pct, obs: r.obs || '' }));
   materiais = (mt.data || []).map(r => ({ id: r.id, data: brData(r.data), desc: r.descricao,
     cat: r.categoria, forn: r.fornecedor, ref: r.referencia, valor: +r.valor, pago: r.pago ? 'sim' : 'nao' }));
   moPagamentos = (mo.data || []).map(r => ({ id: r.id, data: brData(r.data), dest: r.destinatario,
-    ref: r.referencia, valor: +r.valor, tipo: r.tipo, itemId: r.item_id }));
+    ref: r.referencia, valor: +r.valor, tipo: r.tipo, itemId: r.item_id, frente: r.frente || 'p1' }));
   medicoesConfirmadas = (md.data || []).map(r => ({ num: r.numero, data: brData(r.data),
     pctCaixa: +r.pct_caixa, valor: +r.valor, ref: r.referencia, itens: r.itens_desc, confirmada: !!r.confirmada }));
   historico = (hs.data || []).map(r => ({ data: r.data_txt || brData(r.data), desc: r.descricao,
@@ -283,7 +284,7 @@ function montarPayload(oid) {
     materiais: materiais.map(m => ({ ...o, data: isoData(m.data), descricao: m.desc,
       categoria: m.cat, fornecedor: m.forn, referencia: m.ref, valor: m.valor || 0, pago: (m.pago === 'sim' || m.pago === true) })),
     mo_pagamentos: moPagamentos.map(p => ({ ...o, data: isoData(p.data), destinatario: p.dest,
-      referencia: p.ref, valor: p.valor || 0, tipo: p.tipo || 'mo', item_id: p.itemId || null })),
+      referencia: p.ref, valor: p.valor || 0, tipo: p.tipo || 'mo', item_id: p.itemId || null, frente: p.frente || 'p1' })),
     medicoes: medicoesConfirmadas.map(m => ({ ...o, numero: m.num, data: isoData(m.data),
       pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada })),
     historico: historico.map(h => ({ ...o, data: isoData(h.data), data_txt: h.data,
