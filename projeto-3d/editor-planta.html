@@ -1152,6 +1152,15 @@ $('#b-export').onclick=()=>{
   $('#modal-img').src=url; $('#modal-dl').href=url; $('#modal-dl').download=`planta-mariara-${FLOOR_NAMES[ui.floor].toLowerCase().replace(/\W+/g,'-')}.png`; $('#modal').hidden=false;
 };
 $('#modal-close').onclick=()=>{ $('#modal').hidden=true; };
+// dentro do Claude o download passa pelo recurso "downloads"; fora dele (GitHub Pages) o link baixa direto
+let dlApi=null; (async()=>{ try{ dlApi = window.claude?.use ? await window.claude.use('downloads') : null; }catch(e){ dlApi=null; } })();
+$('#modal-dl').addEventListener('click',async e=>{
+  if(!dlApi) return;
+  e.preventDefault();
+  const a=$('#modal-dl'); const bin=atob(a.href.split(',')[1]); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); const blob=new Blob([bytes],{type:'image/png'});
+  try{ await dlApi.save({filename:a.download,data:blob}); toast('Imagem salva'); }
+  catch(err){ toast(err?.code==='declined'?'Download cancelado':'Não deu para baixar aqui. Clique com o botão direito na imagem e salve.'); }
+});
 
 // teclado
 addEventListener('keydown',e=>{
