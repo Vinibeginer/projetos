@@ -52,6 +52,8 @@
       const when = new Date(restored);
       DD.toast('Projeto restaurado do salvamento local (' + when.toLocaleString('pt-BR') + ').', 'info');
     }
+    // nuvem da obra (depois do login): carrega a versão salva e passa a salvar lá também
+    if (DD.cloud) DD.cloud.start();
     if (asBuiltUpdated) {
       DD.persist.save(DD.store.doc);
       DD.toast('Planta atualizada com as alterações de obra (as built).', 'ok');
