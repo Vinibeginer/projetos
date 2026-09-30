@@ -112,9 +112,36 @@ ST.clearImported();
 check('remover dados importados', !ST.hasData() && !store['dd.decor.casa.estrutura.v1']);
 off();
 
+// nuvem da obra: lê depois do login e grava para dono/editor (cliente Supabase simulado)
+(async () => {
+  const saved = [];
+  const mockClient = {
+    from: (t) => ({
+      select: () => ({ eq: (col, val) => ({ maybeSingle: async () => ({ data: t === 'projeto_estrutural' && val === 'obra-1' ? { dados: fixture } : null, error: null }) }) }),
+      upsert: async (row) => (saved.push(row), { error: null }),
+    }),
+  };
+  const auth = (papel) => ({ ready: Promise.resolve({ client: mockClient, user: { id: 'u1' }, obraId: 'obra-1', papel }) });
+  ST.clearImported();
+  const ok = await ST.cloud.load(auth('leitor'));
+  check('lê o projeto estrutural da nuvem após o login', ok && ST.hasData() && ST.source() === 'nuvem');
+  check('leitor não grava na nuvem', !ST.cloud.canSave());
+  ST.importData(fixture);
+  await ST.cloud.load(auth('editor'));
+  check('editor pode guardar o importado', ST.cloud.canSave());
+  const err = await ST.cloud.save();
+  check('guarda na nuvem', err === null && saved.length === 1 && saved[0].obra_id === 'obra-1' && saved[0].dados === fixture && ST.source() === 'nuvem');
+  check('sem cópia local depois de guardar', !store['dd.decor.casa.estrutura.v1']);
+  const none = await ST.cloud.load({ ready: Promise.resolve({ client: null, obraId: null }) });
+  check('sem login não quebra', none === false);
+  finish();
+})();
+
+function finish() {
 // o index.html público não pode ter os dados do projeto estrutural embutidos
 const pub = path.join(__dirname, '..', 'index.html');
 if (fs.existsSync(pub)) check('index.html público sem dados estruturais', !/window\.DD_STRUCT\s*=/.test(fs.readFileSync(pub, 'utf8')));
 
 console.log(bad ? `test-structure: ${bad} falha(s)` : 'test-structure: todos os testes ok');
 process.exit(bad ? 1 : 0);
+}

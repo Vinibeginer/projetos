@@ -3,6 +3,8 @@
 // Os dados NÃO ficam no repositório público (a prancha proíbe disponibilizá-los a terceiros): entram
 //   a) embutidos no build privado  → window.DD_STRUCT (python tools/build.py out.html --estrutura private/estrutura.json)
 //   b) importados pelo usuário      → arquivo .json guardado no navegador (DD.structure.importData)
+//   c) da nuvem da obra (Supabase)  → tabela projeto_estrutural, lida só por membros da obra depois do login
+//      (window.projetoAuth, de auth/sessao.js); dono e editores gravam com DD.structure.cloud.save()
 // Sem dados, o estúdio segue com a estrutura inferida da planta (paredes estruturais × vedação).
 // Coordenadas no mesmo sistema do documento: mm, origem no canto fundo-esquerdo do lote, +y para a rua.
 // Níveis: o 0,00 da estrutura é o piso do térreo (floor.level) — iguais aos da arquitetura.
@@ -14,7 +16,7 @@
     column: '#A0452D', columnInk: '#5C2415', beam: '#1F8A8A', beamFill: 'rgba(31,138,138,0.16)',
     footing: 'rgba(122,79,160,0.75)', footingFill: 'rgba(122,79,160,0.07)', erro: '#C0392B', alerta: '#D9822B',
   };
-  const S = { data: null, source: null, version: 0, cache: null, highlight: -1 };
+  const S = { data: null, raw: null, source: null, version: 0, cache: null, highlight: -1, auth: null };
 
   // ------------------------------------------------------------------ dados
   const num = (v) => typeof v === 'number' && isFinite(v);
@@ -55,14 +57,14 @@
   function load() {
     if (window.DD_STRUCT) {
       const r = validate(window.DD_STRUCT);
-      if (r.data) return setData(r.data, 'embutido');
+      if (r.data) return (S.raw = window.DD_STRUCT), setData(r.data, 'embutido');
       console.warn('[structure] dados embutidos inválidos:', r.error);
     }
     try {
       const txt = window.localStorage && window.localStorage.getItem(LS_KEY);
       if (!txt) return;
-      const r = validate(JSON.parse(txt));
-      if (r.data) setData(r.data, 'importado');
+      const raw = JSON.parse(txt), r = validate(raw);
+      if (r.data) (S.raw = raw), setData(r.data, 'importado');
     } catch (e) {
       console.warn('[structure] não foi possível ler os dados salvos', e);
     }
@@ -76,8 +78,64 @@
     } catch (e) {
       console.warn('[structure] não foi possível guardar no navegador', e);
     }
+    S.raw = raw;
     setData(r.data, 'importado');
     return null;
+  }
+
+  // ------------------------------------------------------------------ nuvem da obra (login do site)
+  const TABLE = 'projeto_estrutural';
+  /** Depois do login, lê o projeto estrutural da obra (se não houver dados embutidos ou importados). */
+  function loadCloud(auth) {
+    const a = auth || window.projetoAuth;
+    if (!a || !a.ready) return Promise.resolve(false);
+    return a.ready
+      .then((ctx) => {
+        S.auth = ctx;
+        if (!ctx || !ctx.client || !ctx.obraId) return false;
+        if (DD.events) DD.events.emit('structure:changed', { source: S.source }); // atualiza "Guardar na nuvem"
+        if (S.data) return false;
+        return ctx.client
+          .from(TABLE)
+          .select('dados')
+          .eq('obra_id', ctx.obraId)
+          .maybeSingle()
+          .then((res) => {
+            if (res.error) throw res.error;
+            if (!res.data || S.data) return false;
+            const r = validate(res.data.dados);
+            if (r.error) {
+              console.warn('[structure] dados da nuvem inválidos:', r.error);
+              return false;
+            }
+            S.raw = res.data.dados;
+            setData(r.data, 'nuvem');
+            return true;
+          });
+      })
+      .catch((e) => {
+        console.warn('[structure] não foi possível ler o projeto estrutural da nuvem', e);
+        return false;
+      });
+  }
+  const canSaveCloud = () => !!(S.auth && S.auth.client && S.auth.obraId && (S.auth.papel === 'dono' || S.auth.papel === 'editor') && S.raw && S.source !== 'nuvem');
+  /** Grava os dados atuais (importados) na nuvem da obra. → Promise<null | mensagem de erro> */
+  function saveCloud() {
+    if (!canSaveCloud()) return Promise.resolve('Só o dono ou editores da obra podem guardar, depois de importar o arquivo.');
+    return S.auth.client
+      .from(TABLE)
+      .upsert({ obra_id: S.auth.obraId, dados: S.raw, atualizado_em: new Date().toISOString() })
+      .then((res) => {
+        if (res.error) return res.error.message || 'Não foi possível guardar.';
+        try {
+          window.localStorage.removeItem(LS_KEY); // a cópia local não é mais necessária
+        } catch (e) {
+          /* sem armazenamento */
+        }
+        S.source = 'nuvem';
+        if (DD.events) DD.events.emit('structure:changed', { source: S.source });
+        return null;
+      });
   }
   function clearImported() {
     try {
@@ -86,7 +144,11 @@
       /* sem armazenamento */
     }
     if (window.DD_STRUCT) load();
-    else setData(null, null);
+    else {
+      S.raw = null;
+      setData(null, null);
+      loadCloud();
+    }
   }
 
   const floorIndex = (doc, floorId) => Math.max(0, doc.floors.findIndex((f) => f.id === floorId));
@@ -424,6 +486,7 @@
     clearImported,
     hasData: () => !!S.data,
     source: () => S.source,
+    cloud: { load: loadCloud, save: saveCloud, canSave: canSaveCloud, signedIn: () => !!(S.auth && S.auth.obraId) },
     version: () => S.version,
     info: () =>
       S.data
@@ -446,4 +509,5 @@
     markers3d,
   };
   load();
+  loadCloud();
 })();

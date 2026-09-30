@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<script src="../auth/sessao.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Estúdio de Decoração — Casa</title>
 <meta name="description" content="Ferramenta de decoração em 2D e 3D sobre a planta aprovada de uma casa (3 pavimentos, lote 9 × 20 m).">
@@ -8596,6 +8597,8 @@ kbd {
 // Os dados NÃO ficam no repositório público (a prancha proíbe disponibilizá-los a terceiros): entram
 //   a) embutidos no build privado  → window.DD_STRUCT (python tools/build.py out.html --estrutura private/estrutura.json)
 //   b) importados pelo usuário      → arquivo .json guardado no navegador (DD.structure.importData)
+//   c) da nuvem da obra (Supabase)  → tabela projeto_estrutural, lida só por membros da obra depois do login
+//      (window.projetoAuth, de auth/sessao.js); dono e editores gravam com DD.structure.cloud.save()
 // Sem dados, o estúdio segue com a estrutura inferida da planta (paredes estruturais × vedação).
 // Coordenadas no mesmo sistema do documento: mm, origem no canto fundo-esquerdo do lote, +y para a rua.
 // Níveis: o 0,00 da estrutura é o piso do térreo (floor.level) — iguais aos da arquitetura.
@@ -8607,7 +8610,7 @@ kbd {
     column: '#A0452D', columnInk: '#5C2415', beam: '#1F8A8A', beamFill: 'rgba(31,138,138,0.16)',
     footing: 'rgba(122,79,160,0.75)', footingFill: 'rgba(122,79,160,0.07)', erro: '#C0392B', alerta: '#D9822B',
   };
-  const S = { data: null, source: null, version: 0, cache: null, highlight: -1 };
+  const S = { data: null, raw: null, source: null, version: 0, cache: null, highlight: -1, auth: null };
 
   // ------------------------------------------------------------------ dados
   const num = (v) => typeof v === 'number' && isFinite(v);
@@ -8648,14 +8651,14 @@ kbd {
   function load() {
     if (window.DD_STRUCT) {
       const r = validate(window.DD_STRUCT);
-      if (r.data) return setData(r.data, 'embutido');
+      if (r.data) return (S.raw = window.DD_STRUCT), setData(r.data, 'embutido');
       console.warn('[structure] dados embutidos inválidos:', r.error);
     }
     try {
       const txt = window.localStorage && window.localStorage.getItem(LS_KEY);
       if (!txt) return;
-      const r = validate(JSON.parse(txt));
-      if (r.data) setData(r.data, 'importado');
+      const raw = JSON.parse(txt), r = validate(raw);
+      if (r.data) (S.raw = raw), setData(r.data, 'importado');
     } catch (e) {
       console.warn('[structure] não foi possível ler os dados salvos', e);
     }
@@ -8669,8 +8672,64 @@ kbd {
     } catch (e) {
       console.warn('[structure] não foi possível guardar no navegador', e);
     }
+    S.raw = raw;
     setData(r.data, 'importado');
     return null;
+  }
+
+  // ------------------------------------------------------------------ nuvem da obra (login do site)
+  const TABLE = 'projeto_estrutural';
+  /** Depois do login, lê o projeto estrutural da obra (se não houver dados embutidos ou importados). */
+  function loadCloud(auth) {
+    const a = auth || window.projetoAuth;
+    if (!a || !a.ready) return Promise.resolve(false);
+    return a.ready
+      .then((ctx) => {
+        S.auth = ctx;
+        if (!ctx || !ctx.client || !ctx.obraId) return false;
+        if (DD.events) DD.events.emit('structure:changed', { source: S.source }); // atualiza "Guardar na nuvem"
+        if (S.data) return false;
+        return ctx.client
+          .from(TABLE)
+          .select('dados')
+          .eq('obra_id', ctx.obraId)
+          .maybeSingle()
+          .then((res) => {
+            if (res.error) throw res.error;
+            if (!res.data || S.data) return false;
+            const r = validate(res.data.dados);
+            if (r.error) {
+              console.warn('[structure] dados da nuvem inválidos:', r.error);
+              return false;
+            }
+            S.raw = res.data.dados;
+            setData(r.data, 'nuvem');
+            return true;
+          });
+      })
+      .catch((e) => {
+        console.warn('[structure] não foi possível ler o projeto estrutural da nuvem', e);
+        return false;
+      });
+  }
+  const canSaveCloud = () => !!(S.auth && S.auth.client && S.auth.obraId && (S.auth.papel === 'dono' || S.auth.papel === 'editor') && S.raw && S.source !== 'nuvem');
+  /** Grava os dados atuais (importados) na nuvem da obra. → Promise<null | mensagem de erro> */
+  function saveCloud() {
+    if (!canSaveCloud()) return Promise.resolve('Só o dono ou editores da obra podem guardar, depois de importar o arquivo.');
+    return S.auth.client
+      .from(TABLE)
+      .upsert({ obra_id: S.auth.obraId, dados: S.raw, atualizado_em: new Date().toISOString() })
+      .then((res) => {
+        if (res.error) return res.error.message || 'Não foi possível guardar.';
+        try {
+          window.localStorage.removeItem(LS_KEY); // a cópia local não é mais necessária
+        } catch (e) {
+          /* sem armazenamento */
+        }
+        S.source = 'nuvem';
+        if (DD.events) DD.events.emit('structure:changed', { source: S.source });
+        return null;
+      });
   }
   function clearImported() {
     try {
@@ -8679,7 +8738,11 @@ kbd {
       /* sem armazenamento */
     }
     if (window.DD_STRUCT) load();
-    else setData(null, null);
+    else {
+      S.raw = null;
+      setData(null, null);
+      loadCloud();
+    }
   }
 
   const floorIndex = (doc, floorId) => Math.max(0, doc.floors.findIndex((f) => f.id === floorId));
@@ -9017,6 +9080,7 @@ kbd {
     clearImported,
     hasData: () => !!S.data,
     source: () => S.source,
+    cloud: { load: loadCloud, save: saveCloud, canSave: canSaveCloud, signedIn: () => !!(S.auth && S.auth.obraId) },
     version: () => S.version,
     info: () =>
       S.data
@@ -9039,6 +9103,7 @@ kbd {
     markers3d,
   };
   load();
+  loadCloud();
 })();
 
 // ---- 20-plan2d.js ----
@@ -18480,7 +18545,8 @@ kbd {
       return h('div', null, [
         h('p', {
           class: 'legend-note',
-          text: 'O projeto estrutural não está carregado. Importe o arquivo estrutura.json (Mais opções › Importar projeto) para ver pilares, vigas e sapatas no 2D e no 3D e a lista de conflitos com a arquitetura.',
+          text:
+            'O projeto estrutural não está carregado. Quem participa da obra vê os dados depois de entrar no site; também dá para importar o arquivo estrutura.json (Mais opções › Importar projeto) para ver pilares, vigas e sapatas no 2D e no 3D e a lista de conflitos com a arquitetura.',
         }),
         h('div', { class: 'btn-row' }, [textButton('upload', 'Importar projeto estrutural', importStructureFile)]),
       ]);
@@ -18524,6 +18590,14 @@ kbd {
         class: 'legend-note',
         text: (info.fonte ? info.fonte + ' ' : '') + 'A lista recalcula quando paredes, portas ou janelas mudam. A solução de cada conflito deve ser validada pelo engenheiro responsável e pela arquiteta.',
       }),
+      src === 'nuvem' ? h('p', { class: 'legend-note', text: 'Dados lidos da nuvem da obra: só quem participa da obra consegue abrir.' }) : null,
+      st.cloud && st.cloud.canSave()
+        ? h('div', { class: 'btn-row' }, [
+            textButton('upload', 'Guardar na nuvem da obra', () =>
+              st.cloud.save().then((err) => toast(err ? 'Não foi possível guardar: ' + err : 'Projeto estrutural guardado na nuvem da obra.', err ? 'error' : 'ok'))
+            ),
+          ])
+        : null,
       src === 'importado' ? h('div', { class: 'btn-row' }, [textButton('trash', 'Remover dados importados', () => st.clearImported(), 'btn-danger')]) : null,
     ]);
   }

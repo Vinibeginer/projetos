@@ -2346,7 +2346,8 @@
       return h('div', null, [
         h('p', {
           class: 'legend-note',
-          text: 'O projeto estrutural não está carregado. Importe o arquivo estrutura.json (Mais opções › Importar projeto) para ver pilares, vigas e sapatas no 2D e no 3D e a lista de conflitos com a arquitetura.',
+          text:
+            'O projeto estrutural não está carregado. Quem participa da obra vê os dados depois de entrar no site; também dá para importar o arquivo estrutura.json (Mais opções › Importar projeto) para ver pilares, vigas e sapatas no 2D e no 3D e a lista de conflitos com a arquitetura.',
         }),
         h('div', { class: 'btn-row' }, [textButton('upload', 'Importar projeto estrutural', importStructureFile)]),
       ]);
@@ -2390,6 +2391,14 @@
         class: 'legend-note',
         text: (info.fonte ? info.fonte + ' ' : '') + 'A lista recalcula quando paredes, portas ou janelas mudam. A solução de cada conflito deve ser validada pelo engenheiro responsável e pela arquiteta.',
       }),
+      src === 'nuvem' ? h('p', { class: 'legend-note', text: 'Dados lidos da nuvem da obra: só quem participa da obra consegue abrir.' }) : null,
+      st.cloud && st.cloud.canSave()
+        ? h('div', { class: 'btn-row' }, [
+            textButton('upload', 'Guardar na nuvem da obra', () =>
+              st.cloud.save().then((err) => toast(err ? 'Não foi possível guardar: ' + err : 'Projeto estrutural guardado na nuvem da obra.', err ? 'error' : 'ok'))
+            ),
+          ])
+        : null,
       src === 'importado' ? h('div', { class: 'btn-row' }, [textButton('trash', 'Remover dados importados', () => st.clearImported(), 'btn-danger')]) : null,
     ]);
   }
