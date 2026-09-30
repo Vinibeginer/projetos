@@ -973,9 +973,14 @@
   }
   function saveNow() {
     flushNudge();
+    const cloud = DD.cloud && DD.cloud.active() && DD.cloud.canEdit();
     if (DD.persist.save(doc())) {
       DD.events.emit('saved', { auto: false, at: new Date() });
-      toast('Projeto salvo neste navegador.', 'ok');
+      if (!cloud) toast('Projeto salvo neste navegador.', 'ok');
+      else
+        DD.cloud.flush().then((ok) =>
+          toast(ok ? 'Projeto salvo na nuvem da obra.' : 'Salvo neste navegador; a nuvem recebe quando a conexão voltar.', ok ? 'ok' : 'warn')
+        );
     } else {
       toast('Não foi possível salvar: o armazenamento do navegador está indisponível ou cheio.', 'error');
     }
@@ -2846,8 +2851,11 @@
     ].forEach(([elId, key]) => document.getElementById(elId).addEventListener('click', () => toggleShow(key)));
     DD.events.on('plan2d:cursor', onCursor);
     DD.events.on('plan2d:viewport', syncZoom);
-    DD.events.on('saved', (p) => setSaveState('saved', p && p.at));
+    DD.events.on('saved', (p) => {
+      if (!(DD.cloud && DD.cloud.active())) setSaveState('saved', p && p.at); // com a nuvem ativa, quem avisa é ela
+    });
     DD.events.on('doc:committed', () => setSaveState('pending'));
+    DD.events.on('cloud:status', setCloudState);
   }
   function onCursor(p) {
     const pt = p && (p.world || p);
@@ -2887,6 +2895,34 @@
     setPressed(document.getElementById('tg-grid'), !!show.grid);
     setPressed(document.getElementById('tg-dims'), !!show.dims);
     setPressed(document.getElementById('tg-labels'), !!show.labels);
+  }
+  /** Estado da nuvem da obra (16-cloud.js) no mesmo indicador da barra de status. */
+  const CLOUD_TEXT = {
+    sending: ['pending', 'Salvando na nuvem…'],
+    pending: ['pending', 'Salvando na nuvem…'],
+    offline: ['unsaved', 'Sem conexão — salvo neste aparelho'],
+    error: ['unsaved', 'Não salvou na nuvem'],
+    readonly: ['saved', 'Somente leitura (nuvem da obra)'],
+  };
+  function setCloudState(st) {
+    const box = document.getElementById('save-state');
+    const txt = document.getElementById('save-text');
+    if (!box || !txt || !st || st.state === 'off') return;
+    clearTimeout(S.saveTimer);
+    if (st.state === 'saved') {
+      const when = st.at ? new Date(st.at) : new Date();
+      box.setAttribute('data-state', 'saved');
+      setText(txt, 'Salvo na nuvem ' + fmtSavedAt(when, new Date()));
+      box.title = 'Projeto salvo na nuvem da obra em ' + fmtSavedAt(when, new Date(), true) + ' — abre igual em qualquer aparelho de quem participa da obra';
+      return;
+    }
+    const [state, text] = CLOUD_TEXT[st.state] || ['unsaved', 'Nuvem indisponível'];
+    box.setAttribute('data-state', state);
+    setText(txt, text);
+    if (st.state === 'offline') box.title = 'As alterações ficam neste navegador e seguem para a nuvem quando a conexão voltar.';
+    else if (st.state === 'error') box.title = 'Erro ao salvar na nuvem: ' + (st.message || '') + ' — as alterações continuam salvas neste navegador.';
+    else if (st.state === 'readonly') box.title = 'Você pode ver o projeto, mas só o dono e os editores da obra salvam alterações na nuvem.';
+    else box.removeAttribute('title');
   }
   function setSaveState(state, at) {
     const box = document.getElementById('save-state');
