@@ -132,7 +132,7 @@
     O('o0_j4_sala', 'w0_salaFront', 'J4', 3600),
     // as built: duas janelas verticais na parede sala/garagem, uma no meio de cada trecho entre os pilares P12, P14 e P16
     O('o0_j9_garagemA', 'w0_garagemSala', 'J9', 1345),
-    O('o0_j9_garagemB', 'w0_garagemSala', 'J9', 3545),
+    O('o0_j9_garagemB', 'w0_garagemSala', 'J9', 3545, { sill: 800 }), // a mais perto da porta da sala: 30 cm mais baixa
     O('o0_p1_garagem', 'w0_lavBottom', 'P1', 2150, { hinge: 'start', side: -1 }),
     O('o0_p2_lav', 'w0_lavRight', 'P2', 500, { hinge: 'start', side: 1 }),
     O('o0_p8_portao', 'm0_frente', 'P8', 2400, { side: -1 }),
@@ -220,7 +220,7 @@
   // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
   // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
   const AS_BUILT = {
-    version: 2,
+    version: 3,
     date: '2026-09-30',
     changes: [
       { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
@@ -228,7 +228,7 @@
       { floor: 'f0', text: 'Sala: as duas janelas J7 ao lado da entrada foram eliminadas; porta de entrada maior, 1,20 × 2,10.' },
       { floor: 'f0', text: 'Janelas da cozinha e do quarto passaram a 1,20 × 1,20 (peitoril 1,10).' },
       { floor: 'f0', text: 'Cozinha: nova janela 1,20 × 1,20 depois do pilar P6 (uma antes e outra depois do pilar).' },
-      { floor: 'f0', text: 'Parede entre a sala e a garagem: duas janelas verticais 0,50 × 1,20 (peitoril 1,10), uma em cada trecho entre os pilares.' },
+      { floor: 'f0', text: 'Parede entre a sala e a garagem: duas janelas verticais 0,50 × 1,20, uma em cada trecho entre os pilares; a mais perto da porta da sala fica 30 cm mais baixa (peitoril 0,80, a outra 1,10).' },
     ],
     // o que cada rodada troca (uma planta salva recebe só as rodadas que ainda não tem)
     rounds: [
@@ -240,6 +240,7 @@
         roomSeeds: ['r0_desp', 'r0_suite'],
       },
       { version: 2, walls: [], openings: ['o0_j9_garagemA', 'o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
+      { version: 3, walls: [], openings: ['o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
     ],
   };
 

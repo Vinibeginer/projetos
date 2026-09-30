@@ -68,5 +68,12 @@ v1.openings.find((o) => o.id === 'o0_p1_quarto').t = 900;
 const m2 = DD.data.migrateAsBuilt(v1);
 check('rodada 2 acrescenta as duas J9', m2.changed && m2.doc.openings.filter((o) => /^o0_j9_/.test(o.id)).length === 2);
 check('rodada 2 não mexe no que a rodada 1 já trocou', m2.doc.openings.find((o) => o.id === 'o0_p1_quarto').t === 900);
+// rodada 3: só a J9 da frente desce 30 cm
+const v2 = DD.persist.validate(JSON.parse(JSON.stringify(fresh)));
+v2.meta.asBuilt = 2;
+v2.openings.find((o) => o.id === 'o0_j9_garagemB').sill = 1100;
+const m3 = DD.data.migrateAsBuilt(v2);
+const sill = (id) => m3.doc.openings.find((o) => o.id === id).sill;
+check('rodada 3: J9 perto da porta da sala com peitoril 0,80, a outra 1,10', m3.changed && sill('o0_j9_garagemB') === 800 && sill('o0_j9_garagemA') === 1100);
 console.log(fails ? `test-asbuilt: ${fails} falha(s)` : 'test-asbuilt: todos os testes ok');
 process.exitCode = fails ? 1 : 0;

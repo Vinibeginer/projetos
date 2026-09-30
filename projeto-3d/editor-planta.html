@@ -252,11 +252,12 @@ const ESQ = {
   J6:{t:'jan',w:1000,h:1200,sill:1100,desc:'Janela de correr, 2 folhas'},
   J8:{t:'jan',w:1200,h:1200,sill:1100,desc:'Janela de correr, 2 folhas (as built)'},
   J9:{t:'jan',w:500,h:1200,sill:1100,desc:'Janela vertical pivotante (as built)'},
+  J9b:{t:'jan',w:500,h:1200,sill:800,desc:'Janela vertical pivotante, 30 cm mais baixa (as built)'},
 };
 // [código, orientação da parede, coordenada da face inicial da parede, início do vão]
 const OPEN_RAW = [
   // térreo — as built: sem as J7 da entrada, P3 de 1,20; duas J8 na cozinha; porta do quarto após o pilar; J8 no quarto
-  [['P3','h',5000,4950],['J4','h',5000,6800],['J9','v',4150,5780],['J9','v',4150,7980],
+  [['P3','h',5000,4950],['J4','h',5000,6800],['J9b','v',4150,5780],['J9','v',4150,7980],
    ['P1','h',9500,3300],['P2','v',3000,10450],['J1','v',1500,9850],['J8','v',1500,14450],['J8','v',1500,11520],
    ['P1','h',11250,3300],['P1','h',11250,4600],['J5','h',11250,7600],
    ['J8','v',7350,13600],['P6','v',4150,16000],['P2','h',15250,6600],
@@ -461,7 +462,7 @@ const regionMat=(f,R)=>S.floors[f].rooms.find(r=>r.id===R.rooms[0]).mat;
 const ui = { floor:0, mode:'2d', tool:'select', sel:null, tab:'rooms', paintMat:'porcelanato', wallT:100,
   view:{cx:4500,cz:11000,s:0.04}, whole:false, cut:false, walk:false };
 let hist=[], hi=-1;
-const KEY='mariara-planta-v3'; // v2 = as built (planta salva antes das alterações de obra fica de fora)
+const KEY='mariara-planta-v4'; // v2 = as built (planta salva antes das alterações de obra fica de fora)
 function snapshot(){ return JSON.stringify(S); }
 function commit(){ hist=hist.slice(0,hi+1); hist.push(snapshot()); if(hist.length>80) hist.shift(); hi=hist.length-1; changed(true); }
 function changed(save){ S.floors.forEach((_,f)=>computeRegions(f)); if(ui.sel && !findSel()) ui.sel=null; draw2D(); renderPanel(); sync3D(); updUndo(); if(save) autosave(); }
