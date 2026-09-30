@@ -1084,7 +1084,7 @@
       // Garagem — ≥ 0,60 m beside both car doors; bike parked below the shelves
       ['car', 1700, 12870, 0],
       ['shelves', 3950, 12750, 90],
-      ['bike', 3850, 14100, 0],
+      ['bike', 3650, 14100, 0], // clear of the lower J9 (sill 0,80)
     ],
     f1: [
       // Closets — wardrobes stop 0,60 m short of the walls with the J6 windows, leaving the glazing clear
@@ -1187,7 +1187,8 @@
     [['bookshelf', 4475, 13650, 270], ['bookshelf', 4475, 11020, 270, { w: 900 }]],
     [['plant', 4575, 10700, 0], ['plant', 4575, 14530, 0]],
     [['shelves', 3950, 11950, 90], ['shelves', 3950, 12750, 90]],
-    [['bike', 3850, 13600, 0], ['bike', 3850, 14100, 0]],
+    [['bike', 3850, 13600, 0], ['bike', 3650, 14100, 0]],
+    [['bike', 3850, 14100, 0], ['bike', 3650, 14100, 0]], // as built 3: J9 da frente mais baixa
   ]);
 
   const normRot = (r) => (((Math.round(r) % 360) + 360) % 360);

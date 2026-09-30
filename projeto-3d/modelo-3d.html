@@ -248,8 +248,9 @@ const ESQ = {
   J6:{t:'jan',w:1.00,h:1.20,sill:1.10,desc:'Janela de vidro e madeira de correr, 2 folhas'},
   J8:{t:'jan',w:1.20,h:1.20,sill:1.10,desc:'Janela de correr, 2 folhas (as built)'},
   J9:{t:'jan',w:0.50,h:1.20,sill:1.10,desc:'Janela vertical pivotante (as built)'},
+  J9b:{t:'jan',w:0.50,h:1.20,sill:0.80,desc:'Janela vertical pivotante, 30 cm mais baixa (as built)'},
 };
-const QTD = {P1:4,P2:9,P3:1,P4:1,P5:2,P6:2,P7:1,P8:1,P9:1,J1:4,J2:3,J3:2,J4:1,J5:2,J6:2,J8:3,J9:2};
+const QTD = {P1:4,P2:9,P3:1,P4:1,P5:2,P6:2,P7:1,P8:1,P9:1,J1:4,J2:3,J3:2,J4:1,J5:2,J6:2,J8:3,J9:1,J9b:1};
 
 // vãos: [código, 'h' (parede ao longo de x, z0 da parede) | 'v' (ao longo de z, x0 da parede), linha, início]
 // a largura vem da tabela; "início" é a coordenada onde o vão começa
@@ -257,7 +258,7 @@ const OPEN = [
   [ // térreo
     // as built: sem as J7 da entrada, porta P3 de 1,20; cozinha com duas J8 (antes e depois do pilar);
     // porta do quarto logo após o pilar P7; J8 no quarto; J1 da despensa centrada na despensa menor
-    ['P3','h',5.00,4.95],['J4','h',5.00,6.80],['J9','v',4.15,5.78],['J9','v',4.15,7.98], // J9: parede sala/garagem
+    ['P3','h',5.00,4.95],['J4','h',5.00,6.80],['J9b','v',4.15,5.78],['J9','v',4.15,7.98], // J9: parede sala/garagem (a perto da porta da sala mais baixa)
     ['P1','h',9.50,3.30],['P2','v',3.00,10.45],['J1','v',1.50,9.85],['J8','v',1.50,14.45],['J8','v',1.50,11.52],
     ['P1','h',11.25,3.30],['P1','h',11.25,4.60],['J5','h',11.25,7.60],
     ['J8','v',7.35,13.60],['P6','v',4.15,16.00],['P2','h',15.25,6.60],
