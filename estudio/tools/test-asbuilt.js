@@ -26,7 +26,7 @@ Object.assign(op('o0_j2_coz'), J2);
 Object.assign(op('o0_j2_quarto'), J2);
 Object.assign(op('o0_p1_quarto'), { t: 2675, hinge: 'end' });
 Object.assign(op('o0_p3_entrada'), { t: 1377, width: 800 });
-oldDoc.openings = oldDoc.openings.filter((o) => o.id !== 'o0_j8_coz2');
+oldDoc.openings = oldDoc.openings.filter((o) => ['o0_j8_coz2', 'o0_j9_garagemA', 'o0_j9_garagemB'].indexOf(o.id) < 0);
 const J7 = { wall: 'w0_salaFront', code: 'J7', type: 'window', width: 500, height: 2100, sill: 0, style: 'pivot', hinge: 'start', side: 1 };
 oldDoc.openings.push(Object.assign({ id: 'o0_j7_a', t: 600 }, J7), Object.assign({ id: 'o0_j7_b', t: 2150 }, J7));
 oldDoc.roomSeeds.find((r) => r.id === 'r0_desp').x = 4850;
@@ -60,5 +60,13 @@ check('escrivaninha mexida pelo usuário fica onde está', doc.furniture.some((f
 const again = DD.data.migrateAsBuilt(DD.persist.validate(JSON.parse(JSON.stringify(doc))));
 check('segunda migração não muda nada (marca preservada pelo validate)', !again.changed);
 check('áreas', DD.rooms.compute(doc, 'f0').filter((r) => /Desp|Suíte/.test(r.name)).map((r) => r.area.toFixed(2)).join() === '0.96,3.68');
+// planta já na rodada 1, com a porta do quarto ajustada pelo usuário: a rodada 2 só acrescenta as J9
+const v1 = DD.persist.validate(JSON.parse(JSON.stringify(fresh)));
+v1.meta.asBuilt = 1;
+v1.openings = v1.openings.filter((o) => !/^o0_j9_/.test(o.id));
+v1.openings.find((o) => o.id === 'o0_p1_quarto').t = 900;
+const m2 = DD.data.migrateAsBuilt(v1);
+check('rodada 2 acrescenta as duas J9', m2.changed && m2.doc.openings.filter((o) => /^o0_j9_/.test(o.id)).length === 2);
+check('rodada 2 não mexe no que a rodada 1 já trocou', m2.doc.openings.find((o) => o.id === 'o0_p1_quarto').t === 900);
 console.log(fails ? `test-asbuilt: ${fails} falha(s)` : 'test-asbuilt: todos os testes ok');
 process.exitCode = fails ? 1 : 0;

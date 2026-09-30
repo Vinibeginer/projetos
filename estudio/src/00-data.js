@@ -29,6 +29,7 @@
     J6: { type: 'window', width: 1000, height: 1200, sill: 1100, style: 'slide2', desc: 'Janela de vidro e madeira de correr, 2 folhas' },
     J7: { type: 'window', width: 500, height: 2100, sill: 0, style: 'pivot', desc: 'Janela pivotante de vidro e madeira' },
     J8: { type: 'window', width: 1200, height: 1200, sill: 1100, style: 'slide2', desc: 'Janela de correr, 2 folhas (as built: 1,20 × 1,20)' },
+    J9: { type: 'window', width: 500, height: 1200, sill: 1100, style: 'pivot', desc: 'Janela vertical pivotante (as built: 0,50 × 1,20)' },
   };
 
   // Wall helpers. kind: structural | partition | muro | railing
@@ -129,6 +130,9 @@
     // as built: as duas J7 ao lado da entrada foram eliminadas; porta de entrada maior (1,20 × 2,10)
     O('o0_p3_entrada', 'w0_salaFront', 'P3', 1400, { hinge: 'start', side: -1 }),
     O('o0_j4_sala', 'w0_salaFront', 'J4', 3600),
+    // as built: duas janelas verticais na parede sala/garagem, uma no meio de cada trecho entre os pilares P12, P14 e P16
+    O('o0_j9_garagemA', 'w0_garagemSala', 'J9', 1345),
+    O('o0_j9_garagemB', 'w0_garagemSala', 'J9', 3545),
     O('o0_p1_garagem', 'w0_lavBottom', 'P1', 2150, { hinge: 'start', side: -1 }),
     O('o0_p2_lav', 'w0_lavRight', 'P2', 500, { hinge: 'start', side: 1 }),
     O('o0_p8_portao', 'm0_frente', 'P8', 2400, { side: -1 }),
@@ -216,7 +220,7 @@
   // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
   // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
   const AS_BUILT = {
-    version: 1,
+    version: 2,
     date: '2026-09-30',
     changes: [
       { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
@@ -224,11 +228,19 @@
       { floor: 'f0', text: 'Sala: as duas janelas J7 ao lado da entrada foram eliminadas; porta de entrada maior, 1,20 × 2,10.' },
       { floor: 'f0', text: 'Janelas da cozinha e do quarto passaram a 1,20 × 1,20 (peitoril 1,10).' },
       { floor: 'f0', text: 'Cozinha: nova janela 1,20 × 1,20 depois do pilar P6 (uma antes e outra depois do pilar).' },
+      { floor: 'f0', text: 'Parede entre a sala e a garagem: duas janelas verticais 0,50 × 1,20 (peitoril 1,10), uma em cada trecho entre os pilares.' },
     ],
-    walls: ['w0_despSuiteDiv'],
-    openings: ['o0_j1_desp', 'o0_j2_coz', 'o0_j8_coz2', 'o0_j2_quarto', 'o0_p1_quarto', 'o0_p3_entrada'],
-    removedOpenings: ['o0_j7_a', 'o0_j7_b'],
-    roomSeeds: ['r0_desp', 'r0_suite'],
+    // o que cada rodada troca (uma planta salva recebe só as rodadas que ainda não tem)
+    rounds: [
+      {
+        version: 1,
+        walls: ['w0_despSuiteDiv'],
+        openings: ['o0_j1_desp', 'o0_j2_coz', 'o0_j8_coz2', 'o0_j2_quarto', 'o0_p1_quarto', 'o0_p3_entrada'],
+        removedOpenings: ['o0_j7_a', 'o0_j7_b'],
+        roomSeeds: ['r0_desp', 'r0_suite'],
+      },
+      { version: 2, walls: [], openings: ['o0_j9_garagemA', 'o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
+    ],
   };
 
   /**
@@ -253,11 +265,15 @@
         else list.push(copy);
       });
     };
-    put(doc.walls, fresh.walls, AS_BUILT.walls);
-    const wallIds = new Set(doc.walls.map((w) => w.id));
-    doc.openings = doc.openings.filter((o) => AS_BUILT.removedOpenings.indexOf(o.id) < 0);
-    put(doc.openings, fresh.openings.filter((o) => wallIds.has(o.wall)), AS_BUILT.openings);
-    put(doc.roomSeeds, fresh.roomSeeds, AS_BUILT.roomSeeds);
+    AS_BUILT.rounds
+      .filter((r) => r.version > have)
+      .forEach((r) => {
+        put(doc.walls, fresh.walls, r.walls);
+        const wallIds = new Set(doc.walls.map((w) => w.id));
+        doc.openings = doc.openings.filter((o) => r.removedOpenings.indexOf(o.id) < 0);
+        put(doc.openings, fresh.openings.filter((o) => wallIds.has(o.wall)), r.openings);
+        put(doc.roomSeeds, fresh.roomSeeds, r.roomSeeds);
+      });
     const moves = (DD.catalog && DD.catalog.AS_BUILT_MOVES) || [];
     const same = (it, row) => {
       const p = row[4] || {}, t = DD.catalog.types[row[0]] || {};

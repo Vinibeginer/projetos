@@ -1073,18 +1073,18 @@
       ['toilet', 2500, 10025, 180],
       // Sala de estar
       ['rug', 7200, 12000, 90, { w: 2600, d: 1800 }],
-      ['tvUnit', 4525, 11900, 270],
+      ['tvUnit', 4525, 12870, 270, { w: 1600 }], // as built: between the two J9 windows (pier at pillar P14)
       ['sofaL', 8025, 12200, 90],
       ['coffeeTable', 6880, 11900, 90],
       ['floorLamp', 8625, 10600, 0],
       ['armchair', 8440, 14250, 90],
       ['sideTable', 7775, 14450, 0],
-      ['bookshelf', 4475, 13650, 270],
-      ['plant', 4575, 10700, 0],
+      ['bookshelf', 4475, 11020, 270, { w: 900 }],
+      ['plant', 4575, 14530, 0],
       // Garagem — ≥ 0,60 m beside both car doors; bike parked below the shelves
       ['car', 1700, 12870, 0],
-      ['shelves', 3950, 11950, 90],
-      ['bike', 3850, 13600, 0],
+      ['shelves', 3950, 12750, 90],
+      ['bike', 3850, 14100, 0],
     ],
     f1: [
       // Closets — wardrobes stop 0,60 m short of the walls with the J6 windows, leaving the glazing clear
@@ -1182,6 +1182,12 @@
     [['wardrobe', 4600, 7750, 270, { w: 1700 }], ['wardrobe', 6450, 8300, 180, { w: 1700 }]],
     [['desk', 5950, 8300, 180, { w: 900 }], ['desk', 4600, 7150, 270, { w: 900 }]],
     [['officeChair', 5950, 7760, 0], ['officeChair', 5140, 7150, 90]],
+    // as built 2: janelas J9 na parede sala/garagem
+    [['tvUnit', 4525, 11900, 270], ['tvUnit', 4525, 12870, 270, { w: 1600 }]],
+    [['bookshelf', 4475, 13650, 270], ['bookshelf', 4475, 11020, 270, { w: 900 }]],
+    [['plant', 4575, 10700, 0], ['plant', 4575, 14530, 0]],
+    [['shelves', 3950, 11950, 90], ['shelves', 3950, 12750, 90]],
+    [['bike', 3850, 13600, 0], ['bike', 3850, 14100, 0]],
   ]);
 
   const normRot = (r) => (((Math.round(r) % 360) + 360) % 360);
