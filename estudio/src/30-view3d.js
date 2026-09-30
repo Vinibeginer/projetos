@@ -2287,6 +2287,14 @@
     });
     return c;
   }
+  /** Ferramenta "Mover" (ui.tool === 'pan') também no 3D: arrastar com o botão esquerdo / um dedo desloca a vista. */
+  function applyPanTool() {
+    if (!S.orbit || !S.THREE) return;
+    const pan = DD.store && uiNow().tool === 'pan';
+    S.orbit.mouseButtons.LEFT = pan ? S.THREE.MOUSE.PAN : S.THREE.MOUSE.ROTATE;
+    S.orbit.mouseButtons.RIGHT = pan ? S.THREE.MOUSE.ROTATE : S.THREE.MOUSE.PAN;
+    S.orbit.touches.ONE = pan ? S.THREE.TOUCH.PAN : S.THREE.TOUCH.ROTATE;
+  }
 
   // ================================================================== camera poses & transitions
   const TWEEN_GRACE_MS = 250;
@@ -2776,6 +2784,7 @@
       return;
     }
     if (e.button !== 0 || S.tween) return;
+    if (uiNow().tool === 'pan') return; // Mover: o arraste é da câmera, não seleciona nem arrasta móveis
     const hit = pick(e);
     S.press = { x: e.clientX, y: e.clientY, hit };
     if (hit.ref && hit.ref.kind === 'furniture') prepareDrag(hit.ref.id, e);
@@ -3028,6 +3037,7 @@
       tweenCamera(currentPose(), aerialHome(), 600, { home: true }); // re-frame: with or without the upper floors
     if (ui.floor !== prev.floor) onFloorChange(ui.floor);
     if (ui.cam3d !== prev.cam3d) applyCameraMode(ui.cam3d);
+    if (ui.tool !== prev.tool) applyPanTool();
     requestRender();
   }
   function onFloorChange(floorId) {
@@ -3114,6 +3124,7 @@
     S.camera.rotation.order = 'YXZ';
     S.raycaster = new T.Raycaster();
     S.orbit = createOrbit();
+    applyPanTool();
     initWalk();
     bindInput();
     S.ro = typeof ResizeObserver === 'function' ? new ResizeObserver(() => resize()) : null;
