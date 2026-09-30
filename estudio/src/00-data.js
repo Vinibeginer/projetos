@@ -28,6 +28,7 @@
     J5: { type: 'window', width: 1200, height: 1600, sill: 2200, style: 'fixedMaxar', desc: 'Janela de madeira e vidro fixo e máximo-ar' },
     J6: { type: 'window', width: 1000, height: 1200, sill: 1100, style: 'slide2', desc: 'Janela de vidro e madeira de correr, 2 folhas' },
     J7: { type: 'window', width: 500, height: 2100, sill: 0, style: 'pivot', desc: 'Janela pivotante de vidro e madeira' },
+    P10: { type: 'door', width: 800, height: 2100, sill: 0, style: 'swing', desc: 'Porta de giro para a sacada, 1 folha (as built: 0,80 × 2,10)' },
     J8: { type: 'window', width: 1200, height: 1200, sill: 1100, style: 'slide2', desc: 'Janela de correr, 2 folhas (as built: 1,20 × 1,20)' },
     J9: { type: 'window', width: 500, height: 1200, sill: 1100, style: 'pivot', desc: 'Janela vertical pivotante (as built: 0,50 × 1,20)' },
   };
@@ -151,8 +152,11 @@
     O('o1_j5_escada', 'w1_masterBottom', 'J5', 5100),
     O('o1_p2_q1', 'w1_quartosTop', 'P2', 3675, { hinge: 'end', side: 1 }),
     O('o1_p2_q2', 'w1_quartosTop', 'P2', 4775, { hinge: 'start', side: 1 }),
-    O('o1_p5_q1', 'w1_front', 'P5', 2500, { side: 1 }),
-    O('o1_p5_q2', 'w1_front', 'P5', 5950, { side: 1 }),
+    // as built: as portas balcão P5 dos quartos da frente viraram porta de 0,80 + janela 1,20 × 1,20
+    O('o1_j8_q1', 'w1_front', 'J8', 1700),
+    O('o1_p10_q1', 'w1_front', 'P10', 3100, { hinge: 'end', side: 1 }),
+    O('o1_p10_q2', 'w1_front', 'P10', 5400, { hinge: 'start', side: 1 }),
+    O('o1_j8_q2', 'w1_front', 'J8', 6600),
     // 2º pavimento
     O('o2_j2_esq', 'w2_left', 'J2', 2150),
     O('o2_j1_lav', 'w2_left', 'J1', 6900),
@@ -220,7 +224,7 @@
   // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
   // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
   const AS_BUILT = {
-    version: 3,
+    version: 4,
     date: '2026-09-30',
     changes: [
       { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
@@ -229,6 +233,7 @@
       { floor: 'f0', text: 'Janelas da cozinha e do quarto passaram a 1,20 × 1,20 (peitoril 1,10).' },
       { floor: 'f0', text: 'Cozinha: nova janela 1,20 × 1,20 depois do pilar P6 (uma antes e outra depois do pilar).' },
       { floor: 'f0', text: 'Parede entre a sala e a garagem: duas janelas verticais 0,50 × 1,20, uma em cada trecho entre os pilares; a mais perto da porta da sala fica 30 cm mais baixa (peitoril 0,80, a outra 1,10).' },
+      { floor: 'f1', text: 'Quartos 1 e 2 (frente): cada porta balcão da sacada (P5, 1,60 m) virou uma porta de 0,80 × 2,10 e uma janela de 1,20 × 1,20 (peitoril 1,10).' },
     ],
     // o que cada rodada troca (uma planta salva recebe só as rodadas que ainda não tem)
     rounds: [
@@ -241,6 +246,7 @@
       },
       { version: 2, walls: [], openings: ['o0_j9_garagemA', 'o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
       { version: 3, walls: [], openings: ['o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
+      { version: 4, walls: [], openings: ['o1_j8_q1', 'o1_p10_q1', 'o1_p10_q2', 'o1_j8_q2'], removedOpenings: ['o1_p5_q1', 'o1_p5_q2'], roomSeeds: [] },
     ],
   };
 
