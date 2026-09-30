@@ -2328,7 +2328,20 @@
     );
     el.appendChild(section(`Ambientes — ${floor ? floor.name : ''}`, [roomList(d, floor)]));
     el.appendChild(section('Estrutura e compatibilização', [structureBlock(d, u, floor)], 'st-section'));
+    const ab = asBuiltBlock(d);
+    if (ab) el.appendChild(section('Alterações de obra (as built)', [ab]));
     el.appendChild(section('Legenda', [legendBlock()]));
+  }
+  /** Lista do que mudou na obra em relação à planta aprovada (DD.data.AS_BUILT), só quando a planta a inclui. */
+  function asBuiltBlock(d) {
+    const ab = DD.data.AS_BUILT;
+    if (!ab || !d.meta || !(d.meta.asBuilt >= ab.version)) return null;
+    const floorName = (id) => (d.floors.find((f) => f.id === id) || {}).name || id;
+    const when = new Date(ab.date + 'T12:00:00').toLocaleDateString('pt-BR');
+    return h('div', null, [
+      h('p', { class: 'legend-note', text: `Planta e 3D já mostram a obra como executada (registro de ${when}). Base: projeto aprovado.` }),
+      h('ul', { class: 'asbuilt-list' }, ab.changes.map((c) => h('li', { text: `${floorName(c.floor)}: ${c.text}` }))),
+    ]);
   }
   // --------------------------------------------------------------- projeto estrutural (15-structure.js)
   const SEV_LABEL = { erro: 'Conflito', alerta: 'Atenção', nota: 'Nota' };

@@ -6,9 +6,17 @@
     let doc = null;
     let restored = null;
     const saved = DD.persist.load();
+    let asBuiltUpdated = false;
     if (saved) {
       doc = saved.doc;
       restored = saved.savedAt;
+      try {
+        const m = DD.data.migrateAsBuilt(doc);
+        doc = m.doc;
+        asBuiltUpdated = m.changed;
+      } catch (e) {
+        console.error('as built migration failed', e);
+      }
     } else {
       doc = DD.data.initialState();
       try {
@@ -43,6 +51,10 @@
     if (restored) {
       const when = new Date(restored);
       DD.toast('Projeto restaurado do salvamento local (' + when.toLocaleString('pt-BR') + ').', 'info');
+    }
+    if (asBuiltUpdated) {
+      DD.persist.save(DD.store.doc);
+      DD.toast('Planta atualizada com as alterações de obra (as built).', 'ok');
     }
   }
 

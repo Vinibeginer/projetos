@@ -217,10 +217,14 @@ test('walker descends back to the Térreo', () => {
   near(s.feet, 0, 1, 'feet back on the ground floor');
   ok(s.floorIndex === 0, 'floor index back to f0');
 });
-test('Térreo: walk under the upper flight into the Quarto door', () => {
-  const s = walk({ x: 6825, y: 9300, feet: 0 }, { x: 0, y: -1 }, 1200);
-  ok(s.y < 8500, 'went through the door under the stair (y ' + Math.round(s.y) + ')');
+test('Térreo: walk from the Sala into the Quarto door (as built: next to pillar P7)', () => {
+  const s = walk({ x: 4950, y: 9300, feet: 0 }, { x: 0, y: -1 }, 1200);
+  ok(s.y < 8500, 'went through the Quarto door (y ' + Math.round(s.y) + ')');
   near(s.feet, 0, 1);
+});
+test('Térreo: the old Quarto door under the stair is now wall', () => {
+  const s = walk({ x: 6825, y: 9300, feet: 0 }, { x: 0, y: -1 }, 1200);
+  ok(s.y > 8700, 'stopped at the wall (y ' + Math.round(s.y) + ')');
 });
 test('Térreo: low headroom under the landing blocks', () => {
   const s = walk({ x: 7300, y: 9150, feet: 0 }, { x: 1, y: 0 }, 1500);
@@ -286,7 +290,7 @@ test('walker never stands with the head inside the stair: underside ≥ feet + 1
 });
 test('Térreo: the low end of the upper flight blocks (QA: x 7400–7700 under the flight)', () => {
   [7400, 7550, 7700].forEach((x) => ok(P.chooseSurface(P.surfacesAt(ctx, x, 9150), 0, P.ceilingsAt(ctx, x, 9150)).blocked, 'x ' + x));
-  ok(!P.chooseSurface(P.surfacesAt(ctx, 6825, 9150), 0, P.ceilingsAt(ctx, 6825, 9150)).blocked, 'Quarto door axis stays walkable');
+  ok(!P.chooseSurface(P.surfacesAt(ctx, 6825, 9150), 0, P.ceilingsAt(ctx, 6825, 9150)).blocked, 'passage under the upper flight stays walkable');
 });
 
 // ------------------------------------------------------------------ railings & windows through two floors

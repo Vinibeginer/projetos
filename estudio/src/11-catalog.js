@@ -1053,21 +1053,21 @@
       ['upperCabinet', 3975, 5860, 90, { w: 1000 }],
       // table below the stove, 0,75 m from the wall to sit down, clear of the P1 swing
       ['dining4', 2750, 7400, 90, { w: 1000, d: 1400 }],
-      // Despensa — shelves on the back wall and a shorter run on the right, both reachable from the door
-      ['shelves', 4850, 3200, 0, { w: 1100 }],
-      ['shelves', 5200, 4200, 90, { w: 700 }],
+      // Despensa (as built: 0,60 m livres) — one run of shelves on the back wall
+      ['shelves', 4600, 3200, 0, { w: 600 }],
       // Suíte (banheiro) — box in the corner away from the J1 window, toilet under it
       ['shower', 6950, 3400, 0, { w: 800, d: 800 }],
       ['toilet', 6200, 3325, 0],
       ['basin', 5780, 4230, 270, { w: 700 }],
-      // Quarto — bed group left of the P2 doorway (suíte), wardrobe on the left wall, desk by the P1 door
+      // Quarto — bed group left of the P2 doorway (suíte); as built: P1 door next to pillar P7, so the desk
+      // sits on the left wall and the wardrobe on the bottom wall, right of the door swing
       ['bedDouble', 5450, 5725, 0],
       ['nightstand', 4525, 4950, 0],
       ['nightstand', 6350, 4950, 0, { w: 400 }],
       ['rug', 5450, 6250, 0, { w: 2000, d: 1200 }],
-      ['wardrobe', 4600, 7750, 270, { w: 1700 }],
-      ['desk', 5950, 8300, 180, { w: 900 }],
-      ['officeChair', 5950, 7760, 0],
+      ['wardrobe', 6450, 8300, 180, { w: 1700 }],
+      ['desk', 4600, 7150, 270, { w: 900 }],
+      ['officeChair', 5140, 7150, 90],
       // Lavabo
       ['basin', 1880, 9150, 270, { w: 700 }],
       ['toilet', 2500, 10025, 180],
@@ -1174,6 +1174,16 @@
     ],
   });
 
+  // As built: default items that moved (old row → new row, null = removed). DD.data.migrateAsBuilt uses it to
+  // update a saved plan, touching only items still exactly where the old default layout put them.
+  const AS_BUILT_MOVES = Object.freeze([
+    [['shelves', 4850, 3200, 0, { w: 1100 }], ['shelves', 4600, 3200, 0, { w: 600 }]],
+    [['shelves', 5200, 4200, 90, { w: 700 }], null],
+    [['wardrobe', 4600, 7750, 270, { w: 1700 }], ['wardrobe', 6450, 8300, 180, { w: 1700 }]],
+    [['desk', 5950, 8300, 180, { w: 900 }], ['desk', 4600, 7150, 270, { w: 900 }]],
+    [['officeChair', 5950, 7760, 0], ['officeChair', 5140, 7150, 90]],
+  ]);
+
   const normRot = (r) => (((Math.round(r) % 360) + 360) % 360);
 
   function layoutItem(floor, n, row) {
@@ -1218,5 +1228,6 @@
     draw2d,
     thumbnail,
     defaultLayout,
+    AS_BUILT_MOVES,
   };
 })();

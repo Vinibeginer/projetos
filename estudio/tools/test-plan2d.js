@@ -225,24 +225,25 @@ test('solidIntervals & cut plane', () => {
   ok(!T.cutsWall({ type: 'window', sill: 1800 }), 'high window above the cut plane');
 });
 test('openingRange respects wall ends, walls at its joints and neighbours', () => {
-  const w = DD.ops.byId(baseDoc, 'walls', 'w0_back'); // L = 6000, openings at 2125 (P1 800), 3170 (J1 600), 4450 (J1 600)
+  const w = DD.ops.byId(baseDoc, 'walls', 'w0_back'); // L = 6000, openings at 2125 (P1 800), 3100 (J1 600), 4450 (J1 600)
   const op = DD.ops.byId(baseDoc, 'openings', 'o0_j1_desp');
   const r = T.openingRange(baseDoc, op, w);
-  // partitions butting into w0_back: w0_cozDesp x 4150–4300 (s 2650–2800), w0_despSuiteDiv x 5400–5550 (s 3900–4050)
-  eq(r.lo, 2800 + 300); eq(r.hi, 3900 - 300);
+  // partitions butting into w0_back: w0_cozDesp x 4150–4300 (s 2650–2800), w0_despSuiteDiv x 4900–5050 (s 3400–3550)
+  // (as built: the despensa is exactly one J1 wide, so the window cannot slide)
+  eq(r.lo, 2800 + 300); eq(r.hi, 3400 - 300);
   // P2 on w0_despSuite (a = joint with w0_cozDesp/w0_cozQuarto, 150 thick): jamb stops at the inner face x = 4300
   const ds = DD.ops.byId(baseDoc, 'walls', 'w0_despSuite');
   const p2 = DD.ops.byId(baseDoc, 'openings', 'o0_p2_suite');
   eq(T.openingRange(baseDoc, Object.assign({}, p2, { t: 500 }), ds).lo, 75 + 350, 'clear of the crossing wall');
   eq(T.openingRange(baseDoc, p2, ds).hi, 3125 - 350, 'clear of w0_right at the b end');
   const obs = T.wallObstacles(baseDoc, ds).map((o) => o.map(Math.round).join('-')).sort();
-  ok(obs.indexOf('0-75') >= 0 && obs.indexOf('1175-1325') >= 0 && obs.indexOf('3125-3200') >= 0, JSON.stringify(obs));
+  ok(obs.indexOf('0-75') >= 0 && obs.indexOf('675-825') >= 0 && obs.indexOf('3125-3200') >= 0, JSON.stringify(obs));
 });
 test('jointOpeningClash: a partition end may not butt into a door or window of another wall', () => {
-  // w0_right (x 7425, from y 2850) has J2 at t 3000 ± 1000 → y 4850–6850
+  // w0_right (x 7425, from y 2850) has J8 at t 3000 ± 600 → y 5250–6450
   eq(T.jointOpeningClash(baseDoc, 'f0', { x: 7425, y: 4675 }, 150, 'w0_despSuite'), null);
-  eq(T.jointOpeningClash(baseDoc, 'f0', { x: 7425, y: 4975 }, 150, 'w0_despSuite').id, 'o0_j2_quarto');
-  eq(T.jointOpeningClash(baseDoc, 'f0', { x: 7425, y: 4775 }, 150, 'w0_despSuite'), null, 'touching the jamb is fine');
+  eq(T.jointOpeningClash(baseDoc, 'f0', { x: 7425, y: 5375 }, 150, 'w0_despSuite').id, 'o0_j2_quarto');
+  eq(T.jointOpeningClash(baseDoc, 'f0', { x: 7425, y: 5175 }, 150, 'w0_despSuite'), null, 'touching the jamb is fine');
   eq(T.jointOpeningClash(baseDoc, 'f0', { x: 6000, y: 6000 }, 150, 'x'), null, 'free end');
 });
 test('retargetOpenings keeps openings fixed in world space when wall.a moves', () => {
@@ -481,17 +482,17 @@ e2e('select: resize from a corner handle and rotate with the knob', () => {
 });
 e2e('select: structural wall is locked (toast once), partition moves perpendicular with joints kept', () => {
   events.length = 0;
-  down({ x: 1575, y: 7500 }); // w0_left, structural (no opening there)
-  move({ x: 1900, y: 7500 });
-  move({ x: 2100, y: 7500 });
-  up({ x: 2100, y: 7500 });
+  down({ x: 1575, y: 6100 }); // w0_left, structural (no opening there: between the two kitchen windows)
+  move({ x: 1900, y: 6100 });
+  move({ x: 2100, y: 6100 });
+  up({ x: 2100, y: 6100 });
   eq(events.filter((e) => e[0] === 'toast' && e[2] === 'Parede estrutural — bloqueada').length, 1);
   eq(DD.ops.byId(st().doc, 'walls', 'w0_left').a.x, 1575);
   const docBefore = st().doc;
   events.length = 0;
-  down({ x: 5475, y: 3800 }); // w0_despSuiteDiv partition (vertical, between Desp. and Suíte)
-  move({ x: 5540, y: 3800 });
-  move({ x: 5578, y: 3900 });
+  down({ x: 4975, y: 3800 }); // w0_despSuiteDiv partition (vertical, between Desp. and Suíte; as built x 4975)
+  move({ x: 5040, y: 3800 });
+  move({ x: 5078, y: 3900 });
   ok(S.feedback && /Deslocamento 0,10 m/.test(S.feedback.label.text), 'offset label ' + (S.feedback && S.feedback.label.text));
   ok(S.feedback.rays.length === 2, 'distances to both neighbours');
   // 200 mm would put the joint with w0_back into window J1 of the Suíte (x 5650–6250): clamped, warned once
@@ -504,11 +505,11 @@ e2e('select: structural wall is locked (toast once), partition moves perpendicul
   eq(w.a.x, 5575); eq(w.b.x, 5575);
   eq(st().undoLabel(), 'Mover parede');
   ok(!st().inGesture(), 'gesture closed');
-  ok(DD.ops.byId(docBefore, 'walls', 'w0_despSuiteDiv').a.x === 5475, 'previous doc not mutated');
+  ok(DD.ops.byId(docBefore, 'walls', 'w0_despSuiteDiv').a.x === 4975, 'previous doc not mutated');
   const desp = DD.rooms.compute(st().doc, 'f0').find((r) => r.name === 'Desp.');
-  near(desp.area, 1.76 + 0.1 * 1.6, 0.005);
+  near(desp.area, (5500 - 4300) * 1600 / 1e6, 0.005);
   st().undo();
-  eq(DD.ops.byId(st().doc, 'walls', 'w0_despSuiteDiv').a.x, 5475, 'one undo step');
+  eq(DD.ops.byId(st().doc, 'walls', 'w0_despSuiteDiv').a.x, 4975, 'one undo step');
 });
 e2e('select: partition endpoint drag (snaps, openings keep world position)', () => {
   click({ x: 4225, y: 3500 }); // select w0_cozDesp
@@ -576,7 +577,7 @@ e2e('wall tool: chained orthogonal partitions, Esc ends the chain', () => {
 e2e('demolish tool: partition fades then merges rooms; structural refused', () => {
   setTool('demolish');
   events.length = 0;
-  click({ x: 1575, y: 7500 });
+  click({ x: 1575, y: 6100 });
   ok(events.some((e) => e[0] === 'toast' && e[1] === 'warn' && /não pode ser demolida/.test(e[2])));
   click({ x: 4225, y: 6500 }); // w0_cozQuarto
   ok(DD.ops.byId(st().doc, 'walls', 'w0_cozQuarto'), 'still there during the fade');

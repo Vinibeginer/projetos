@@ -1,4 +1,5 @@
-// ===== 00-data.js — plan model extracted from "Proj Aprovado.pdf" (1:100, vector) =====
+// ===== 00-data.js — plan model extracted from "Proj Aprovado.pdf" (1:100, vector) + as built =====
+// As built (alterações feitas na obra): ver AS_BUILT no fim do arquivo.
 // Units: millimetres. Origin: back-left corner of the 9,00 x 20,00 m lot (top-left of the drawing).
 // +x → right, +y → down (towards the street).
 (function () {
@@ -14,7 +15,7 @@
   const SCHEDULE = {
     P1: { type: 'door', width: 800, height: 2100, sill: 0, style: 'swing', desc: 'Porta de madeira lisa de giro, 1 folha' },
     P2: { type: 'door', width: 700, height: 2100, sill: 0, style: 'swing', desc: 'Porta de madeira lisa de giro, 1 folha' },
-    P3: { type: 'door', width: 800, height: 2100, sill: 0, style: 'swing', desc: 'Porta de madeira com vitrô, 1 folha' },
+    P3: { type: 'door', width: 1200, height: 2100, sill: 0, style: 'swing', desc: 'Porta de entrada de madeira, 1 folha (as built: 1,20 × 2,10)' },
     P4: { type: 'door', width: 2000, height: 2100, sill: 0, style: 'slide4', desc: 'Porta de correr de madeira e vidro, 4 folhas' },
     P5: { type: 'door', width: 1600, height: 2100, sill: 0, style: 'double', desc: 'Porta balcão de madeira e vidro, 2 folhas' },
     P6: { type: 'door', width: 800, height: 2100, sill: 0, style: 'slide', desc: 'Porta de madeira de correr, 1 folha' },
@@ -27,6 +28,7 @@
     J5: { type: 'window', width: 1200, height: 1600, sill: 2200, style: 'fixedMaxar', desc: 'Janela de madeira e vidro fixo e máximo-ar' },
     J6: { type: 'window', width: 1000, height: 1200, sill: 1100, style: 'slide2', desc: 'Janela de vidro e madeira de correr, 2 folhas' },
     J7: { type: 'window', width: 500, height: 2100, sill: 0, style: 'pivot', desc: 'Janela pivotante de vidro e madeira' },
+    J8: { type: 'window', width: 1200, height: 1200, sill: 1100, style: 'slide2', desc: 'Janela de correr, 2 folhas (as built: 1,20 × 1,20)' },
   };
 
   // Wall helpers. kind: structural | partition | muro | railing
@@ -60,7 +62,7 @@
     V('w0_cozDesp', 'f0', 4225, 2925, 4675, 'partition'),
     V('w0_cozQuarto', 'f0', 4225, 4675, 8675, 'partition'),
     H('w0_despSuite', 'f0', 4675, 4225, 7425, 'partition'),
-    V('w0_despSuiteDiv', 'f0', 5475, 2925, 4675, 'partition'),
+    V('w0_despSuiteDiv', 'f0', 4975, 2925, 4675, 'partition'), // as built: banheiro +0,50 m sobre a despensa
     V('w0_divisaDir', 'f0', 8925, 8000, 16200, 'structural'),
     H('w0_salaFront', 'f0', 14925, 4150, 8925, 'structural'),
     V('w0_garagemSala', 'f0', 4225, 10425, 15000, 'structural'),
@@ -113,19 +115,19 @@
   const openings = [
     // Térreo
     O('o0_p1_fundos', 'w0_back', 'P1', 2125, { hinge: 'end', side: 1 }),
-    O('o0_j1_desp', 'w0_back', 'J1', 3170),
+    O('o0_j1_desp', 'w0_back', 'J1', 3100), // as built: centrada na despensa reduzida
     O('o0_j1_suite', 'w0_back', 'J1', 4450),
-    O('o0_j2_coz', 'w0_left', 'J2', 2150),
+    O('o0_j2_coz', 'w0_left', 'J8', 2150), // as built: 1,20 × 1,20 antes do pilar P6
+    O('o0_j8_coz2', 'w0_left', 'J8', 5030), // as built: janela nova depois do pilar P6
     O('o0_j1_lav', 'w0_left', 'J1', 7100),
-    O('o0_j2_quarto', 'w0_right', 'J2', 3000),
-    O('o0_p1_quarto', 'w0_salaTop', 'P1', 2675, { hinge: 'end', side: -1 }),
+    O('o0_j2_quarto', 'w0_right', 'J8', 3000), // as built: 1,20 × 1,20
+    O('o0_p1_quarto', 'w0_salaTop', 'P1', 850, { hinge: 'start', side: -1 }), // as built: saiu de baixo da escada, logo após o pilar P7
     O('o0_j5_escada', 'w0_salaTop', 'J5', 4025),
     O('o0_p1_coz', 'w0_cozBottom', 'P1', 2125, { hinge: 'end', side: -1 }),
     O('o0_p6_desp', 'w0_cozDesp', 'P6', 1250, { side: 1 }),
     O('o0_p2_suite', 'w0_despSuite', 'P2', 2700, { hinge: 'end', side: -1 }),
-    O('o0_j7_a', 'w0_salaFront', 'J7', 600),
-    O('o0_p3_entrada', 'w0_salaFront', 'P3', 1377, { hinge: 'start', side: -1 }),
-    O('o0_j7_b', 'w0_salaFront', 'J7', 2150),
+    // as built: as duas J7 ao lado da entrada foram eliminadas; porta de entrada maior (1,20 × 2,10)
+    O('o0_p3_entrada', 'w0_salaFront', 'P3', 1400, { hinge: 'start', side: -1 }),
     O('o0_j4_sala', 'w0_salaFront', 'J4', 3600),
     O('o0_p1_garagem', 'w0_lavBottom', 'P1', 2150, { hinge: 'start', side: -1 }),
     O('o0_p2_lav', 'w0_lavRight', 'P2', 500, { hinge: 'start', side: 1 }),
@@ -162,8 +164,8 @@
     Object.assign({ id, floor, name, x, y, material, planArea: planArea == null ? null : planArea, outdoor: false }, extra || {});
   const roomSeeds = [
     S('r0_cozinha', 'f0', 'Cozinha', 2900, 6200, 'porcelanato', 14.0),
-    S('r0_desp', 'f0', 'Desp.', 4850, 3800, 'ceramica', 1.76),
-    S('r0_suite', 'f0', 'Suíte', 6450, 3900, 'ceramica', 2.88),
+    S('r0_desp', 'f0', 'Desp.', 4600, 3800, 'ceramica', null), // as built: 0,50 m menor
+    S('r0_suite', 'f0', 'Suíte', 6450, 3900, 'ceramica', null), // as built: 0,50 m maior
     S('r0_quarto', 'f0', 'Quarto', 5825, 6700, 'vinilico', 11.74),
     S('r0_lav', 'f0', 'Lav.', 2325, 9550, 'ceramica', 2.16),
     S('r0_sala', 'f0', 'Sala', 6500, 12200, 'porcelanato', 29.6),
@@ -210,12 +212,81 @@
     ],
   };
 
+  // ---------------------------------------------------------------- as built
+  // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
+  // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
+  const AS_BUILT = {
+    version: 1,
+    date: '2026-09-30',
+    changes: [
+      { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
+      { floor: 'f0', text: 'Porta do quarto (P1) saiu de baixo da escada: agora fica logo após o pilar P7, ao lado da porta da cozinha.' },
+      { floor: 'f0', text: 'Sala: as duas janelas J7 ao lado da entrada foram eliminadas; porta de entrada maior, 1,20 × 2,10.' },
+      { floor: 'f0', text: 'Janelas da cozinha e do quarto passaram a 1,20 × 1,20 (peitoril 1,10).' },
+      { floor: 'f0', text: 'Cozinha: nova janela 1,20 × 1,20 depois do pilar P6 (uma antes e outra depois do pilar).' },
+    ],
+    walls: ['w0_despSuiteDiv'],
+    openings: ['o0_j1_desp', 'o0_j2_coz', 'o0_j8_coz2', 'o0_j2_quarto', 'o0_p1_quarto', 'o0_p3_entrada'],
+    removedOpenings: ['o0_j7_a', 'o0_j7_b'],
+    roomSeeds: ['r0_desp', 'r0_suite'],
+  };
+
+  /**
+   * Leva as alterações do as built para uma planta salva antes delas, sem perder o que o usuário fez:
+   * só os itens listados em AS_BUILT são trocados, e móveis só mudam se ainda estão onde o layout antigo os pôs.
+   * Retorna { doc, changed } (doc novo; o recebido não é alterado).
+   */
+  function migrateAsBuilt(input) {
+    const have = (input.meta && input.meta.asBuilt) || 0;
+    if (have >= AS_BUILT.version) return { doc: input, changed: false };
+    const fresh = initialState();
+    const doc = JSON.parse(JSON.stringify(input));
+    const byId = (list) => new Map(list.map((x) => [x.id, x]));
+    const put = (list, freshList, ids) => {
+      const src = byId(freshList);
+      ids.forEach((id) => {
+        const i = list.findIndex((x) => x.id === id);
+        const f = src.get(id);
+        if (!f) return;
+        const copy = JSON.parse(JSON.stringify(f));
+        if (i >= 0) list[i] = copy;
+        else list.push(copy);
+      });
+    };
+    put(doc.walls, fresh.walls, AS_BUILT.walls);
+    const wallIds = new Set(doc.walls.map((w) => w.id));
+    doc.openings = doc.openings.filter((o) => AS_BUILT.removedOpenings.indexOf(o.id) < 0);
+    put(doc.openings, fresh.openings.filter((o) => wallIds.has(o.wall)), AS_BUILT.openings);
+    put(doc.roomSeeds, fresh.roomSeeds, AS_BUILT.roomSeeds);
+    const moves = (DD.catalog && DD.catalog.AS_BUILT_MOVES) || [];
+    const same = (it, row) => {
+      const p = row[4] || {}, t = DD.catalog.types[row[0]] || {};
+      return it.floor === 'f0' && it.type === row[0] && it.x === row[1] && it.y === row[2] && ((it.rot || 0) % 360) === row[3] &&
+        it.w === (p.w || t.w) && it.d === (p.d || t.d);
+    };
+    moves.forEach(([from, to]) => {
+      const i = doc.furniture.findIndex((it) => same(it, from));
+      if (i < 0) return;
+      if (!to) {
+        doc.furniture.splice(i, 1);
+        return;
+      }
+      const p = to[4] || {}, t = DD.catalog.types[to[0]] || {};
+      Object.assign(doc.furniture[i], { x: to[1], y: to[2], rot: to[3], w: p.w || t.w, d: p.d || t.d });
+    });
+    doc.meta = Object.assign({}, doc.meta, { asBuilt: AS_BUILT.version });
+    if (doc.meta.name === 'Casa — projeto aprovado') doc.meta.name = fresh.meta.name;
+    if (doc.meta.source === 'Planta aprovada 01/01 (esc. 1:100)') doc.meta.source = fresh.meta.source;
+    return { doc, changed: true };
+  }
+
   function initialState() {
     return {
       version: 1,
       meta: {
-        name: 'Casa — projeto aprovado',
-        source: 'Planta aprovada 01/01 (esc. 1:100)',
+        name: 'Casa — as built',
+        source: 'Planta aprovada 01/01 (esc. 1:100) + alterações de obra',
+        asBuilt: AS_BUILT.version,
       },
       floors: FLOORS.map((f) => Object.assign({}, f)),
       walls: walls.map((w) => Object.assign({}, w, { a: Object.assign({}, w.a), b: Object.assign({}, w.b) })),
@@ -229,5 +300,5 @@
     };
   }
 
-  DD.data = { FLOORS, SCHEDULE, KIND_HEIGHT, initialState };
+  DD.data = { FLOORS, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
 })();
