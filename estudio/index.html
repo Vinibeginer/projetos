@@ -3971,6 +3971,28 @@ kbd {
   };
 
   // ------------------------------------------------------------------ persistence
+  // Dentro do visualizador do Claude os downloads diretos são bloqueados: quando a página roda lá, o arquivo é
+  // entregue pelo recurso "downloads" (o usuário confirma). Fora dele (GitHub Pages) segue o link de download normal.
+  let hostDownloads = null;
+  if (window.claude && typeof window.claude.use === 'function')
+    Promise.resolve(window.claude.use('downloads'))
+      .then((api) => (hostDownloads = api || null))
+      .catch(() => (hostDownloads = null));
+  function dataURLToBlob(url) {
+    const [head, body] = url.split(',');
+    const type = (head.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream';
+    const bin = atob(body || ''), bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return new Blob([bytes], { type });
+  }
+  function hostSave(blob, filename) {
+    if (!hostDownloads) return false;
+    hostDownloads
+      .save({ filename, data: blob })
+      .then(() => DD.toast('Arquivo salvo: ' + filename, 'ok'))
+      .catch((e) => DD.toast(e && e.code === 'declined' ? 'Download cancelado.' : 'Não foi possível baixar o arquivo aqui.', 'warn'));
+    return true;
+  }
   const LS_KEY = 'dd.decor.casa.v1';
   DD.persist = {
     key: LS_KEY,
@@ -4112,6 +4134,7 @@ kbd {
       DD.persist.downloadBlob(blob, filename || 'projeto-decoracao.json');
     },
     downloadDataURL(dataURL, filename) {
+      if (dataURL.slice(0, 5) === 'data:' && hostSave(dataURLToBlob(dataURL), filename)) return;
       const a = document.createElement('a');
       a.href = dataURL;
       a.download = filename;
@@ -4120,6 +4143,7 @@ kbd {
       a.remove();
     },
     downloadBlob(blob, filename) {
+      if (hostSave(blob, filename)) return;
       const url = URL.createObjectURL(blob);
       DD.persist.downloadDataURL(url, filename);
       setTimeout(() => URL.revokeObjectURL(url), 2000);
