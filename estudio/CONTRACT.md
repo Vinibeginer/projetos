@@ -8,8 +8,8 @@ source of truth and are already tested (`node tools/test-core.js`: all 18 plan r
 ## 0. Hard rules for every module
 - Each JS module is a classic-script IIFE: `(function(){ const DD = window.DD; ... DD.xxx = {...}; })();`
   No `import`/`export` statements, no top-level `await`, no bundler. Modules are concatenated in file-name order
-  into ONE classic `<script>`: `00-data, 01-core, 10-materials, 11-catalog, 12-furniture3d, 20-plan2d, 30-view3d,
-  40-ui, 99-boot`. A module may reference other `DD.*` namespaces only inside functions (they all exist by the
+  into ONE classic `<script>`: `00-data, 01-core, 10-materials, 11-catalog, 12-furniture3d, 15-structure, 20-plan2d,
+  30-view3d, 40-ui, 99-boot`. A module may reference other `DD.*` namespaces only inside functions (they all exist by the
   time `99-boot.js` calls `init`).
 - **Never write the string `</script` in JS** (build refuses). No `localStorage` except via `DD.persist`.
 - **Immutability**: the document (`DD.store.doc`) is never mutated. Produce new objects (`DD.ops.update/add/remove`,
@@ -218,3 +218,33 @@ Door swing zones to keep free and plan fixtures are listed in the catalog agent'
   `#EFEBE3`, wall tops (cut) `#2E2A26` for structural / `#BFB6A6` partitions so the 2D logic reads in 3D; window frames
   & doors wood `#8A5A2E` (facade has wooden frames/shutters), glass light blue transparent, railings black metal,
   muros coral-beige `#E7D3C0`, grass ground, sky gradient.
+
+
+### 4.7 `src/15-structure.js` → `DD.structure` (projeto estrutural e compatibilização)
+Structural data (columns, beams per level, footings, tie beams) from the engineer's drawings. **The data is never
+committed** (the drawings forbid making them available to third parties): it arrives either embedded in a private
+build (`python tools/build.py out.html --estrutura private/estrutura.json` → `window.DD_STRUCT`) or imported by the
+user through *Mais opções › Importar projeto* (a JSON with `formato: "estrutura-casa/1"` is routed here and kept in
+`localStorage['dd.decor.casa.estrutura.v1']`). Without data the studio keeps the inferred structure.
+```js
+// JSON (mm, same axes as the doc; levels = floor.level of the architecture, 0 = ground floor finish)
+{ formato:'estrutura-casa/1', fonte, niveis:[0,2880,5760,8640], laje:{tipo,h},
+  pilares:[{n,x0,x1,y0,y1,topo,secao}], vigas:{ '<level>':[{x0,x1,y0,y1,h}] },
+  sapatas:[{n,x0,x1,y0,y1}], vigasEquilibrio:[{n,x0,x1,y0,y1,h}] }
+DD.structure = {
+  FORMAT, load(), validate(raw) → {data,error}, importData(raw) → error|null, clearImported(),
+  hasData(), source() → 'embutido'|'importado'|null, version(), info(),
+  columnsOn(floor), ceilingBeams(floor), beamsAt(level),
+  compat(doc) → [{ sev:'erro'|'alerta'|'nota', floor|null, x, y, z, title, detail }],  // cached by doc identity
+  summary(doc), focus(doc, index), highlight(),
+  draw2dWorld(rc), draw2dScreen(rc),          // layers called by plan2d.drawScene when ui.show.structure
+  build3d(THREE, doc, floor), markers3d(THREE, doc, floor),   // groups added per floor by view3d
+}
+```
+Compatibility rules: column over a door/window (≥ 100 mm = erro, less = alerta: opening positions come from the
+drawing), column < 100 mm from an opening jamb, column mostly outside walls (exposed), window/door top above the
+underside of a ceiling beam, beam without a wall below (exposed), wall without beam/ground beam below, slab edge
+vs. architecture outline, level check, slab thickness vs. `floor.height - floor.ceiling`. Events:
+`'structure:changed' {source}`, `'structure:focus' {index, issue}`. UI state: `ui.show.structure` (2D+3D layers),
+`ui.structOnly` (3D shows only the structure). Colours: columns `#A0452D`, beams `#1F8A8A`, footings `#7A4FA0`.
+Tests: `node tools/test-structure.js` (synthetic fixture — no real data in the repo).

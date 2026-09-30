@@ -1418,6 +1418,28 @@
     input.value = '';
     if (!file) return;
     if (file.size > MAX_IMPORT_BYTES) return toast('Arquivo grande demais para um projeto (máx. 10 MB).', 'error');
+    if (DD.structure && typeof file.text === 'function')
+      return file
+        .text()
+        .then((txt) => {
+          let raw = null;
+          try {
+            raw = JSON.parse(txt);
+          } catch (err) {
+            raw = null;
+          }
+          if (raw && raw.formato === DD.structure.FORMAT) {
+            const err = DD.structure.importData(raw);
+            if (err) toast('Projeto estrutural: ' + err, 'error');
+            else toast('Projeto estrutural importado: pilares, vigas e sapatas carregados. Veja a lista de conflitos no painel Projeto.', 'ok');
+            return;
+          }
+          importProjectFile(file);
+        })
+        .catch(() => importProjectFile(file));
+    importProjectFile(file);
+  }
+  function importProjectFile(file) {
     DD.persist
       .readJSONFile(file)
       .then((next) => {
@@ -2118,7 +2140,12 @@
       icon('recenter'),
       h('span', { class: 'btn-label', text: 'Recentralizar' }),
     ]);
-    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.floorsChip, recenter]));
+    S.el.structChip = h(
+      'button',
+      { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só estrutura', 'data-tip': 'Mostrar só pilares, vigas e sapatas (projeto estrutural)', onclick: () => toggleStructure('only') },
+      [icon('layers'), h('span', { class: 'btn-label', text: 'Só estrutura' })]
+    );
+    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.floorsChip, S.el.structChip, recenter]));
     S.el.overlayHint = h('div', { class: 'o3d-hint', 'aria-live': 'polite' });
     ov.appendChild(S.el.overlayHint);
   }
@@ -2132,6 +2159,10 @@
     if (!S.el.overlay) return;
     $$('[data-cam]', S.el.overlay).forEach((b) => setPressed(b, b.getAttribute('data-cam') === u.cam3d));
     setPressed(S.el.floorsChip, !!u.showAllFloors);
+    if (S.el.structChip) {
+      S.el.structChip.hidden = !(DD.structure && DD.structure.hasData());
+      setPressed(S.el.structChip, !!u.structOnly && u.show.structure !== false);
+    }
     const mode = CAM_MODES.find((m) => m.id === u.cam3d) || CAM_MODES[0];
     setText(S.el.overlayHint, mode.hint);
   }
@@ -2266,7 +2297,8 @@
     return {
       el,
       sync(d, u) {
-        const key = [d.walls, d.roomSeeds, d.separators, d.floors, d.furniture, u.floor];
+        const st = DD.structure;
+        const key = [d.walls, d.roomSeeds, d.separators, d.floors, d.furniture, u.floor, d.openings, u.show, u.structOnly, st ? st.version() : 0, st ? st.highlight() : 0];
         if (last && key.every((v, i) => v === last[i])) return;
         last = key;
         el.textContent = '';
@@ -2295,7 +2327,71 @@
       ])
     );
     el.appendChild(section(`Ambientes — ${floor ? floor.name : ''}`, [roomList(d, floor)]));
+    el.appendChild(section('Estrutura e compatibilização', [structureBlock(d, u, floor)], 'st-section'));
     el.appendChild(section('Legenda', [legendBlock()]));
+  }
+  // --------------------------------------------------------------- projeto estrutural (15-structure.js)
+  const SEV_LABEL = { erro: 'Conflito', alerta: 'Atenção', nota: 'Nota' };
+  function importStructureFile() {
+    document.getElementById('file-import').click();
+  }
+  function toggleStructure(key) {
+    const u = ui();
+    if (key === 'show') setUI({ show: Object.assign({}, u.show, { structure: u.show.structure === false }) });
+    else setUI({ structOnly: !u.structOnly, show: Object.assign({}, u.show, { structure: true }) });
+  }
+  function structureBlock(d, u, floor) {
+    const st = DD.structure;
+    if (!st || !st.hasData())
+      return h('div', null, [
+        h('p', {
+          class: 'legend-note',
+          text: 'O projeto estrutural não está carregado. Importe o arquivo estrutura.json (Mais opções › Importar projeto) para ver pilares, vigas e sapatas no 2D e no 3D e a lista de conflitos com a arquitetura.',
+        }),
+        h('div', { class: 'btn-row' }, [textButton('upload', 'Importar projeto estrutural', importStructureFile)]),
+      ]);
+    const info = st.info(), list = st.compat(d), c = st.summary(d);
+    const props = propList([['cols', 'Pilares'], ['beams', 'Vigas por nível'], ['foot', 'Sapatas'], ['slab', 'Lajes']]);
+    props.set('cols', `${info.columns} (${info.toRoof} até a cobertura)`, 'num');
+    props.set('beams', info.beamsPerLevel.join(' / '), 'num');
+    props.set('foot', `${info.footings} + ${info.tieBeams} vigas de equilíbrio`, 'num');
+    props.set('slab', `${info.slabType || 'laje'} h = ${info.slab / 10} cm`);
+    const chip = (key, label, on, tip) =>
+      h('button', { type: 'button', class: 'chip', 'aria-pressed': on ? 'true' : 'false', 'data-tip': tip, onclick: () => toggleStructure(key) }, [h('span', { class: 'btn-label', text: label })]);
+    const toggles = h('div', { class: 'btn-row st-toggles' }, [
+      chip('show', 'Mostrar estrutura', u.show.structure !== false, 'Pilares, vigas do teto e sapatas na planta e no 3D'),
+      chip('only', 'Só estrutura no 3D', !!u.structOnly, 'Esconde paredes, móveis e terreno no 3D'),
+    ]);
+    const counts = h('div', { class: 'st-counts' }, ['erro', 'alerta', 'nota'].map((k) => h('span', { class: 'st-sev st-' + k, text: `${c[k]} ${k === 'erro' ? (c[k] === 1 ? 'conflito' : 'conflitos') : k === 'alerta' ? 'atenção' : c[k] === 1 ? 'nota' : 'notas'}` })));
+    const hl = st.highlight();
+    const row = (it) => {
+      const i = list.indexOf(it), marker = it.x != null && it.sev !== 'nota';
+      return h('li', null, [
+        h('button', { type: 'button', class: 'st-issue' + (i === hl ? ' is-active' : ''), onclick: () => st.focus(doc(), i) }, [
+          h('span', { class: 'st-sev st-' + it.sev, text: (marker ? i + 1 + ' · ' : '') + SEV_LABEL[it.sev] }),
+          h('strong', { text: it.title }),
+          h('small', { text: it.detail }),
+        ]),
+      ]);
+    };
+    const here = list.filter((it) => it.floor === (floor && floor.id) || it.floor == null);
+    const others = d.floors.filter((f) => !floor || f.id !== floor.id).map((f) => {
+      const n = list.filter((it) => it.floor === f.id && it.sev === 'erro').length;
+      return n ? h('button', { type: 'button', class: 'chip', onclick: () => setFloor(f.id) }, [h('span', { class: 'btn-label', text: `${f.name}: ${n} ${n === 1 ? 'conflito' : 'conflitos'}` })]) : null;
+    });
+    const src = st.source();
+    return h('div', null, [
+      props.el,
+      toggles,
+      counts,
+      here.length ? h('ul', { class: 'list st-list' }, here.map(row)) : h('p', { class: 'list-empty', text: 'Nenhum conflito neste pavimento.' }),
+      others.some(Boolean) ? h('div', { class: 'btn-row st-others' }, others) : null,
+      h('p', {
+        class: 'legend-note',
+        text: (info.fonte ? info.fonte + ' ' : '') + 'A lista recalcula quando paredes, portas ou janelas mudam. A solução de cada conflito deve ser validada pelo engenheiro responsável e pela arquiteta.',
+      }),
+      src === 'importado' ? h('div', { class: 'btn-row' }, [textButton('trash', 'Remover dados importados', () => st.clearImported(), 'btn-danger')]) : null,
+    ]);
   }
   function roomList(d, floor) {
     if (!floor) return h('p', { class: 'list-empty', text: 'Nenhum pavimento.' });
@@ -2326,7 +2422,10 @@
       h('div', { class: 'legend' }, rows),
       h('p', {
         class: 'legend-note',
-        text: 'A estrutura foi inferida da planta aprovada: fachadas, divisas e paredes que se repetem no pavimento de cima são tratadas como estruturais.',
+        text:
+          DD.structure && DD.structure.hasData()
+            ? 'Paredes estruturais × vedação seguem a leitura da planta aprovada; pilares, vigas e sapatas vêm do projeto estrutural (seção Estrutura).'
+            : 'A estrutura foi inferida da planta aprovada: fachadas, divisas e paredes que se repetem no pavimento de cima são tratadas como estruturais.',
       }),
     ]);
   }
@@ -2925,8 +3024,8 @@
     if (u.tool !== prev.tool || u.snap !== prev.snap || u.show !== prev.show || u.cam3d !== prev.cam3d) syncStatus(u);
     if (u.tool !== prev.tool) syncToolRail(u);
     if (u.tool !== prev.tool || u.paintMaterial !== prev.paintMaterial) syncPaintStrip(u);
-    if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors) syncOverlay(u);
-    if (u.selection !== prev.selection || u.floor !== prev.floor) refreshInspector();
+    if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors || u.structOnly !== prev.structOnly || u.show !== prev.show) syncOverlay(u);
+    if (u.selection !== prev.selection || u.floor !== prev.floor || u.show !== prev.show || u.structOnly !== prev.structOnly) refreshInspector();
   }
 
   // =================================================================== lifecycle
@@ -2954,6 +3053,11 @@
     $$('dialog.dialog').forEach(initDialog);
     initKeyboard();
     DD.events.on('toast', (p) => p && showToast(p.msg, p.kind));
+    DD.events.on('structure:changed', () => {
+      syncOverlay(ui());
+      refreshInspector();
+    });
+    DD.events.on('structure:focus', () => refreshInspector());
     DD.store.subscribe(onDocChange);
     DD.store.subscribeUI(onUIChange);
     if (window.matchMedia) {

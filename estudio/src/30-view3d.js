@@ -1804,7 +1804,7 @@
       furn.name = 'furniture:' + f.id;
       root.add(furn);
       S.world.add(root);
-      S.floors.set(f.id, { root, arch: null, roof: null, furn, sig: null, shown: true, anim: null });
+      S.floors.set(f.id, { root, arch: null, roof: null, furn, struct: null, marks: null, structKey: null, markKey: null, sig: null, shown: true, anim: null });
     });
   }
   /** Identity list of everything the architecture of a floor is built from. */
@@ -1997,6 +1997,52 @@
     return rebuilt;
   }
 
+  // ------------------------------------------------------------------ projeto estrutural (15-structure.js)
+  /** Pilares/vigas/sapatas e marcadores de conflito por pavimento; reconstrói só o que mudou. → changed? */
+  function syncStructure(doc) {
+    if (!DD.structure) return false;
+    const T = S.THREE, ver = DD.structure.version(), hl = DD.structure.highlight();
+    let list = [];
+    try {
+      list = DD.structure.compat(doc);
+    } catch (e) {
+      console.warn('[view3d] compatibilização falhou', e);
+    }
+    let changed = false;
+    doc.floors.forEach((f) => {
+      const fg = S.floors.get(f.id);
+      if (!fg) return;
+      const skey = [ver, f];
+      if (!sameList(skey, fg.structKey)) {
+        disposeTree(fg.struct);
+        fg.struct = DD.structure.build3d(T, doc, f);
+        fg.root.add(fg.struct);
+        fg.structKey = skey;
+        changed = true;
+      }
+      const mkey = [ver, list, hl];
+      if (!sameList(mkey, fg.markKey)) {
+        disposeTree(fg.marks);
+        fg.marks = DD.structure.markers3d(T, doc, f);
+        fg.root.add(fg.marks);
+        fg.markKey = mkey;
+        changed = true;
+      }
+    });
+    return changed;
+  }
+  /** Leva a câmera (vista aérea) até o ponto de um item da compatibilização. */
+  function flyToIssue(it) {
+    if (!it || it.x == null || !S.ready || !S.active || isWalking() || !S.orbit) return;
+    const f = floorOf(docNow(), it.floor);
+    const target = { x: it.x * MM, y: (f.level + (it.z == null ? 1200 : it.z)) * MM, z: it.y * MM };
+    const cur = currentPose();
+    const dx = cur.pos.x - cur.target.x, dy = cur.pos.y - cur.target.y, dz = cur.pos.z - cur.target.z;
+    const L = Math.hypot(dx, dy, dz) || 1, dist = 7;
+    const pos = { x: target.x + (dx / L) * dist, y: target.y + Math.max(0.35, dy / L) * dist, z: target.z + (dz / L) * dist };
+    tweenCamera(cur, { pos, target, up: { x: 0, y: 1, z: 0 } }, 700, {});
+  }
+
   // ------------------------------------------------------------------ floor visibility (slide + toggle)
   const reducedMotion = () => !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
   const isWalking = () => !!S.walk && S.walk.enabled;
@@ -2011,14 +2057,20 @@
   function updateVisibility(animate) {
     const doc = docNow(), ui = uiNow();
     const showFurniture = !ui.show || ui.show.furniture !== false;
+    const showStruct = !ui.show || ui.show.structure !== false;
+    const only = showStruct && !!ui.structOnly && !!(DD.structure && DD.structure.hasData()); // "Só estrutura"
     doc.floors.forEach((f, i) => {
       const fg = S.floors.get(f.id);
       if (!fg) return;
       const show = floorShouldShow(doc, ui, i);
       if (show !== fg.shown) startFloorAnim(fg, show, animate);
-      fg.furn.visible = showFurniture;
-      if (fg.roof) fg.roof.visible = showsUpper(ui);
+      fg.furn.visible = showFurniture && !only;
+      if (fg.arch) fg.arch.visible = !only;
+      if (fg.struct) fg.struct.visible = showStruct;
+      if (fg.marks) fg.marks.visible = showStruct;
+      if (fg.roof) fg.roof.visible = showsUpper(ui) && !only;
     });
+    if (S.site) S.site.visible = !only;
     requestRender();
   }
   /**
@@ -2131,7 +2183,7 @@
       S.dirty.transient = !!(store() && store().inGesture());
     }
     const d = S.dirty;
-    if (!d.site && !d.floors.size && !d.furniture && !d.visibility && !d.highlight) return;
+    if (!d.site && !d.floors.size && !d.furniture && !d.visibility && !d.highlight && !d.structure) return;
     let changed = false;
     if (d.site) {
       disposeTree(S.site);
@@ -2148,9 +2200,10 @@
       });
     }
     if (d.furniture && syncFurniture(doc)) changed = true;
+    if ((d.structure || d.floors.size) && syncStructure(doc)) changed = true;
     if (changed || d.floors.size || d.furniture) S.dirty.colliders = true;
-    const vis = d.visibility || d.floors.size > 0;
-    S.dirty = { floors: new Set(), furniture: false, site: false, visibility: false, highlight: false, transient: false, colliders: S.dirty.colliders };
+    const vis = d.visibility || d.floors.size > 0 || d.structure;
+    S.dirty = { floors: new Set(), furniture: false, site: false, visibility: false, highlight: false, structure: false, transient: false, colliders: S.dirty.colliders };
     if (vis) updateVisibility(true);
     applyHighlights();
     requestRender();
@@ -2970,7 +3023,7 @@
   }
   function onUIChange(ui, prev) {
     if (ui.selection !== prev.selection || ui.hover !== prev.hover) S.dirty.highlight = true;
-    if (ui.showAllFloors !== prev.showAllFloors || ui.show !== prev.show) S.dirty.visibility = true;
+    if (ui.showAllFloors !== prev.showAllFloors || ui.show !== prev.show || ui.structOnly !== prev.structOnly) S.dirty.visibility = true;
     if (ui.showAllFloors !== prev.showAllFloors && S.ready && S.active && S.atHome && !S.tween && !isWalking())
       tweenCamera(currentPose(), aerialHome(), 600, { home: true }); // re-frame: with or without the upper floors
     if (ui.floor !== prev.floor) onFloorChange(ui.floor);
@@ -2988,6 +3041,19 @@
   function subscribeStore() {
     S.unsubs.push(store().subscribe(onDocChange));
     S.unsubs.push(store().subscribeUI(onUIChange));
+    S.unsubs.push(
+      DD.events.on('structure:changed', () => {
+        S.dirty.structure = true;
+        requestRender();
+      })
+    );
+    S.unsubs.push(
+      DD.events.on('structure:focus', (e) => {
+        S.dirty.structure = true;
+        requestRender();
+        flyToIssue(e && e.issue);
+      })
+    );
   }
 
   // ================================================================== DOM (status, walk prompt, crosshair)
@@ -3055,7 +3121,7 @@
     subscribeStore();
     const doc = docNow();
     markAllFloors(doc);
-    S.dirty.site = S.dirty.furniture = S.dirty.visibility = S.dirty.highlight = true;
+    S.dirty.site = S.dirty.furniture = S.dirty.visibility = S.dirty.highlight = S.dirty.structure = true;
   }
   function failWith(msg) {
     S.failed = true;

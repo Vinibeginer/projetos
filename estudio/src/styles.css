@@ -2215,3 +2215,74 @@ kbd {
     transition-delay: 0s !important;
   }
 }
+
+/* ---- projeto estrutural e compatibilização (15-structure.js) ---- */
+.st-toggles {
+  margin-top: 10px;
+  flex-wrap: wrap;
+}
+.st-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 12px 0 4px;
+}
+.st-sev {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 4px;
+  font: 600 10.5px/1.6 var(--font-mono, 'JetBrains Mono', ui-monospace, monospace);
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #fff;
+}
+.st-erro {
+  background: var(--danger);
+}
+.st-alerta {
+  background: var(--warn);
+}
+.st-nota {
+  background: var(--faint);
+}
+.st-list {
+  margin-top: 6px;
+  max-height: 440px;
+  overflow-y: auto;
+}
+.st-issue {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 8px;
+  width: 100%;
+  padding: 7px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  align-items: start;
+}
+.st-issue:hover {
+  background: var(--hover);
+}
+.st-issue.is-active {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+}
+.st-issue strong {
+  font-weight: 600;
+  font-size: 12.5px;
+}
+.st-issue small {
+  grid-column: 2;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+.st-others {
+  margin-top: 8px;
+  flex-wrap: wrap;
+}

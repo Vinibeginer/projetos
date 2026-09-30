@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Projetos — Obra Mariára</title>
+<meta name="description" content="Ferramentas da obra: estúdio de decoração e compatibilização 2D/3D, tracker da obra, maquetes, projeto elétrico e controle de gastos.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #151412; --panel: #1e1d1a; --panel-2: #26241f; --line: #34312b; --text: #ede8df; --muted: #a39a8c;
+  --faint: #7a7266; --accent: #e0703f; --accent-2: #2ba3a3; --hover: rgba(237, 232, 223, 0.05);
+  --font-ui: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, 'SFMono-Regular', Consolas, monospace;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #f3efe6; --panel: #fbf9f4; --panel-2: #efe9dd; --line: #ddd5c6; --text: #211e1a; --muted: #6b6356;
+    --faint: #8f8679; --accent: #c85a2a; --accent-2: #1f7f7f; --hover: rgba(33, 30, 26, 0.05);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #f3efe6; --panel: #fbf9f4; --panel-2: #efe9dd; --line: #ddd5c6; --text: #211e1a; --muted: #6b6356;
+  --faint: #8f8679; --accent: #c85a2a; --accent-2: #1f7f7f; --hover: rgba(33, 30, 26, 0.05);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 400 15px/1.5 var(--font-ui); }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 56px; }
+header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
+.mark { width: 42px; height: 42px; border-radius: 10px; background: var(--accent); display: grid; place-items: center; flex: none; }
+.mark svg { width: 24px; height: 24px; }
+h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: -0.01em; }
+.sub { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+.eyebrow { font: 500 11px var(--font-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--faint); margin: 30px 0 12px; }
+a { color: inherit; text-decoration: none; }
+.hero { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+.hero:hover { border-color: var(--accent); }
+.hero:focus-visible, .card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.hero-text { padding: 26px 26px 24px; display: flex; flex-direction: column; gap: 10px; }
+.hero h2 { margin: 0; font-size: 22px; font-weight: 700; }
+.hero p { margin: 0; color: var(--muted); max-width: 52ch; }
+.tags { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.tag { font: 500 11px var(--font-mono); padding: 3px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.tag.new { border-color: var(--accent); color: var(--accent); }
+.go { margin-top: auto; padding-top: 8px; color: var(--accent); font-weight: 600; }
+.hero-art { background: var(--panel-2); border-left: 1px solid var(--line); display: grid; place-items: center; padding: 18px; min-height: 220px; }
+.hero-art svg { width: 100%; max-width: 360px; height: auto; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 6px; }
+.card:hover { border-color: var(--accent-2); background: color-mix(in srgb, var(--panel) 92%, var(--accent-2)); }
+.card h3 { margin: 0; font-size: 16px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+.card p { margin: 0; color: var(--muted); font-size: 13.5px; }
+.card .path { margin-top: auto; padding-top: 6px; font: 400 11.5px var(--font-mono); color: var(--faint); }
+.dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.minor { display: flex; flex-wrap: wrap; gap: 8px; }
+.minor a { font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); }
+.minor a:hover { color: var(--text); border-color: var(--muted); }
+footer { margin-top: 40px; color: var(--faint); font-size: 12.5px; }
+@media (max-width: 760px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero-art { border-left: 0; border-top: 1px solid var(--line); min-height: 0; }
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+    <div>
+      <h1>Obra Mariára</h1>
+      <p class="sub">Ferramentas da casa de 3 pavimentos — projeto, obra e finanças</p>
+    </div>
+  </header>
+
+  <div class="eyebrow">Principal</div>
+  <a class="hero" href="./estudio/">
+    <div class="hero-text">
+      <h2>Estúdio de Decoração</h2>
+      <p>A planta aprovada em 2D e 3D na mesma página: áreas calculadas pelas paredes, móveis em escala que encostam na parede, medição, demolição de paredes de vedação, troca de piso e passeio em primeira pessoa.</p>
+      <p>Com o projeto estrutural carregado, mostra pilares, vigas e sapatas e lista os conflitos com a arquitetura.</p>
+      <div class="tags"><span class="tag">2D ⇄ 3D</span><span class="tag">móveis</span><span class="tag">passeio</span><span class="tag new">estrutura + compatibilização</span></div>
+      <span class="go">Abrir o estúdio →</span>
+    </div>
+    <div class="hero-art" aria-hidden="true">
+      <svg viewBox="0 0 360 220">
+        <g fill="none" stroke-linejoin="round">
+          <path d="M40 70h180v110H40z" stroke="#7a7266" stroke-width="2"/>
+          <path d="M40 70h180" stroke="#e0703f" stroke-width="5"/>
+          <path d="M40 70v110M220 70v110M40 180h180" stroke="#e0703f" stroke-width="5"/>
+          <path d="M130 70v60M40 130h60" stroke="#a39a8c" stroke-width="3"/>
+          <path d="M150 130a24 24 0 0 1 24-24" stroke="#a39a8c" stroke-width="1.5" stroke-dasharray="3 3"/>
+          <rect x="60" y="145" width="44" height="24" rx="3" stroke="#a39a8c" stroke-width="1.5"/>
+          <rect x="160" y="84" width="46" height="34" rx="3" stroke="#a39a8c" stroke-width="1.5"/>
+        </g>
+        <g fill="#a0452d"><rect x="36" y="66" width="10" height="10"/><rect x="126" y="66" width="10" height="10"/><rect x="215" y="66" width="10" height="10"/><rect x="36" y="175" width="10" height="10"/><rect x="215" y="175" width="10" height="10"/></g>
+        <path d="M46 71h169" stroke="#2ba3a3" stroke-width="2" stroke-dasharray="6 4"/>
+        <g transform="translate(240 40)" fill="none" stroke-linejoin="round" stroke-width="2">
+          <path d="M20 60 60 40l40 20-40 20z" stroke="#2ba3a3"/>
+          <path d="M20 60v60l40 20v-60M100 60v60l-40 20" stroke="#a39a8c"/>
+          <path d="M20 90l40 20 40-20" stroke="#2ba3a3" stroke-dasharray="4 3"/>
+          <path d="M24 62v56M96 62v56M60 82v56" stroke="#a0452d" stroke-width="4"/>
+        </g>
+        <circle cx="131" cy="132" r="9" fill="#e5484d"/><text x="131" y="136" text-anchor="middle" font-size="10" font-family="monospace" font-weight="700" fill="#fff">1</text>
+      </svg>
+    </div>
+  </a>
+
+  <div class="eyebrow">Obra</div>
+  <div class="grid">
+    <a class="card" href="./tracker-obra/"><h3><span class="dot" style="background:#e0703f"></span>Tracker da Obra</h3><p>Avanço físico por item da PCI, medições da CAIXA, mão de obra, materiais e desembolso.</p><span class="path">tracker-obra/</span></a>
+    <a class="card" href="./acompanhar/"><h3><span class="dot" style="background:#e0703f"></span>Acompanhamento</h3><p>Visão de leitura do andamento da obra para compartilhar.</p><span class="path">acompanhar/</span></a>
+    <a class="card" href="./projeto-3d/"><h3><span class="dot" style="background:#2ba3a3"></span>Maquete da obra</h3><p>Maquete isométrica sincronizada com o avanço do Tracker, por etapa e pavimento.</p><span class="path">projeto-3d/</span></a>
+    <a class="card" href="./projeto-3d/modelo-3d.html"><h3><span class="dot" style="background:#2ba3a3"></span>Modelo 3D</h3><p>Os três pavimentos do projeto aprovado com portas, janelas e escada.</p><span class="path">projeto-3d/modelo-3d.html</span></a>
+    <a class="card" href="./editor-projeto-eletrico/"><h3><span class="dot" style="background:#e3a53a"></span>Projeto Elétrico</h3><p>Editor de projeto elétrico sobre as plantas, com simbologia da NBR 5410.</p><span class="path">editor-projeto-eletrico/</span></a>
+  </div>
+
+  <div class="eyebrow">Pessoal</div>
+  <div class="grid">
+    <a class="card" href="./gastos-pessoais/"><h3><span class="dot" style="background:#46a758"></span>Gastos Pessoais</h3><p>Controle de despesas, fatura do cartão e importação de extratos.</p><span class="path">gastos-pessoais/</span></a>
+  </div>
+
+  <div class="eyebrow">Versões anteriores</div>
+  <div class="minor">
+    <a href="./projeto-3d/editor-planta.html">Editor da planta 2D/3D (antes do estúdio)</a>
+    <a href="./projeto-3d/passeio-3d.html">Passeio 3D por ambiente</a>
+    <a href="./projeto-3d/plantas.html">Plantas por pavimento</a>
+  </div>
+
+  <footer>Estúdio baseado em infosetecinco/estudio-decoracao-casa. Os dados do projeto estrutural não são publicados neste site.</footer>
+</div>
+</body>
+</html>

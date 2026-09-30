@@ -8,3 +8,6 @@ node_modules/
 tools/ui-harness.html
 # internal QA notes
 qa/
+
+# dados do projeto estrutural (propriedade do engenheiro — não publicar)
+private/
