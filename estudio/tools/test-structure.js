@@ -29,7 +29,7 @@ const rectOf = (opId) => {
   const xs = [f.start.x, f.end.x], ys = [f.start.y, f.end.y];
   return { x0: Math.min(...xs) - (horiz ? 0 : h), x1: Math.max(...xs) + (horiz ? 0 : h), y0: Math.min(...ys) - (horiz ? h : 0), y1: Math.max(...ys) + (horiz ? h : 0), op };
 };
-const j2 = rectOf('o0_j2_coz'); // janela de 2,00 m, peitoril 1,10 → topo a 2,40 m
+const j2 = rectOf('o0_j2_coz'); // as built: J8 1,20 × 1,20, peitoril 1,10 → topo a 2,30 m
 const j1 = rectOf('o0_j1_lav');
 const cy = (j1.y0 + j1.y1) / 2;
 const fixture = {
@@ -45,7 +45,7 @@ const fixture = {
   vigas: {
     0: [{ x0: 1500, x1: 7500, y0: 2850, y1: 3000, h: 450 }],
     2880: [
-      { x0: j2.x0, x1: j2.x1, y0: j2.y0 - 500, y1: j2.y1 + 500, h: 500 }, // sobre a J2 da cozinha: fundo a 2,38 m
+      { x0: j2.x0, x1: j2.x1, y0: j2.y0 - 500, y1: j2.y1 + 500, h: 600 }, // sobre a J8 da cozinha: fundo a 2,28 m
       { x0: 150, x1: 4150, y0: 12700, y1: 12850, h: 500 }, // atravessa a garagem → aparente
     ],
     5760: [],
@@ -70,7 +70,7 @@ check('pilar dentro de janela é conflito', pil && pil.sev === 'erro', pil && pi
 const names = (i) => ST.columnsOn(doc.floors[i]).map((c) => c.n).join();
 check('pilar só existe nos pavimentos que atravessa', names(0) === 'PT1,PT2,PT3' && names(1) === 'PT1,PT2' && names(2) === 'PT2', [0, 1, 2].map(names).join(' | '));
 check('sem conflito do PT3 fora do térreo', !list.some((i) => /PT3/.test(i.title) && i.floor !== 'f0'));
-const jan = find(/Janela J2 bate na viga 15\/50/, 'f0');
+const jan = find(/Janela J8 bate na viga 15\/60/, 'f0');
 check('janela acima do fundo da viga', jan && jan.sev === 'erro' && /faltam 20 mm/.test(jan.detail), jan && jan.detail);
 check('viga aparente na garagem', !!list.find((i) => /Viga 15\/50 aparente/.test(i.title) && /Garagem/.test(i.detail)));
 check('pilar aparente na garagem', !!find(/Pilar PT3 fica aparente/, 'f0'));
@@ -81,7 +81,7 @@ check('ordem: conflitos primeiro', list[0].sev === 'erro' && list[list.length - 
 const fix2 = JSON.parse(JSON.stringify(fixture));
 fix2.vigas[2880][0].h = 300;
 ST.importData(fix2);
-check('viga de 30 cm não bate na janela', !ST.compat(doc).some((i) => /Janela J2 bate/.test(i.title)));
+check('viga de 30 cm não bate na janela', !ST.compat(doc).some((i) => /Janela J8 bate/.test(i.title)));
 ST.importData(fixture);
 const moved = DD.ops.update(doc, 'openings', 'o0_j1_lav', { t: j1.op.t - 900 });
 check('mover a janela tira o conflito do pilar (recalcula com o documento)', !ST.compat(moved).some((i) => /Pilar PT1 invade/.test(i.title) && i.floor === 'f0'));

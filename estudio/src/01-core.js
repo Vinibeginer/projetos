@@ -1269,6 +1269,7 @@
           }
         : defaults.site;
       const meta = { name: (input.meta && str(input.meta.name, 80)) || defaults.meta.name, source: (input.meta && str(input.meta.source, 120)) || defaults.meta.source };
+      if (input.meta && num(input.meta.asBuilt) && input.meta.asBuilt > 0) meta.asBuilt = input.meta.asBuilt;
       return { version: 1, meta, floors, walls, openings, roomSeeds, separators, stairs, furniture, measures, site };
     },
     downloadJSON(doc, filename) {

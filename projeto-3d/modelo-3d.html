@@ -95,7 +95,7 @@ td.n{font-family:var(--f-num);font-variant-numeric:tabular-nums;white-space:nowr
 <div class="app">
   <header>
     <h1>Obra Mariára 3D</h1>
-    <div class="sub">Projeto aprovado · planta nº 934 · lote 9,00 × 20,00 m · vista a partir da rua</div>
+    <div class="sub">Projeto aprovado nº 934 + as built · lote 9,00 × 20,00 m · vista a partir da rua</div>
   </header>
   <div class="main">
     <div class="viewer-col">
@@ -179,8 +179,8 @@ const ROOMS = [
   [0,'Lavabo',2.16,'molhado',[[1.65,3.00,9.65,11.25]]],
   [0,'Cozinha',14.00,'molhado',[[1.65,4.15,11.40,17.00]]],
   [0,'Quarto',11.74,'intimo',[[4.30,7.35,11.40,15.25]]],
-  [0,'Despensa',1.76,'molhado',[[4.30,5.40,15.40,17.00]]],
-  [0,'Suíte',2.88,'molhado',[[5.55,7.35,15.40,17.00]]],
+  [0,'Despensa',0.96,'molhado',[[4.30,4.90,15.40,17.00]]],   // as built: 0,50 m menor
+  [0,'Suíte',3.68,'molhado',[[5.05,7.35,15.40,17.00]]],      // as built: 0,50 m maior
   [1,'Varanda',9.14,'varanda',[[0.15,8.85,3.95,5.00]]],
   [1,'Quarto 1',17.40,'intimo',[[0.15,4.15,5.15,9.50]]],
   [1,'Quarto 2',19.79,'intimo',[[4.30,8.85,5.15,9.50]]],
@@ -209,7 +209,7 @@ const WALLS = [
     [4.15,9,5.00,5.15],[4.15,4.30,5.15,9.65],
     [1.50,4.30,9.50,9.65],[1.50,1.65,9.65,17.15],[3.00,3.15,9.65,11.25],
     [1.50,9,11.25,11.40],[4.15,4.30,11.40,17.00],[7.35,7.50,11.40,17.15],
-    [4.30,7.35,15.25,15.40],[5.40,5.55,15.40,17.00],[1.50,7.50,17.00,17.15],
+    [4.30,7.35,15.25,15.40],[4.90,5.05,15.40,17.00],[1.50,7.50,17.00,17.15],
   ],
   [ // 1º pavimento
     [0,0.15,3.80,9.65],[8.85,9,3.80,11.40],
@@ -233,7 +233,7 @@ const WALLS = [
 const ESQ = {
   P1:{t:'giro',w:0.80,h:2.10,sill:0,desc:'Porta de madeira lisa de giro, 1 folha'},
   P2:{t:'giro',w:0.70,h:2.10,sill:0,desc:'Porta de madeira lisa de giro, 1 folha'},
-  P3:{t:'giro',w:0.80,h:2.10,sill:0,desc:'Porta de madeira com vitrô, 1 folha'},
+  P3:{t:'giro',w:1.20,h:2.10,sill:0,desc:'Porta de entrada de madeira, 1 folha (as built)'},
   P4:{t:'correr-vidro',w:2.00,h:2.10,sill:0,desc:'Porta de correr de madeira e vidro, 4 folhas'},
   P5:{t:'balcao',w:1.60,h:2.10,sill:0,desc:'Porta balcão de madeira e vidro, 2 folhas'},
   P6:{t:'correr',w:0.80,h:2.10,sill:0,desc:'Porta de madeira de correr, 1 folha'},
@@ -246,19 +246,21 @@ const ESQ = {
   J4:{t:'jan',w:2.00,h:1.80,sill:0.60,desc:'Janela de madeira e vidro de correr, 2 folhas'},
   J5:{t:'jan',w:1.20,h:1.60,sill:2.20,desc:'Janela de madeira e vidro fixo e máximo ar'},
   J6:{t:'jan',w:1.00,h:1.20,sill:1.10,desc:'Janela de vidro e madeira de correr, 2 folhas'},
-  J7:{t:'jan',w:0.50,h:2.10,sill:0.00,desc:'Janela pivotante de vidro e madeira'},
+  J8:{t:'jan',w:1.20,h:1.20,sill:1.10,desc:'Janela de correr, 2 folhas (as built)'},
 };
-const QTD = {P1:4,P2:9,P3:1,P4:1,P5:2,P6:2,P7:1,P8:1,P9:1,J1:4,J2:5,J3:2,J4:1,J5:2,J6:2,J7:2};
+const QTD = {P1:4,P2:9,P3:1,P4:1,P5:2,P6:2,P7:1,P8:1,P9:1,J1:4,J2:3,J3:2,J4:1,J5:2,J6:2,J8:3};
 
 // vãos: [código, 'h' (parede ao longo de x, z0 da parede) | 'v' (ao longo de z, x0 da parede), linha, início]
 // a largura vem da tabela; "início" é a coordenada onde o vão começa
 const OPEN = [
   [ // térreo
-    ['J7','h',5.00,4.55],['P3','h',5.00,5.15],['J7','h',5.00,6.00],['J4','h',5.00,6.80],
-    ['P1','h',9.50,3.30],['P2','v',3.00,10.45],['J1','v',1.50,9.85],['J2','v',1.50,14.05],
-    ['P1','h',11.25,3.30],['P1','h',11.25,6.50],['J5','h',11.25,7.60],
-    ['J2','v',7.35,13.20],['P6','v',4.15,16.00],['P2','h',15.25,6.60],
-    ['P1','h',17.00,3.30],['J1','h',17.00,4.55],['J1','h',17.00,5.75],
+    // as built: sem as J7 da entrada, porta P3 de 1,20; cozinha com duas J8 (antes e depois do pilar);
+    // porta do quarto logo após o pilar P7; J8 no quarto; J1 da despensa centrada na despensa menor
+    ['P3','h',5.00,4.95],['J4','h',5.00,6.80],
+    ['P1','h',9.50,3.30],['P2','v',3.00,10.45],['J1','v',1.50,9.85],['J8','v',1.50,14.45],['J8','v',1.50,11.52],
+    ['P1','h',11.25,3.30],['P1','h',11.25,4.60],['J5','h',11.25,7.60],
+    ['J8','v',7.35,13.60],['P6','v',4.15,16.00],['P2','h',15.25,6.60],
+    ['P1','h',17.00,3.30],['J1','h',17.00,4.30],['J1','h',17.00,5.75],
   ],
   [ // 1º pavimento
     ['P5','h',5.00,1.70],['P5','h',5.00,5.20],

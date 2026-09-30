@@ -228,7 +228,7 @@ const STAIR = {x0:6200, x1:8850, z0:9650, z1:11250};
 const WALLS_RAW = [
   [[0,150,3800,9650],[8850,9000,3800,11400],[4150,9000,5000,5150],[4150,4300,5150,9650],
    [1500,4300,9500,9650],[1500,1650,9650,17150],[3000,3150,9650,11250],[1500,9000,11250,11400],
-   [4150,4300,11400,17000],[7350,7500,11400,17150],[4300,7350,15250,15400],[5400,5550,15400,17000],[1500,7500,17000,17150]],
+   [4150,4300,11400,17000],[7350,7500,11400,17150],[4300,7350,15250,15400],[4900,5050,15400,17000],[1500,7500,17000,17150]], // as built: suíte +0,50 m
   [[0,150,3800,9650],[8850,9000,3800,11400],[150,8850,5000,5150],[4150,4300,5150,9500],[150,8850,9500,9650],
    [1500,1650,9650,17150],[3000,3150,9650,15250],[1650,3000,12350,12500],[3150,8850,11250,11400],[7350,7500,11400,17150],
    [1650,7350,15250,15400],[4150,4300,15400,17000],[1500,7500,17000,17150],[150,8850,3800,3950,300]],
@@ -240,7 +240,7 @@ const WALLS_RAW = [
 const ESQ = {
   P1:{t:'giro',w:800,h:2100,sill:0,desc:'Porta de madeira lisa de giro, 1 folha'},
   P2:{t:'giro',w:700,h:2100,sill:0,desc:'Porta de madeira lisa de giro, 1 folha'},
-  P3:{t:'giro',w:800,h:2100,sill:0,desc:'Porta de madeira com vitrô, 1 folha'},
+  P3:{t:'giro',w:1200,h:2100,sill:0,desc:'Porta de entrada de madeira, 1 folha (as built)'},
   P4:{t:'correr-vidro',w:2000,h:2100,sill:0,desc:'Porta de correr de madeira e vidro, 4 folhas'},
   P5:{t:'balcao',w:1600,h:2100,sill:0,desc:'Porta balcão de madeira e vidro, 2 folhas'},
   P6:{t:'correr',w:800,h:2100,sill:0,desc:'Porta de madeira de correr, 1 folha'},
@@ -250,15 +250,16 @@ const ESQ = {
   J4:{t:'jan',w:2000,h:1800,sill:600,desc:'Janela de correr, 2 folhas'},
   J5:{t:'jan',w:1200,h:1600,sill:2200,desc:'Janela fixa e máximo ar'},
   J6:{t:'jan',w:1000,h:1200,sill:1100,desc:'Janela de correr, 2 folhas'},
-  J7:{t:'jan',w:500,h:2100,sill:0,desc:'Janela pivotante'},
+  J8:{t:'jan',w:1200,h:1200,sill:1100,desc:'Janela de correr, 2 folhas (as built)'},
 };
 // [código, orientação da parede, coordenada da face inicial da parede, início do vão]
 const OPEN_RAW = [
-  [['J7','h',5000,4550],['P3','h',5000,5150],['J7','h',5000,6000],['J4','h',5000,6800],
-   ['P1','h',9500,3300],['P2','v',3000,10450],['J1','v',1500,9850],['J2','v',1500,14050],
-   ['P1','h',11250,3300],['P1','h',11250,6500],['J5','h',11250,7600],
-   ['J2','v',7350,13200],['P6','v',4150,16000],['P2','h',15250,6600],
-   ['P1','h',17000,3300],['J1','h',17000,4550],['J1','h',17000,5750]],
+  // térreo — as built: sem as J7 da entrada, P3 de 1,20; duas J8 na cozinha; porta do quarto após o pilar; J8 no quarto
+  [['P3','h',5000,4950],['J4','h',5000,6800],
+   ['P1','h',9500,3300],['P2','v',3000,10450],['J1','v',1500,9850],['J8','v',1500,14450],['J8','v',1500,11520],
+   ['P1','h',11250,3300],['P1','h',11250,4600],['J5','h',11250,7600],
+   ['J8','v',7350,13600],['P6','v',4150,16000],['P2','h',15250,6600],
+   ['P1','h',17000,3300],['J1','h',17000,4300],['J1','h',17000,5750]],
   [['P5','h',5000,1700],['P5','h',5000,5200],['P2','h',9500,3350],['P2','h',9500,4400],
    ['P2','v',3000,9750],['P2','v',3000,14500],['J3','v',1500,10600],['J3','v',1500,13450],['J6','v',1500,15700],
    ['P2','h',11250,3300],['J5','h',11250,7600],['J2','v',7350,13200],['J6','v',7350,15700],
@@ -269,8 +270,8 @@ const OPEN_RAW = [
 // cômodos: [pavimento, nome, tipo, ponto dentro do cômodo x, z, área no projeto (m²)]
 const ROOMS_RAW = [
   [0,'Garagem','garagem',2150,7250,18.00],[0,'Sala','social',6500,7500,29.60],[0,'Lavabo','molhado',2300,10400,2.16],
-  [0,'Cozinha','molhado',2900,14200,14.00],[0,'Quarto','intimo',5800,13300,11.74],[0,'Despensa','molhado',4850,16200,1.76],
-  [0,'Suíte','molhado',6450,16200,2.88],
+  [0,'Cozinha','molhado',2900,14200,14.00],[0,'Quarto','intimo',5800,13300,11.74],[0,'Despensa','molhado',4600,16200,0.96],
+  [0,'Suíte','molhado',6450,16200,3.68],
   [1,'Varanda','varanda',4500,4450,9.14],[1,'Quarto 1','intimo',2150,7300,17.40],[1,'Quarto 2','intimo',6550,7300,19.79],
   [1,'Circulação','social',4600,10450,9.12],[1,'Banheiro','molhado',2300,11000,3.65],[1,'Suíte','molhado',2300,13900,3.71],
   [1,'Quarto Master','intimo',5250,13300,16.17],[1,'Closet (esq.)','intimo',2900,16200,4.00],[1,'Closet (dir.)','intimo',5800,16200,4.88],
@@ -312,11 +313,11 @@ const CAT = {
 // rotação 0 = costas para a rua; 90 = costas para a direita; 180 = costas para o fundo; 270 = costas para a esquerda
 const FURN_RAW = [
   [0,'carro',2150,7250,0],[0,'sofa3',4750,7400,270],[0,'rack',8625,7400,90],[0,'mesa_centro',6700,7400,90],
-  [0,'mesa4',5250,10350,90],[0,'poltrona',8250,5600,0],
+  [0,'mesa4',5250,9900,90],[0,'poltrona',8250,5600,0],
   [0,'geladeira',2000,11800,270],[0,'fogao',1950,13400,270],[0,'bancada_pia',1950,15050,270],[0,'mesa_redonda',3300,14200,0],
   [0,'vaso',1975,10100,270],[0,'lavatorio',2300,11025,180],
-  [0,'cama_casal',5500,14310,180],[0,'criado',4560,15025,180],[0,'criado',6440,15025,180],[0,'guarda_roupa',4600,12400,270],
-  [0,'estante',4850,16800,180],[0,'vaso',6000,16675,180],[0,'lavatorio',7125,16300,90],
+  [0,'cama_casal',5500,14310,180],[0,'criado',4560,15025,180],[0,'criado',6440,15025,180],[0,'guarda_roupa',4600,12750,270,1000],
+  [0,'estante',4600,16800,180,600],[0,'vaso',6000,16675,180],[0,'lavatorio',7125,16300,90],
   [1,'cama_casal',1090,7300,270],[1,'criado',350,6360,270],[1,'criado',350,8240,270],[1,'guarda_roupa',3850,7300,90,2000],
   [1,'cama_casal',7910,7300,90],[1,'criado',8650,6360,90],[1,'criado',8650,8240,90],[1,'guarda_roupa',4600,7300,270,2000],
   [1,'escrivaninha',6600,9200,180],
@@ -459,7 +460,7 @@ const regionMat=(f,R)=>S.floors[f].rooms.find(r=>r.id===R.rooms[0]).mat;
 const ui = { floor:0, mode:'2d', tool:'select', sel:null, tab:'rooms', paintMat:'porcelanato', wallT:100,
   view:{cx:4500,cz:11000,s:0.04}, whole:false, cut:false, walk:false };
 let hist=[], hi=-1;
-const KEY='mariara-planta-v1';
+const KEY='mariara-planta-v2'; // v2 = as built (planta salva antes das alterações de obra fica de fora)
 function snapshot(){ return JSON.stringify(S); }
 function commit(){ hist=hist.slice(0,hi+1); hist.push(snapshot()); if(hist.length>80) hist.shift(); hi=hist.length-1; changed(true); }
 function changed(save){ S.floors.forEach((_,f)=>computeRegions(f)); if(ui.sel && !findSel()) ui.sel=null; draw2D(); renderPanel(); sync3D(); updUndo(); if(save) autosave(); }
@@ -1201,7 +1202,7 @@ if(!restored) buildInitial();
 S.floors.forEach((_,f)=>computeRegions(f));
 hist=[snapshot()]; hi=0;
 resize2D(); fit2D(); resize3D(); setPose(aerialPose()); sync3D(); renderPanel(); updUndo(); setBtns();
-$('#status').textContent = restored ? 'Projeto salvo neste navegador carregado' : 'Planta do projeto aprovado';
+$('#status').textContent = restored ? 'Projeto salvo neste navegador carregado' : 'Planta do projeto aprovado + alterações de obra (as built)';
 applyTheme(); matchMedia('(prefers-color-scheme: dark)').addEventListener('change',applyTheme);
 new MutationObserver(applyTheme).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 function applyTheme(){ scene.background=new THREE.Color(css('--scene')||'#dfe5e0'); scene.fog=new THREE.Fog(scene.background,60,140); draw2D(); }
