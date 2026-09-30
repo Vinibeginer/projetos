@@ -2,6 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
+<script src="./auth/sessao.js" data-login></script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Projetos — Obra Mariára</title>
 <meta name="description" content="Ferramentas da obra: estúdio de decoração e compatibilização 2D/3D, tracker da obra, maquetes, projeto elétrico e controle de gastos.">
@@ -29,6 +30,7 @@
   --faint: #8f8679; --accent: #c85a2a; --accent-2: #1f7f7f; --hover: rgba(33, 30, 26, 0.05);
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--text); font: 400 15px/1.5 var(--font-ui); }
 .wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; padding-block: 40px 56px; }
 header { display: flex; align-items: center; gap: 14px; margin-bottom: 32px; }
@@ -61,6 +63,36 @@ a { color: inherit; text-decoration: none; }
 .minor a { font-size: 13px; padding: 6px 12px; border: 1px solid var(--line); border-radius: 8px; color: var(--muted); }
 .minor a:hover { color: var(--text); border-color: var(--muted); }
 footer { margin-top: 40px; color: var(--faint); font-size: 12.5px; }
+header .who { margin-left: auto; display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); }
+.btn { font: 600 13px var(--font-ui); padding: 7px 14px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel); color: var(--text); cursor: pointer; }
+.btn:hover { border-color: var(--muted); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn:disabled { opacity: .6; cursor: default; }
+.linkbtn { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; font-size: 13px; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.gate { min-height: 100vh; display: grid; place-items: center; padding-inline: 16px; padding-block: 32px; }
+.login { width: 100%; max-width: 400px; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 28px 26px; }
+.login .mark { margin-bottom: 16px; }
+.login h1 { font-size: 22px; }
+.login .sub { margin-bottom: 22px; }
+.login label { display: block; font-size: 12.5px; color: var(--muted); margin: 12px 0 5px; }
+.login input { width: 100%; font: 15px var(--font-ui); padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.login .actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 20px; flex-wrap: wrap; }
+.login .msg { min-height: 20px; margin: 14px 0 0; font-size: 13px; color: var(--muted); }
+.login .msg.err { color: #e5484d; }
+.login .note { margin: 20px 0 0; padding-top: 16px; border-top: 1px solid var(--line); font-size: 12.5px; color: var(--faint); }
+.checking { color: var(--muted); font-size: 14px; }
+.access { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; }
+.access form { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+.access input, .access select { font: 14px var(--font-ui); padding: 8px 10px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); }
+.access input { flex: 1 1 220px; min-width: 0; }
+.access ul { list-style: none; margin: 0; padding: 0; }
+.access li { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); font-size: 14px; flex-wrap: wrap; }
+.access li .email { flex: 1 1 180px; min-width: 0; overflow-wrap: anywhere; }
+.access .pill { font: 500 11px var(--font-mono); padding: 2px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+.access .pill.pend { border-color: var(--accent); color: var(--accent); }
+.access .hint { margin: 10px 0 0; font-size: 12.5px; color: var(--faint); }
+.access .amsg { min-height: 18px; font-size: 13px; color: var(--muted); margin: 0 0 8px; }
 @media (max-width: 760px) {
   .hero { grid-template-columns: 1fr; }
   .hero-art { border-left: 0; border-top: 1px solid var(--line); min-height: 0; }
@@ -68,13 +100,35 @@ footer { margin-top: 40px; color: var(--faint); font-size: 12.5px; }
 </style>
 </head>
 <body>
-<div class="wrap">
+<noscript><p style="padding:20px">Ative o JavaScript para entrar.</p></noscript>
+<div class="gate" id="checking"><p class="checking" role="status">Verificando acesso…</p></div>
+
+<div class="gate" id="gate" hidden>
+  <form class="login" id="login-form" novalidate>
+    <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
+    <h1>Obra Mariára</h1>
+    <p class="sub">Entre com a mesma conta do Tracker da obra.</p>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="senha">Senha</label>
+    <input id="senha" type="password" autocomplete="current-password" required>
+    <div class="actions">
+      <button class="btn primary" id="entrar" type="submit">Entrar</button>
+      <button class="linkbtn" id="esqueci" type="button">Esqueci minha senha</button>
+    </div>
+    <p class="msg" id="msg" role="alert" aria-live="polite"></p>
+    <p class="note">O acesso é só para quem participa da obra. Recebeu um convite e ainda não tem conta? <button class="linkbtn" id="criar" type="button">Criar conta</button></p>
+  </form>
+</div>
+
+<div class="wrap" id="hub" hidden>
   <header>
     <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"><path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/></svg></div>
     <div>
       <h1>Obra Mariára</h1>
       <p class="sub">Ferramentas da casa de 3 pavimentos — projeto, obra e finanças</p>
     </div>
+    <div class="who"><span id="who"></span><button class="btn" id="sair" type="button">Sair</button></div>
   </header>
 
   <div class="eyebrow">Principal</div>
@@ -124,6 +178,21 @@ footer { margin-top: 40px; color: var(--faint); font-size: 12.5px; }
     <a class="card" href="./gastos-pessoais/"><h3><span class="dot" style="background:#46a758"></span>Gastos Pessoais</h3><p>Controle de despesas, fatura do cartão e importação de extratos.</p><span class="path">gastos-pessoais/</span></a>
   </div>
 
+  <section id="acesso" hidden>
+    <div class="eyebrow">Acesso à obra</div>
+    <div class="access">
+      <form id="convite-form" novalidate>
+        <label class="sr" for="convite-email" hidden>E-mail</label>
+        <input id="convite-email" type="email" placeholder="E-mail da pessoa" autocomplete="off" required>
+        <select id="convite-papel" aria-label="Permissão"><option value="leitor">Pode ver</option><option value="editor">Pode editar</option></select>
+        <button class="btn primary" type="submit">Convidar</button>
+      </form>
+      <p class="amsg" id="amsg" role="status" aria-live="polite"></p>
+      <ul id="acesso-lista"></ul>
+      <p class="hint">A pessoa entra com o e-mail convidado: se ainda não tiver conta, cria em "Criar conta" na tela de login. "Pode editar" também grava o projeto estrutural pelo estúdio.</p>
+    </div>
+  </section>
+
   <div class="eyebrow">Versões anteriores</div>
   <div class="minor">
     <a href="./projeto-3d/editor-planta.html">Editor da planta 2D/3D (antes do estúdio)</a>
@@ -131,7 +200,147 @@ footer { margin-top: 40px; color: var(--faint); font-size: 12.5px; }
     <a href="./projeto-3d/plantas.html">Plantas por pavimento</a>
   </div>
 
-  <footer>Estúdio baseado em infosetecinco/estudio-decoracao-casa. Os dados do projeto estrutural não são publicados neste site.</footer>
+  <footer>Acesso restrito a quem participa da obra. Estúdio baseado em infosetecinco/estudio-decoracao-casa.</footer>
 </div>
+<script>
+(function () {
+  var P = window.projetoAuth, $ = function (id) { return document.getElementById(id); };
+  var params = new URLSearchParams(location.search);
+  var msg = $('msg');
+  function say(text, err) { msg.textContent = text || ''; msg.classList.toggle('err', !!err); }
+  // volta para a página que pediu o login (só caminhos deste site)
+  function destino() {
+    var n = params.get('next') || '';
+    return n.charAt(0) === '/' && n.charAt(1) !== '/' && n.indexOf('\\') < 0 ? n : null;
+  }
+  function mostrarLogin(texto, err) {
+    $('checking').hidden = true; $('hub').hidden = true; $('gate').hidden = false;
+    say(texto, err);
+    $('email').focus();
+  }
+  function entrar(user) {
+    var n = destino();
+    if (n) { location.replace(n); return; }
+    $('checking').hidden = true; $('gate').hidden = true; $('hub').hidden = false;
+    $('who').textContent = user && user.email ? user.email : '';
+    history.replaceState(null, '', location.pathname);
+  }
+  var SEM_ACESSO = 'Esta conta não tem acesso à obra. Peça ao responsável que convide o seu e-mail no Tracker.';
+  if (params.has('sair')) { P.sair(); return; }
+  P.ready.then(function (a) {
+    if (a.user && a.obraId) entrar(a.user);
+    else if (a.user) mostrarLogin(SEM_ACESSO, true);
+    else mostrarLogin(params.has('sem-acesso') ? SEM_ACESSO : params.has('next') ? 'Entre para abrir essa página.' : '');
+  }, function () { mostrarLogin('Sem conexão com o servidor de login. Verifique a internet e tente de novo.', true); });
+
+  function traduz(e) {
+    var m = ((e && e.message) || '').toLowerCase();
+    if (m.indexOf('invalid login') >= 0) return 'E-mail ou senha incorretos.';
+    if (m.indexOf('confirm') >= 0) return 'Confirme o e-mail antes de entrar (veja a caixa de entrada).';
+    if (m.indexOf('rate limit') >= 0) return 'Muitas tentativas. Aguarde um minuto.';
+    return (e && e.message) || 'Não foi possível entrar.';
+  }
+  $('login-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var email = $('email').value.trim(), senha = $('senha').value;
+    if (!email || !senha) { say('Preencha e-mail e senha.', true); return; }
+    $('entrar').disabled = true; say('Entrando…');
+    P.client().then(function (c) {
+      return c.auth.signInWithPassword({ email: email, password: senha }).then(function (r) {
+        if (r.error) throw r.error;
+        return c.rpc('acesso_projeto').then(function (res) {
+          if (res.error) throw res.error;
+          var acc = Array.isArray(res.data) ? res.data[0] : res.data;
+          if (!acc) { return c.auth.signOut().then(function () { throw new Error(SEM_ACESSO); }); }
+          location.reload(); // o sessao.js confirma e guarda o acesso
+        });
+      });
+    }).catch(function (e) { $('entrar').disabled = false; say(traduz(e), true); });
+  });
+  $('esqueci').addEventListener('click', function () {
+    var email = $('email').value.trim();
+    if (!email) { say('Digite seu e-mail no campo acima e clique de novo em "Esqueci minha senha".', true); $('email').focus(); return; }
+    P.client().then(function (c) {
+      return c.auth.resetPasswordForEmail(email, { redirectTo: P.ROOT + 'tracker-obra/?recuperar=1' });
+    }).then(function (r) {
+      if (r && r.error) throw r.error;
+      say('Enviamos um link para ' + email + '. Abra o e-mail para definir a nova senha.');
+    }).catch(function (e) { say(traduz(e), true); });
+  });
+  $('sair').addEventListener('click', function () { P.sair(); });
+
+  // ---- criar conta (para quem recebeu convite)
+  var modoCriar = false;
+  $('criar').addEventListener('click', function () {
+    modoCriar = !modoCriar;
+    $('entrar').textContent = modoCriar ? 'Criar conta' : 'Entrar';
+    $('criar').textContent = modoCriar ? 'Já tenho conta' : 'Criar conta';
+    $('senha').setAttribute('autocomplete', modoCriar ? 'new-password' : 'current-password');
+    say(modoCriar ? 'Use o e-mail que recebeu o convite e uma senha com pelo menos 6 caracteres.' : '');
+  });
+  $('login-form').addEventListener('submit', function (ev) {
+    if (!modoCriar) return;
+    ev.stopImmediatePropagation(); ev.preventDefault();
+    var email = $('email').value.trim(), senha = $('senha').value;
+    if (!email || senha.length < 6) { say('Preencha o e-mail e uma senha com pelo menos 6 caracteres.', true); return; }
+    $('entrar').disabled = true;
+    P.client().then(function (c) {
+      return c.auth.signUp({ email: email, password: senha, options: { emailRedirectTo: P.ROOT } });
+    }).then(function (r) {
+      $('entrar').disabled = false;
+      if (r.error) throw r.error;
+      if (r.data && r.data.session) { location.reload(); return; }
+      say('Conta criada. Abra o e-mail de confirmação que enviamos para ' + email + ' e depois entre aqui.');
+    }).catch(function (e) { $('entrar').disabled = false; say(traduz(e), true); });
+  }, true);
+
+  // ---- acesso à obra (só o dono)
+  var obraId = null;
+  function amsg(t, err) { $('amsg').textContent = t || ''; $('amsg').style.color = err ? '#e5484d' : ''; }
+  function carregarAcesso() {
+    P.client().then(function (c) { return c.rpc('membros_projeto'); }).then(function (r) {
+      if (r.error) throw r.error;
+      var ul = $('acesso-lista'); ul.textContent = '';
+      var rows = r.data || [];
+      if (!rows.length) { var li0 = document.createElement('li'); li0.textContent = 'Só você tem acesso por enquanto.'; li0.style.color = 'var(--muted)'; ul.appendChild(li0); }
+      rows.forEach(function (m) {
+        var li = document.createElement('li');
+        var em = document.createElement('span'); em.className = 'email'; em.textContent = m.email || '(conta sem e-mail)';
+        var pa = document.createElement('span'); pa.className = 'pill' + (m.pendente ? ' pend' : ''); pa.textContent = (m.papel === 'editor' ? 'pode editar' : 'pode ver') + (m.pendente ? ' · convite pendente' : '');
+        var bt = document.createElement('button'); bt.className = 'btn'; bt.type = 'button'; bt.textContent = m.pendente ? 'Cancelar convite' : 'Remover';
+        bt.onclick = function () { remover(m, bt); };
+        li.appendChild(em); li.appendChild(pa); li.appendChild(bt); ul.appendChild(li);
+      });
+    }).catch(function (e) { amsg('Não foi possível carregar a lista: ' + ((e && e.message) || ''), true); });
+  }
+  function remover(m, bt) {
+    if (bt.dataset.confirm !== '1') { bt.dataset.confirm = '1'; bt.textContent = 'Confirmar'; setTimeout(function () { bt.dataset.confirm = ''; bt.textContent = m.pendente ? 'Cancelar convite' : 'Remover'; }, 3000); return; }
+    P.client().then(function (c) {
+      return m.pendente
+        ? c.from('convites').delete().eq('obra_id', obraId).eq('email', m.email)
+        : c.from('obra_membros').delete().eq('obra_id', obraId).eq('user_id', m.user_id);
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      amsg(m.pendente ? 'Convite cancelado.' : 'Acesso removido.'); carregarAcesso();
+    }).catch(function (e) { amsg('Não foi possível remover: ' + ((e && e.message) || ''), true); });
+  }
+  $('convite-form').addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    var email = $('convite-email').value.trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { amsg('Digite um e-mail válido.', true); return; }
+    P.client().then(function (c) {
+      return c.from('convites').upsert({ obra_id: obraId, email: email, papel: $('convite-papel').value }, { onConflict: 'obra_id,email' });
+    }).then(function (r) {
+      if (r.error) throw r.error;
+      $('convite-email').value = '';
+      amsg('Convite registrado para ' + email + '. Avise a pessoa: ela entra por este site com esse e-mail.');
+      carregarAcesso();
+    }).catch(function (e) { amsg('Não foi possível convidar: ' + ((e && e.message) || ''), true); });
+  });
+  P.ready.then(function (a) {
+    if (a.user && a.papel === 'dono') { obraId = a.obraId; $('acesso').hidden = false; carregarAcesso(); }
+  }, function () {});
+})();
+</script>
 </body>
 </html>

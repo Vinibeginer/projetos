@@ -15,6 +15,18 @@ código em `estudio/src/` (módulos numerados), página gerada com `python estud
 testes em `estudio/tools/test-*.js` e contrato entre módulos em `estudio/CONTRACT.md`. Os dados do projeto
 estrutural não são publicados (ficam em `estudio/private/`, ignorado pelo Git).
 
+## Acesso restrito (login)
+A página inicial (`index.html`) é a tela de login: usa a mesma conta do Tracker (Supabase) e só libera quem é
+dono ou membro da obra (função `acesso_projeto()`, migração `0008`). As páginas do estúdio, maquetes, projeto
+elétrico e gastos incluem `auth/sessao.js` no `<head>`: sem sessão ou sem acesso, voltam para o login.
+O dono convida e remove pessoas na seção **Acesso à obra** da página inicial (convite por e-mail; a pessoa cria a
+conta em "Criar conta" ou, se já tiver, ganha o acesso no próximo login).
+
+- O Tracker mantém o login próprio (é multi-obra) e o `acompanhar/` segue público pelo código da obra.
+- O código das páginas continua num repositório público: o login controla quem usa o site e quem lê os
+  **dados do banco** (Tracker, projeto estrutural na tabela `projeto_estrutural`). Para esconder também o código,
+  o repositório precisaria ser privado (GitHub Pages em repositório privado exige plano pago).
+
 ## Tracker da obra
 Tracker financeiro da obra — Vinícius Sampaio Ornellas
 

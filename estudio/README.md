@@ -15,7 +15,9 @@ Ferramenta de decoração e compatibilização em **um único arquivo HTML** sob
 
 ### Dados do projeto estrutural
 A prancha do projeto estrutural proíbe disponibilizá-lo a terceiros, então **os dados não ficam neste repositório
-público**. Para ver a estrutura:
+público**. Eles ficam na nuvem da obra (tabela `projeto_estrutural` no Supabase), e só quem entra no site com uma
+conta da obra consegue ler. Dono e editores atualizam importando o `estrutura.json` e clicando em
+**Guardar na nuvem da obra** (painel Projeto › Estrutura). Outras formas:
 - abra a página e use **Mais opções › Importar projeto** com o arquivo `estrutura.json` (fica guardado só no seu navegador); ou
 - gere uma versão privada com os dados embutidos: `python tools/build.py private/estudio-privado.html --estrutura private/estrutura.json` (a pasta `private/` é ignorada pelo Git).
 
