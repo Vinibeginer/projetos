@@ -30,6 +30,9 @@ oldDoc.openings = oldDoc.openings.filter((o) => ['o0_j8_coz2', 'o0_j9_garagemA',
 const J7 = { wall: 'w0_salaFront', code: 'J7', type: 'window', width: 500, height: 2100, sill: 0, style: 'pivot', hinge: 'start', side: 1 };
 oldDoc.openings.push(Object.assign({ id: 'o0_j7_a', t: 600 }, J7), Object.assign({ id: 'o0_j7_b', t: 2150 }, J7));
 oldDoc.roomSeeds.find((r) => r.id === 'r0_desp').x = 4850;
+oldDoc.openings = oldDoc.openings.filter((o) => !/^o1_(j8|p10)_q/.test(o.id));
+const P5 = { wall: 'w1_front', code: 'P5', type: 'door', width: 1600, height: 2100, sill: 0, style: 'double', hinge: 'start', side: 1 };
+oldDoc.openings.push(Object.assign({ id: 'o1_p5_q1', t: 2500 }, P5), Object.assign({ id: 'o1_p5_q2', t: 5950 }, P5));
 DD.catalog.AS_BUILT_MOVES.forEach(([from, to], i) => {
   const p = from[4] || {}, t = DD.catalog.types[from[0]];
   const item = { id: 'old' + i, floor: 'f0', type: from[0], x: from[1], y: from[2], rot: from[3], w: p.w || t.w, d: p.d || t.d, h: t.h, elev: 0, color: null };
@@ -75,5 +78,7 @@ v2.openings.find((o) => o.id === 'o0_j9_garagemB').sill = 1100;
 const m3 = DD.data.migrateAsBuilt(v2);
 const sill = (id) => m3.doc.openings.find((o) => o.id === id).sill;
 check('rodada 3: J9 perto da porta da sala com peitoril 0,80, a outra 1,10', m3.changed && sill('o0_j9_garagemB') === 800 && sill('o0_j9_garagemA') === 1100);
+check('rodada 4: quartos da frente sem P5, com porta 0,80 e janela 1,20', !doc.openings.some((o) => o.code === 'P5') &&
+  doc.openings.filter((o) => /^o1_(j8|p10)_q/.test(o.id)).map((o) => o.code + o.width).sort().join() === 'J81200,J81200,P10800,P10800');
 console.log(fails ? `test-asbuilt: ${fails} falha(s)` : 'test-asbuilt: todos os testes ok');
 process.exitCode = fails ? 1 : 0;

@@ -242,7 +242,7 @@ const ESQ = {
   P2:{t:'giro',w:700,h:2100,sill:0,desc:'Porta de madeira lisa de giro, 1 folha'},
   P3:{t:'giro',w:1200,h:2100,sill:0,desc:'Porta de entrada de madeira, 1 folha (as built)'},
   P4:{t:'correr-vidro',w:2000,h:2100,sill:0,desc:'Porta de correr de madeira e vidro, 4 folhas'},
-  P5:{t:'balcao',w:1600,h:2100,sill:0,desc:'Porta balcão de madeira e vidro, 2 folhas'},
+  P10:{t:'giro',w:800,h:2100,sill:0,desc:'Porta de giro para a sacada, 1 folha (as built)'},
   P6:{t:'correr',w:800,h:2100,sill:0,desc:'Porta de madeira de correr, 1 folha'},
   J1:{t:'jan',w:600,h:600,sill:1800,desc:'Janela máximo ar'},
   J2:{t:'jan',w:2000,h:1300,sill:1100,desc:'Janela de correr, 2 folhas'},
@@ -262,7 +262,7 @@ const OPEN_RAW = [
    ['P1','h',11250,3300],['P1','h',11250,4600],['J5','h',11250,7600],
    ['J8','v',7350,13600],['P6','v',4150,16000],['P2','h',15250,6600],
    ['P1','h',17000,3300],['J1','h',17000,4300],['J1','h',17000,5750]],
-  [['P5','h',5000,1700],['P5','h',5000,5200],['P2','h',9500,3350],['P2','h',9500,4400],
+  [['J8','h',5000,1100],['P10','h',5000,2700],['P10','h',5000,5000],['J8','h',5000,6000], // as built['P2','h',9500,3350],['P2','h',9500,4400],
    ['P2','v',3000,9750],['P2','v',3000,14500],['J3','v',1500,10600],['J3','v',1500,13450],['J6','v',1500,15700],
    ['P2','h',11250,3300],['J5','h',11250,7600],['J2','v',7350,13200],['J6','v',7350,15700],
    ['P6','h',15250,3300],['P2','h',15250,4400]],
@@ -462,7 +462,7 @@ const regionMat=(f,R)=>S.floors[f].rooms.find(r=>r.id===R.rooms[0]).mat;
 const ui = { floor:0, mode:'2d', tool:'select', sel:null, tab:'rooms', paintMat:'porcelanato', wallT:100,
   view:{cx:4500,cz:11000,s:0.04}, whole:false, cut:false, walk:false };
 let hist=[], hi=-1;
-const KEY='mariara-planta-v4'; // v2 = as built (planta salva antes das alterações de obra fica de fora)
+const KEY='mariara-planta-v5'; // v2 = as built (planta salva antes das alterações de obra fica de fora)
 function snapshot(){ return JSON.stringify(S); }
 function commit(){ hist=hist.slice(0,hi+1); hist.push(snapshot()); if(hist.length>80) hist.shift(); hi=hist.length-1; changed(true); }
 function changed(save){ S.floors.forEach((_,f)=>computeRegions(f)); if(ui.sel && !findSel()) ui.sel=null; draw2D(); renderPanel(); sync3D(); updUndo(); if(save) autosave(); }
