@@ -121,6 +121,7 @@
   const PANEL_TITLES = { overview: 'Projeto', furniture: 'Móvel', wall: 'Parede', opening: 'Abertura', room: 'Ambiente', measure: 'Medida' };
   const SELECTION_COLLECTION = { furniture: 'furniture', wall: 'walls', opening: 'openings', measure: 'measures' };
 
+  const HINT_3D_PAN = 'Mover: arraste para deslocar a vista · botão direito para girar · roda do mouse para zoom';
   const CAM_MODES = [
     { id: 'orbit', label: 'Aérea', icon: 'orbit', hint: 'Arraste para girar · botão direito para deslocar · roda do mouse para zoom · clique para selecionar' },
     // Shown only once the pointer is locked: before that, view3d's own centre prompt explains how to start.
@@ -1641,13 +1642,22 @@
   function syncToolRail(u, view) {
     const is3d = (view || S.appliedView || u.view) === '3d';
     $$('#toolrail .tool-btn').forEach((b) => {
-      setPressed(b, !is3d && b.getAttribute('data-tool') === u.tool);
-      b.setAttribute('data-tip', (b.getAttribute('data-tip') || '').replace(/ — volta à planta 2D$/, '') + (is3d ? ' — volta à planta 2D' : ''));
+      const id = b.getAttribute('data-tool'), in3d = id === 'pan'; // Mover também funciona na vista 3D
+      setPressed(b, (!is3d || in3d) && id === u.tool);
+      b.setAttribute('data-tip', (b.getAttribute('data-tip') || '').replace(/ — volta à planta 2D$/, '') + (is3d && !in3d ? ' — volta à planta 2D' : ''));
     });
   }
   function pickToolFromRail(id) {
+    if (id === 'pan' && planHidden()) {
+      toggle3DPan();
+      return;
+    }
     setTool(id);
     if (planHidden()) setView('2d');
+  }
+  /** Mover a vista no 3D: liga/desliga (volta para Selecionar). */
+  function toggle3DPan() {
+    setTool(ui().tool === 'pan' ? 'select' : 'pan');
   }
 
   // =================================================================== library
@@ -2136,6 +2146,11 @@
       },
       [icon('layers'), h('span', { class: 'btn-label', text: 'Pavimentos superiores' })]
     );
+    S.el.panChip = h(
+      'button',
+      { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Mover a vista', 'data-tip': 'Arrastar desloca a vista em vez de girar (H)', onclick: toggle3DPan },
+      [icon('pan'), h('span', { class: 'btn-label', text: 'Mover' })]
+    );
     const recenter = h('button', { type: 'button', class: 'btn', 'aria-label': 'Recentralizar câmera', 'data-tip': 'Voltar a câmera para o pavimento ativo', onclick: recenter3D }, [
       icon('recenter'),
       h('span', { class: 'btn-label', text: 'Recentralizar' }),
@@ -2145,7 +2160,7 @@
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só estrutura', 'data-tip': 'Mostrar só pilares, vigas e sapatas (projeto estrutural)', onclick: () => toggleStructure('only') },
       [icon('layers'), h('span', { class: 'btn-label', text: 'Só estrutura' })]
     );
-    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.floorsChip, S.el.structChip, recenter]));
+    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, recenter]));
     S.el.overlayHint = h('div', { class: 'o3d-hint', 'aria-live': 'polite' });
     ov.appendChild(S.el.overlayHint);
   }
@@ -2164,7 +2179,11 @@
       setPressed(S.el.structChip, !!u.structOnly && u.show.structure !== false);
     }
     const mode = CAM_MODES.find((m) => m.id === u.cam3d) || CAM_MODES[0];
-    setText(S.el.overlayHint, mode.hint);
+    if (S.el.panChip) {
+      S.el.panChip.hidden = mode.id === 'walk';
+      setPressed(S.el.panChip, u.tool === 'pan');
+    }
+    setText(S.el.overlayHint, mode.id === 'orbit' && u.tool === 'pan' ? HINT_3D_PAN : mode.hint);
   }
   function setCameraMode(mode) {
     flushNudge();
@@ -2853,7 +2872,7 @@
     const is3d = (view || S.appliedView || u.view) === '3d';
     const tool = TOOL_BY_ID[u.tool] || TOOLS[0];
     const cam = CAM_MODES.find((m) => m.id === u.cam3d) || CAM_MODES[0];
-    const key = is3d ? '3d:' + cam.id : tool.id;
+    const key = is3d ? '3d:' + cam.id + (u.tool === 'pan' ? ':pan' : '') : tool.id;
     const toolEl = document.getElementById('status-tool');
     if (toolEl.getAttribute('data-tool') !== key) {
       toolEl.setAttribute('data-tool', key);
@@ -2861,7 +2880,8 @@
       toolEl.appendChild(icon(is3d ? 'cube' : tool.icon));
       toolEl.appendChild(document.createTextNode(' ' + (is3d ? 'Vista 3D · ' + cam.label : tool.id === 'pan' ? 'Mover a vista' : tool.label)));
     }
-    setText(document.getElementById('status-hint'), is3d ? STATUS_3D[cam.id] || STATUS_3D.orbit : tool.hint);
+    const pan3d = is3d && cam.id === 'orbit' && u.tool === 'pan';
+    setText(document.getElementById('status-hint'), pan3d ? HINT_3D_PAN : is3d ? STATUS_3D[cam.id] || STATUS_3D.orbit : tool.hint);
     const show = u.show || {};
     setPressed(document.getElementById('tg-snap'), !!u.snap);
     setPressed(document.getElementById('tg-grid'), !!show.grid);
@@ -3005,7 +3025,7 @@
   function runAction(a) {
     const fid = () => selectedFurnitureId();
     const handlers = {
-      tool: () => planOnly() || setTool(a.tool),
+      tool: () => (a.tool === 'pan' && planHidden() ? toggle3DPan() : planOnly() || setTool(a.tool)),
       undo: doUndo,
       redo: doRedo,
       save: saveNow,
@@ -3044,7 +3064,10 @@
     if (S.ready && u.view !== S.appliedView) setView(u.view);
     if (u.floor !== prev.floor) syncFloorTabs();
     if (u.tool !== prev.tool || u.snap !== prev.snap || u.show !== prev.show || u.cam3d !== prev.cam3d) syncStatus(u);
-    if (u.tool !== prev.tool) syncToolRail(u);
+    if (u.tool !== prev.tool) {
+      syncToolRail(u);
+      syncOverlay(u);
+    }
     if (u.tool !== prev.tool || u.paintMaterial !== prev.paintMaterial) syncPaintStrip(u);
     if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors || u.structOnly !== prev.structOnly || u.show !== prev.show) syncOverlay(u);
     if (u.selection !== prev.selection || u.floor !== prev.floor || u.show !== prev.show || u.structOnly !== prev.structOnly) refreshInspector();
