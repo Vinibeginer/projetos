@@ -779,6 +779,36 @@ kbd {
 .workspace.lib-collapsed {
   --lib-w: 0px;
 }
+.workspace.insp-collapsed {
+  --insp-w: 0px;
+}
+.workspace.insp-collapsed .inspector {
+  overflow: hidden;
+  border-left-color: transparent;
+}
+/* apresentação: só a casa (topo enxuto, sem ferramentas, painéis e rodapé) */
+.app.presenting {
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr) 0;
+}
+.app.presenting .workspace {
+  --rail-w: 0px;
+  --lib-w: 0px;
+  --insp-w: 0px;
+}
+.app.presenting .toolrail,
+.app.presenting .library,
+.app.presenting .inspector,
+.app.presenting .statusbar {
+  overflow: hidden;
+  border-color: transparent;
+  visibility: hidden;
+}
+.app.presenting .topbar-actions > :not(#btn-present):not(.topbar-sep) {
+  display: none !important;
+}
+#btn-present[aria-pressed='true'] {
+  color: var(--accent);
+}
 .workspace.is-resizing,
 .workspace.no-anim {
   transition: none;
@@ -2175,6 +2205,9 @@ kbd {
 }
 
 @media (max-width: 999px) {
+  .hide-narrow {
+    display: none !important;
+  }
   .workspace {
     grid-template-columns: var(--rail-w) minmax(0, 1fr);
     grid-template-areas: 'rail stage';
@@ -2490,7 +2523,10 @@ kbd {
       <button type="button" class="icon-btn" id="btn-undo" aria-label="Desfazer" data-tip="Nada para desfazer" disabled><span class="ic" data-icon="undo"></span></button>
       <button type="button" class="icon-btn hide-compact" id="btn-redo" aria-label="Refazer" data-tip="Nada para refazer" disabled><span class="ic" data-icon="redo"></span></button>
       <span class="topbar-sep" aria-hidden="true"></span>
-      <button type="button" class="btn btn-primary btn-save" id="btn-save" data-tip="Salvar neste navegador" data-key="Ctrl+S" aria-label="Salvar"><span class="ic" data-icon="save"></span><span class="btn-save-label">Salvar</span></button>
+      <button type="button" class="icon-btn hide-narrow" id="btn-insp-toggle" aria-label="Painel lateral direito" aria-controls="inspector" aria-pressed="true" data-tip="Recolher / mostrar o painel da direita" data-key="I"><span class="ic" data-icon="panelRight"></span></button>
+      <button type="button" class="icon-btn" id="btn-present" aria-label="Modo apresentação" aria-pressed="false" data-tip="Apresentação: só a casa, em tela cheia" data-key="P"><span class="ic" data-icon="expand"></span></button>
+      <span class="topbar-sep hide-narrow" aria-hidden="true"></span>
+      <button type="button" class="btn btn-primary btn-save" id="btn-save" data-tip="Salvar na nuvem da obra" data-key="Ctrl+S" aria-label="Salvar"><span class="ic" data-icon="save"></span><span class="btn-save-label">Salvar</span></button>
 
       <div class="menu-wrap">
         <button type="button" class="btn btn-ghost hide-compact" id="btn-export" aria-haspopup="menu" aria-expanded="false" aria-controls="menu-export"><span class="ic" data-icon="export"></span><span>Exportar</span><span class="ic ic-sm" data-icon="chevron"></span></button>
@@ -16817,6 +16853,8 @@ kbd {
     flip: '<path d="M10 2.5v15"/><path d="M7.5 5.5 3 10l4.5 4.5zM12.5 5.5 17 10l-4.5 4.5"/>',
     hinge: '<path d="M4 16.5V3.5"/><path d="M4 3.5a13 13 0 0 1 12.5 13"/><path d="M4 16.5h12.5"/>',
     room: '<path d="M3 3.5h14v13H3z"/><path d="M3 10h6M12 3.5V8M12 11v5.5"/>',
+    panelRight: '<rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M12.5 3.5v13"/>',
+    expand: '<path d="M3 7.5V3h4.5M17 7.5V3h-4.5M3 12.5V17h4.5M17 12.5V17h-4.5"/>',
   };
 
   const SHORTCUT_GROUPS = [
@@ -16835,7 +16873,7 @@ kbd {
         [['←', '↑', '→', '↓'], 'Deslocar 10 mm (Shift: 100 mm)'],
         [['Enter'], 'Confirmar o valor de um campo'],
         [['Esc'], 'Cancelar / limpar a seleção'],
-        [['Ctrl', 'S'], 'Salvar neste navegador'],
+        [['Ctrl', 'S'], 'Salvar (nuvem da obra)'],
       ],
     },
     {
@@ -16847,6 +16885,9 @@ kbd {
         [['0'], 'Enquadrar o pavimento (3D: recentralizar)'],
         [['+', '−'], 'Zoom da planta'],
         [['G'], 'Mostrar / ocultar a grade'],
+        [['B'], 'Recolher / mostrar a biblioteca (painel da esquerda)'],
+        [['I'], 'Recolher / mostrar o painel da direita'],
+        [['P'], 'Apresentação: só a casa, em tela cheia (Esc sai)'],
         [['?'], 'Esta lista de atalhos'],
       ],
     },
@@ -17146,6 +17187,9 @@ kbd {
     if (lower === 'r') return { type: 'rotate', delta: e.shiftKey ? -90 : 90 };
     if (lower === 'q') return { type: 'view', mode: e.shiftKey ? 'split' : 'toggle' };
     if (lower === 'g' && !e.shiftKey) return { type: 'grid' };
+    if (lower === 'b' && !e.shiftKey) return { type: 'panel', panel: 'library' };
+    if (lower === 'i' && !e.shiftKey) return { type: 'panel', panel: 'inspector' };
+    if (lower === 'p' && !e.shiftKey) return { type: 'present' };
     if (k === '0') return { type: 'fit' };
     if (k === '+' || k === '=') return { type: 'zoom', factor: ZOOM_STEP };
     if (k === '-' || k === '_') return { type: 'zoom', factor: 1 / ZOOM_STEP };
@@ -17607,6 +17651,7 @@ kbd {
   }
   function escapeAction() {
     if (S.openMenu) return closeMenu(S.openMenu, true);
+    if (S.presenting) return setPresenting(false);
     if (S.drawer) return closeDrawer(true);
     flushNudge();
     call('plan2d', 'cancel');
@@ -18141,6 +18186,12 @@ kbd {
     document.getElementById('btn-undo').addEventListener('click', doUndo);
     document.getElementById('btn-redo').addEventListener('click', doRedo);
     document.getElementById('btn-save').addEventListener('click', saveNow);
+    document.getElementById('btn-insp-toggle').addEventListener('click', toggleInspector);
+    document.getElementById('btn-present').addEventListener('click', () => setPresenting(!S.presenting));
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && S.presenting && S.presentFullscreen) setPresenting(false); // Esc do navegador
+    });
+    restorePanels();
     document.getElementById('file-import').addEventListener('change', onImportFile);
     document.getElementById('floor-tabs').addEventListener('keydown', onFloorTabKey);
     bindMenu('btn-export', 'menu-export');
@@ -19567,10 +19618,73 @@ kbd {
   function toggleLibrary() {
     if (isNarrow()) toggleDrawer('library');
     else {
+      if (S.presenting) setPresenting(false);
       document.getElementById('workspace').classList.toggle('lib-collapsed');
       syncLibraryToggle();
+      storePanels();
       trackLayout(LAYOUT_ANIM_MS + 60);
     }
+  }
+  /** Painel da direita (Projeto / inspetor): recolhe para a planta e o 3D ganharem a largura. */
+  function toggleInspector() {
+    if (isNarrow()) toggleDrawer('inspector');
+    else {
+      if (S.presenting) setPresenting(false);
+      document.getElementById('workspace').classList.toggle('insp-collapsed');
+      syncInspectorToggle();
+      storePanels();
+      trackLayout(LAYOUT_ANIM_MS + 60);
+    }
+  }
+  function syncInspectorToggle() {
+    const b = document.getElementById('btn-insp-toggle');
+    if (b) setPressed(b, !document.getElementById('workspace').classList.contains('insp-collapsed'));
+  }
+  // painéis recolhidos ficam lembrados neste navegador (conveniência de cada pessoa)
+  const PANELS_KEY = 'dd.decor.paineis';
+  function storePanels() {
+    const ws = document.getElementById('workspace');
+    try {
+      localStorage.setItem(PANELS_KEY, JSON.stringify({ lib: ws.classList.contains('lib-collapsed'), insp: ws.classList.contains('insp-collapsed') }));
+    } catch (err) {
+      /* sem armazenamento: só nesta visita */
+    }
+  }
+  function restorePanels() {
+    let p = null;
+    try {
+      p = JSON.parse(localStorage.getItem(PANELS_KEY) || 'null');
+    } catch (err) {
+      p = null;
+    }
+    const ws = document.getElementById('workspace');
+    if (p && p.lib) ws.classList.add('lib-collapsed');
+    if (p && p.insp) ws.classList.add('insp-collapsed');
+    syncInspectorToggle();
+  }
+  /**
+   * Apresentação: esconde ferramentas, biblioteca, painel da direita e rodapé e pede tela cheia,
+   * para mostrar a casa (2D ou 3D) no maior tamanho possível. Esc, P ou o mesmo botão voltam.
+   */
+  function setPresenting(on) {
+    on = !!on;
+    if (on === !!S.presenting) return;
+    S.presenting = on;
+    closeDrawer(false);
+    if (S.openMenu) closeMenu(S.openMenu, false);
+    document.getElementById('app').classList.toggle('presenting', on);
+    setPressed(document.getElementById('btn-present'), on);
+    const root = document.documentElement;
+    if (on && root.requestFullscreen && !document.fullscreenElement) {
+      S.presentFullscreen = true;
+      root.requestFullscreen().catch(() => (S.presentFullscreen = false));
+    } else if (!on && document.fullscreenElement && S.presentFullscreen && document.exitFullscreen) {
+      S.presentFullscreen = false;
+      document.exitFullscreen().catch(() => {});
+    }
+    if (on) toast('Apresentação: Esc ou P para voltar.', 'info');
+    S.refitUntil = performance.now() + LAYOUT_ANIM_MS + 120;
+    trackLayout(LAYOUT_ANIM_MS + 200);
   }
   function syncLibraryToggle() {
     const open = isNarrow() ? S.drawer === 'library' : !document.getElementById('workspace').classList.contains('lib-collapsed');
@@ -19669,6 +19783,8 @@ kbd {
       save: saveNow,
       duplicate: () => fid() && duplicateFurniture(fid()),
       escape: escapeAction,
+      panel: () => (a.panel === 'library' ? toggleLibrary() : toggleInspector()),
+      present: () => setPresenting(!S.presenting),
       delete: deleteSelection,
       shortcuts: openShortcuts,
       rotate: () => fid() && rotateFurniture(fid(), a.delta),
