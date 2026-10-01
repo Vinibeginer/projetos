@@ -617,6 +617,36 @@ kbd {
 .workspace.lib-collapsed {
   --lib-w: 0px;
 }
+.workspace.insp-collapsed {
+  --insp-w: 0px;
+}
+.workspace.insp-collapsed .inspector {
+  overflow: hidden;
+  border-left-color: transparent;
+}
+/* apresentação: só a casa (topo enxuto, sem ferramentas, painéis e rodapé) */
+.app.presenting {
+  grid-template-rows: var(--topbar-h) minmax(0, 1fr) 0;
+}
+.app.presenting .workspace {
+  --rail-w: 0px;
+  --lib-w: 0px;
+  --insp-w: 0px;
+}
+.app.presenting .toolrail,
+.app.presenting .library,
+.app.presenting .inspector,
+.app.presenting .statusbar {
+  overflow: hidden;
+  border-color: transparent;
+  visibility: hidden;
+}
+.app.presenting .topbar-actions > :not(#btn-present):not(.topbar-sep) {
+  display: none !important;
+}
+#btn-present[aria-pressed='true'] {
+  color: var(--accent);
+}
 .workspace.is-resizing,
 .workspace.no-anim {
   transition: none;
@@ -2013,6 +2043,9 @@ kbd {
 }
 
 @media (max-width: 999px) {
+  .hide-narrow {
+    display: none !important;
+  }
   .workspace {
     grid-template-columns: var(--rail-w) minmax(0, 1fr);
     grid-template-areas: 'rail stage';

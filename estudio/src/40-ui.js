@@ -215,6 +215,8 @@
     flip: '<path d="M10 2.5v15"/><path d="M7.5 5.5 3 10l4.5 4.5zM12.5 5.5 17 10l-4.5 4.5"/>',
     hinge: '<path d="M4 16.5V3.5"/><path d="M4 3.5a13 13 0 0 1 12.5 13"/><path d="M4 16.5h12.5"/>',
     room: '<path d="M3 3.5h14v13H3z"/><path d="M3 10h6M12 3.5V8M12 11v5.5"/>',
+    panelRight: '<rect x="2.5" y="3.5" width="15" height="13" rx="1.5"/><path d="M12.5 3.5v13"/>',
+    expand: '<path d="M3 7.5V3h4.5M17 7.5V3h-4.5M3 12.5V17h4.5M17 12.5V17h-4.5"/>',
   };
 
   const SHORTCUT_GROUPS = [
@@ -233,7 +235,7 @@
         [['←', '↑', '→', '↓'], 'Deslocar 10 mm (Shift: 100 mm)'],
         [['Enter'], 'Confirmar o valor de um campo'],
         [['Esc'], 'Cancelar / limpar a seleção'],
-        [['Ctrl', 'S'], 'Salvar neste navegador'],
+        [['Ctrl', 'S'], 'Salvar (nuvem da obra)'],
       ],
     },
     {
@@ -245,6 +247,9 @@
         [['0'], 'Enquadrar o pavimento (3D: recentralizar)'],
         [['+', '−'], 'Zoom da planta'],
         [['G'], 'Mostrar / ocultar a grade'],
+        [['B'], 'Recolher / mostrar a biblioteca (painel da esquerda)'],
+        [['I'], 'Recolher / mostrar o painel da direita'],
+        [['P'], 'Apresentação: só a casa, em tela cheia (Esc sai)'],
         [['?'], 'Esta lista de atalhos'],
       ],
     },
@@ -544,6 +549,9 @@
     if (lower === 'r') return { type: 'rotate', delta: e.shiftKey ? -90 : 90 };
     if (lower === 'q') return { type: 'view', mode: e.shiftKey ? 'split' : 'toggle' };
     if (lower === 'g' && !e.shiftKey) return { type: 'grid' };
+    if (lower === 'b' && !e.shiftKey) return { type: 'panel', panel: 'library' };
+    if (lower === 'i' && !e.shiftKey) return { type: 'panel', panel: 'inspector' };
+    if (lower === 'p' && !e.shiftKey) return { type: 'present' };
     if (k === '0') return { type: 'fit' };
     if (k === '+' || k === '=') return { type: 'zoom', factor: ZOOM_STEP };
     if (k === '-' || k === '_') return { type: 'zoom', factor: 1 / ZOOM_STEP };
@@ -1005,6 +1013,7 @@
   }
   function escapeAction() {
     if (S.openMenu) return closeMenu(S.openMenu, true);
+    if (S.presenting) return setPresenting(false);
     if (S.drawer) return closeDrawer(true);
     flushNudge();
     call('plan2d', 'cancel');
@@ -1539,6 +1548,12 @@
     document.getElementById('btn-undo').addEventListener('click', doUndo);
     document.getElementById('btn-redo').addEventListener('click', doRedo);
     document.getElementById('btn-save').addEventListener('click', saveNow);
+    document.getElementById('btn-insp-toggle').addEventListener('click', toggleInspector);
+    document.getElementById('btn-present').addEventListener('click', () => setPresenting(!S.presenting));
+    document.addEventListener('fullscreenchange', () => {
+      if (!document.fullscreenElement && S.presenting && S.presentFullscreen) setPresenting(false); // Esc do navegador
+    });
+    restorePanels();
     document.getElementById('file-import').addEventListener('change', onImportFile);
     document.getElementById('floor-tabs').addEventListener('keydown', onFloorTabKey);
     bindMenu('btn-export', 'menu-export');
@@ -2965,10 +2980,73 @@
   function toggleLibrary() {
     if (isNarrow()) toggleDrawer('library');
     else {
+      if (S.presenting) setPresenting(false);
       document.getElementById('workspace').classList.toggle('lib-collapsed');
       syncLibraryToggle();
+      storePanels();
       trackLayout(LAYOUT_ANIM_MS + 60);
     }
+  }
+  /** Painel da direita (Projeto / inspetor): recolhe para a planta e o 3D ganharem a largura. */
+  function toggleInspector() {
+    if (isNarrow()) toggleDrawer('inspector');
+    else {
+      if (S.presenting) setPresenting(false);
+      document.getElementById('workspace').classList.toggle('insp-collapsed');
+      syncInspectorToggle();
+      storePanels();
+      trackLayout(LAYOUT_ANIM_MS + 60);
+    }
+  }
+  function syncInspectorToggle() {
+    const b = document.getElementById('btn-insp-toggle');
+    if (b) setPressed(b, !document.getElementById('workspace').classList.contains('insp-collapsed'));
+  }
+  // painéis recolhidos ficam lembrados neste navegador (conveniência de cada pessoa)
+  const PANELS_KEY = 'dd.decor.paineis';
+  function storePanels() {
+    const ws = document.getElementById('workspace');
+    try {
+      localStorage.setItem(PANELS_KEY, JSON.stringify({ lib: ws.classList.contains('lib-collapsed'), insp: ws.classList.contains('insp-collapsed') }));
+    } catch (err) {
+      /* sem armazenamento: só nesta visita */
+    }
+  }
+  function restorePanels() {
+    let p = null;
+    try {
+      p = JSON.parse(localStorage.getItem(PANELS_KEY) || 'null');
+    } catch (err) {
+      p = null;
+    }
+    const ws = document.getElementById('workspace');
+    if (p && p.lib) ws.classList.add('lib-collapsed');
+    if (p && p.insp) ws.classList.add('insp-collapsed');
+    syncInspectorToggle();
+  }
+  /**
+   * Apresentação: esconde ferramentas, biblioteca, painel da direita e rodapé e pede tela cheia,
+   * para mostrar a casa (2D ou 3D) no maior tamanho possível. Esc, P ou o mesmo botão voltam.
+   */
+  function setPresenting(on) {
+    on = !!on;
+    if (on === !!S.presenting) return;
+    S.presenting = on;
+    closeDrawer(false);
+    if (S.openMenu) closeMenu(S.openMenu, false);
+    document.getElementById('app').classList.toggle('presenting', on);
+    setPressed(document.getElementById('btn-present'), on);
+    const root = document.documentElement;
+    if (on && root.requestFullscreen && !document.fullscreenElement) {
+      S.presentFullscreen = true;
+      root.requestFullscreen().catch(() => (S.presentFullscreen = false));
+    } else if (!on && document.fullscreenElement && S.presentFullscreen && document.exitFullscreen) {
+      S.presentFullscreen = false;
+      document.exitFullscreen().catch(() => {});
+    }
+    if (on) toast('Apresentação: Esc ou P para voltar.', 'info');
+    S.refitUntil = performance.now() + LAYOUT_ANIM_MS + 120;
+    trackLayout(LAYOUT_ANIM_MS + 200);
   }
   function syncLibraryToggle() {
     const open = isNarrow() ? S.drawer === 'library' : !document.getElementById('workspace').classList.contains('lib-collapsed');
@@ -3067,6 +3145,8 @@
       save: saveNow,
       duplicate: () => fid() && duplicateFurniture(fid()),
       escape: escapeAction,
+      panel: () => (a.panel === 'library' ? toggleLibrary() : toggleInspector()),
+      present: () => setPresenting(!S.presenting),
       delete: deleteSelection,
       shortcuts: openShortcuts,
       rotate: () => fid() && rotateFurniture(fid(), a.delta),
