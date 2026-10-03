@@ -564,6 +564,7 @@ kbd {
   animation: pop-in 160ms var(--ease-out-expo);
 }
 .menu-item {
+  text-decoration: none;
   display: flex;
   align-items: center;
   gap: 10px;
