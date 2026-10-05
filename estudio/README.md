@@ -38,3 +38,8 @@ O contrato entre os módulos está em `CONTRACT.md`.
 ## Origem
 Base do estúdio: repositório [infosetecinco/estudio-decoracao-casa](https://github.com/infosetecinco/estudio-decoracao-casa)
 (commit `1424977`). Integração do projeto estrutural e da compatibilização feita neste repositório.
+
+## Páginas de estudo (não alteram o projeto)
+
+- `cozinha-teto.html` — estudo do teto da cozinha (vigas aparentes): opções A–D em abas, planta de forro e 3D.
+- `hidrossanitario.html` — anteprojeto hidrossanitário (água fria, esgoto, ventilação) sobre a planta as built: plantas por pavimento, 3D, memorial de cálculo (NBR 5626 / NBR 8160), furos e esperas nas lajes e lista de materiais (CSV). Precisa de revisão e ART/RRT antes de executar.
