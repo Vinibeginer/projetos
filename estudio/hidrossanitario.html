@@ -1,0 +1,1269 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<script src="../auth/sessao.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hidrossanitário</title>
+<meta name="description" content="Anteprojeto hidrossanitário (água fria, esgoto e ventilação) da Obra Mariára sobre o projeto 3D: plantas por pavimento, 3D, memorial de cálculo e lista de materiais.">
+<script>
+  try { var t = localStorage.getItem('dd.decor.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script src="./src/00-data.js"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #151412; --panel: #1e1d1a; --panel-2: #26241f; --line: #34312b; --line-soft: #2a2823;
+  --text: #ede8df; --muted: #a39a8c; --faint: #7a7266;
+  --accent: #e0703f; --accent-soft: rgba(224,112,63,.15); --accent-ink: #1c0f08;
+  --warn: #e3a53a; --ok: #46a758; --bad: #e5484d; --hover: rgba(237,232,223,.06);
+  --af: #2f80d8; --es: #9a5b2c; --ve: #2f9e5f; --al: #7a4fc2;
+  --font-ui: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #e8e4dc; --panel: #f6f3ee; --panel-2: #eeeae3; --line: #d7d0c4; --line-soft: #e3ddd2;
+  --text: #211e1a; --muted: #6b6356; --faint: #8f8679; --accent: #c65a2b; --accent-soft: rgba(198,90,43,.12);
+  --accent-ink: #fff8f3; --warn: #a8700f; --ok: #2e8540; --bad: #cc3a3f; --hover: rgba(33,30,26,.05);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: #e8e4dc; --panel: #f6f3ee; --panel-2: #eeeae3; --line: #d7d0c4; --line-soft: #e3ddd2;
+    --text: #211e1a; --muted: #6b6356; --faint: #8f8679; --accent: #c65a2b; --accent-soft: rgba(198,90,43,.12);
+    --accent-ink: #fff8f3; --warn: #a8700f; --ok: #2e8540; --bad: #cc3a3f; --hover: rgba(33,30,26,.05);
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 var(--font-ui); }
+body { overflow: hidden; }
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); height: 100vh; height: 100dvh; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; }
+.brand b { display: block; font-size: 14px; font-weight: 600; }
+.brand small { display: block; font: 500 11px/1.3 var(--font-mono); color: var(--muted); }
+.badge { font: 500 10.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 5px 8px; border-radius: 99px; border: 1px solid var(--warn); color: var(--warn); white-space: nowrap; }
+.spacer { flex: 1; }
+.tabs { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line-soft); overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.tabs button { flex: none; border: 0; background: transparent; color: var(--muted); font: 500 13px/1 var(--font-ui); padding: 8px 11px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+.tabs button:hover { background: var(--hover); color: var(--text); }
+.tabs button[aria-selected='true'] { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.link { color: var(--muted); font-size: 12.5px; text-decoration: none; border: 1px solid var(--line); padding: 7px 10px; border-radius: 8px; white-space: nowrap; }
+.link:hover { color: var(--text); background: var(--hover); }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; min-width: 0; }
+.main.wide { grid-template-columns: minmax(0, 1fr); }
+.stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
+#plan { position: absolute; inset: 0; width: 100%; height: 100%; background: #f3efe6; touch-action: none; cursor: grab; }
+#plan:active { cursor: grabbing; }
+#view3d { position: absolute; inset: 0; }
+#view3d canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.layers { position: absolute; left: 10px; top: 10px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 20px); }
+.layers label { display: flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-ui); padding: 7px 9px; border-radius: 8px; background: rgba(20,19,17,.78); color: #ede8df; cursor: pointer; user-select: none; }
+.layers i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.layers input { margin: 0; accent-color: var(--accent); }
+.tip { position: absolute; z-index: 5; pointer-events: none; font: 500 11.5px/1.4 var(--font-mono); background: rgba(20,19,17,.92); color: #ede8df; padding: 6px 8px; border-radius: 6px; max-width: 280px; white-space: pre-line; }
+.hint { position: absolute; right: 10px; bottom: 10px; z-index: 3; font: 500 11px/1.4 var(--font-mono); color: #ede8df; background: rgba(20,19,17,.66); padding: 6px 8px; border-radius: 6px; pointer-events: none; }
+.doc { position: absolute; inset: 0; overflow-y: auto; padding: 22px 26px 60px; scrollbar-width: thin; }
+.doc h2 { margin: 26px 0 8px; font-size: 18px; }
+.doc h2:first-child { margin-top: 0; }
+.doc h3 { margin: 18px 0 6px; font: 500 11.5px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.doc p { margin: 6px 0; max-width: 980px; }
+.doc ul { margin: 6px 0; padding-left: 20px; max-width: 980px; }
+.doc li { margin: 3px 0; }
+table { border-collapse: collapse; margin: 8px 0 4px; font-size: 12.5px; min-width: 520px; }
+.tw { overflow-x: auto; max-width: 100%; }
+th, td { border-bottom: 1px solid var(--line-soft); padding: 6px 9px; text-align: left; vertical-align: top; }
+th { font: 500 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--panel-2); position: sticky; top: 0; }
+td.n { font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+td.c { font-family: var(--font-mono); white-space: nowrap; }
+.ok { color: var(--ok); font-weight: 600; }
+.bad { color: var(--bad); font-weight: 600; }
+.warnc { color: var(--warn); font-weight: 600; }
+.group td { background: var(--accent-soft); font-weight: 600; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: 500 13px/1 var(--font-ui); padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; }
+.btn:hover { background: var(--hover); }
+.callout { margin: 10px 0; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--warn); background: rgba(227,165,58,.10); max-width: 980px; }
+.side { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 16px 16px 24px; scrollbar-width: thin; }
+.side h2 { margin: 0 0 4px; font-size: 17px; }
+.side .sub { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.side h3 { margin: 16px 0 8px; font: 500 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { border: 1px solid var(--line-soft); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
+.kpi b { display: block; font: 600 16px/1.2 var(--font-mono); }
+.kpi span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.leg { display: grid; gap: 6px; font-size: 12.5px; }
+.leg span { display: flex; align-items: center; gap: 8px; }
+.leg i { width: 22px; height: 0; border-top: 3px solid; display: inline-block; }
+.list { margin: 0; padding-left: 18px; font-size: 13px; }
+.list li { margin: 4px 0; }
+@media (max-width: 999px) {
+  html, body { overflow-x: hidden; }
+  body { overflow-y: auto; }
+  .app { height: auto; min-height: 100vh; }
+  .badge { display: none; }
+  .tabs { order: 5; width: 100%; }
+  .main, .main.wide { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: 68vh; }
+  .stage.docmode { height: auto; min-height: 60vh; }
+  .stage.docmode .doc { position: static; }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+  .hint { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="./" title="Voltar ao estúdio">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x=".5" y=".5" width="27" height="27" rx="7" fill="#2f80d8"/><path d="M14 6c3.4 4.3 5.1 7.3 5.1 9.4a5.1 5.1 0 0 1-10.2 0C8.9 13.3 10.6 10.3 14 6z" fill="none" stroke="#08121c" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span><b>Hidrossanitário</b><small>água fria · esgoto · ventilação — as built</small></span>
+    </a>
+    <span class="badge" title="Precisa de revisão e ART/RRT de profissional habilitado antes de executar">anteprojeto · revisar com ART</span>
+    <span class="spacer"></span>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Pranchas"></nav>
+    <a class="link" href="./">← Estúdio</a>
+  </header>
+  <div class="main" id="main">
+    <section class="stage" id="stage">
+      <canvas id="plan" aria-label="Planta hidrossanitária"></canvas>
+      <div id="view3d" hidden></div>
+      <div class="doc" id="doc" hidden></div>
+      <div class="layers" id="layers">
+        <label><input type="checkbox" data-layer="AF" checked><i style="background:var(--af)"></i>Água fria</label>
+        <label><input type="checkbox" data-layer="ES" checked><i style="background:var(--es)"></i>Esgoto</label>
+        <label><input type="checkbox" data-layer="VE" checked><i style="background:var(--ve)"></i>Ventilação</label>
+        <label><input type="checkbox" data-layer="AL" checked><i style="background:var(--al)"></i>Alimentação</label>
+        <label><input type="checkbox" data-layer="TXT" checked>Rótulos</label>
+        <label id="lbl-walls" hidden><input type="checkbox" data-layer="WALLS" checked>Paredes</label>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+      <div class="hint" id="hint">Arraste para mover · roda/pinça para zoom · passe o mouse num tubo</div>
+    </section>
+    <aside class="side" id="side"></aside>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// =====================================================================================================
+//  ANTEPROJETO HIDROSSANITÁRIO — Obra Mariára (as built)
+//  Coordenadas em mm no mesmo sistema do estúdio: x → direita (da divisa esquerda), y → rua (do fundo do lote),
+//  z = altura em relação ao piso acabado do térreo. Calçada externa a −0,36 m.
+//  Normas de referência: ABNT NBR 5626:2020 (água fria), NBR 8160:1999 (esgoto e ventilação),
+//  NBR 7229/13969 (só se não houver rede coletora). Pesos relativos: NBR 5626:1998 (método usual).
+// =====================================================================================================
+const L1 = 2880, L2 = 5760, LR = 8640; // pisos do 1º, 2º e laje de cobertura
+const ZG = -360;                       // calçada externa
+const VT = LR + 300;                   // topo dos terminais de ventilação (30 cm acima da cobertura não utilizável)
+const PLATAFORMA = 1000;               // altura da plataforma da caixa d'água sobre a laje
+const CX_BASE = LR + PLATAFORMA;       // fundo da caixa
+const NA_MIN = CX_BASE + 160;          // nível mínimo operacional (logo acima da saída)
+const PESSOAS = 8, PER_CAPITA = 150;   // 4 dormitórios × 2 pessoas; L/pessoa·dia (residência padrão médio)
+
+// ---------------------------------------------------------------------------------------------- aparelhos
+const TIPOS = {
+  vaso:   { nome: 'Bacia sanitária c/ caixa acoplada', P: 0.3, q: 0.15, uhc: 6, dn: 100, sifao: true },
+  lav:    { nome: 'Lavatório', P: 0.3, q: 0.15, uhc: 1, dn: 40, sifao: true },
+  ch:     { nome: 'Chuveiro elétrico', P: 0.1, q: 0.10, uhc: 2, dn: 40, sifao: false },
+  pia:    { nome: 'Pia de cozinha', P: 0.7, q: 0.25, uhc: 3, dn: 50, sifao: true },
+  tanque: { nome: 'Tanque', P: 0.7, q: 0.25, uhc: 3, dn: 40, sifao: true },
+  mlr:    { nome: 'Máquina de lavar roupa', P: 1.0, q: 0.30, uhc: 3, dn: 50, sifao: true, pmin: 20 },
+  tj:     { nome: 'Torneira de jardim / lavagem', P: 0.4, q: 0.20, uhc: 0, sifao: false },
+};
+// fl: T | 1 | 2 · x,y: posição do aparelho (símbolo) · rot: costas para a parede (0 fundo, 90 dir, 180 frente, 270 esq)
+// cs: caixa sifonada que recebe o aparelho (lavatório/chuveiro) · es: ramal de descarga · af: nó de água fria
+const FX = [
+  { id: 'T-PIA', fl: 'T', t: 'pia', amb: 'Cozinha', x: 1950, y: 5850, rot: 270, af: 'fTPIA', es: 'ETP' },
+  { id: 'T-LAV1', fl: 'T', t: 'lav', amb: 'Lavabo', x: 1880, y: 9150, rot: 270, af: 'fTLAV1', es: 'ETL1', cs: 'CS-T1' },
+  { id: 'T-VS1', fl: 'T', t: 'vaso', amb: 'Lavabo', x: 2500, y: 10025, rot: 180, af: 'fTVS1', es: 'ETV1' },
+  { id: 'T-VS2', fl: 'T', t: 'vaso', amb: 'Suíte (térreo)', x: 6200, y: 3325, rot: 0, af: 'fTVS2', es: 'ETV2' },
+  { id: 'T-CH2', fl: 'T', t: 'ch', amb: 'Suíte (térreo)', x: 6950, y: 3400, rot: 0, af: 'fTCH2', es: 'ETCh2', cs: 'CS-T2' },
+  { id: 'T-LAV2', fl: 'T', t: 'lav', amb: 'Suíte (térreo)', x: 5280, y: 4230, rot: 270, af: 'fTLAV2', es: 'ETL2', cs: 'CS-T2' },
+  { id: 'T-TJQ', fl: 'T', t: 'tj', amb: 'Quintal (fundos)', x: 6450, y: 2700, rot: 0, af: 'fTJQ' },
+  { id: 'T-TJG', fl: 'T', t: 'tj', amb: 'Garagem', x: 4000, y: 12500, rot: 90, af: 'fTJG', direto: true },
+  { id: 'T-TJF', fl: 'T', t: 'tj', amb: 'Jardim da frente', x: 7100, y: 19700, rot: 180, af: 'fTJF', direto: true },
+  { id: '1-LAV-S', fl: '1', t: 'lav', amb: 'Banheiro da suíte (1º)', x: 1880, y: 5200, rot: 270, af: 'f1LAVS', es: 'E1SL', cs: 'CS-1S' },
+  { id: '1-VS-S', fl: '1', t: 'vaso', amb: 'Banheiro da suíte (1º)', x: 1975, y: 6150, rot: 270, af: 'f1VSS', es: 'E1SV' },
+  { id: '1-CH-S', fl: '1', t: 'ch', amb: 'Banheiro da suíte (1º)', x: 2325, y: 7050, rot: 180, af: 'f1CHS', es: 'E1SCh', cs: 'CS-1S' },
+  { id: '1-CH-B', fl: '1', t: 'ch', amb: 'Banheiro (1º)', x: 2325, y: 8125, rot: 0, af: 'f1CHB', es: 'E1BCh', cs: 'CS-1B' },
+  { id: '1-VS-B', fl: '1', t: 'vaso', amb: 'Banheiro (1º)', x: 1975, y: 8980, rot: 270, af: 'f1VSB', es: 'E1BV' },
+  { id: '1-LAV-B', fl: '1', t: 'lav', amb: 'Banheiro (1º)', x: 1880, y: 9670, rot: 270, af: 'f1LAVB', es: 'E1BL', cs: 'CS-1B' },
+  { id: '2-PIA', fl: '2', t: 'pia', amb: 'Varanda gourmet (2º)', x: 1950, y: 5850, rot: 270, af: 'f2PIA', es: 'E2P' },
+  { id: '2-MLR', fl: '2', t: 'mlr', amb: 'Área de serviço (2º)', x: 1950, y: 8275, rot: 180, af: 'f2MLR', es: 'E2M' },
+  { id: '2-TQ', fl: '2', t: 'tanque', amb: 'Área de serviço (2º)', x: 2700, y: 8325, rot: 180, af: 'f2TQ', es: 'E2T' },
+  { id: '2-LAV', fl: '2', t: 'lav', amb: 'Lavabo (2º)', x: 1880, y: 9300, rot: 270, af: 'f2LAV', es: 'E2L1', cs: 'CS-2L' },
+  { id: '2-VS', fl: '2', t: 'vaso', amb: 'Lavabo (2º)', x: 2575, y: 10025, rot: 180, af: 'f2VS', es: 'E2V' },
+];
+const FXBY = Object.fromEntries(FX.map((f) => [f.id, f]));
+
+// ---------------------------------------------------------------------------------------------- ÁGUA FRIA
+// Nós (x, y, z). Trechos ligam nó a nó (a = montante, b = jusante); "via" são as curvas no caminho.
+const AFN = {
+  CX: [1725, 7900, CX_BASE + 60], BR: [1650, 7900, LR + 100],
+  // AF-1 — prumada do shaft interno SH-1 (lavabo térreo / banheiro 1º / lavabo 2º)
+  A1T: [2130, 10300, LR + 100], A1_2: [2130, 10300, L2 + 1200], A1_1: [2130, 10300, L1 + 1200], A1_0: [2130, 10300, 1200],
+  R2: [1900, 10360, L2 + 1200], K2: [1640, 10360, L2 + 1200], L2n: [1640, 9300, L2 + 1200], S2n: [1640, 8610, L2 + 1200], M2n: [1800, 8610, L2 + 1200],
+  f2VS: [2725, 10360, L2 + 200], f2LAV: [1640, 9300, L2 + 600], f2MLR: [1800, 8610, L2 + 1100], f2TQ: [2700, 8610, L2 + 1100],
+  R1: [1900, 10360, L1 + 1200], K1: [1640, 10360, L1 + 1200], B1L: [1640, 9670, L1 + 1200], B1V: [1640, 9130, L1 + 1200], SW2: [2325, 7575, L1 + 1200],
+  f1LAVB: [1640, 9670, L1 + 600], f1VSB: [1640, 9130, L1 + 200], f1CHB: [2325, 7620, L1 + 2100], f1CHS: [2325, 7530, L1 + 2100],
+  SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L2 - 580], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
+  R0: [1900, 10360, 1200], f0VS: [2650, 10360, 200], fTLAV1: [1640, 9150, 600],
+  // AF-2 — shaft externo SH-2 (pias do térreo e do 2º)
+  A2T: [1300, 6850, LR + 100], A2_2: [1300, 6850, L2 + 600], G2: [1300, 6500, L2 + 600], f2PIA: [1650, 5850, L2 + 600],
+  A2_0: [1300, 6850, 600], G0: [1300, 6500, 600], fTPIA: [1650, 5850, 600],
+  // AF-3 — shaft externo dos fundos SH-3 (suíte do térreo e torneira do quintal)
+  A3T: [6450, 2780, LR + 100], A3_0: [6450, 2780, 1200], fTJQ: [6450, 2780, 600], R3: [6450, 2990, 1200], V3: [6350, 2990, 1200],
+  fTVS2: [6350, 2990, 200], fTCH2: [6950, 2990, 2100], fTLAV2: [5040, 4230, 600],
+};
+AFN.fTVS1 = AFN.f0VS;
+const AFE = [
+  { id: 'BAR', a: 'CX', b: 'BR', via: [[1650, 7900, CX_BASE + 60]], fl: 'C', tag: 'Barrilete', rg: 'Registro geral da caixa' },
+  { id: 'AF1-c', a: 'BR', b: 'A1T', via: [[1650, 10300, LR + 100]], fl: 'C', tag: 'AF-1', rg: 'Registro da coluna AF-1' },
+  { id: 'AF1-2', a: 'A1T', b: 'A1_2', fl: 'v', tag: 'AF-1' },
+  { id: 'AF1-1', a: 'A1_2', b: 'A1_1', fl: 'v', tag: 'AF-1' },
+  { id: 'AF1-0', a: 'A1_1', b: 'A1_0', fl: 'v', tag: 'AF-1' },
+  { id: '2-r', a: 'A1_2', b: 'R2', fl: '2', rg: 'Registro do lavabo e serviço (2º)' },
+  { id: '2-vs', a: 'R2', b: 'f2VS', via: [[2725, 10360, L2 + 1200]], fl: '2' },
+  { id: '2-k', a: 'R2', b: 'K2', fl: '2' },
+  { id: '2-l', a: 'K2', b: 'L2n', fl: '2' },
+  { id: '2-lav', a: 'L2n', b: 'f2LAV', fl: '2' },
+  { id: '2-s', a: 'L2n', b: 'S2n', fl: '2' },
+  { id: '2-m', a: 'S2n', b: 'M2n', fl: '2' },
+  { id: '2-mlr', a: 'M2n', b: 'f2MLR', fl: '2' },
+  { id: '2-tq', a: 'M2n', b: 'f2TQ', via: [[2700, 8610, L2 + 1200]], fl: '2' },
+  { id: '1-r', a: 'A1_1', b: 'R1', fl: '1', rg: 'Registro do banheiro (1º)' },
+  { id: '1-k', a: 'R1', b: 'K1', fl: '1' },
+  { id: '1-bl', a: 'K1', b: 'B1L', fl: '1' },
+  { id: '1-lavb', a: 'B1L', b: 'f1LAVB', fl: '1' },
+  { id: '1-bv', a: 'B1L', b: 'B1V', fl: '1' },
+  { id: '1-vsb', a: 'B1V', b: 'f1VSB', fl: '1' },
+  { id: '1-sw', a: 'B1V', b: 'SW2', via: [[1640, 7575, L1 + 1200]], fl: '1' },
+  { id: '1-chb', a: 'SW2', b: 'f1CHB', via: [[2325, 7620, L1 + 1200]], fl: '1', rp: true },
+  { id: '1-chs', a: 'SW2', b: 'f1CHS', via: [[2325, 7530, L1 + 1200]], fl: '1', rp: true },
+  { id: '1-sr', a: 'SW2', b: 'SR', via: [[2450, 7575, L1 + 1200]], fl: '1', rg: 'Registro da suíte (1º)' },
+  { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L2 - 580], [2450, 7450, L2 - 580], [1700, 7450, L2 - 580]], fl: '1' },
+  { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1640, 5650, L2 - 580], [1640, 5650, L1 + 200]], fl: '1' },
+  { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L2 - 580], [1640, 5200, L2 - 580]], fl: '1' },
+  { id: 'T-r', a: 'A1_0', b: 'R0', fl: 'T', rg: 'Registro do lavabo (térreo)' },
+  { id: 'T-vs1', a: 'R0', b: 'fTVS1', via: [[2650, 10360, 1200]], fl: 'T' },
+  { id: 'T-lav1', a: 'R0', b: 'fTLAV1', via: [[1640, 10360, 1200], [1640, 9150, 1200]], fl: 'T' },
+  { id: 'AF2-c', a: 'BR', b: 'A2T', via: [[1650, 6850, LR + 100]], fl: 'C', tag: 'AF-2', rg: 'Registro da coluna AF-2' },
+  { id: 'AF2-2', a: 'A2T', b: 'A2_2', fl: 'v', tag: 'AF-2' },
+  { id: '2-g', a: 'A2_2', b: 'G2', fl: '2', rg: 'Registro da pia gourmet (2º)' },
+  { id: '2-pia', a: 'G2', b: 'f2PIA', via: [[1300, 5850, L2 + 600]], fl: '2' },
+  { id: 'AF2-0', a: 'A2_2', b: 'A2_0', fl: 'v', tag: 'AF-2' },
+  { id: 'T-g', a: 'A2_0', b: 'G0', fl: 'T', rg: 'Registro da cozinha (térreo)' },
+  { id: 'T-pia', a: 'G0', b: 'fTPIA', via: [[1300, 5850, 600]], fl: 'T' },
+  { id: 'AF3-c', a: 'BR', b: 'A3T', via: [[1650, 3100, LR + 100], [6450, 3100, LR + 100]], fl: 'C', tag: 'AF-3', rg: 'Registro da coluna AF-3' },
+  { id: 'AF3-0', a: 'A3T', b: 'A3_0', fl: 'v', tag: 'AF-3' },
+  { id: 'T-tjq', a: 'A3_0', b: 'fTJQ', fl: 'T' },
+  { id: 'T-r3', a: 'A3_0', b: 'R3', fl: 'T', rg: 'Registro da suíte (térreo)' },
+  { id: 'T-ch2', a: 'R3', b: 'fTCH2', via: [[6950, 2990, 1200]], fl: 'T', rp: true },
+  { id: 'T-v3', a: 'R3', b: 'V3', fl: 'T' },
+  { id: 'T-vs2', a: 'V3', b: 'fTVS2', fl: 'T' },
+  { id: 'T-lav2', a: 'V3', b: 'fTLAV2', via: [[5040, 2990, 1200], [5040, 4230, 1200]], fl: 'T' },
+];
+// Alimentador predial (rede pública → hidrômetro → caixa d'água) e saídas diretas da rede (torneiras externas)
+const ALN = { HD: [6750, 19800, 400], AL2: [6750, 19500, -760], AL4: [3850, 12500, -760], CXE: [2500, 8700, CX_BASE + 1000], fTJG: [4100, 12500, 600], fTJF: [7100, 19850, 600] };
+const ALE = [
+  { id: 'AL-a', a: 'HD', b: 'AL2', via: [[6750, 19800, -760]], fl: 'T', tag: 'Alimentador' },
+  { id: 'AL-b', a: 'AL2', b: 'AL4', via: [[3850, 19500, -760]], fl: 'T', tag: 'Alimentador' },
+  { id: 'AL-c', a: 'AL4', b: 'CXE', via: [[3850, 10600, -760], [2200, 10600, -760], [2200, 10300, -760], [2200, 10300, LR + 100], [2500, 10300, LR + 100], [2500, 8700, LR + 100]], fl: 'T', tag: 'Alimentador' },
+  { id: 'AL-g', a: 'AL4', b: 'fTJG', via: [[4100, 12500, -760]], fl: 'T', tag: 'Torneira da garagem (direto da rede)' },
+  { id: 'AL-f', a: 'AL2', b: 'fTJF', via: [[7100, 19500, -760], [7100, 19850, -760]], fl: 'T', tag: 'Torneira da frente (direto da rede)' },
+  { id: 'LADRAO', a: null, b: null, pts: [[3275, 7900, CX_BASE + 900], [3650, 7900, CX_BASE + 900], [3650, 7900, LR + 50]], fl: 'C', tag: 'Extravasor (ladrão)', dn: 32 },
+  { id: 'LIMPEZA', a: null, b: null, pts: [[3275, 8000, CX_BASE + 40], [3550, 8000, CX_BASE + 40], [3550, 8000, LR + 50]], fl: 'C', tag: 'Limpeza da caixa', dn: 32 },
+];
+
+// ---------------------------------------------------------------------------------------------- ESGOTO E VENTILAÇÃO
+// Construtor de caminhos: v(z) desce/sobe na vertical; h(x,y) anda na horizontal com a declividade do trecho.
+function pb(x, y, z, s) {
+  const p = [[x, y, z]];
+  const api = {
+    v(zz) { const l = p[p.length - 1]; p.push([l[0], l[1], zz]); return api; },
+    h(xx, yy) { const l = p[p.length - 1]; const d = Math.hypot(xx - l[0], yy - l[1]); p.push([xx, yy, l[2] - (s || 0) * d]); return api; },
+    pt(xx, yy, zz) { p.push([xx, yy, zz]); return api; },
+    get: () => p,
+  };
+  return api;
+}
+// kind: ramal | tq (prumada) | base (pé do tubo de queda) | col (subcoletor/coletor) | ve (ventilação)
+const ES = [
+  // 2º pavimento
+  { id: 'E2V', dn: 100, s: 0.01, pts: pb(2575, 10050, L2, 0.01).v(L2 - 260).h(2000, 10280).get(), to: 'TQ-1', fx: ['2-VS'], fl: '2', kind: 'ramal' },
+  { id: 'E2L1', dn: 40, s: 0.02, pts: pb(1700, 9300, L2 + 450, 0.02).v(L2 - 60).h(2050, 9750).get(), to: 'CS-2L', fx: ['2-LAV'], fl: '2', kind: 'ramal' },
+  { id: 'E2L2', dn: 75, s: 0.02, pts: pb(2050, 9750, L2 - 170, 0.02).v(L2 - 240).h(2000, 10280).get(), to: 'TQ-1', from: 'CS-2L', fl: '2', kind: 'ramal' },
+  { id: 'E2P', dn: 50, s: 0.02, pts: pb(1700, 5850, L2 + 450, 0.02).h(1380, 5850).h(1380, 6650).get(), to: 'TG-1', fx: ['2-PIA'], fl: '2', kind: 'ramal' },
+  { id: 'E2T', dn: 75, s: 0.02, pts: pb(2700, 8560, L2 + 450, 0.02).v(L2 + 330).h(1950, 8560).get(), to: 'E2M', fx: ['2-TQ'], fl: '2', kind: 'ramal' },
+  { id: 'E2M', dn: 75, s: 0.02, pts: pb(1950, 8560, L2 + 315, 0.02).h(1650, 8560).h(1420, 8565).get(), to: 'TS-1', fx: ['2-MLR'], fl: '2', kind: 'ramal' },
+  // 1º pavimento
+  { id: 'E1BV', dn: 100, s: 0.01, pts: pb(1950, 8980, L1, 0.01).v(L1 - 260).h(1950, 10150).h(2000, 10280).get(), to: 'TQ-1', fx: ['1-VS-B'], fl: '1', kind: 'ramal' },
+  { id: 'E1BL', dn: 40, s: 0.02, pts: pb(1700, 9670, L1 + 450, 0.02).v(L1 - 50).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-LAV-B'], fl: '1', kind: 'ramal' },
+  { id: 'E1BCh', dn: 40, s: 0.02, pts: pb(2325, 8125, L1 - 20, 0.02).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-CH-B'], fl: '1', kind: 'ramal' },
+  { id: 'E1BC', dn: 75, s: 0.02, pts: pb(2550, 9300, L1 - 120, 0.02).v(L1 - 230).h(2550, 10050).h(2060, 10280).get(), to: 'TQ-1', from: 'CS-1B', fl: '1', kind: 'ramal' },
+  { id: 'E1SV', dn: 100, s: 0.01, pts: pb(1975, 6150, L1, 0.01).v(L1 - 260).h(1975, 7000).h(1745, 7225).get(), to: 'TQ-2', fx: ['1-VS-S'], fl: '1', kind: 'ramal' },
+  { id: 'E1SL', dn: 40, s: 0.02, pts: pb(1700, 5200, L1 + 450, 0.02).v(L1 - 50).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-LAV-S'], fl: '1', kind: 'ramal' },
+  { id: 'E1SCh', dn: 40, s: 0.02, pts: pb(2325, 7050, L1 - 20, 0.02).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-CH-S'], fl: '1', kind: 'ramal' },
+  { id: 'E1SC', dn: 75, s: 0.02, pts: pb(2250, 6500, L1 - 120, 0.02).v(L1 - 220).h(2250, 6900).h(1975, 6900).get(), to: 'E1SV', from: 'CS-1S', fl: '1', kind: 'ramal' },
+  // térreo (ramais enterrados)
+  { id: 'ETP', dn: 75, s: 0.02, pts: pb(1700, 5850, 450, 0.02).v(150).h(1380, 5850).h(1380, 6650).get(), to: 'TG-1', fx: ['T-PIA'], fl: 'T', kind: 'ramal' },
+  { id: 'ETV1', dn: 100, s: 0.01, pts: pb(2500, 10050, 0, 0.01).v(-640).h(2500, 9850).h(650, 9850).h(650, 9650).get(), to: 'CI-3', fx: ['T-VS1'], fl: 'T', kind: 'ramal' },
+  { id: 'ETL1', dn: 40, s: 0.02, pts: pb(1700, 9150, 450, 0.02).v(-100).h(2050, 9600).get(), to: 'CS-T1', fx: ['T-LAV1'], fl: 'T', kind: 'ramal' },
+  { id: 'ETC1', dn: 75, s: 0.02, pts: pb(2050, 9600, -150, 0.02).h(2050, 9790).pt(2050, 9850, -600).get(), to: 'ETV1', from: 'CS-T1', fl: 'T', kind: 'ramal' },
+  { id: 'ETV2', dn: 100, s: 0.01, pts: pb(6200, 3300, 0, 0.01).v(-640).h(6200, 2450).h(850, 2450).get(), to: 'CI-1', fx: ['T-VS2'], fl: 'T', kind: 'ramal' },
+  { id: 'ETCh2', dn: 40, s: 0.02, pts: pb(6950, 3400, 0, 0.02).v(-100).h(6450, 3400).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-CH2'], fl: 'T', kind: 'ramal' },
+  { id: 'ETL2', dn: 40, s: 0.02, pts: pb(5280, 4230, 450, 0.02).v(-100).h(6450, 4230).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-LAV2'], fl: 'T', kind: 'ramal' },
+  { id: 'ETC2', dn: 75, s: 0.02, pts: pb(6450, 3900, -150, 0.02).h(6450, 3150).pt(6450, 3150, -560).pt(6200, 3000, -600).get(), to: 'ETV2', from: 'CS-T2', fl: 'T', kind: 'ramal' },
+  // prumadas (tubos de queda) e prolongamentos (ventilação primária)
+  { id: 'TQ-1', dn: 100, pts: [[2000, 10280, -800], [2000, 10280, L2 - 240]], to: 'BTQ1', fl: 'v', kind: 'tq', nome: 'Tubo de queda TQ-1 (shaft SH-1)' },
+  { id: 'VP-1', dn: 100, pts: [[2000, 10280, L2 - 240], [2000, 10280, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TQ-1' },
+  { id: 'TQ-2', dn: 100, pts: [[1745, 7225, -750], [1745, 7225, L1 - 220]], to: 'BTQ2', fl: 'v', kind: 'tq', nome: 'Tubo de queda TQ-2 (canto do pilar P6)' },
+  { id: 'VP-2', dn: 100, pts: [[1745, 7225, L1 - 220], [1745, 7225, L1 + 1020], [1380, 7225, L1 + 1030], [1380, 7225, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TQ-2 (sai para o SH-2)' },
+  { id: 'TG-1', dn: 75, pts: [[1380, 6650, -620], [1380, 6650, L2 + 430]], to: 'BTG1', fl: 'v', kind: 'tq', nome: 'Tubo de gordura TG-1 (shaft SH-2)' },
+  { id: 'VP-TG', dn: 75, pts: [[1380, 6650, L2 + 430], [1380, 6650, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TG-1' },
+  { id: 'TS-1', dn: 75, pts: [[1420, 8565, -700], [1420, 8565, L2 + 300]], to: 'BTS1', fl: 'v', kind: 'tq', nome: 'Tubo de queda de serviço TS-1' },
+  { id: 'VP-TS', dn: 75, pts: [[1420, 8565, L2 + 300], [1420, 8565, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TS-1' },
+  // pés dos tubos de queda (enterrados)
+  { id: 'BTQ1', dn: 100, s: 0.01, pts: pb(2000, 10280, -800, 0.01).h(2000, 9350).h(850, 9350).get(), to: 'CI-3', fl: 'T', kind: 'base' },
+  { id: 'BTQ2', dn: 100, s: 0.01, pts: pb(1745, 7225, -750, 0.01).h(1745, 7300).h(850, 7300).get(), to: 'CI-2', fl: 'T', kind: 'base' },
+  { id: 'BTG1', dn: 75, s: 0.02, pts: pb(1380, 6650, -620, 0.02).h(1380, 6150).h(1100, 5850).get(), to: 'CGS', fl: 'T', kind: 'base' },
+  { id: 'BTS1', dn: 75, s: 0.02, pts: pb(1420, 8565, -700, 0.02).h(850, 9150).get(), to: 'CI-3', fl: 'T', kind: 'base' },
+  { id: 'ECG', dn: 75, s: 0.02, pts: pb(1000, 5800, -700, 0.02).h(700, 6100).h(700, 7000).get(), to: 'CI-2', from: 'CGS', fl: 'T', kind: 'base' },
+  // coletor predial (enterrado, i = 2 %)
+  { id: 'CL-1', dn: 100, s: 0.02, pts: pb(550, 2450, -820, 0.02).h(550, 7300).get(), to: 'CI-2', from: 'CI-1', fl: 'T', kind: 'col' },
+  { id: 'CL-2', dn: 100, s: 0.02, pts: pb(550, 7300, -917, 0.02).h(550, 9350).get(), to: 'CI-3', from: 'CI-2', fl: 'T', kind: 'col' },
+  { id: 'CL-3', dn: 100, s: 0.02, pts: pb(550, 9350, -958, 0.02).h(550, 17000).get(), to: 'CI-4', from: 'CI-3', fl: 'T', kind: 'col' },
+  { id: 'CL-4', dn: 100, s: 0.02, pts: pb(550, 17000, -1111, 0.02).h(550, 20000).get(), to: 'REDE', from: 'CI-4', fl: 'T', kind: 'col' },
+  // colunas de ventilação
+  { id: 'CV-1', dn: 50, pts: [[1800, 9850, -646], [1800, 10300, -450], [1800, 10300, L2 + 1040], [2000, 10280, L2 + 1100]], attach: { edge: 'ETV1', pt: [1800, 9850] }, fl: 'v', kind: 've', sys: 'VE', nome: 'Coluna de ventilação CV-1 (lavabo do térreo → VP-1)' },
+  { id: 'CV-3', dn: 50, pts: [[6200, 2780, -645], [6330, 2780, -500], [6330, 2780, VT]], attach: { edge: 'ETV2', pt: [6200, 2780] }, fl: 'v', kind: 've', sys: 'VE', nome: 'Coluna de ventilação CV-3 (suíte do térreo, shaft SH-3)' },
+];
+ES.forEach((e) => (e.sys = e.sys || 'ES'));
+const ESBY = Object.fromEntries(ES.map((e) => [e.id, e]));
+// caixas: CS (sifonada), CI (inspeção), CGS (gordura simples)
+const BOX = [
+  { id: 'CS-2L', k: 'CS', fl: '2', x: 2050, y: 9750, z: L2 - 120, out: 'E2L2' },
+  { id: 'CS-1B', k: 'CS', fl: '1', x: 2550, y: 9300, z: L1 - 120, out: 'E1BC' },
+  { id: 'CS-1S', k: 'CS', fl: '1', x: 2250, y: 6500, z: L1 - 120, out: 'E1SC' },
+  { id: 'CS-T1', k: 'CS', fl: 'T', x: 2050, y: 9600, z: -120, out: 'ETC1' },
+  { id: 'CS-T2', k: 'CS', fl: 'T', x: 6450, y: 3900, z: -120, out: 'ETC2' },
+  { id: 'CGS', k: 'CG', fl: 'T', x: 1000, y: 5800, z: -700, out: 'ECG' },
+  { id: 'CI-1', k: 'CI', fl: 'T', x: 550, y: 2450, z: -820, out: 'CL-1' },
+  { id: 'CI-2', k: 'CI', fl: 'T', x: 550, y: 7300, z: -917, out: 'CL-2' },
+  { id: 'CI-3', k: 'CI', fl: 'T', x: 550, y: 9350, z: -958, out: 'CL-3' },
+  { id: 'CI-4', k: 'CI', fl: 'T', x: 550, y: 17000, z: -1111, out: 'CL-4' },
+];
+const BOXBY = Object.fromEntries(BOX.map((b) => [b.id, b]));
+// shafts (para desenho)
+const SHAFTS = [
+  { id: 'SH-1', nome: 'Shaft interno (canto do pilar P11)', x0: 1650, x1: 2260, y0: 10230, y1: 10350, ext: false },
+  { id: 'SH-2', nome: 'Shaft externo lateral (em frente ao pilar P6)', x0: 1240, x1: 1500, y0: 6560, y1: 7290, ext: true },
+  { id: 'SH-2b', nome: 'Caixa do TQ-2 na cozinha / suíte (junto ao pilar P6)', x0: 1650, x1: 1820, y0: 7160, y1: 7300, ext: false },
+  { id: 'SH-3', nome: 'Shaft externo dos fundos', x0: 6280, x1: 6520, y0: 2700, y1: 2850, ext: true },
+];
+
+// =====================================================================================================
+//  CÁLCULOS
+// =====================================================================================================
+const DI = { 20: 17.0, 25: 21.6, 32: 27.8, 40: 35.2, 50: 44.0 }; // PVC soldável — diâmetro interno (mm)
+const vmax = (dn) => Math.min(3, 14 * Math.sqrt(DI[dn] / 1000)); // NBR 5626:1998
+const jFWH = (q, dn) => (8.69e6 * Math.pow(q, 1.75) * Math.pow(DI[dn], -4.75)) / 9.81; // m.c.a./m (Fair-Whipple-Hsiao, plástico)
+const dist3 = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
+const polyLen = (p) => p.slice(1).reduce((s, q, i) => s + dist3(p[i], q), 0);
+const fmtm = (mm, d = 2) => (mm / 1000).toFixed(d).replace('.', ',');
+const fmtn = (v, d = 2) => (+v).toFixed(d).replace('.', ',');
+
+function afPts(e, N) {
+  return e.pts || [N[e.a], ...(e.via || []), N[e.b]];
+}
+function solveAF() {
+  const N = AFN;
+  const fxAt = {};
+  FX.filter((f) => !f.direto).forEach((f) => (fxAt[f.af] = f));
+  const children = {};
+  AFE.forEach((e) => (children[e.a] = children[e.a] || []).push(e));
+  const parentOf = {};
+  AFE.forEach((e) => (parentOf[e.b] = e));
+  // ΣP e vazão por trecho
+  const down = (node) => {
+    const own = fxAt[node] ? [fxAt[node]] : [];
+    return own.concat(...(children[node] || []).map((e) => down(e.b)));
+  };
+  AFE.forEach((e) => {
+    e.fx = down(e.b);
+    e.P = e.fx.reduce((s, f) => s + TIPOS[f.t].P, 0);
+    const qmax = Math.max(...e.fx.map((f) => TIPOS[f.t].q));
+    e.Q = e.fx.length === 1 ? TIPOS[e.fx[0].t].q : Math.max(0.3 * Math.sqrt(e.P), qmax);
+    e.pts = afPts(e, N);
+    e.L = polyLen(e.pts);
+    e.dn = [20, 25, 32, 40, 50].find((d) => (e.Q / 1000) / (Math.PI * Math.pow(DI[d] / 1000, 2) / 4) <= vmax(d));
+  });
+  const order = []; // percurso do reservatório para baixo
+  const walk = (node) => (children[node] || []).forEach((e) => { order.push(e); walk(e.b); });
+  walk('CX');
+  const press = {};
+  const compute = () => {
+    press.CX = (NA_MIN - N.CX[2]) / 1000;
+    order.forEach((e) => {
+      e.v = (e.Q / 1000) / (Math.PI * Math.pow(DI[e.dn] / 1000, 2) / 4);
+      e.J = jFWH(e.Q, e.dn);
+      e.Leq = e.L / 1000 * 1.3 + (e.rp ? 5 : 0);
+      e.hf = e.J * e.Leq;
+      press[e.b] = press[e.a] + (N[e.a][2] - N[e.b][2]) / 1000 - e.hf;
+      e.pIn = press[e.a]; e.pOut = press[e.b];
+    });
+  };
+  const pathTo = (node) => { const p = []; let e = parentOf[node]; while (e) { p.unshift(e); e = parentOf[e.a]; } return p; };
+  const pmin = (f) => (TIPOS[f.t].pmin || 10) / 9.81;
+  compute();
+  // otimização: aumenta o diâmetro do trecho que mais perde carga no caminho dos pontos com pressão abaixo do mínimo
+  for (let it = 0; it < 30; it++) {
+    const low = FX.filter((f) => !f.direto && press[f.af] < pmin(f));
+    if (!low.length) break;
+    const f = low[0];
+    const cand = pathTo(f.af).filter((e) => e.dn < 50).sort((a, b) => b.hf - a.hf)[0];
+    if (!cand) break;
+    cand.dn = [20, 25, 32, 40, 50].find((d) => d > cand.dn);
+    cand.up = true;
+    compute();
+  }
+  const pontos = FX.filter((f) => !f.direto).map((f) => {
+    const z = N[f.af][2];
+    return { f, z, est: (NA_MIN - z) / 1000, din: press[f.af], min: pmin(f), ok: press[f.af] >= pmin(f) };
+  });
+  return { order, pontos, press };
+}
+
+function solveES() {
+  // UHC acumulados (aparelhos → caixas → ramais → tubos de queda → coletor)
+  const into = {};
+  ES.forEach((e) => { if (e.to) (into[e.to] = into[e.to] || []).push(e.id); });
+  BOX.forEach((b) => { (into[b.out] = into[b.out] || []).push(b.id); });
+  const memo = {};
+  // trecho: aparelhos ligados nele + tudo que chega (trechos e caixas) · caixa: soma do que chega nela
+  const uhcOf = (id) => {
+    if (memo[id] != null) return memo[id];
+    let u = 0;
+    const e = ESBY[id];
+    if (e && e.fx) u += e.fx.reduce((s, fid) => s + TIPOS[FXBY[fid].t].uhc, 0);
+    (into[id] || []).forEach((src) => (u += uhcOf(src)));
+    return (memo[id] = u);
+  };
+  // CS são caixas: UHC da caixa = soma do que entra nela
+  BOX.forEach((b) => uhcOf(b.id));
+  ES.forEach((e) => {
+    e.L = polyLen(e.pts);
+    e.uhc = e.sys === 'VE' ? 0 : uhcOf(e.id);
+    // declividade da parte horizontal
+    let lh = 0, dz = 0;
+    for (let i = 1; i < e.pts.length; i++) {
+      const a = e.pts[i - 1], b = e.pts[i];
+      const h = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      if (h > 50 && Math.abs(b[2] - a[2]) < h * 0.2) { lh += h; dz += a[2] - b[2]; }
+    }
+    e.lh = lh; e.i = lh > 0 ? dz / lh : null;
+  });
+  return { uhcOf };
+}
+
+// distância do desconector até a ventilação (NBR 8160, Tabela 10: DN40 1,00 · DN50 1,20 · DN75 1,80 · DN100 2,40 m)
+const LIM_VENT = { 40: 1000, 50: 1200, 75: 1800, 100: 2400 };
+function projOn(pts, pt) {
+  let best = { d: Infinity, i: 0, t: 0 };
+  for (let i = 1; i < pts.length; i++) {
+    const a = pts[i - 1], b = pts[i];
+    const dx = b[0] - a[0], dy = b[1] - a[1], L2v = dx * dx + dy * dy;
+    let t = L2v ? ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / L2v : 0;
+    t = Math.max(0, Math.min(1, t));
+    const d = Math.hypot(a[0] + dx * t - pt[0], a[1] + dy * t - pt[1]);
+    if (d < best.d) best = { d, i, t };
+  }
+  return best;
+}
+function lenFrom(pts, from) {
+  // comprimento do ponto (projeção) até o fim da polilinha
+  const pr = projOn(pts, from);
+  const a = pts[pr.i - 1], b = pts[pr.i];
+  let L = dist3(a, b) * (1 - pr.t);
+  for (let i = pr.i + 1; i < pts.length; i++) L += dist3(pts[i - 1], pts[i]);
+  return L;
+}
+function lenUpTo(pts, from, to) {
+  // comprimento entre duas projeções na mesma polilinha (from antes de to)
+  return lenFrom(pts, from) - lenFrom(pts, to);
+}
+function ventDistances() {
+  const vents = ES.filter((e) => e.attach);
+  const stacks = new Set(ES.filter((e) => e.kind === 'tq').map((e) => e.id));
+  const out = [];
+  const starters = [];
+  FX.forEach((f) => { if (f.es && !f.cs && TIPOS[f.t].sifao) starters.push({ label: f.id + ' — ' + TIPOS[f.t].nome, edge: f.es, from: ESBY[f.es].pts[0], dn: ESBY[f.es].dn }); });
+  BOX.filter((b) => b.k === 'CS').forEach((b) => starters.push({ label: b.id + ' — caixa sifonada', edge: b.out, from: ESBY[b.out].pts[0], dn: ESBY[b.out].dn }));
+  starters.forEach((s) => {
+    let e = ESBY[s.edge], from = s.from, L = 0, where = null, guard = 0;
+    while (e && guard++ < 10) {
+      const v = vents.find((x) => x.attach.edge === e.id);
+      if (v) { const vp = [v.attach.pt[0], v.attach.pt[1]]; const pr = projOn(e.pts, vp); const prf = projOn(e.pts, from); if (pr.i > prf.i || (pr.i === prf.i && pr.t >= prf.t)) { L += lenUpTo(e.pts, from, vp); where = v.id; break; } }
+      L += lenFrom(e.pts, from);
+      if (stacks.has(e.to)) { where = e.to; break; }
+      const nxt = ESBY[e.to];
+      if (!nxt) { where = null; break; }
+      from = e.pts[e.pts.length - 1];
+      e = nxt;
+    }
+    out.push({ label: s.label, dn: s.dn, L, lim: LIM_VENT[s.dn], via: where, ok: where && L <= LIM_VENT[s.dn] });
+  });
+  return out;
+}
+
+// ---------------------------------------------------------------------------------------------- quantitativos
+function angleAt(a, b, c) {
+  const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - b[0], c[1] - b[1], c[2] - b[2]];
+  const nu = Math.hypot(...u), nv = Math.hypot(...v);
+  if (!nu || !nv) return 0;
+  const cos = (u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) / (nu * nv);
+  return (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
+}
+function quantities(af) {
+  const items = new Map();
+  const add = (grupo, desc, un, q) => {
+    const k = grupo + '|' + desc + '|' + un;
+    const it = items.get(k) || { grupo, desc, un, q: 0 };
+    it.q += q;
+    items.set(k, it);
+  };
+  const tubos = {};
+  const tubo = (grupo, label, dn, L) => { const k = grupo + '|' + label + '|' + dn; tubos[k] = tubos[k] || { grupo, label, dn, L: 0 }; tubos[k].L += L; };
+  const conexoesPorVertice = (pts, grupo, kind, dn, isES) => {
+    for (let i = 1; i < pts.length - 1; i++) {
+      const ang = angleAt(pts[i - 1], pts[i], pts[i + 1]);
+      if (ang < 15) continue;
+      if (isES) add(grupo, (ang > 60 ? 'Joelho 90°' : 'Joelho 45°') + ' esgoto DN' + dn, 'un', 1);
+      else add(grupo, (ang > 60 ? 'Joelho 90° soldável' : 'Joelho 45° soldável') + ' ' + dn + ' mm', 'un', 1);
+    }
+  };
+  // água fria (tubos, curvas, tês, reduções, pontos, registros)
+  const childrenAF = {};
+  AFE.forEach((e) => (childrenAF[e.a] = childrenAF[e.a] || []).push(e));
+  AFE.forEach((e) => {
+    tubo('Água fria', 'Tubo PVC soldável marrom', e.dn, e.L);
+    conexoesPorVertice(e.pts, 'Água fria', 'af', e.dn, false);
+    if (e.rg) add('Registros e válvulas', 'Registro de gaveta bruto ' + e.dn + ' mm (c/ acabamento)', 'un', 1);
+    if (e.rp) add('Registros e válvulas', 'Registro de pressão 20 mm (c/ acabamento) — chuveiro', 'un', 1);
+  });
+  const parentAF = {};
+  AFE.forEach((e) => (parentAF[e.b] = e));
+  Object.keys(childrenAF).forEach((n) => {
+    const ch = childrenAF[n];
+    const par = parentAF[n];
+    const deg = ch.length + (par ? 1 : 0);
+    const main = par ? par.dn : Math.max(...ch.map((c) => c.dn));
+    if (deg >= 3) add('Água fria', 'Tê soldável ' + main + ' mm', 'un', deg - 2);
+    else if (deg === 2 && par) {
+      const a = par.pts[par.pts.length - 2], b = AFN[n], c = ch[0].pts[1];
+      const ang = angleAt(a, b, c);
+      if (ang > 15) add('Água fria', (ang > 60 ? 'Joelho 90° soldável ' : 'Joelho 45° soldável ') + main + ' mm', 'un', 1);
+    }
+    ch.forEach((c) => { if (c.dn < main) add('Água fria', 'Bucha de redução soldável ' + main + '×' + c.dn + ' mm', 'un', 1); });
+  });
+  FX.filter((f) => !f.direto).forEach(() => add('Água fria', 'Joelho 90° soldável c/ bucha de latão 20 mm × ½" (ponto de utilização)', 'un', 1));
+  // alimentador, torneiras diretas e extravasor/limpeza
+  ALE.forEach((e) => {
+    const pts = e.pts || afPts(e, ALN);
+    const dn = e.dn || (e.id === 'AL-g' || e.id === 'AL-f' ? 20 : 25);
+    tubo(e.id === 'LADRAO' || e.id === 'LIMPEZA' ? 'Reservatório' : 'Alimentador predial', 'Tubo PVC soldável marrom', dn, polyLen(pts));
+    conexoesPorVertice(pts, e.id === 'LADRAO' || e.id === 'LIMPEZA' ? 'Reservatório' : 'Alimentador predial', 'af', dn, false);
+  });
+  add('Alimentador predial', 'Tê soldável 25 mm (derivação das torneiras diretas)', 'un', 2);
+  add('Alimentador predial', 'Bucha de redução soldável 25×20 mm', 'un', 2);
+  add('Alimentador predial', 'Joelho 90° soldável c/ bucha de latão 20 mm × ½" + torneira de jardim', 'un', 2);
+  add('Alimentador predial', 'Registro de gaveta 25 mm após o hidrômetro (se o cavalete não tiver)', 'un', 1);
+  add('Alimentador predial', 'Hidrômetro e cavalete — padrão da concessionária', 'cj', 1);
+  add('Reservatório', "Caixa d'água de polietileno 1.500 L com tampa", 'un', 1);
+  add('Reservatório', 'Torneira de boia 25 mm (¾")', 'un', 1);
+  add('Reservatório', 'Adaptador soldável com flange 32 mm (saída, extravasor e limpeza)', 'un', 3);
+  add('Reservatório', 'Adaptador soldável com flange 25 mm (entrada)', 'un', 1);
+  add('Reservatório', 'Registro de gaveta 32 mm (limpeza)', 'un', 1);
+  add('Reservatório', 'Plataforma de 1,00 m para a caixa (alvenaria/concreto sobre vigas) — orçar com a obra civil', 'cj', 1);
+  add('Água fria', 'Torneira de jardim (quintal)', 'un', 1);
+  // esgoto e ventilação
+  const grupoES = (e) => (e.sys === 'VE' ? 'Ventilação' : 'Esgoto');
+  ES.forEach((e) => {
+    tubo(grupoES(e), e.sys === 'VE' ? 'Tubo PVC esgoto série normal (ventilação)' : 'Tubo PVC esgoto série normal', e.dn, e.L);
+    conexoesPorVertice(e.pts, grupoES(e), 'es', e.dn, true);
+    if (e.to && ESBY[e.to] && e.kind !== 'tq') {
+      const tgt = ESBY[e.to];
+      add(grupoES(e), 'Junção simples 45° esgoto DN' + (tgt ? tgt.dn : 100) + '×' + e.dn, 'un', 1);
+    }
+    if (e.attach) add('Ventilação', 'Junção simples 45° esgoto DN' + ESBY[e.attach.edge].dn + '×' + e.dn + ' (pé da coluna de ventilação)', 'un', 1);
+    if (e.kind === 'tq') add('Esgoto', 'Curva 90° raio longo DN' + e.dn + ' (pé do tubo de queda)', 'un', 1);
+    if (e.sys === 'VE' && Math.abs(e.pts[e.pts.length - 1][2] - VT) < 1) add('Ventilação', 'Terminal de ventilação (chapéu) DN' + e.dn, 'un', 1);
+  });
+  add('Ventilação', 'Junção simples 45° esgoto DN100×50 (CV-1 no VP-1)', 'un', 1);
+  const nCS = BOX.filter((b) => b.k === 'CS').length;
+  add('Esgoto', 'Caixa sifonada 150×150×50 com grelha (saída DN75)', 'un', nCS);
+  add('Caixas enterradas', 'Caixa de inspeção 60×60 cm com tampa de concreto (alvenaria ou pré-moldada)', 'un', BOX.filter((b) => b.k === 'CI').length);
+  add('Caixas enterradas', 'Caixa de gordura simples Ø40 cm, 31 L (NBR 8160) com tampa', 'un', 1);
+  add('Caixas enterradas', 'Tampa reforçada para a CI-4 (passagem de veículos na rampa)', 'un', 1);
+  // aparelhos (acessórios de ligação)
+  const n = (t) => FX.filter((f) => f.t === t).length;
+  add('Acessórios dos aparelhos', 'Anel de vedação para bacia DN100', 'un', n('vaso'));
+  add('Acessórios dos aparelhos', 'Engate flexível ½" (bacias e lavatórios)', 'un', n('vaso') + n('lav'));
+  add('Acessórios dos aparelhos', 'Sifão para pia DN50 (cozinha / gourmet)', 'un', n('pia'));
+  add('Acessórios dos aparelhos', 'Sifão para tanque DN40', 'un', n('tanque'));
+  add('Acessórios dos aparelhos', 'Válvula + tubo de ligação para lavatório (descarga na caixa sifonada)', 'un', n('lav'));
+  add('Acessórios dos aparelhos', 'Ralo/sifão para máquina de lavar DN50 (com tubo de espera a 0,90 m)', 'un', n('mlr'));
+  // fixação e insumos
+  let ext = 0;
+  ES.filter((e) => e.kind === 'tq' || e.kind === 've').forEach((e) => {
+    for (let i = 1; i < e.pts.length; i++) if (e.pts[i][0] < 1500 || e.pts[i][1] < 2850) ext += Math.abs(e.pts[i][2] - e.pts[i - 1][2]);
+  });
+  AFE.filter((e) => e.tag === 'AF-2' || e.tag === 'AF-3').forEach((e) => (ext += e.fl === 'v' ? e.L : 0));
+  add('Fixação e insumos', 'Abraçadeira tipo D para tubos aparentes nos shafts (a cada 1,5 m)', 'un', Math.ceil(ext / 1500));
+  const juntasAF = [...items.values()].filter((i) => i.grupo !== 'Esgoto' && i.grupo !== 'Ventilação' && /soldável/.test(i.desc)).reduce((s, i) => s + i.q * 2, 0);
+  add('Fixação e insumos', 'Adesivo para PVC (frasco 175 g)', 'un', Math.max(2, Math.ceil(juntasAF / 60) + 1));
+  add('Fixação e insumos', 'Solução limpadora para PVC (frasco 200 mL)', 'un', Math.max(1, Math.ceil(juntasAF / 120)));
+  add('Fixação e insumos', 'Fita veda-rosca 18 mm × 25 m', 'un', Math.max(2, Math.ceil(FX.length / 8)));
+  add('Fixação e insumos', 'Pasta lubrificante para juntas elásticas (pote 400 g)', 'un', 2);
+  add('Fixação e insumos', 'Lixa d’água nº 100', 'un', 6);
+  // tubos → barras de 6 m (+10 % de perdas)
+  const tub = Object.values(tubos).sort((a, b) => a.grupo.localeCompare(b.grupo) || a.dn - b.dn);
+  tub.forEach((t) => {
+    const m = (t.L / 1000) * 1.1;
+    t.m = m; t.barras = Math.ceil(m / 6);
+  });
+  return { tubos: tub, items: [...items.values()].sort((a, b) => a.grupo.localeCompare(b.grupo) || a.desc.localeCompare(b.desc)) };
+}
+
+// furos e passagens (para deixar esperas antes de concretar / levantar paredes)
+function passagens() {
+  const out = [];
+  const slabs = [{ z: L1 - 80, nome: 'Laje do 1º pavimento' }, { z: L2 - 80, nome: 'Laje do 2º pavimento' }, { z: LR - 80, nome: 'Laje de cobertura' }];
+  const all = [];
+  AFE.forEach((e) => all.push({ id: e.tag || e.id, sys: 'Água fria', dn: e.dn, pts: e.pts }));
+  ALE.forEach((e) => all.push({ id: e.tag, sys: 'Alimentador', dn: e.dn || 25, pts: e.pts || afPts(e, ALN) }));
+  ES.forEach((e) => all.push({ id: e.nome || e.id, sys: e.sys === 'VE' ? 'Ventilação' : 'Esgoto', dn: e.dn, pts: e.pts }));
+  const inside = (x, y) => x > 1500 && x < 7500 && y > 2850 && y < 10500;
+  all.forEach((p) => {
+    for (let i = 1; i < p.pts.length; i++) {
+      const a = p.pts[i - 1], b = p.pts[i];
+      slabs.forEach((s) => {
+        const lo = Math.min(a[2], b[2]), hi = Math.max(a[2], b[2]);
+        if (lo < s.z && hi > s.z && inside(a[0], a[1])) {
+          const k = s.nome + p.id + a[0] + a[1];
+          if (!out.some((o) => o.k === k)) out.push({ k, onde: s.nome, x: a[0], y: a[1], dn: p.dn, oque: p.id, sys: p.sys, furo: p.dn + 50 });
+        }
+      });
+    }
+  });
+  BOX.filter((b) => b.k === 'CS' && b.fl !== 'T').forEach((b) => out.push({ k: b.id, onde: b.fl === '1' ? 'Laje do 1º pavimento' : 'Laje do 2º pavimento', x: b.x, y: b.y, dn: 150, oque: b.id + ' (caixa sifonada no rebaixo)', sys: 'Esgoto', furo: '25×25 cm' }));
+  return out.sort((a, b) => a.onde.localeCompare(b.onde) || a.x - b.x);
+}
+
+const AF = solveAF();
+solveES();
+const VENT = ventDistances();
+const QT = quantities(AF);
+const PASS = passagens();
+
+// =====================================================================================================
+//  INTERFACE
+// =====================================================================================================
+const doc = window.DD && DD.data ? DD.data.initialState() : null;
+const PRANCHAS = [
+  { id: 'T', label: 'Térreo', fid: 'f0' },
+  { id: '1', label: '1º Pav.', fid: 'f1' },
+  { id: '2', label: '2º Pav.', fid: 'f2' },
+  { id: 'C', label: 'Cobertura', fid: 'f2' },
+  { id: '3d', label: '3D' },
+  { id: 'calc', label: 'Memorial e cálculo' },
+  { id: 'mat', label: 'Materiais' },
+];
+const FL_RANGE = { T: [-2000, L1], 1: [L1, L2], 2: [L2, LR], C: [LR, 20000] };
+const COLORS = { AF: '#2f80d8', ES: '#9a5b2c', VE: '#2f9e5f', AL: '#7a4fc2' };
+const S = { tab: 'T', layers: { AF: true, ES: true, VE: true, AL: true, TXT: true, WALLS: true }, view: null, hover: null };
+
+const $ = (id) => document.getElementById(id);
+const tabs = $('tabs');
+PRANCHAS.forEach((p) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('role', 'tab'); b.dataset.tab = p.id; b.textContent = p.label;
+  b.addEventListener('click', () => setTab(p.id));
+  tabs.appendChild(b);
+});
+$('layers').addEventListener('change', (e) => {
+  const k = e.target.dataset.layer;
+  if (!k) return;
+  S.layers[k] = e.target.checked;
+  drawPlan(); if (S.tab === '3d') sync3D();
+});
+
+// ---------------------------------------------------------------------------------------------- planta
+const plan = $('plan');
+const ctx = plan.getContext('2d');
+const BOUNDS = { T: [-2900, 1700, 9300, 20400], 1: [-2900, 2300, 7900, 11000], 2: [-2900, 2300, 7900, 11000], C: [-2900, 2300, 7900, 11000] };
+function fitView() {
+  const [x0, y0, x1, y1] = BOUNDS[S.tab] || BOUNDS.T;
+  const w = plan.clientWidth, h = plan.clientHeight;
+  const s = Math.min((w - 30) / (x1 - x0), (h - 30) / (y1 - y0));
+  S.view = { s, ox: (w - (x1 - x0) * s) / 2 - x0 * s, oy: (h - (y1 - y0) * s) / 2 - y0 * s };
+}
+const X = (x) => S.view.ox + x * S.view.s;
+const Y = (y) => S.view.oy + y * S.view.s;
+
+function wallRect(w) {
+  const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L * w.thick / 2, ny = dx / L * w.thick / 2;
+  return [[w.a.x + nx, w.a.y + ny], [w.b.x + nx, w.b.y + ny], [w.b.x - nx, w.b.y - ny], [w.a.x - nx, w.a.y - ny]];
+}
+function drawWalls(fid, faint) {
+  if (!doc) return;
+  const walls = doc.walls.filter((w) => w.floor === fid);
+  walls.forEach((w) => {
+    const r = wallRect(w);
+    ctx.beginPath(); r.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.closePath();
+    ctx.fillStyle = faint ? 'rgba(46,42,38,.18)' : w.kind === 'structural' ? '#3a3631' : w.kind === 'partition' ? '#8c8375' : w.kind === 'railing' ? 'rgba(46,42,38,.35)' : '#b3aa9b';
+    ctx.fill();
+  });
+  if (faint) return;
+  doc.openings.forEach((o) => {
+    const w = walls.find((x) => x.id === o.wall);
+    if (!w) return;
+    const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const c0 = o.t - o.width / 2, c1 = o.t + o.width / 2;
+    const fake = { a: { x: w.a.x + ux * c0, y: w.a.y + uy * c0 }, b: { x: w.a.x + ux * c1, y: w.a.y + uy * c1 }, thick: w.thick + 6 };
+    const r = wallRect(fake);
+    ctx.beginPath(); r.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.closePath();
+    ctx.fillStyle = '#f3efe6'; ctx.fill();
+    if (o.type === 'window') {
+      ctx.strokeStyle = '#3a3631'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(X(fake.a.x), Y(fake.a.y)); ctx.lineTo(X(fake.b.x), Y(fake.b.y)); ctx.stroke();
+      ctx.stroke(new Path2D(r.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1])).join(' ') + 'Z'));
+    }
+  });
+}
+function drawFixture(f) {
+  const s = S.view.s;
+  ctx.save();
+  ctx.translate(X(f.x), Y(f.y));
+  ctx.rotate(((f.rot || 0) * Math.PI) / 180);
+  ctx.strokeStyle = '#4d4740'; ctx.fillStyle = '#ffffff'; ctx.lineWidth = 1.2;
+  const R = (w, d) => { ctx.beginPath(); ctx.rect(-w / 2 * s, -d / 2 * s, w * s, d * s); ctx.fill(); ctx.stroke(); };
+  if (f.t === 'vaso') { R(380, 200); ctx.translate(0, 0); ctx.beginPath(); ctx.ellipse(0, 260 * s, 170 * s, 230 * s, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+  else if (f.t === 'lav') { ctx.beginPath(); ctx.ellipse(0, 0, 260 * s, 190 * s, 0, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+  else if (f.t === 'ch') { R(760, 760); ctx.beginPath(); ctx.moveTo(-380 * s, -380 * s); ctx.lineTo(380 * s, 380 * s); ctx.moveTo(380 * s, -380 * s); ctx.lineTo(-380 * s, 380 * s); ctx.stroke(); }
+  else if (f.t === 'pia') { R(500, 420); ctx.beginPath(); ctx.arc(0, 0, 90 * s, 0, Math.PI * 2); ctx.stroke(); }
+  else if (f.t === 'tanque') { R(560, 500); ctx.beginPath(); ctx.rect(-200 * s, -150 * s, 400 * s, 300 * s); ctx.stroke(); }
+  else if (f.t === 'mlr') { R(600, 600); ctx.beginPath(); ctx.arc(0, 0, 200 * s, 0, Math.PI * 2); ctx.stroke(); }
+  else if (f.t === 'tj') { ctx.fillStyle = '#2f80d8'; ctx.beginPath(); ctx.arc(0, 0, Math.max(3, 80 * s), 0, Math.PI * 2); ctx.fill(); }
+  ctx.restore();
+  if (S.layers.TXT) label(f.id, f.x, f.y - 380, '#4d4740', true);
+}
+function label(txt, x, y, color, small, bg) {
+  ctx.font = (small ? '500 10px' : '600 11px') + ' "JetBrains Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(txt).width + 6;
+  ctx.fillStyle = bg || 'rgba(243,239,230,.88)'; ctx.fillRect(X(x) - w / 2, Y(y) - 7, w, 14);
+  ctx.fillStyle = color || '#1f1d1a'; ctx.fillText(txt, X(x), Y(y));
+}
+function inFloor(z, fl) { const [a, b] = FL_RANGE[fl]; return z >= a && z < b; }
+// prancha de cada trecho pela altura: ramais logo abaixo da laje (até 45 cm) pertencem ao pavimento de cima
+const floorOf = (z) => (z < L1 - 450 ? 'T' : z < L2 - 450 ? '1' : z < LR - 450 ? '2' : 'C');
+function pipeList() {
+  // tudo que pode ser desenhado: {id, sys, dn, pts, fl, kind, info}
+  const L = [];
+  AFE.forEach((e) => L.push({ id: e.id, sys: 'AF', dn: e.dn, pts: e.pts, fl: e.fl, kind: e.fl === 'v' ? 'col' : 'h', info: `${e.tag || 'Ramal'} · ${e.id}\nDN ${e.dn} mm · ${fmtm(e.L)} m\nΣP ${fmtn(e.P, 1)} · Q ${fmtn(e.Q, 2)} L/s · v ${fmtn(e.v, 2)} m/s` }));
+  ALE.forEach((e) => { const pts = e.pts || afPts(e, ALN); L.push({ id: e.id, sys: e.id === 'LADRAO' || e.id === 'LIMPEZA' ? 'AF' : 'AL', dn: e.dn || 25, pts, fl: e.fl, kind: 'h', info: `${e.tag}\nDN ${e.dn || 25} mm · ${fmtm(polyLen(pts))} m` }); });
+  ES.forEach((e) => L.push({ id: e.id, sys: e.sys, dn: e.dn, pts: e.pts, fl: e.fl, kind: e.fl === 'v' ? 'col' : 'h', info: `${e.nome || e.id}\nDN ${e.dn} · ${fmtm(e.L)} m${e.uhc ? ' · ' + e.uhc + ' UHC' : ''}${e.i != null && e.kind !== 'tq' ? ' · i = ' + fmtn(e.i * 100, 1) + ' %' : ''}` }));
+  return L;
+}
+const PIPES = pipeList();
+function visibleSegs(fl) {
+  // segmentos horizontais da prancha + prumadas (desenhadas como círculo)
+  const segs = [], cols = [];
+  PIPES.forEach((p) => {
+    if (!S.layers[p.sys]) return;
+    const pts = p.pts;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1], b = pts[i];
+      const vert = Math.hypot(b[0] - a[0], b[1] - a[1]) < 1;
+      if (vert) {
+        const lo = Math.min(a[2], b[2]), hi = Math.max(a[2], b[2]);
+        const [f0, f1] = FL_RANGE[fl];
+        if (hi > f0 + 1 && lo < f1 - 1 && hi - lo > 300) cols.push({ p, x: a[0], y: a[1], lo, hi });
+      } else {
+        if (floorOf((a[2] + b[2]) / 2) === fl) segs.push({ p, a, b });
+      }
+    }
+  });
+  return { segs, cols };
+}
+function drawPlan() {
+  if (S.tab === '3d' || S.tab === 'calc' || S.tab === 'mat') return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = plan.clientWidth, h = plan.clientHeight;
+  if (!w || !h) return;
+  if (!S.view) fitView();
+  plan.width = Math.round(w * dpr); plan.height = Math.round(h * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#f3efe6'; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#e7e1d5'; ctx.lineWidth = 1;
+  const g = 1000 * S.view.s;
+  if (g > 12) {
+    for (let x = S.view.ox % g; x < w; x += g) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = S.view.oy % g; y < h; y += g) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  }
+  const fl = S.tab;
+  const P = PRANCHAS.find((p) => p.id === fl);
+  // lote
+  ctx.strokeStyle = '#b3aa9b'; ctx.setLineDash([6, 4]); ctx.strokeRect(X(0), Y(0), 9000 * S.view.s, 20000 * S.view.s); ctx.setLineDash([]);
+  if (fl === 'C') {
+    drawWalls('f2', true);
+    ctx.fillStyle = 'rgba(160,150,135,.25)'; ctx.fillRect(X(1500), Y(2850), 6000 * S.view.s, 7650 * S.view.s);
+    ctx.strokeStyle = '#6b6356'; ctx.strokeRect(X(1500), Y(2850), 6000 * S.view.s, 7650 * S.view.s);
+    // caixa d'água e plataforma
+    ctx.fillStyle = '#d7e7f7'; ctx.strokeStyle = '#2f80d8'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(2500), Y(7900), 775 * S.view.s, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.strokeStyle = '#6b6356'; ctx.lineWidth = 1; ctx.setLineDash([4, 3]); ctx.strokeRect(X(1600), Y(7000), 1800 * S.view.s, 1800 * S.view.s); ctx.setLineDash([]);
+    if (S.layers.TXT) { label("Caixa d'água 1.500 L", 2500, 7750, '#1b4f8a'); label('plataforma h = 1,00 m', 2500, 8050, '#4d4740', true); }
+  } else drawWalls(P.fid, false);
+  // shafts
+  SHAFTS.forEach((sh) => {
+    const show = sh.id === 'SH-2b' ? fl === 'T' || fl === '1' : sh.id === 'SH-3' ? fl !== 'C' : true;
+    if (!show) return;
+    ctx.fillStyle = sh.ext ? 'rgba(122,79,194,.10)' : 'rgba(224,112,63,.12)'; ctx.strokeStyle = sh.ext ? '#7a4fc2' : '#e0703f';
+    ctx.lineWidth = 1; ctx.setLineDash([3, 3]);
+    ctx.fillRect(X(sh.x0), Y(sh.y0), (sh.x1 - sh.x0) * S.view.s, (sh.y1 - sh.y0) * S.view.s);
+    ctx.strokeRect(X(sh.x0), Y(sh.y0), (sh.x1 - sh.x0) * S.view.s, (sh.y1 - sh.y0) * S.view.s); ctx.setLineDash([]);
+  });
+  // aparelhos
+  if (fl !== 'C') FX.filter((f) => f.fl === fl).forEach(drawFixture);
+  if (fl === 'T' && S.layers.AL) {
+    ctx.fillStyle = '#efe6fb'; ctx.strokeStyle = '#7a4fc2'; ctx.lineWidth = 1.5;
+    ctx.fillRect(X(6450), Y(19700), 600 * S.view.s, 220 * S.view.s); ctx.strokeRect(X(6450), Y(19700), 600 * S.view.s, 220 * S.view.s);
+    if (S.layers.TXT) label('Hidrômetro (concessionária)', 5600, 19300, '#4b2d84', true);
+  }
+  // caixas
+  BOX.filter((b) => b.fl === fl && S.layers.ES).forEach((b) => {
+    ctx.lineWidth = 1.5; ctx.strokeStyle = '#6a3d1a';
+    if (b.k === 'CI') { ctx.fillStyle = '#efe2d2'; ctx.fillRect(X(b.x - 300), Y(b.y - 300), 600 * S.view.s, 600 * S.view.s); ctx.strokeRect(X(b.x - 300), Y(b.y - 300), 600 * S.view.s, 600 * S.view.s); }
+    else if (b.k === 'CG') { ctx.fillStyle = '#efe2d2'; ctx.beginPath(); ctx.arc(X(b.x), Y(b.y), 250 * S.view.s, 0, Math.PI * 2); ctx.fill(); ctx.stroke(); }
+    else { ctx.fillStyle = '#fff'; ctx.fillRect(X(b.x - 75), Y(b.y - 75), 150 * S.view.s, 150 * S.view.s); ctx.strokeRect(X(b.x - 75), Y(b.y - 75), 150 * S.view.s, 150 * S.view.s); }
+    if (S.layers.TXT) {
+      const prof = b.k === 'CI' || b.k === 'CG' ? ' · prof. ' + fmtm(ZG - b.z) + ' m' : '';
+      label(b.id + prof, b.x + (b.k === 'CS' ? 0 : 0), b.y + (b.k === 'CI' ? 420 : b.k === 'CG' ? 360 : 190), '#6a3d1a', true);
+    }
+  });
+  // tubos
+  const { segs, cols } = visibleSegs(fl);
+  segs.forEach(({ p, a, b }) => {
+    const under = (a[2] + b[2]) / 2 < -50;
+    ctx.strokeStyle = COLORS[p.sys]; ctx.lineWidth = Math.max(1.6, Math.min(5, p.dn / 30)) * (S.hover === p.id ? 1.8 : 1);
+    ctx.setLineDash(under ? [8, 4] : p.sys === 'VE' ? [3, 3] : []);
+    ctx.beginPath(); ctx.moveTo(X(a[0]), Y(a[1])); ctx.lineTo(X(b[0]), Y(b[1])); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  // rótulos dos trechos (no maior segmento de cada tubo)
+  if (S.layers.TXT) {
+    const best = {};
+    segs.forEach((s) => { const L = Math.hypot(s.b[0] - s.a[0], s.b[1] - s.a[1]); if (!best[s.p.id] || L > best[s.p.id].L) best[s.p.id] = { s, L }; });
+    Object.values(best).forEach(({ s, L }) => {
+      if (L * S.view.s < 60) return;
+      const e = ESBY[s.p.id];
+      const t = s.p.sys === 'ES' && e && e.i != null && e.kind !== 'tq' ? `Ø${s.p.dn} i=${fmtn(e.i * 100, 1)}%` : `Ø${s.p.dn}`;
+      label(t, (s.a[0] + s.b[0]) / 2, (s.a[1] + s.b[1]) / 2, COLORS[s.p.sys], true);
+    });
+  }
+  // prumadas
+  const seen = new Set();
+  cols.forEach((c) => {
+    const k = c.p.id + c.x + c.y;
+    if (seen.has(k)) return; seen.add(k);
+    const r = Math.max(4, (c.p.dn / 2 + 20) * S.view.s);
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = COLORS[c.p.sys]; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(c.x), Y(c.y), r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = COLORS[c.p.sys]; ctx.beginPath(); ctx.arc(X(c.x), Y(c.y), r * 0.45, 0, Math.PI * 2); ctx.fill();
+  });
+  if (S.layers.TXT) {
+    // rótulos das prumadas na margem, com linha de chamada
+    const tags = [
+      ['SH-3 · AF-3 · CV-3 Ø50', 6400, 2780, fl === 'T' ? 2450 : 3300],
+      ['SH-2 · TG-1 Ø75 · AF-2 · VP-2 Ø100', 1340, 6700, 6300],
+      ['TQ-2 Ø100 (canto do P6)', 1745, 7225, 7350],
+      ['TS-1 Ø75 (tanque/máquina)', 1420, 8565, 8500],
+      ['SH-1 · TQ-1 Ø100 · CV-1 Ø50 · AF-1 · AL', 1950, 10290, 10350],
+    ];
+    if (fl === '2' || fl === 'C') tags.splice(2, 1);
+    ctx.font = '500 10px "JetBrains Mono", monospace';
+    tags.forEach(([t, px, py, ty]) => {
+      const tx = -2750, w = ctx.measureText(t).width + 8;
+      ctx.strokeStyle = 'rgba(31,29,26,.55)'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(X(tx) + w, Y(ty)); ctx.lineTo(X(px), Y(py)); ctx.stroke();
+      ctx.fillStyle = 'rgba(255,255,255,.95)'; ctx.fillRect(X(tx), Y(ty) - 8, w, 16);
+      ctx.strokeRect(X(tx), Y(ty) - 8, w, 16);
+      ctx.fillStyle = '#1f1d1a'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, X(tx) + 4, Y(ty));
+    });
+  }
+  // título
+  ctx.font = '600 13px "Space Grotesk", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#1f1d1a';
+  const titles = { T: 'Térreo — água fria, esgoto (enterrado tracejado) e ventilação', 1: '1º pavimento — ramais sob a laje e nas paredes', 2: '2º pavimento', C: "Cobertura — caixa d'água, barrilete e terminais de ventilação" };
+  ctx.fillText(titles[fl], 12, h - 14);
+  // escala
+  const m = 1000 * S.view.s;
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - 20 - m, h - 18); ctx.lineTo(w - 20, h - 18); ctx.stroke();
+  ctx.font = '500 10px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.fillText('1 m', w - 20 - m / 2, h - 28);
+}
+// mover/zoom
+let drag = null;
+const pointers = new Map();
+plan.addEventListener('pointerdown', (e) => { plan.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); drag = { x: e.clientX, y: e.clientY }; });
+plan.addEventListener('pointermove', (e) => {
+  const r = plan.getBoundingClientRect();
+  if (pointers.has(e.pointerId)) {
+    const prev = pointers.get(e.pointerId);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d0 = Math.hypot(a.x - b.x, a.y - b.y);
+      prev.x = e.clientX; prev.y = e.clientY;
+      const [c, d] = [...pointers.values()];
+      const d1 = Math.hypot(c.x - d.x, c.y - d.y);
+      zoomAt((c.x + d.x) / 2 - r.left, (c.y + d.y) / 2 - r.top, d1 / (d0 || d1));
+      return;
+    }
+    S.view.ox += e.clientX - prev.x; S.view.oy += e.clientY - prev.y;
+    prev.x = e.clientX; prev.y = e.clientY;
+    $('tip').hidden = true;
+    drawPlan();
+    return;
+  }
+  hoverAt(e.clientX - r.left, e.clientY - r.top);
+});
+['pointerup', 'pointercancel'].forEach((t) => plan.addEventListener(t, (e) => pointers.delete(e.pointerId)));
+plan.addEventListener('wheel', (e) => { e.preventDefault(); const r = plan.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+plan.addEventListener('dblclick', () => { fitView(); drawPlan(); });
+function zoomAt(px, py, k) {
+  const s2 = Math.max(0.01, Math.min(1.2, S.view.s * k));
+  const wx = (px - S.view.ox) / S.view.s, wy = (py - S.view.oy) / S.view.s;
+  S.view.s = s2; S.view.ox = px - wx * s2; S.view.oy = py - wy * s2;
+  drawPlan();
+}
+function hoverAt(px, py) {
+  if (!S.view) return;
+  const { segs, cols } = visibleSegs(S.tab);
+  let best = null;
+  const d2s = (a, b) => {
+    const ax = X(a[0]), ay = Y(a[1]), bx = X(b[0]), by = Y(b[1]);
+    const dx = bx - ax, dy = by - ay, L = dx * dx + dy * dy;
+    const t = L ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / L)) : 0;
+    return Math.hypot(ax + dx * t - px, ay + dy * t - py);
+  };
+  segs.forEach((s) => { const d = d2s(s.a, s.b); if (d < 7 && (!best || d < best.d)) best = { d, p: s.p }; });
+  cols.forEach((c) => { const d = Math.hypot(X(c.x) - px, Y(c.y) - py); if (d < 9 && (!best || d < best.d)) best = { d, p: c.p, col: c }; });
+  const tip = $('tip');
+  const id = best ? best.p.id : null;
+  if (id !== S.hover) { S.hover = id; drawPlan(); }
+  if (!best) { tip.hidden = true; return; }
+  tip.hidden = false;
+  tip.textContent = best.p.info + (best.col ? `\nprumada: ${fmtm(best.col.lo)} → ${fmtm(best.col.hi)} m` : '');
+  tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px';
+  tip.style.top = Math.min(py + 14, plan.clientHeight - 90) + 'px';
+}
+
+// ---------------------------------------------------------------------------------------------- 3D
+let R3 = null;
+function init3D() {
+  if (R3) return;
+  const host = $('view3d');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  host.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xe9e5dd);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
+  camera.position.set(-9, 13, 25);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(3.5, 3, 8.5);
+  controls.enableDamping = true;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8070, 1.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-6, 14, 8); scene.add(sun);
+  const groups = { WALLS: new THREE.Group(), AF: new THREE.Group(), ES: new THREE.Group(), VE: new THREE.Group(), AL: new THREE.Group(), BOX: new THREE.Group() };
+  Object.values(groups).forEach((g) => scene.add(g));
+  const M = (mm) => mm / 1000;
+  const V = (p) => new THREE.Vector3(M(p[0]), M(p[2]), M(p[1]));
+  // chão (transparente, para ver o que está enterrado)
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9, 20), new THREE.MeshStandardMaterial({ color: 0x9db38a, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }));
+  ground.rotation.x = -Math.PI / 2; ground.position.set(4.5, M(ZG), 10); scene.add(ground);
+  // paredes com vãos
+  if (doc) {
+    const wallMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c6, transparent: true, opacity: 0.16, depthWrite: false });
+    const level = Object.fromEntries(doc.floors.map((f) => [f.id, f.level]));
+    doc.walls.forEach((w) => {
+      const base = level[w.floor] || 0, H = w.height || 2880;
+      const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy);
+      const ops = doc.openings.filter((o) => o.wall === w.id).map((o) => ({ a: o.t - o.width / 2, b: o.t + o.width / 2, z0: o.sill, z1: o.sill + o.height })).sort((p, q) => p.a - q.a);
+      const cuts = [0]; ops.forEach((o) => cuts.push(o.a, o.b)); cuts.push(L);
+      const piece = (s0, s1, z0, z1) => {
+        if (s1 - s0 < 5 || z1 - z0 < 5) return;
+        const g = new THREE.BoxGeometry(M(s1 - s0), M(z1 - z0), M(w.thick));
+        const m = new THREE.Mesh(g, wallMat);
+        const sm = (s0 + s1) / 2;
+        m.position.set(M(w.a.x + dx / L * sm), M(base + (z0 + z1) / 2), M(w.a.y + dy / L * sm));
+        m.rotation.y = -Math.atan2(dy, dx);
+        groups.WALLS.add(m);
+      };
+      for (let i = 0; i < cuts.length - 1; i++) {
+        const s0 = cuts[i], s1 = cuts[i + 1], op = ops.find((o) => o.a === s0 && o.b === s1);
+        if (!op) piece(s0, s1, 0, H); else { piece(s0, s1, 0, op.z0); piece(s0, s1, op.z1, H); }
+      }
+    });
+    // lajes (contorno)
+    const slabMat = new THREE.MeshStandardMaterial({ color: 0xbdb4a5, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
+    [[L1, 1500, 9000, 2850, 15000], [L2, 1500, 9000, 2850, 10500], [LR, 1500, 7500, 2850, 10500]].forEach(([z, x0, x1, y0, y1]) => {
+      const m = new THREE.Mesh(new THREE.BoxGeometry(M(x1 - x0), 0.16, M(y1 - y0)), slabMat);
+      m.position.set(M((x0 + x1) / 2), M(z) - 0.08, M((y0 + y1) / 2)); groups.WALLS.add(m);
+    });
+  }
+  // tubos
+  const mats = {};
+  const mat = (sys) => (mats[sys] = mats[sys] || new THREE.MeshStandardMaterial({ color: COLORS[sys], roughness: 0.5 }));
+  PIPES.forEach((p) => {
+    const g = groups[p.sys] || groups.AF;
+    const r = Math.max(0.012, (p.dn / 2000) * 1.15);
+    for (let i = 1; i < p.pts.length; i++) {
+      const a = V(p.pts[i - 1]), b = V(p.pts[i]);
+      const L = a.distanceTo(b);
+      if (L < 0.001) continue;
+      const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 12), mat(p.sys));
+      cyl.position.copy(a).lerp(b, 0.5);
+      cyl.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize());
+      g.add(cyl);
+      const j = new THREE.Mesh(new THREE.SphereGeometry(r * 1.15, 10, 8), mat(p.sys)); j.position.copy(b); g.add(j);
+    }
+  });
+  // caixas, reservatório e aparelhos
+  const boxMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4a });
+  BOX.forEach((b) => {
+    const sz = b.k === 'CI' ? 600 : b.k === 'CG' ? 500 : 150;
+    const top = b.k === 'CS' ? b.z + 120 : ZG;
+    const m = b.k === 'CG' ? new THREE.Mesh(new THREE.CylinderGeometry(M(250), M(250), M(top - b.z + 100), 20), boxMat) : new THREE.Mesh(new THREE.BoxGeometry(M(sz), M(top - b.z + 100), M(sz)), boxMat);
+    m.position.set(M(b.x), M((top + b.z - 100) / 2), M(b.y)); groups.BOX.add(m);
+  });
+  const cx = new THREE.Mesh(new THREE.CylinderGeometry(0.775, 0.7, 1.05, 32), new THREE.MeshStandardMaterial({ color: 0x4a90d9, transparent: true, opacity: 0.85 }));
+  cx.position.set(2.5, M(CX_BASE) + 0.525, 7.9); groups.AF.add(cx);
+  const plat = new THREE.Mesh(new THREE.BoxGeometry(1.8, M(PLATAFORMA), 1.8), new THREE.MeshStandardMaterial({ color: 0xb8afa0 }));
+  plat.position.set(2.5, M(LR + PLATAFORMA / 2), 7.9); groups.WALLS.add(plat);
+  const fxMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.3 });
+  const lvl = { T: 0, 1: L1, 2: L2 };
+  FX.forEach((f) => {
+    if (f.t === 'tj') return;
+    const dims = { vaso: [380, 650, 400], lav: [500, 400, 180], ch: [120, 120, 60], pia: [600, 500, 200], tanque: [550, 500, 300], mlr: [600, 600, 850] }[f.t];
+    const zc = { vaso: 200, lav: 820, ch: 2050, pia: 830, tanque: 750, mlr: 425 }[f.t];
+    const m = new THREE.Mesh(new THREE.BoxGeometry(M(dims[0]), M(dims[2]), M(dims[1])), fxMat);
+    m.position.set(M(f.x), M(lvl[f.fl] + zc), M(f.y)); m.rotation.y = -((f.rot || 0) * Math.PI) / 180; groups.BOX.add(m);
+  });
+  R3 = { renderer, scene, camera, controls, groups, host };
+  const loop = () => { if (S.tab === '3d') { controls.update(); renderer.render(scene, camera); } requestAnimationFrame(loop); };
+  loop();
+}
+function sync3D() {
+  if (!R3) return;
+  ['AF', 'ES', 'VE', 'AL', 'WALLS'].forEach((k) => (R3.groups[k].visible = !!S.layers[k]));
+  const w = R3.host.clientWidth, h = R3.host.clientHeight;
+  if (w && h) { R3.renderer.setSize(w, h, false); R3.camera.aspect = w / h; R3.camera.updateProjectionMatrix(); }
+}
+
+// ---------------------------------------------------------------------------------------------- memorial
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function table(head, rows, cls) {
+  return `<div class="tw"><table class="${cls || ''}"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+function memorial() {
+  const consumo = PESSOAS * PER_CAPITA;
+  const pRows = AF.pontos.map((p) => `<tr><td class="c">${p.f.id}</td><td>${esc(TIPOS[p.f.t].nome)}</td><td>${esc(p.f.amb)}</td><td class="n">${fmtm(p.z)}</td><td class="n">${fmtn(p.est)}</td><td class="n">${fmtn(p.din)}</td><td class="n">${fmtn(p.din * 9.81, 1)}</td><td class="n">${fmtn(p.min * 9.81, 0)}</td><td class="${p.ok ? 'ok' : 'bad'}">${p.ok ? 'OK' : 'baixa'}</td></tr>`);
+  const tRows = AF.order.map((e) => `<tr><td class="c">${e.id}</td><td>${esc(e.tag || '')}</td><td class="n">${e.dn}${e.up ? ' ↑' : ''}</td><td class="n">${fmtm(e.L)}</td><td class="n">${fmtn(e.P, 1)}</td><td class="n">${fmtn(e.Q, 2)}</td><td class="n">${fmtn(e.v, 2)}</td><td class="n">${fmtn(e.J, 3)}</td><td class="n">${fmtn(e.hf, 2)}</td><td class="n">${fmtn(e.pOut, 2)}</td></tr>`);
+  const apar = FX.filter((f) => f.t !== 'tj').map((f) => `<tr><td class="c">${f.id}</td><td>${esc(TIPOS[f.t].nome)}</td><td>${esc(f.amb)}</td><td class="n">${TIPOS[f.t].P}</td><td class="n">${TIPOS[f.t].q}</td><td class="n">${TIPOS[f.t].uhc}</td><td class="n">${TIPOS[f.t].dn}</td><td>${f.cs ? 'na ' + f.cs : 'sifão próprio'}</td></tr>`);
+  const lim = { tq: '≤ 240 UHC (DN100, até 3 pav.)', ramal: '', base: '', col: '≤ 216 UHC (DN100, i = 2 %)' };
+  const esRows = ES.filter((e) => e.sys === 'ES').map((e) => `<tr><td class="c">${e.id}</td><td>${esc(e.nome || ({ ramal: 'Ramal', base: 'Pé de tubo de queda / ligação', col: 'Coletor predial' })[e.kind] || '')}</td><td class="n">${e.dn}</td><td class="n">${e.uhc}</td><td class="n">${fmtm(e.L)}</td><td class="n">${e.i != null && e.kind !== 'tq' ? fmtn(e.i * 100, 1) + ' %' : '—'}</td><td class="${e.i != null && e.kind !== 'tq' && e.i < (e.dn >= 100 ? 0.0099 : 0.0199) ? 'bad' : 'ok'}">${e.kind === 'tq' ? 'TQ ' + lim.tq : e.i != null && e.i < (e.dn >= 100 ? 0.0099 : 0.0199) ? 'declividade baixa' : 'OK'}</td></tr>`);
+  const ciRows = BOX.filter((b) => b.k !== 'CS').map((b) => `<tr><td class="c">${b.id}</td><td>${b.k === 'CI' ? 'Caixa de inspeção 60×60' : 'Caixa de gordura simples Ø40 (31 L)'}</td><td class="n">${fmtm(b.x)} ; ${fmtm(b.y)}</td><td class="n">${fmtm(ZG - b.z)}</td><td class="n">${(() => { const inn = ES.filter((e) => e.to === b.id); return inn.map((e) => e.id).join(', '); })()}</td></tr>`);
+  const vRows = VENT.map((v) => `<tr><td>${esc(v.label)}</td><td class="n">${v.dn}</td><td class="n">${fmtm(v.L)}</td><td class="n">${fmtm(v.lim)}</td><td class="c">${v.via || '—'}</td><td class="${v.ok ? 'ok' : 'bad'}">${v.ok ? 'OK' : 'rever'}</td></tr>`);
+  const passRows = PASS.map((p) => `<tr><td>${esc(p.onde)}</td><td class="n">${fmtm(p.x)} ; ${fmtm(p.y)}</td><td>${esc(p.sys)}</td><td>${esc(p.oque)}</td><td class="n">${p.dn}</td><td class="n">${typeof p.furo === 'number' ? 'Ø ' + p.furo + ' mm' : p.furo}</td></tr>`);
+  const uTot = ESBY['CL-4'].uhc;
+  return `
+  <p class="callout"><b>Anteprojeto.</b> Feito sobre a planta as built e o projeto estrutural da obra, para orientar a execução e o orçamento. Antes de executar, precisa ser revisado e assinado (ART/RRT) por engenheiro ou arquiteto, conferido com a concessionária (ligação de água e de esgoto) e compatibilizado com o calculista nos furos e passagens listados no fim.</p>
+  <h2>1. Premissas e normas</h2>
+  <ul>
+    <li><b>Água fria:</b> ABNT NBR 5626:2020. Sistema indireto por gravidade (caixa d'água na cobertura), com as torneiras externas da garagem e da frente ligadas direto na rede (sistema misto). Vazões e pesos relativos pelo método dos pesos (NBR 5626:1998, ainda usado como referência): Q = 0,3·√ΣP. Velocidade ≤ 14·√D e ≤ 3 m/s. Perda de carga por Fair-Whipple-Hsiao (plástico), comprimento real + 30 % para conexões e +5 m equivalentes no registro de pressão dos chuveiros. Pressão dinâmica mínima de 10 kPa em todos os pontos e 20 kPa na máquina de lavar (exigência usual dos fabricantes).</li>
+    <li><b>Esgoto e ventilação:</b> ABNT NBR 8160:1999. Dimensionamento por Unidades Hunter de Contribuição (UHC). Declividade mínima: 2 % até DN75 e 1 % para DN100 (coletor predial adotado com 2 %). Todo tubo de queda prolongado acima da cobertura como ventilação primária. Distância do desconector à ventilação limitada pela Tabela 10.</li>
+    <li><b>Aquecimento:</b> chuveiros elétricos (sem rede de água quente). Para aquecedor a gás ou solar, prever a rede de água quente à parte.</li>
+    <li><b>Materiais:</b> PVC soldável marrom (água fria) e PVC esgoto série normal (esgoto e ventilação).</li>
+    <li><b>Não incluídos:</b> águas pluviais, que nunca podem ser ligadas no esgoto; gás; e a obra civil das caixas, shafts e plataforma (alvenaria, concreto).</li>
+  </ul>
+  <h2>2. Concepção — prumadas compartilhadas entre os andares</h2>
+  <ul>
+    <li><b>SH-1 (shaft interno, canto do pilar P11):</b> o lavabo do térreo, o banheiro do 1º e o lavabo do 2º ficam empilhados. Um único tubo de queda, o <b>TQ-1 (DN100)</b>, atende os três, e no mesmo shaft passam a <b>coluna de água AF-1</b>, o <b>alimentador</b> que sobe para a caixa d'água e a <b>CV-1</b> (ventilação do lavabo do térreo). O shaft fica junto à parede da frente e não cruza nenhuma viga.</li>
+    <li><b>SH-2 (shaft externo, na lateral esquerda, em frente ao pilar P6):</b> a pia da cozinha do térreo e a pia gourmet do 2º ficam uma sobre a outra. Elas usam um único <b>tubo de gordura TG-1 (DN75)</b> e uma única <b>caixa de gordura</b>, e são abastecidas pela <b>coluna AF-2</b>. É a única faixa da fachada lateral sem janela nos três pavimentos. A ventilação do banheiro da suíte do 1º (VP-2) também sobe por aqui.</li>
+    <li><b>TQ-2 (DN100):</b> banheiro da suíte do 1º. Desce numa caixa de 15 × 13 cm no canto entre o pilar P6 e a janela nova da cozinha. No 1º, essa caixa fica dentro do box.</li>
+    <li><b>TS-1 (DN75):</b> tanque e máquina do 2º. Desce por fora da parede lateral, entre as janelas, separado dos vasos para evitar retorno de espuma.</li>
+    <li><b>SH-3 (shaft externo dos fundos):</b> leva a coluna de água AF-3 e a ventilação CV-3 da suíte do térreo. Assim não é preciso passar água por baixo do piso.</li>
+    <li><b>Chuveiros do 1º costas com costas:</b> o banheiro e a suíte do 1º compartilham a mesma parede hidráulica, com um único ramal para os dois chuveiros.</li>
+    <li><b>Coletor predial reto:</b> corre pela faixa lateral esquerda, com 4 caixas de inspeção (máx. 25 m entre elas) até a rede pública.</li>
+  </ul>
+  <h2>3. Água fria</h2>
+  <h3>Consumo e reservação</h3>
+  <p>População: ${PESSOAS} pessoas (4 dormitórios × 2) · consumo de ${PER_CAPITA} L/pessoa·dia → <b>${consumo} L/dia</b>.</p>
+  <p><b>Caixa d'água adotada: 1.500 L</b> (cerca de 1,25 dia), de polietileno, sobre plataforma de ${fmtm(PLATAFORMA)} m na laje de cobertura, apoiada sobre as vigas. A carga é de ~1,6 t cheia: conferir com o calculista. A plataforma garante a pressão no 2º pavimento (máquina de lavar). Se o abastecimento da rua for intermitente, considerar 2 × 1.000 L interligadas.</p>
+  <p><b>Saídas da caixa:</b> extravasor (ladrão) DN32 descarregando à vista na laje, limpeza DN32 com registro e entrada por torneira de boia DN25.</p>
+  <h3>Pontos de utilização — pressão disponível</h3>
+  <p>Nível mínimo da água considerado: ${fmtm(NA_MIN)} m. Pressão estática = desnível até o ponto; pressão dinâmica = estática − perdas de carga.</p>
+  ${table(['Ponto', 'Aparelho', 'Ambiente', 'Altura (m)', 'Estática (m.c.a.)', 'Dinâmica (m.c.a.)', 'Dinâmica (kPa)', 'Mín. (kPa)', ''], pRows)}
+  <h3>Dimensionamento dos trechos</h3>
+  <p>DN escolhido pela velocidade máxima. Trechos com ↑ foram aumentados automaticamente para garantir a pressão mínima nos pontos de jusante.</p>
+  ${table(['Trecho', 'Coluna', 'DN (mm)', 'L (m)', 'ΣP', 'Q (L/s)', 'v (m/s)', 'J (m/m)', 'Perda (m)', 'Pressão no fim (m.c.a.)'], tRows)}
+  <h3>Registros</h3>
+  <ul>
+    <li>1 registro de gaveta na saída da caixa e 1 em cada coluna (AF-1, AF-2, AF-3), todos no barrilete.</li>
+    <li>1 registro de gaveta por ambiente, a 1,80 m do piso ou no ponto indicado na planta.</li>
+    <li>1 registro de pressão por chuveiro.</li>
+  </ul>
+  <h3>Alimentador predial</h3>
+  <p>DN25 (¾") do hidrômetro até a caixa d'água. É enterrado a ~0,40 m, passa sob a garagem pelo lado direito, longe do esgoto, e sobe pelo shaft SH-1. Torneiras da garagem e da frente ligadas direto. O hidrômetro, o cavalete e a ligação são feitos pela concessionária (Águas do Paraíba, em Campos dos Goytacazes: confirmar o padrão e a pressão da rede).</p>
+  <h2>4. Esgoto sanitário</h2>
+  <h3>Aparelhos</h3>
+  ${table(['Ponto', 'Aparelho', 'Ambiente', 'Peso AF', 'q (L/s)', 'UHC', 'DN descarga', 'Desconector'], apar)}
+  <h3>Ramais, tubos de queda e coletor</h3>
+  ${table(['Trecho', 'Descrição', 'DN', 'UHC', 'L (m)', 'Declividade', 'Verificação'], esRows)}
+  <p>Total no coletor predial: <b>${uTot} UHC</b>, atendido pelo DN100 a 2 % (limite de 216 UHC). Tubos de queda: TQ-1 com ${ESBY['TQ-1'].uhc} UHC e TQ-2 com ${ESBY['TQ-2'].uhc} UHC (DN100, obrigatório por receberem bacias); TG-1 com ${ESBY['TG-1'].uhc} UHC (DN75); TS-1 com ${ESBY['TS-1'].uhc} UHC (DN75).</p>
+  <h3>Caixas enterradas</h3>
+  ${table(['Caixa', 'Tipo', 'Posição x ; y (m)', 'Profundidade (m)', 'Recebe'], ciRows)}
+  <p>As profundidades são contadas a partir da calçada (−0,36 m em relação ao piso do térreo). Coletor com i = 2 %, chegando a ~${fmtm(ZG - ESBY['CL-4'].pts[1][2])} m de profundidade na divisa da frente: confirmar a cota da rede pública. <b>Se a rua não tiver rede de esgoto</b>, a CI-4 passa a levar a uma fossa séptica + filtro anaeróbio (NBR 7229/13969). Para ${PESSOAS} pessoas: V = 1000 + N·(C·T + K·Lf) = 1000 + ${PESSOAS}·(130·1 + 57·1) ≈ <b>2,5 m³</b> de fossa, mais o filtro e o sumidouro.</p>
+  <h2>5. Ventilação</h2>
+  <p>Ventilação primária com os TQ-1, TQ-2, TG-1 e TS-1 prolongados até 0,30 m acima da laje de cobertura. Colunas de ventilação DN50 nos grupos do térreo: CV-1, que sobe no SH-1 e se liga ao VP-1, e CV-3, no SH-3. Se a cobertura virar terraço utilizável, os terminais precisam ficar a 2,00 m do piso.</p>
+  ${table(['Desconector', 'DN do ramal', 'Distância até a ventilação (m)', 'Limite (m)', 'Ventilado por', ''], vRows)}
+  <h2>6. Compatibilização com arquitetura e estrutura</h2>
+  <ul>
+    <li><b>Janela nova da cozinha (depois do pilar P6):</b> deve começar a pelo menos 14 cm do pilar (y ≥ 7,30 m) para caber a caixa do TQ-2. Ajuste de ~2 cm em relação ao estudo atual.</li>
+    <li><b>Áreas molhadas do 1º e do 2º:</b> prever <b>rebaixo de laje ou enchimento de ~10 cm</b> nos banheiros do 1º e no lavabo do 2º, para as caixas sifonadas e os ramais de lavatório e chuveiro.</li>
+    <li><b>Forro sob os ramais:</b> os ramais do pavimento de cima correm sob a laje e pedem forro no lavabo do térreo, nos banheiros do 1º e no teto da cozinha. Na cozinha, isso fica numa faixa de ~30 cm junto à parede da pia, entre y 6,15 e 7,25 m. É compatível com as opções A e B do estudo do teto; nas opções C e D, prever uma sanca nessa faixa.</li>
+    <li><b>Caixa d'água:</b> apoiar a plataforma sobre vigas da laje de cobertura. Carga de ~1,6 t: conferir a posição com o calculista.</li>
+    <li><b>Tubulação enterrada:</b> foi traçada desviando dos pilares. Conferir com o calculista a cota de topo das sapatas e a posição das caixas de inspeção: os tubos ficam a até ~1,0 m de profundidade.</li>
+    <li><b>Baldrames:</b> nas travessias deixar tubo camisa (Ø + 2 cm) antes da concretagem.</li>
+    <li><b>Shafts externos (SH-2, SH-3) e TS-1:</b> fechar com alvenaria/drywall cimentício ou pintar com tinta acrílica, porque o PVC não pode ficar exposto ao sol.</li>
+  </ul>
+  <h3>Furos e esperas nas lajes (deixar antes de concretar)</h3>
+  ${table(['Laje', 'Posição x ; y (m)', 'Sistema', 'Tubo', 'DN', 'Furo / camisa'], passRows)}
+  <p>Origem das coordenadas: canto do fundo esquerdo do lote (x para a direita, y em direção à rua), as mesmas do estúdio.</p>
+  <h2>7. Sequência de execução (para ganhar tempo)</h2>
+  <ol>
+    <li><b>Antes do contrapiso do térreo:</b> coletor, CIs, caixa de gordura, ramais enterrados e alimentador, com as camisas nos baldrames. Fazer o teste de estanqueidade com água antes de aterrar.</li>
+    <li><b>Antes de concretar cada laje:</b> deixar as esperas da tabela acima (camisas ou caixas de passagem) e os rebaixos dos banheiros. Isso evita quebrar a laje depois.</li>
+    <li><b>Durante a alvenaria de cada pavimento:</b> subir as prumadas (SH-1, SH-2, SH-3) junto com as paredes e embutir os ramais de água antes do reboco.</li>
+    <li><b>Cobertura:</b> plataforma, caixa d'água, barrilete e terminais de ventilação.</li>
+    <li><b>Testes antes de fechar forros e revestimentos:</b> água fria com pressão de ensaio (1,5× a máxima, mínimo de 1 h); esgoto com enchimento de água por 15 min; e verificação das caixas.</li>
+  </ol>`;
+}
+function materiais() {
+  const tRows = [];
+  let g = '';
+  QT.tubos.forEach((t) => {
+    if (t.grupo !== g) { g = t.grupo; tRows.push(`<tr class="group"><td colspan="5">${esc(g)}</td></tr>`); }
+    tRows.push(`<tr><td>${esc(t.label)}</td><td class="n">${t.dn}</td><td class="n">${fmtn(t.L / 1000, 1)}</td><td class="n">${fmtn(t.m, 1)}</td><td class="n">${t.barras}</td></tr>`);
+  });
+  const iRows = [];
+  g = '';
+  QT.items.forEach((i) => {
+    if (i.grupo !== g) { g = i.grupo; iRows.push(`<tr class="group"><td colspan="3">${esc(g)}</td></tr>`); }
+    iRows.push(`<tr><td>${esc(i.desc)}</td><td class="c">${i.un}</td><td class="n">${Math.ceil(i.q)}</td></tr>`);
+  });
+  return `
+  <p class="callout">Quantidades levantadas automaticamente do traçado (comprimento real de cada tubo, curvas, tês e junções), com <b>+10 % de perdas</b> nos tubos e arredondamento para barras de 6 m. As conexões são contadas pelo traçado: em obra é comum surgirem 1 ou 2 peças a mais por ambiente. Os aparelhos (louças e metais) não estão incluídos.</p>
+  <p><button class="btn" id="csv" type="button">Baixar lista (CSV para planilha)</button></p>
+  <h2>Tubos</h2>
+  ${table(['Tubo', 'DN (mm)', 'Traçado (m)', 'Com perdas (m)', 'Barras de 6 m'], tRows)}
+  <h2>Conexões, registros, caixas e acessórios</h2>
+  ${table(['Item', 'Un.', 'Qtd.'], iRows)}`;
+}
+function csv() {
+  const lines = [['Grupo', 'Item', 'DN', 'Unidade', 'Quantidade']];
+  QT.tubos.forEach((t) => lines.push([t.grupo, t.label + ' (barras de 6 m)', t.dn, 'barra', t.barras]));
+  QT.items.forEach((i) => lines.push([i.grupo, i.desc, '', i.un, Math.ceil(i.q)]));
+  const txt = lines.map((l) => l.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'hidrossanitario-materiais.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---------------------------------------------------------------------------------------------- painel lateral
+function side() {
+  const low = AF.pontos.filter((p) => !p.ok).length;
+  const ventBad = VENT.filter((v) => !v.ok).length;
+  const tubosAF = QT.tubos.filter((t) => t.grupo === 'Água fria').reduce((s, t) => s + t.m, 0);
+  const tubosES = QT.tubos.filter((t) => t.grupo === 'Esgoto' || t.grupo === 'Ventilação').reduce((s, t) => s + t.m, 0);
+  const minP = Math.min(...AF.pontos.map((p) => p.din));
+  const fl = S.tab;
+  const fxs = FX.filter((f) => f.fl === fl);
+  $('side').innerHTML = `
+    <h2>${fl === '3d' ? '3D — todas as redes' : PRANCHAS.find((p) => p.id === fl).label}</h2>
+    <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo; paredes transparentes para ver as prumadas. Tubulação enterrada abaixo do chão verde.' : 'Arraste para mover, roda ou pinça para zoom, duplo clique para enquadrar. Passe o mouse num tubo para ver DN, comprimento e vazão.'}</p>
+    <div class="kpis">
+      <div class="kpi"><b>${AF.pontos.length}</b><span>pontos de água</span></div>
+      <div class="kpi"><b>${ESBY['CL-4'].uhc}</b><span>UHC no coletor</span></div>
+      <div class="kpi"><b class="${low ? 'bad' : 'ok'}">${fmtn(minP * 9.81, 0)} kPa</b><span>menor pressão dinâmica</span></div>
+      <div class="kpi"><b class="${ventBad ? 'bad' : 'ok'}">${ventBad ? ventBad + ' a rever' : 'OK'}</b><span>ventilação dos desconectores</span></div>
+      <div class="kpi"><b>${fmtn(tubosAF, 0)} m</b><span>tubos de água (c/ perdas)</span></div>
+      <div class="kpi"><b>${fmtn(tubosES, 0)} m</b><span>tubos de esgoto + ventilação</span></div>
+    </div>
+    <h3>Legenda</h3>
+    <div class="leg">
+      <span><i style="border-color:var(--af)"></i>Água fria (PVC soldável)</span>
+      <span><i style="border-color:var(--al)"></i>Alimentador (rede → caixa)</span>
+      <span><i style="border-color:var(--es)"></i>Esgoto · tracejado = enterrado</span>
+      <span><i style="border-color:var(--ve);border-top-style:dotted"></i>Ventilação</span>
+      <span>◉ prumada (desce/sobe) · □ CI/CS · ○ caixa de gordura</span>
+    </div>
+    ${fxs.length ? `<h3>Pontos neste pavimento</h3><ul class="list">${fxs.map((f) => { const p = AF.pontos.find((x) => x.f === f); return `<li><b>${f.id}</b> · ${esc(TIPOS[f.t].nome)} (${esc(f.amb)})${p ? ` — ${fmtn(p.din * 9.81, 0)} kPa` : ''}</li>`; }).join('')}</ul>` : ''}
+    <h3>Prumadas</h3>
+    <ul class="list">
+      <li><b>SH-1</b> (interno, canto P11): TQ-1 Ø100, CV-1 Ø50, AF-1, alimentador</li>
+      <li><b>SH-2</b> (externo, frente do P6): TG-1 Ø75, AF-2, VP-2 Ø100</li>
+      <li><b>TQ-2</b> Ø100: caixa no canto do P6 (cozinha/suíte)</li>
+      <li><b>TS-1</b> Ø75: tanque e máquina do 2º (externo)</li>
+      <li><b>SH-3</b> (externo, fundos): AF-3, CV-3 Ø50</li>
+    </ul>
+    <p class="sub" style="margin-top:14px">Anteprojeto: revisar com responsável técnico (ART/RRT) antes de executar. Detalhes em <b>Memorial e cálculo</b>.</p>`;
+}
+
+// ---------------------------------------------------------------------------------------------- abas
+function setTab(id) {
+  S.tab = id;
+  [...tabs.children].forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === id ? 'true' : 'false'));
+  const isPlan = ['T', '1', '2', 'C'].includes(id), is3d = id === '3d', isDoc = id === 'calc' || id === 'mat';
+  plan.hidden = !isPlan; $('view3d').hidden = !is3d; $('doc').hidden = !isDoc;
+  $('layers').hidden = isDoc; $('hint').hidden = !isPlan; $('lbl-walls').hidden = !is3d; $('tip').hidden = true;
+  $('main').classList.toggle('wide', isDoc);
+  $('stage').classList.toggle('docmode', isDoc);
+  $('side').hidden = isDoc;
+  try { history.replaceState(null, '', '#' + id); } catch (e) { /* file:// */ }
+  if (isPlan) { S.view = null; requestAnimationFrame(() => { fitView(); drawPlan(); }); side(); }
+  if (is3d) { init3D(); requestAnimationFrame(sync3D); side(); }
+  if (isDoc) {
+    $('doc').innerHTML = id === 'calc' ? memorial() : materiais();
+    $('doc').scrollTop = 0;
+    const b = $('csv'); if (b) b.addEventListener('click', csv);
+  }
+}
+new ResizeObserver(() => { if (['T', '1', '2', 'C'].includes(S.tab)) { fitView(); drawPlan(); } if (S.tab === '3d') sync3D(); }).observe($('stage'));
+const h0 = (location.hash || '').slice(1);
+setTab(PRANCHAS.some((p) => p.id === h0) ? h0 : 'T');
+window.__hs = { AF, ES, VENT, QT, PASS, FX, setTab }; // para conferência
+</script>
+</body>
+</html>
