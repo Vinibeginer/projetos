@@ -263,7 +263,7 @@
     showAllFloors: false, // 3D: show floors above the active one (and roof)
     snap: true, // furniture adsorbs to walls; walls snap to grid/endpoints
     paintMaterial: 'madeira', // material used by the paint tool
-    show: { dims: true, furniture: true, areas: true, grid: true, labels: true, structure: true },
+    show: { dims: true, furniture: true, areas: true, grid: true, labels: true, structure: true, hidro: false },
   });
 
   // ------------------------------------------------------------------ document helpers (immutable)

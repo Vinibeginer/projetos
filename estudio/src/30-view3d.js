@@ -1804,7 +1804,7 @@
       furn.name = 'furniture:' + f.id;
       root.add(furn);
       S.world.add(root);
-      S.floors.set(f.id, { root, arch: null, roof: null, furn, struct: null, marks: null, structKey: null, markKey: null, sig: null, shown: true, anim: null });
+      S.floors.set(f.id, { root, arch: null, roof: null, furn, struct: null, marks: null, structKey: null, markKey: null, hidro: null, hidroKey: null, sig: null, shown: true, anim: null });
     });
   }
   /** Identity list of everything the architecture of a floor is built from. */
@@ -2031,6 +2031,22 @@
     });
     return changed;
   }
+  /** Tubos do projeto hidrossanitário (17-hidro.js), em "raio X" por cima das paredes; feitos na 1ª vez que a camada liga. */
+  function syncHidro(doc, ui) {
+    if (!DD.hidro || !ui.show || ui.show.hidro !== true) return false;
+    const T = S.THREE, levels = doc.floors.map((f) => f.level).join(',');
+    let changed = false;
+    doc.floors.forEach((f) => {
+      const fg = S.floors.get(f.id);
+      if (!fg || (fg.hidro && fg.hidroKey === levels + '|' + f.level)) return;
+      disposeTree(fg.hidro);
+      fg.hidro = DD.hidro.build3d(T, doc, f);
+      fg.root.add(fg.hidro);
+      fg.hidroKey = levels + '|' + f.level;
+      changed = true;
+    });
+    return changed;
+  }
   /** Leva a câmera (vista aérea) até o ponto de um item da compatibilização. */
   function flyToIssue(it) {
     if (!it || it.x == null || !S.ready || !S.active || isWalking() || !S.orbit) return;
@@ -2059,6 +2075,8 @@
     const showFurniture = !ui.show || ui.show.furniture !== false;
     const showStruct = !ui.show || ui.show.structure !== false;
     const only = showStruct && !!ui.structOnly && !!(DD.structure && DD.structure.hasData()); // "Só estrutura"
+    const showHidro = !!ui.show && ui.show.hidro === true;
+    if (showHidro) syncHidro(doc, ui);
     doc.floors.forEach((f, i) => {
       const fg = S.floors.get(f.id);
       if (!fg) return;
@@ -2068,6 +2086,7 @@
       if (fg.arch) fg.arch.visible = !only;
       if (fg.struct) fg.struct.visible = showStruct;
       if (fg.marks) fg.marks.visible = showStruct;
+      if (fg.hidro) fg.hidro.visible = showHidro;
       if (fg.roof) fg.roof.visible = showsUpper(ui) && !only;
     });
     if (S.site) S.site.visible = !only;

@@ -212,6 +212,7 @@
     walk: '<circle cx="11" cy="3.8" r="1.5"/><path d="M8 18l2-5.5 2.5 2.3V18M6.8 10.2l2.7-3.4 3 .9 1.4 2.8 2 .8M9.5 6.8l-1 4.7"/>',
     recenter: '<circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.6"/><path d="M10 1.8v3M10 15.2v3M1.8 10h3M15.2 10h3"/>',
     layers: '<path d="M10 3 17.5 7 10 11 2.5 7z"/><path d="M2.5 10.5 10 14.5l7.5-4M2.5 14l7.5 4 7.5-4"/>',
+    drop: '<path d="M10 2.8C7.2 6.6 5.2 9.4 5.2 12.2a4.8 4.8 0 0 0 9.6 0c0-2.8-2-5.6-4.8-9.4z"/>',
     flip: '<path d="M10 2.5v15"/><path d="M7.5 5.5 3 10l4.5 4.5zM12.5 5.5 17 10l-4.5 4.5"/>',
     hinge: '<path d="M4 16.5V3.5"/><path d="M4 3.5a13 13 0 0 1 12.5 13"/><path d="M4 16.5h12.5"/>',
     room: '<path d="M3 3.5h14v13H3z"/><path d="M3 10h6M12 3.5V8M12 11v5.5"/>',
@@ -1010,6 +1011,14 @@
   function toggleShow(key) {
     const show = ui().show || {};
     setUI({ show: Object.assign({}, show, { [key]: !show[key] }) });
+  }
+  /** Camada do projeto hidrossanitário (17-hidro.js) na planta e no 3D. */
+  function toggleHidro() {
+    toggleShow('hidro');
+    if (ui().show.hidro && !S.hidroHinted) {
+      S.hidroHinted = true;
+      DD.toast('Hidráulica: água fria (azul), esgoto (marrom), ventilação (verde) e alimentador (roxo). Medidas, cálculo e pranchas em PDF em “Mais opções › Projeto hidrossanitário”.', 'info');
+    }
   }
   function escapeAction() {
     if (S.openMenu) return closeMenu(S.openMenu, true);
@@ -2180,7 +2189,12 @@
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só estrutura', 'data-tip': 'Mostrar só pilares, vigas e sapatas (projeto estrutural)', onclick: () => toggleStructure('only') },
       [icon('layers'), h('span', { class: 'btn-label', text: 'Só estrutura' })]
     );
-    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, recenter]));
+    S.el.hidroChip = h(
+      'button',
+      { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Hidráulica', 'data-tip': 'Mostrar os tubos de água, esgoto e ventilação por dentro das paredes', onclick: toggleHidro },
+      [icon('drop'), h('span', { class: 'btn-label', text: 'Hidráulica' })]
+    );
+    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, S.el.hidroChip, recenter]));
     S.el.overlayHint = h('div', { class: 'o3d-hint', 'aria-live': 'polite' });
     ov.appendChild(S.el.overlayHint);
   }
@@ -2194,6 +2208,10 @@
     if (!S.el.overlay) return;
     $$('[data-cam]', S.el.overlay).forEach((b) => setPressed(b, b.getAttribute('data-cam') === u.cam3d));
     setPressed(S.el.floorsChip, !!u.showAllFloors);
+    if (S.el.hidroChip) {
+      S.el.hidroChip.hidden = !DD.hidro;
+      setPressed(S.el.hidroChip, !!(u.show && u.show.hidro));
+    }
     if (S.el.structChip) {
       S.el.structChip.hidden = !(DD.structure && DD.structure.hasData());
       setPressed(S.el.structChip, !!u.structOnly && u.show.structure !== false);
@@ -2864,6 +2882,11 @@
       ['tg-dims', 'dims'],
       ['tg-labels', 'labels'],
     ].forEach(([elId, key]) => document.getElementById(elId).addEventListener('click', () => toggleShow(key)));
+    const hidroBtn = document.getElementById('tg-hidro');
+    if (hidroBtn) {
+      hidroBtn.hidden = !DD.hidro;
+      hidroBtn.addEventListener('click', toggleHidro);
+    }
     DD.events.on('plan2d:cursor', onCursor);
     DD.events.on('plan2d:viewport', syncZoom);
     DD.events.on('saved', (p) => {
@@ -2910,6 +2933,8 @@
     setPressed(document.getElementById('tg-grid'), !!show.grid);
     setPressed(document.getElementById('tg-dims'), !!show.dims);
     setPressed(document.getElementById('tg-labels'), !!show.labels);
+    const hidroBtn = document.getElementById('tg-hidro');
+    if (hidroBtn) setPressed(hidroBtn, !!show.hidro);
   }
   /** Estado da nuvem da obra (16-cloud.js) no mesmo indicador da barra de status. */
   const CLOUD_TEXT = {
