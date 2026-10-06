@@ -14,6 +14,7 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap">
 <script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
 <script src="./src/00-data.js"></script>
+<script src="./src/17-hidro.js"></script>
 <style>
 :root {
   color-scheme: dark;
@@ -115,6 +116,11 @@ td.c { font-family: var(--font-mono); white-space: nowrap; }
 table.pts { min-width: 0; width: 100%; font-size: 9.5px; line-height: 1.25; }
 table.pts th { position: static; background: #eee; color: #333; font-size: 8.5px; padding: 3px 4px; }
 table.pts td { padding: 2px 4px; border-bottom: 1px solid #e3e3e3; color: #1f1d1a; }
+tr.chg td { background: #fff4e0; }
+.chg-tag { color: #a3560b; font-weight: 600; }
+.callout.warn { border-width: 2px; font-weight: 500; }
+.badge.src { border-color: var(--line); color: var(--muted); }
+.badge.src[data-kind='cloud'] { border-color: var(--ok); color: var(--ok); }
 td.num span { display: inline-grid; place-items: center; min-width: 17px; height: 17px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-mono); }
 .sh-foot { font-size: 9px; color: #444; border-top: 1px solid #999; padding-top: 4px; }
 @page { size: A3 landscape; margin: 8mm; }
@@ -149,6 +155,7 @@ td.num span { display: inline-grid; place-items: center; min-width: 17px; height
       <span><b>Hidrossanitário</b><small>água fria · esgoto · ventilação — as built</small></span>
     </a>
     <span class="badge" title="Precisa de revisão e ART/RRT de profissional habilitado antes de executar">anteprojeto · revisar com ART</span>
+    <span class="badge src" id="src-badge" data-kind="ref" title="Paredes usadas nas plantas e nas medidas das pranchas">planta de referência</span>
     <span class="spacer"></span>
     <nav class="tabs" id="tabs" role="tablist" aria-label="Pranchas"></nav>
     <a class="link" href="./">← Estúdio</a>
@@ -177,531 +184,19 @@ td.num span { display: inline-grid; place-items: center; min-width: 17px; height
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
-// =====================================================================================================
-//  ANTEPROJETO HIDROSSANITÁRIO — Obra Mariára (as built)
-//  Coordenadas em mm no mesmo sistema do estúdio: x → direita (da divisa esquerda), y → rua (do fundo do lote),
-//  z = altura em relação ao piso acabado do térreo. Calçada externa a −0,36 m.
-//  Normas de referência: ABNT NBR 5626:2020 (água fria), NBR 8160:1999 (esgoto e ventilação),
-//  NBR 7229/13969 (só se não houver rede coletora). Pesos relativos: NBR 5626:1998 (método usual).
-// =====================================================================================================
-const L1 = 2880, L2 = 5760, LR = 8640; // pisos do 1º, 2º e laje de cobertura
-const ZG = -360;                       // calçada externa
-const VT = LR + 300;                   // topo dos terminais de ventilação (30 cm acima da cobertura não utilizável)
-const PLATAFORMA = 1000;               // altura da plataforma da caixa d'água sobre a laje
-const CX_BASE = LR + PLATAFORMA;       // fundo da caixa
-const NA_MIN = CX_BASE + 160;          // nível mínimo operacional (logo acima da saída)
-const PESSOAS = 8, PER_CAPITA = 150;   // 4 dormitórios × 2 pessoas; L/pessoa·dia (residência padrão médio)
-
-// ---------------------------------------------------------------------------------------------- aparelhos
-const TIPOS = {
-  vaso:   { nome: 'Bacia sanitária c/ caixa acoplada', P: 0.3, q: 0.15, uhc: 6, dn: 100, sifao: true },
-  lav:    { nome: 'Lavatório', P: 0.3, q: 0.15, uhc: 1, dn: 40, sifao: true },
-  ch:     { nome: 'Chuveiro elétrico', P: 0.1, q: 0.10, uhc: 2, dn: 40, sifao: false },
-  pia:    { nome: 'Pia de cozinha', P: 0.7, q: 0.25, uhc: 3, dn: 50, sifao: true },
-  tanque: { nome: 'Tanque', P: 0.7, q: 0.25, uhc: 3, dn: 40, sifao: true },
-  mlr:    { nome: 'Máquina de lavar roupa', P: 1.0, q: 0.30, uhc: 3, dn: 50, sifao: true, pmin: 20 },
-  tj:     { nome: 'Torneira de jardim / lavagem', P: 0.4, q: 0.20, uhc: 0, sifao: false },
-};
-// fl: T | 1 | 2 · x,y: posição do aparelho (símbolo) · rot: costas para a parede (0 fundo, 90 dir, 180 frente, 270 esq)
-// cs: caixa sifonada que recebe o aparelho (lavatório/chuveiro) · es: ramal de descarga · af: nó de água fria
-const FX = [
-  { id: 'T-PIA', fl: 'T', t: 'pia', amb: 'Cozinha', x: 1950, y: 5850, rot: 270, af: 'fTPIA', es: 'ETP' },
-  { id: 'T-LAV1', fl: 'T', t: 'lav', amb: 'Lavabo', x: 1880, y: 9150, rot: 270, af: 'fTLAV1', es: 'ETL1', cs: 'CS-T1' },
-  { id: 'T-VS1', fl: 'T', t: 'vaso', amb: 'Lavabo', x: 2500, y: 10025, rot: 180, af: 'fTVS1', es: 'ETV1' },
-  { id: 'T-VS2', fl: 'T', t: 'vaso', amb: 'Suíte (térreo)', x: 6200, y: 3325, rot: 0, af: 'fTVS2', es: 'ETV2' },
-  { id: 'T-CH2', fl: 'T', t: 'ch', amb: 'Suíte (térreo)', x: 6950, y: 3400, rot: 0, af: 'fTCH2', es: 'ETCh2', cs: 'CS-T2' },
-  { id: 'T-LAV2', fl: 'T', t: 'lav', amb: 'Suíte (térreo)', x: 5280, y: 4230, rot: 270, af: 'fTLAV2', es: 'ETL2', cs: 'CS-T2' },
-  { id: 'T-TJQ', fl: 'T', t: 'tj', amb: 'Quintal (fundos)', x: 6450, y: 2700, rot: 0, af: 'fTJQ' },
-  { id: 'T-TJG', fl: 'T', t: 'tj', amb: 'Garagem', x: 4000, y: 12500, rot: 90, af: 'fTJG', direto: true },
-  { id: 'T-TJF', fl: 'T', t: 'tj', amb: 'Jardim da frente', x: 7100, y: 19700, rot: 180, af: 'fTJF', direto: true },
-  { id: '1-LAV-S', fl: '1', t: 'lav', amb: 'Banheiro da suíte (1º)', x: 1880, y: 5200, rot: 270, af: 'f1LAVS', es: 'E1SL', cs: 'CS-1S' },
-  { id: '1-VS-S', fl: '1', t: 'vaso', amb: 'Banheiro da suíte (1º)', x: 1975, y: 6150, rot: 270, af: 'f1VSS', es: 'E1SV' },
-  { id: '1-CH-S', fl: '1', t: 'ch', amb: 'Banheiro da suíte (1º)', x: 2325, y: 7050, rot: 180, af: 'f1CHS', es: 'E1SCh', cs: 'CS-1S' },
-  { id: '1-CH-B', fl: '1', t: 'ch', amb: 'Banheiro (1º)', x: 2325, y: 8125, rot: 0, af: 'f1CHB', es: 'E1BCh', cs: 'CS-1B' },
-  { id: '1-VS-B', fl: '1', t: 'vaso', amb: 'Banheiro (1º)', x: 1975, y: 8980, rot: 270, af: 'f1VSB', es: 'E1BV' },
-  { id: '1-LAV-B', fl: '1', t: 'lav', amb: 'Banheiro (1º)', x: 1880, y: 9670, rot: 270, af: 'f1LAVB', es: 'E1BL', cs: 'CS-1B' },
-  { id: '2-PIA', fl: '2', t: 'pia', amb: 'Varanda gourmet (2º)', x: 1950, y: 5850, rot: 270, af: 'f2PIA', es: 'E2P' },
-  { id: '2-MLR', fl: '2', t: 'mlr', amb: 'Área de serviço (2º)', x: 1950, y: 8275, rot: 180, af: 'f2MLR', es: 'E2M' },
-  { id: '2-TQ', fl: '2', t: 'tanque', amb: 'Área de serviço (2º)', x: 2700, y: 8325, rot: 180, af: 'f2TQ', es: 'E2T' },
-  { id: '2-LAV', fl: '2', t: 'lav', amb: 'Lavabo (2º)', x: 1880, y: 9300, rot: 270, af: 'f2LAV', es: 'E2L1', cs: 'CS-2L' },
-  { id: '2-VS', fl: '2', t: 'vaso', amb: 'Lavabo (2º)', x: 2575, y: 10025, rot: 180, af: 'f2VS', es: 'E2V' },
-];
-const FXBY = Object.fromEntries(FX.map((f) => [f.id, f]));
-
-// ---------------------------------------------------------------------------------------------- ÁGUA FRIA
-// Nós (x, y, z). Trechos ligam nó a nó (a = montante, b = jusante); "via" são as curvas no caminho.
-const AFN = {
-  CX: [1725, 7900, CX_BASE + 60], BR: [1650, 7900, LR + 100],
-  // AF-1 — prumada do shaft interno SH-1 (lavabo térreo / banheiro 1º / lavabo 2º)
-  A1T: [2130, 10300, LR + 100], A1_2: [2130, 10300, L2 + 1200], A1_1: [2130, 10300, L1 + 1200], A1_0: [2130, 10300, 1200],
-  R2: [1900, 10360, L2 + 1200], K2: [1640, 10360, L2 + 1200], L2n: [1640, 9300, L2 + 1200], S2n: [1640, 8610, L2 + 1200], M2n: [1800, 8610, L2 + 1200],
-  f2VS: [2725, 10360, L2 + 200], f2LAV: [1640, 9300, L2 + 600], f2MLR: [1800, 8610, L2 + 1100], f2TQ: [2700, 8610, L2 + 1100],
-  R1: [1900, 10360, L1 + 1200], K1: [1640, 10360, L1 + 1200], B1L: [1640, 9670, L1 + 1200], B1V: [1640, 9130, L1 + 1200], SW2: [2325, 7575, L1 + 1200],
-  f1LAVB: [1640, 9670, L1 + 600], f1VSB: [1640, 9130, L1 + 200], f1CHB: [2325, 7620, L1 + 2100], f1CHS: [2325, 7530, L1 + 2100],
-  SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L2 - 580], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
-  R0: [1900, 10360, 1200], f0VS: [2650, 10360, 200], fTLAV1: [1640, 9150, 600],
-  // AF-2 — shaft externo SH-2 (pias do térreo e do 2º)
-  A2T: [1300, 6850, LR + 100], A2_2: [1300, 6850, L2 + 600], G2: [1300, 6500, L2 + 600], f2PIA: [1650, 5850, L2 + 600],
-  A2_0: [1300, 6850, 600], G0: [1300, 6500, 600], fTPIA: [1650, 5850, 600],
-  // AF-3 — shaft externo dos fundos SH-3 (suíte do térreo e torneira do quintal)
-  A3T: [6450, 2780, LR + 100], A3_0: [6450, 2780, 1200], fTJQ: [6450, 2780, 600], R3: [6450, 2990, 1200], V3: [6350, 2990, 1200],
-  fTVS2: [6350, 2990, 200], fTCH2: [6950, 2990, 2100], fTLAV2: [5040, 4230, 600],
-};
-AFN.fTVS1 = AFN.f0VS;
-const AFE = [
-  { id: 'BAR', a: 'CX', b: 'BR', via: [[1650, 7900, CX_BASE + 60]], fl: 'C', tag: 'Barrilete', rg: 'Registro geral da caixa' },
-  { id: 'AF1-c', a: 'BR', b: 'A1T', via: [[1650, 10300, LR + 100]], fl: 'C', tag: 'AF-1', rg: 'Registro da coluna AF-1' },
-  { id: 'AF1-2', a: 'A1T', b: 'A1_2', fl: 'v', tag: 'AF-1' },
-  { id: 'AF1-1', a: 'A1_2', b: 'A1_1', fl: 'v', tag: 'AF-1' },
-  { id: 'AF1-0', a: 'A1_1', b: 'A1_0', fl: 'v', tag: 'AF-1' },
-  { id: '2-r', a: 'A1_2', b: 'R2', fl: '2', rg: 'Registro do lavabo e serviço (2º)' },
-  { id: '2-vs', a: 'R2', b: 'f2VS', via: [[2725, 10360, L2 + 1200]], fl: '2' },
-  { id: '2-k', a: 'R2', b: 'K2', fl: '2' },
-  { id: '2-l', a: 'K2', b: 'L2n', fl: '2' },
-  { id: '2-lav', a: 'L2n', b: 'f2LAV', fl: '2' },
-  { id: '2-s', a: 'L2n', b: 'S2n', fl: '2' },
-  { id: '2-m', a: 'S2n', b: 'M2n', fl: '2' },
-  { id: '2-mlr', a: 'M2n', b: 'f2MLR', fl: '2' },
-  { id: '2-tq', a: 'M2n', b: 'f2TQ', via: [[2700, 8610, L2 + 1200]], fl: '2' },
-  { id: '1-r', a: 'A1_1', b: 'R1', fl: '1', rg: 'Registro do banheiro (1º)' },
-  { id: '1-k', a: 'R1', b: 'K1', fl: '1' },
-  { id: '1-bl', a: 'K1', b: 'B1L', fl: '1' },
-  { id: '1-lavb', a: 'B1L', b: 'f1LAVB', fl: '1' },
-  { id: '1-bv', a: 'B1L', b: 'B1V', fl: '1' },
-  { id: '1-vsb', a: 'B1V', b: 'f1VSB', fl: '1' },
-  { id: '1-sw', a: 'B1V', b: 'SW2', via: [[1640, 7575, L1 + 1200]], fl: '1' },
-  { id: '1-chb', a: 'SW2', b: 'f1CHB', via: [[2325, 7620, L1 + 1200]], fl: '1', rp: true },
-  { id: '1-chs', a: 'SW2', b: 'f1CHS', via: [[2325, 7530, L1 + 1200]], fl: '1', rp: true },
-  { id: '1-sr', a: 'SW2', b: 'SR', via: [[2450, 7575, L1 + 1200]], fl: '1', rg: 'Registro da suíte (1º)' },
-  { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L2 - 580], [2450, 7450, L2 - 580], [1700, 7450, L2 - 580]], fl: '1' },
-  { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1640, 5650, L2 - 580], [1640, 5650, L1 + 200]], fl: '1' },
-  { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L2 - 580], [1640, 5200, L2 - 580]], fl: '1' },
-  { id: 'T-r', a: 'A1_0', b: 'R0', fl: 'T', rg: 'Registro do lavabo (térreo)' },
-  { id: 'T-vs1', a: 'R0', b: 'fTVS1', via: [[2650, 10360, 1200]], fl: 'T' },
-  { id: 'T-lav1', a: 'R0', b: 'fTLAV1', via: [[1640, 10360, 1200], [1640, 9150, 1200]], fl: 'T' },
-  { id: 'AF2-c', a: 'BR', b: 'A2T', via: [[1650, 6850, LR + 100]], fl: 'C', tag: 'AF-2', rg: 'Registro da coluna AF-2' },
-  { id: 'AF2-2', a: 'A2T', b: 'A2_2', fl: 'v', tag: 'AF-2' },
-  { id: '2-g', a: 'A2_2', b: 'G2', fl: '2', rg: 'Registro da pia gourmet (2º)' },
-  { id: '2-pia', a: 'G2', b: 'f2PIA', via: [[1300, 5850, L2 + 600]], fl: '2' },
-  { id: 'AF2-0', a: 'A2_2', b: 'A2_0', fl: 'v', tag: 'AF-2' },
-  { id: 'T-g', a: 'A2_0', b: 'G0', fl: 'T', rg: 'Registro da cozinha (térreo)' },
-  { id: 'T-pia', a: 'G0', b: 'fTPIA', via: [[1300, 5850, 600]], fl: 'T' },
-  { id: 'AF3-c', a: 'BR', b: 'A3T', via: [[1650, 3100, LR + 100], [6450, 3100, LR + 100]], fl: 'C', tag: 'AF-3', rg: 'Registro da coluna AF-3' },
-  { id: 'AF3-0', a: 'A3T', b: 'A3_0', fl: 'v', tag: 'AF-3' },
-  { id: 'T-tjq', a: 'A3_0', b: 'fTJQ', fl: 'T' },
-  { id: 'T-r3', a: 'A3_0', b: 'R3', fl: 'T', rg: 'Registro da suíte (térreo)' },
-  { id: 'T-ch2', a: 'R3', b: 'fTCH2', via: [[6950, 2990, 1200]], fl: 'T', rp: true },
-  { id: 'T-v3', a: 'R3', b: 'V3', fl: 'T' },
-  { id: 'T-vs2', a: 'V3', b: 'fTVS2', fl: 'T' },
-  { id: 'T-lav2', a: 'V3', b: 'fTLAV2', via: [[5040, 2990, 1200], [5040, 4230, 1200]], fl: 'T' },
-];
-// Alimentador predial (rede pública → hidrômetro → caixa d'água) e saídas diretas da rede (torneiras externas)
-const ALN = { HD: [6750, 19800, 400], AL2: [6750, 19500, -760], AL4: [3850, 12500, -760], CXE: [2500, 8700, CX_BASE + 1000], fTJG: [4100, 12500, 600], fTJF: [7100, 19850, 600] };
-const ALE = [
-  { id: 'AL-a', a: 'HD', b: 'AL2', via: [[6750, 19800, -760]], fl: 'T', tag: 'Alimentador' },
-  { id: 'AL-b', a: 'AL2', b: 'AL4', via: [[3850, 19500, -760]], fl: 'T', tag: 'Alimentador' },
-  { id: 'AL-c', a: 'AL4', b: 'CXE', via: [[3850, 10600, -760], [2200, 10600, -760], [2200, 10300, -760], [2200, 10300, LR + 100], [2500, 10300, LR + 100], [2500, 8700, LR + 100]], fl: 'T', tag: 'Alimentador' },
-  { id: 'AL-g', a: 'AL4', b: 'fTJG', via: [[4100, 12500, -760]], fl: 'T', tag: 'Torneira da garagem (direto da rede)' },
-  { id: 'AL-f', a: 'AL2', b: 'fTJF', via: [[7100, 19500, -760], [7100, 19850, -760]], fl: 'T', tag: 'Torneira da frente (direto da rede)' },
-  { id: 'LADRAO', a: null, b: null, pts: [[3275, 7900, CX_BASE + 900], [3650, 7900, CX_BASE + 900], [3650, 7900, LR + 50]], fl: 'C', tag: 'Extravasor (ladrão)', dn: 32 },
-  { id: 'LIMPEZA', a: null, b: null, pts: [[3275, 8000, CX_BASE + 40], [3550, 8000, CX_BASE + 40], [3550, 8000, LR + 50]], fl: 'C', tag: 'Limpeza da caixa', dn: 32 },
-];
-
-// ---------------------------------------------------------------------------------------------- ESGOTO E VENTILAÇÃO
-// Construtor de caminhos: v(z) desce/sobe na vertical; h(x,y) anda na horizontal com a declividade do trecho.
-function pb(x, y, z, s) {
-  const p = [[x, y, z]];
-  const api = {
-    v(zz) { const l = p[p.length - 1]; p.push([l[0], l[1], zz]); return api; },
-    h(xx, yy) { const l = p[p.length - 1]; const d = Math.hypot(xx - l[0], yy - l[1]); p.push([xx, yy, l[2] - (s || 0) * d]); return api; },
-    pt(xx, yy, zz) { p.push([xx, yy, zz]); return api; },
-    get: () => p,
-  };
-  return api;
-}
-// kind: ramal | tq (prumada) | base (pé do tubo de queda) | col (subcoletor/coletor) | ve (ventilação)
-const ES = [
-  // 2º pavimento
-  { id: 'E2V', dn: 100, s: 0.01, pts: pb(2575, 10050, L2, 0.01).v(L2 - 260).h(2000, 10280).get(), to: 'TQ-1', fx: ['2-VS'], fl: '2', kind: 'ramal' },
-  { id: 'E2L1', dn: 40, s: 0.02, pts: pb(1700, 9300, L2 + 450, 0.02).v(L2 - 60).h(2050, 9750).get(), to: 'CS-2L', fx: ['2-LAV'], fl: '2', kind: 'ramal' },
-  { id: 'E2L2', dn: 75, s: 0.02, pts: pb(2050, 9750, L2 - 170, 0.02).v(L2 - 240).h(2000, 10280).get(), to: 'TQ-1', from: 'CS-2L', fl: '2', kind: 'ramal' },
-  { id: 'E2P', dn: 50, s: 0.02, pts: pb(1700, 5850, L2 + 450, 0.02).h(1380, 5850).h(1380, 6650).get(), to: 'TG-1', fx: ['2-PIA'], fl: '2', kind: 'ramal' },
-  { id: 'E2T', dn: 75, s: 0.02, pts: pb(2700, 8560, L2 + 450, 0.02).v(L2 + 330).h(1950, 8560).get(), to: 'E2M', fx: ['2-TQ'], fl: '2', kind: 'ramal' },
-  { id: 'E2M', dn: 75, s: 0.02, pts: pb(1950, 8560, L2 + 315, 0.02).h(1650, 8560).h(1420, 8565).get(), to: 'TS-1', fx: ['2-MLR'], fl: '2', kind: 'ramal' },
-  // 1º pavimento
-  { id: 'E1BV', dn: 100, s: 0.01, pts: pb(1950, 8980, L1, 0.01).v(L1 - 260).h(1950, 10150).h(2000, 10280).get(), to: 'TQ-1', fx: ['1-VS-B'], fl: '1', kind: 'ramal' },
-  { id: 'E1BL', dn: 40, s: 0.02, pts: pb(1700, 9670, L1 + 450, 0.02).v(L1 - 50).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-LAV-B'], fl: '1', kind: 'ramal' },
-  { id: 'E1BCh', dn: 40, s: 0.02, pts: pb(2325, 8125, L1 - 20, 0.02).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-CH-B'], fl: '1', kind: 'ramal' },
-  { id: 'E1BC', dn: 75, s: 0.02, pts: pb(2550, 9300, L1 - 120, 0.02).v(L1 - 230).h(2550, 10050).h(2060, 10280).get(), to: 'TQ-1', from: 'CS-1B', fl: '1', kind: 'ramal' },
-  { id: 'E1SV', dn: 100, s: 0.01, pts: pb(1975, 6150, L1, 0.01).v(L1 - 260).h(1975, 7000).h(1745, 7225).get(), to: 'TQ-2', fx: ['1-VS-S'], fl: '1', kind: 'ramal' },
-  { id: 'E1SL', dn: 40, s: 0.02, pts: pb(1700, 5200, L1 + 450, 0.02).v(L1 - 50).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-LAV-S'], fl: '1', kind: 'ramal' },
-  { id: 'E1SCh', dn: 40, s: 0.02, pts: pb(2325, 7050, L1 - 20, 0.02).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-CH-S'], fl: '1', kind: 'ramal' },
-  { id: 'E1SC', dn: 75, s: 0.02, pts: pb(2250, 6500, L1 - 120, 0.02).v(L1 - 220).h(2250, 6900).h(1975, 6900).get(), to: 'E1SV', from: 'CS-1S', fl: '1', kind: 'ramal' },
-  // térreo (ramais enterrados)
-  { id: 'ETP', dn: 75, s: 0.02, pts: pb(1700, 5850, 450, 0.02).v(150).h(1380, 5850).h(1380, 6650).get(), to: 'TG-1', fx: ['T-PIA'], fl: 'T', kind: 'ramal' },
-  { id: 'ETV1', dn: 100, s: 0.01, pts: pb(2500, 10050, 0, 0.01).v(-640).h(2500, 9850).h(650, 9850).h(650, 9650).get(), to: 'CI-3', fx: ['T-VS1'], fl: 'T', kind: 'ramal' },
-  { id: 'ETL1', dn: 40, s: 0.02, pts: pb(1700, 9150, 450, 0.02).v(-100).h(2050, 9600).get(), to: 'CS-T1', fx: ['T-LAV1'], fl: 'T', kind: 'ramal' },
-  { id: 'ETC1', dn: 75, s: 0.02, pts: pb(2050, 9600, -150, 0.02).h(2050, 9790).pt(2050, 9850, -600).get(), to: 'ETV1', from: 'CS-T1', fl: 'T', kind: 'ramal' },
-  { id: 'ETV2', dn: 100, s: 0.01, pts: pb(6200, 3300, 0, 0.01).v(-640).h(6200, 2450).h(850, 2450).get(), to: 'CI-1', fx: ['T-VS2'], fl: 'T', kind: 'ramal' },
-  { id: 'ETCh2', dn: 40, s: 0.02, pts: pb(6950, 3400, 0, 0.02).v(-100).h(6450, 3400).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-CH2'], fl: 'T', kind: 'ramal' },
-  { id: 'ETL2', dn: 40, s: 0.02, pts: pb(5280, 4230, 450, 0.02).v(-100).h(6450, 4230).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-LAV2'], fl: 'T', kind: 'ramal' },
-  { id: 'ETC2', dn: 75, s: 0.02, pts: pb(6450, 3900, -150, 0.02).h(6450, 3150).pt(6450, 3150, -560).pt(6200, 3000, -600).get(), to: 'ETV2', from: 'CS-T2', fl: 'T', kind: 'ramal' },
-  // prumadas (tubos de queda) e prolongamentos (ventilação primária)
-  { id: 'TQ-1', dn: 100, pts: [[2000, 10280, -800], [2000, 10280, L2 - 240]], to: 'BTQ1', fl: 'v', kind: 'tq', nome: 'Tubo de queda TQ-1 (shaft SH-1)' },
-  { id: 'VP-1', dn: 100, pts: [[2000, 10280, L2 - 240], [2000, 10280, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TQ-1' },
-  { id: 'TQ-2', dn: 100, pts: [[1745, 7225, -750], [1745, 7225, L1 - 220]], to: 'BTQ2', fl: 'v', kind: 'tq', nome: 'Tubo de queda TQ-2 (canto do pilar P6)' },
-  { id: 'VP-2', dn: 100, pts: [[1745, 7225, L1 - 220], [1745, 7225, L1 + 1020], [1380, 7225, L1 + 1030], [1380, 7225, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TQ-2 (sai para o SH-2)' },
-  { id: 'TG-1', dn: 75, pts: [[1380, 6650, -620], [1380, 6650, L2 + 430]], to: 'BTG1', fl: 'v', kind: 'tq', nome: 'Tubo de gordura TG-1 (shaft SH-2)' },
-  { id: 'VP-TG', dn: 75, pts: [[1380, 6650, L2 + 430], [1380, 6650, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TG-1' },
-  { id: 'TS-1', dn: 75, pts: [[1420, 8565, -700], [1420, 8565, L2 + 300]], to: 'BTS1', fl: 'v', kind: 'tq', nome: 'Tubo de queda de serviço TS-1' },
-  { id: 'VP-TS', dn: 75, pts: [[1420, 8565, L2 + 300], [1420, 8565, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TS-1' },
-  // pés dos tubos de queda (enterrados)
-  { id: 'BTQ1', dn: 100, s: 0.01, pts: pb(2000, 10280, -800, 0.01).h(2000, 9350).h(850, 9350).get(), to: 'CI-3', fl: 'T', kind: 'base' },
-  { id: 'BTQ2', dn: 100, s: 0.01, pts: pb(1745, 7225, -750, 0.01).h(1745, 7300).h(850, 7300).get(), to: 'CI-2', fl: 'T', kind: 'base' },
-  { id: 'BTG1', dn: 75, s: 0.02, pts: pb(1380, 6650, -620, 0.02).h(1380, 6150).h(1100, 5850).get(), to: 'CGS', fl: 'T', kind: 'base' },
-  { id: 'BTS1', dn: 75, s: 0.02, pts: pb(1420, 8565, -700, 0.02).h(850, 9150).get(), to: 'CI-3', fl: 'T', kind: 'base' },
-  { id: 'ECG', dn: 75, s: 0.02, pts: pb(1000, 5800, -700, 0.02).h(700, 6100).h(700, 7000).get(), to: 'CI-2', from: 'CGS', fl: 'T', kind: 'base' },
-  // coletor predial (enterrado, i = 2 %)
-  { id: 'CL-1', dn: 100, s: 0.02, pts: pb(550, 2450, -820, 0.02).h(550, 7300).get(), to: 'CI-2', from: 'CI-1', fl: 'T', kind: 'col' },
-  { id: 'CL-2', dn: 100, s: 0.02, pts: pb(550, 7300, -917, 0.02).h(550, 9350).get(), to: 'CI-3', from: 'CI-2', fl: 'T', kind: 'col' },
-  { id: 'CL-3', dn: 100, s: 0.02, pts: pb(550, 9350, -958, 0.02).h(550, 17000).get(), to: 'CI-4', from: 'CI-3', fl: 'T', kind: 'col' },
-  { id: 'CL-4', dn: 100, s: 0.02, pts: pb(550, 17000, -1111, 0.02).h(550, 20000).get(), to: 'REDE', from: 'CI-4', fl: 'T', kind: 'col' },
-  // colunas de ventilação
-  { id: 'CV-1', dn: 50, pts: [[1800, 9850, -646], [1800, 10300, -450], [1800, 10300, L2 + 1040], [2000, 10280, L2 + 1100]], attach: { edge: 'ETV1', pt: [1800, 9850] }, fl: 'v', kind: 've', sys: 'VE', nome: 'Coluna de ventilação CV-1 (lavabo do térreo → VP-1)' },
-  { id: 'CV-3', dn: 50, pts: [[6200, 2780, -645], [6330, 2780, -500], [6330, 2780, VT]], attach: { edge: 'ETV2', pt: [6200, 2780] }, fl: 'v', kind: 've', sys: 'VE', nome: 'Coluna de ventilação CV-3 (suíte do térreo, shaft SH-3)' },
-];
-ES.forEach((e) => (e.sys = e.sys || 'ES'));
-const ESBY = Object.fromEntries(ES.map((e) => [e.id, e]));
-// caixas: CS (sifonada), CI (inspeção), CGS (gordura simples)
-const BOX = [
-  { id: 'CS-2L', k: 'CS', fl: '2', x: 2050, y: 9750, z: L2 - 120, out: 'E2L2' },
-  { id: 'CS-1B', k: 'CS', fl: '1', x: 2550, y: 9300, z: L1 - 120, out: 'E1BC' },
-  { id: 'CS-1S', k: 'CS', fl: '1', x: 2250, y: 6500, z: L1 - 120, out: 'E1SC' },
-  { id: 'CS-T1', k: 'CS', fl: 'T', x: 2050, y: 9600, z: -120, out: 'ETC1' },
-  { id: 'CS-T2', k: 'CS', fl: 'T', x: 6450, y: 3900, z: -120, out: 'ETC2' },
-  { id: 'CGS', k: 'CG', fl: 'T', x: 1000, y: 5800, z: -700, out: 'ECG' },
-  { id: 'CI-1', k: 'CI', fl: 'T', x: 550, y: 2450, z: -820, out: 'CL-1' },
-  { id: 'CI-2', k: 'CI', fl: 'T', x: 550, y: 7300, z: -917, out: 'CL-2' },
-  { id: 'CI-3', k: 'CI', fl: 'T', x: 550, y: 9350, z: -958, out: 'CL-3' },
-  { id: 'CI-4', k: 'CI', fl: 'T', x: 550, y: 17000, z: -1111, out: 'CL-4' },
-];
-const BOXBY = Object.fromEntries(BOX.map((b) => [b.id, b]));
-// shafts (para desenho)
-const SHAFTS = [
-  { id: 'SH-1', nome: 'Shaft interno (canto do pilar P11)', x0: 1650, x1: 2260, y0: 10230, y1: 10350, ext: false },
-  { id: 'SH-2', nome: 'Shaft externo lateral (em frente ao pilar P6)', x0: 1240, x1: 1500, y0: 6560, y1: 7290, ext: true },
-  { id: 'SH-2b', nome: 'Caixa do TQ-2 na cozinha / suíte (junto ao pilar P6)', x0: 1650, x1: 1820, y0: 7160, y1: 7300, ext: false },
-  { id: 'SH-3', nome: 'Shaft externo dos fundos', x0: 6280, x1: 6520, y0: 2700, y1: 2850, ext: true },
-];
-
-// =====================================================================================================
-//  CÁLCULOS
-// =====================================================================================================
-const DI = { 20: 17.0, 25: 21.6, 32: 27.8, 40: 35.2, 50: 44.0 }; // PVC soldável — diâmetro interno (mm)
-const vmax = (dn) => Math.min(3, 14 * Math.sqrt(DI[dn] / 1000)); // NBR 5626:1998
-const jFWH = (q, dn) => (8.69e6 * Math.pow(q, 1.75) * Math.pow(DI[dn], -4.75)) / 9.81; // m.c.a./m (Fair-Whipple-Hsiao, plástico)
-const dist3 = (a, b) => Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]);
-const polyLen = (p) => p.slice(1).reduce((s, q, i) => s + dist3(p[i], q), 0);
-const fmtm = (mm, d = 2) => (mm / 1000).toFixed(d).replace('.', ',');
-const fmtn = (v, d = 2) => (+v).toFixed(d).replace('.', ',');
-
-function afPts(e, N) {
-  return e.pts || [N[e.a], ...(e.via || []), N[e.b]];
-}
-function solveAF() {
-  const N = AFN;
-  const fxAt = {};
-  FX.filter((f) => !f.direto).forEach((f) => (fxAt[f.af] = f));
-  const children = {};
-  AFE.forEach((e) => (children[e.a] = children[e.a] || []).push(e));
-  const parentOf = {};
-  AFE.forEach((e) => (parentOf[e.b] = e));
-  // ΣP e vazão por trecho
-  const down = (node) => {
-    const own = fxAt[node] ? [fxAt[node]] : [];
-    return own.concat(...(children[node] || []).map((e) => down(e.b)));
-  };
-  AFE.forEach((e) => {
-    e.fx = down(e.b);
-    e.P = e.fx.reduce((s, f) => s + TIPOS[f.t].P, 0);
-    const qmax = Math.max(...e.fx.map((f) => TIPOS[f.t].q));
-    e.Q = e.fx.length === 1 ? TIPOS[e.fx[0].t].q : Math.max(0.3 * Math.sqrt(e.P), qmax);
-    e.pts = afPts(e, N);
-    e.L = polyLen(e.pts);
-    e.dn = [20, 25, 32, 40, 50].find((d) => (e.Q / 1000) / (Math.PI * Math.pow(DI[d] / 1000, 2) / 4) <= vmax(d));
-  });
-  const order = []; // percurso do reservatório para baixo
-  const walk = (node) => (children[node] || []).forEach((e) => { order.push(e); walk(e.b); });
-  walk('CX');
-  const press = {};
-  const compute = () => {
-    press.CX = (NA_MIN - N.CX[2]) / 1000;
-    order.forEach((e) => {
-      e.v = (e.Q / 1000) / (Math.PI * Math.pow(DI[e.dn] / 1000, 2) / 4);
-      e.J = jFWH(e.Q, e.dn);
-      e.Leq = e.L / 1000 * 1.3 + (e.rp ? 5 : 0);
-      e.hf = e.J * e.Leq;
-      press[e.b] = press[e.a] + (N[e.a][2] - N[e.b][2]) / 1000 - e.hf;
-      e.pIn = press[e.a]; e.pOut = press[e.b];
-    });
-  };
-  const pathTo = (node) => { const p = []; let e = parentOf[node]; while (e) { p.unshift(e); e = parentOf[e.a]; } return p; };
-  const pmin = (f) => (TIPOS[f.t].pmin || 10) / 9.81;
-  compute();
-  // otimização: aumenta o diâmetro do trecho que mais perde carga no caminho dos pontos com pressão abaixo do mínimo
-  for (let it = 0; it < 30; it++) {
-    const low = FX.filter((f) => !f.direto && press[f.af] < pmin(f));
-    if (!low.length) break;
-    const f = low[0];
-    const cand = pathTo(f.af).filter((e) => e.dn < 50).sort((a, b) => b.hf - a.hf)[0];
-    if (!cand) break;
-    cand.dn = [20, 25, 32, 40, 50].find((d) => d > cand.dn);
-    cand.up = true;
-    compute();
-  }
-  const pontos = FX.filter((f) => !f.direto).map((f) => {
-    const z = N[f.af][2];
-    return { f, z, est: (NA_MIN - z) / 1000, din: press[f.af], min: pmin(f), ok: press[f.af] >= pmin(f) };
-  });
-  return { order, pontos, press };
-}
-
-function solveES() {
-  // UHC acumulados (aparelhos → caixas → ramais → tubos de queda → coletor)
-  const into = {};
-  ES.forEach((e) => { if (e.to) (into[e.to] = into[e.to] || []).push(e.id); });
-  BOX.forEach((b) => { (into[b.out] = into[b.out] || []).push(b.id); });
-  const memo = {};
-  // trecho: aparelhos ligados nele + tudo que chega (trechos e caixas) · caixa: soma do que chega nela
-  const uhcOf = (id) => {
-    if (memo[id] != null) return memo[id];
-    let u = 0;
-    const e = ESBY[id];
-    if (e && e.fx) u += e.fx.reduce((s, fid) => s + TIPOS[FXBY[fid].t].uhc, 0);
-    (into[id] || []).forEach((src) => (u += uhcOf(src)));
-    return (memo[id] = u);
-  };
-  // CS são caixas: UHC da caixa = soma do que entra nela
-  BOX.forEach((b) => uhcOf(b.id));
-  ES.forEach((e) => {
-    e.L = polyLen(e.pts);
-    e.uhc = e.sys === 'VE' ? 0 : uhcOf(e.id);
-    // declividade da parte horizontal
-    let lh = 0, dz = 0;
-    for (let i = 1; i < e.pts.length; i++) {
-      const a = e.pts[i - 1], b = e.pts[i];
-      const h = Math.hypot(b[0] - a[0], b[1] - a[1]);
-      if (h > 50 && Math.abs(b[2] - a[2]) < h * 0.2) { lh += h; dz += a[2] - b[2]; }
-    }
-    e.lh = lh; e.i = lh > 0 ? dz / lh : null;
-  });
-  return { uhcOf };
-}
-
-// distância do desconector até a ventilação (NBR 8160, Tabela 10: DN40 1,00 · DN50 1,20 · DN75 1,80 · DN100 2,40 m)
-const LIM_VENT = { 40: 1000, 50: 1200, 75: 1800, 100: 2400 };
-function projOn(pts, pt) {
-  let best = { d: Infinity, i: 0, t: 0 };
-  for (let i = 1; i < pts.length; i++) {
-    const a = pts[i - 1], b = pts[i];
-    const dx = b[0] - a[0], dy = b[1] - a[1], L2v = dx * dx + dy * dy;
-    let t = L2v ? ((pt[0] - a[0]) * dx + (pt[1] - a[1]) * dy) / L2v : 0;
-    t = Math.max(0, Math.min(1, t));
-    const d = Math.hypot(a[0] + dx * t - pt[0], a[1] + dy * t - pt[1]);
-    if (d < best.d) best = { d, i, t };
-  }
-  return best;
-}
-function lenFrom(pts, from) {
-  // comprimento do ponto (projeção) até o fim da polilinha
-  const pr = projOn(pts, from);
-  const a = pts[pr.i - 1], b = pts[pr.i];
-  let L = dist3(a, b) * (1 - pr.t);
-  for (let i = pr.i + 1; i < pts.length; i++) L += dist3(pts[i - 1], pts[i]);
-  return L;
-}
-function lenUpTo(pts, from, to) {
-  // comprimento entre duas projeções na mesma polilinha (from antes de to)
-  return lenFrom(pts, from) - lenFrom(pts, to);
-}
-function ventDistances() {
-  const vents = ES.filter((e) => e.attach);
-  const stacks = new Set(ES.filter((e) => e.kind === 'tq').map((e) => e.id));
-  const out = [];
-  const starters = [];
-  FX.forEach((f) => { if (f.es && !f.cs && TIPOS[f.t].sifao) starters.push({ label: f.id + ' — ' + TIPOS[f.t].nome, edge: f.es, from: ESBY[f.es].pts[0], dn: ESBY[f.es].dn }); });
-  BOX.filter((b) => b.k === 'CS').forEach((b) => starters.push({ label: b.id + ' — caixa sifonada', edge: b.out, from: ESBY[b.out].pts[0], dn: ESBY[b.out].dn }));
-  starters.forEach((s) => {
-    let e = ESBY[s.edge], from = s.from, L = 0, where = null, guard = 0;
-    while (e && guard++ < 10) {
-      const v = vents.find((x) => x.attach.edge === e.id);
-      if (v) { const vp = [v.attach.pt[0], v.attach.pt[1]]; const pr = projOn(e.pts, vp); const prf = projOn(e.pts, from); if (pr.i > prf.i || (pr.i === prf.i && pr.t >= prf.t)) { L += lenUpTo(e.pts, from, vp); where = v.id; break; } }
-      L += lenFrom(e.pts, from);
-      if (stacks.has(e.to)) { where = e.to; break; }
-      const nxt = ESBY[e.to];
-      if (!nxt) { where = null; break; }
-      from = e.pts[e.pts.length - 1];
-      e = nxt;
-    }
-    out.push({ label: s.label, dn: s.dn, L, lim: LIM_VENT[s.dn], via: where, ok: where && L <= LIM_VENT[s.dn] });
-  });
-  return out;
-}
-
-// ---------------------------------------------------------------------------------------------- quantitativos
-function angleAt(a, b, c) {
-  const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - b[0], c[1] - b[1], c[2] - b[2]];
-  const nu = Math.hypot(...u), nv = Math.hypot(...v);
-  if (!nu || !nv) return 0;
-  const cos = (u[0] * v[0] + u[1] * v[1] + u[2] * v[2]) / (nu * nv);
-  return (Math.acos(Math.max(-1, Math.min(1, cos))) * 180) / Math.PI;
-}
-function quantities(af) {
-  const items = new Map();
-  const add = (grupo, desc, un, q) => {
-    const k = grupo + '|' + desc + '|' + un;
-    const it = items.get(k) || { grupo, desc, un, q: 0 };
-    it.q += q;
-    items.set(k, it);
-  };
-  const tubos = {};
-  const tubo = (grupo, label, dn, L) => { const k = grupo + '|' + label + '|' + dn; tubos[k] = tubos[k] || { grupo, label, dn, L: 0 }; tubos[k].L += L; };
-  const conexoesPorVertice = (pts, grupo, kind, dn, isES) => {
-    for (let i = 1; i < pts.length - 1; i++) {
-      const ang = angleAt(pts[i - 1], pts[i], pts[i + 1]);
-      if (ang < 15) continue;
-      if (isES) add(grupo, (ang > 60 ? 'Joelho 90°' : 'Joelho 45°') + ' esgoto DN' + dn, 'un', 1);
-      else add(grupo, (ang > 60 ? 'Joelho 90° soldável' : 'Joelho 45° soldável') + ' ' + dn + ' mm', 'un', 1);
-    }
-  };
-  // água fria (tubos, curvas, tês, reduções, pontos, registros)
-  const childrenAF = {};
-  AFE.forEach((e) => (childrenAF[e.a] = childrenAF[e.a] || []).push(e));
-  AFE.forEach((e) => {
-    tubo('Água fria', 'Tubo PVC soldável marrom', e.dn, e.L);
-    conexoesPorVertice(e.pts, 'Água fria', 'af', e.dn, false);
-    if (e.rg) add('Registros e válvulas', 'Registro de gaveta bruto ' + e.dn + ' mm (c/ acabamento)', 'un', 1);
-    if (e.rp) add('Registros e válvulas', 'Registro de pressão 20 mm (c/ acabamento) — chuveiro', 'un', 1);
-  });
-  const parentAF = {};
-  AFE.forEach((e) => (parentAF[e.b] = e));
-  Object.keys(childrenAF).forEach((n) => {
-    const ch = childrenAF[n];
-    const par = parentAF[n];
-    const deg = ch.length + (par ? 1 : 0);
-    const main = par ? par.dn : Math.max(...ch.map((c) => c.dn));
-    if (deg >= 3) add('Água fria', 'Tê soldável ' + main + ' mm', 'un', deg - 2);
-    else if (deg === 2 && par) {
-      const a = par.pts[par.pts.length - 2], b = AFN[n], c = ch[0].pts[1];
-      const ang = angleAt(a, b, c);
-      if (ang > 15) add('Água fria', (ang > 60 ? 'Joelho 90° soldável ' : 'Joelho 45° soldável ') + main + ' mm', 'un', 1);
-    }
-    ch.forEach((c) => { if (c.dn < main) add('Água fria', 'Bucha de redução soldável ' + main + '×' + c.dn + ' mm', 'un', 1); });
-  });
-  FX.filter((f) => !f.direto).forEach(() => add('Água fria', 'Joelho 90° soldável c/ bucha de latão 20 mm × ½" (ponto de utilização)', 'un', 1));
-  // alimentador, torneiras diretas e extravasor/limpeza
-  ALE.forEach((e) => {
-    const pts = e.pts || afPts(e, ALN);
-    const dn = e.dn || (e.id === 'AL-g' || e.id === 'AL-f' ? 20 : 25);
-    tubo(e.id === 'LADRAO' || e.id === 'LIMPEZA' ? 'Reservatório' : 'Alimentador predial', 'Tubo PVC soldável marrom', dn, polyLen(pts));
-    conexoesPorVertice(pts, e.id === 'LADRAO' || e.id === 'LIMPEZA' ? 'Reservatório' : 'Alimentador predial', 'af', dn, false);
-  });
-  add('Alimentador predial', 'Tê soldável 25 mm (derivação das torneiras diretas)', 'un', 2);
-  add('Alimentador predial', 'Bucha de redução soldável 25×20 mm', 'un', 2);
-  add('Alimentador predial', 'Joelho 90° soldável c/ bucha de latão 20 mm × ½" + torneira de jardim', 'un', 2);
-  add('Alimentador predial', 'Registro de gaveta 25 mm após o hidrômetro (se o cavalete não tiver)', 'un', 1);
-  add('Alimentador predial', 'Hidrômetro e cavalete — padrão da concessionária', 'cj', 1);
-  add('Reservatório', "Caixa d'água de polietileno 1.500 L com tampa", 'un', 1);
-  add('Reservatório', 'Torneira de boia 25 mm (¾")', 'un', 1);
-  add('Reservatório', 'Adaptador soldável com flange 32 mm (saída, extravasor e limpeza)', 'un', 3);
-  add('Reservatório', 'Adaptador soldável com flange 25 mm (entrada)', 'un', 1);
-  add('Reservatório', 'Registro de gaveta 32 mm (limpeza)', 'un', 1);
-  add('Reservatório', 'Plataforma de 1,00 m para a caixa (alvenaria/concreto sobre vigas) — orçar com a obra civil', 'cj', 1);
-  add('Água fria', 'Torneira de jardim (quintal)', 'un', 1);
-  // esgoto e ventilação
-  const grupoES = (e) => (e.sys === 'VE' ? 'Ventilação' : 'Esgoto');
-  ES.forEach((e) => {
-    tubo(grupoES(e), e.sys === 'VE' ? 'Tubo PVC esgoto série normal (ventilação)' : 'Tubo PVC esgoto série normal', e.dn, e.L);
-    conexoesPorVertice(e.pts, grupoES(e), 'es', e.dn, true);
-    if (e.to && ESBY[e.to] && e.kind !== 'tq') {
-      const tgt = ESBY[e.to];
-      add(grupoES(e), 'Junção simples 45° esgoto DN' + (tgt ? tgt.dn : 100) + '×' + e.dn, 'un', 1);
-    }
-    if (e.attach) add('Ventilação', 'Junção simples 45° esgoto DN' + ESBY[e.attach.edge].dn + '×' + e.dn + ' (pé da coluna de ventilação)', 'un', 1);
-    if (e.kind === 'tq') add('Esgoto', 'Curva 90° raio longo DN' + e.dn + ' (pé do tubo de queda)', 'un', 1);
-    if (e.sys === 'VE' && Math.abs(e.pts[e.pts.length - 1][2] - VT) < 1) add('Ventilação', 'Terminal de ventilação (chapéu) DN' + e.dn, 'un', 1);
-  });
-  add('Ventilação', 'Junção simples 45° esgoto DN100×50 (CV-1 no VP-1)', 'un', 1);
-  const nCS = BOX.filter((b) => b.k === 'CS').length;
-  add('Esgoto', 'Caixa sifonada 150×150×50 com grelha (saída DN75)', 'un', nCS);
-  add('Caixas enterradas', 'Caixa de inspeção 60×60 cm com tampa de concreto (alvenaria ou pré-moldada)', 'un', BOX.filter((b) => b.k === 'CI').length);
-  add('Caixas enterradas', 'Caixa de gordura simples Ø40 cm, 31 L (NBR 8160) com tampa', 'un', 1);
-  add('Caixas enterradas', 'Tampa reforçada para a CI-4 (passagem de veículos na rampa)', 'un', 1);
-  // aparelhos (acessórios de ligação)
-  const n = (t) => FX.filter((f) => f.t === t).length;
-  add('Acessórios dos aparelhos', 'Anel de vedação para bacia DN100', 'un', n('vaso'));
-  add('Acessórios dos aparelhos', 'Engate flexível ½" (bacias e lavatórios)', 'un', n('vaso') + n('lav'));
-  add('Acessórios dos aparelhos', 'Sifão para pia DN50 (cozinha / gourmet)', 'un', n('pia'));
-  add('Acessórios dos aparelhos', 'Sifão para tanque DN40', 'un', n('tanque'));
-  add('Acessórios dos aparelhos', 'Válvula + tubo de ligação para lavatório (descarga na caixa sifonada)', 'un', n('lav'));
-  add('Acessórios dos aparelhos', 'Ralo/sifão para máquina de lavar DN50 (com tubo de espera a 0,90 m)', 'un', n('mlr'));
-  // fixação e insumos
-  let ext = 0;
-  ES.filter((e) => e.kind === 'tq' || e.kind === 've').forEach((e) => {
-    for (let i = 1; i < e.pts.length; i++) if (e.pts[i][0] < 1500 || e.pts[i][1] < 2850) ext += Math.abs(e.pts[i][2] - e.pts[i - 1][2]);
-  });
-  AFE.filter((e) => e.tag === 'AF-2' || e.tag === 'AF-3').forEach((e) => (ext += e.fl === 'v' ? e.L : 0));
-  add('Fixação e insumos', 'Abraçadeira tipo D para tubos aparentes nos shafts (a cada 1,5 m)', 'un', Math.ceil(ext / 1500));
-  const juntasAF = [...items.values()].filter((i) => i.grupo !== 'Esgoto' && i.grupo !== 'Ventilação' && /soldável/.test(i.desc)).reduce((s, i) => s + i.q * 2, 0);
-  add('Fixação e insumos', 'Adesivo para PVC (frasco 175 g)', 'un', Math.max(2, Math.ceil(juntasAF / 60) + 1));
-  add('Fixação e insumos', 'Solução limpadora para PVC (frasco 200 mL)', 'un', Math.max(1, Math.ceil(juntasAF / 120)));
-  add('Fixação e insumos', 'Fita veda-rosca 18 mm × 25 m', 'un', Math.max(2, Math.ceil(FX.length / 8)));
-  add('Fixação e insumos', 'Pasta lubrificante para juntas elásticas (pote 400 g)', 'un', 2);
-  add('Fixação e insumos', 'Lixa d’água nº 100', 'un', 6);
-  // tubos → barras de 6 m (+10 % de perdas)
-  const tub = Object.values(tubos).sort((a, b) => a.grupo.localeCompare(b.grupo) || a.dn - b.dn);
-  tub.forEach((t) => {
-    const m = (t.L / 1000) * 1.1;
-    t.m = m; t.barras = Math.ceil(m / 6);
-  });
-  return { tubos: tub, items: [...items.values()].sort((a, b) => a.grupo.localeCompare(b.grupo) || a.desc.localeCompare(b.desc)) };
-}
-
-// furos e passagens (para deixar esperas antes de concretar / levantar paredes)
-function passagens() {
-  const out = [];
-  const slabs = [{ z: L1 - 80, nome: 'Laje do 1º pavimento' }, { z: L2 - 80, nome: 'Laje do 2º pavimento' }, { z: LR - 80, nome: 'Laje de cobertura' }];
-  const all = [];
-  AFE.forEach((e) => all.push({ id: e.tag || e.id, sys: 'Água fria', dn: e.dn, pts: e.pts }));
-  ALE.forEach((e) => all.push({ id: e.tag, sys: 'Alimentador', dn: e.dn || 25, pts: e.pts || afPts(e, ALN) }));
-  ES.forEach((e) => all.push({ id: e.nome || e.id, sys: e.sys === 'VE' ? 'Ventilação' : 'Esgoto', dn: e.dn, pts: e.pts }));
-  const inside = (x, y) => x > 1500 && x < 7500 && y > 2850 && y < 10500;
-  all.forEach((p) => {
-    for (let i = 1; i < p.pts.length; i++) {
-      const a = p.pts[i - 1], b = p.pts[i];
-      slabs.forEach((s) => {
-        const lo = Math.min(a[2], b[2]), hi = Math.max(a[2], b[2]);
-        if (lo < s.z && hi > s.z && inside(a[0], a[1])) {
-          const k = s.nome + p.id + a[0] + a[1];
-          if (!out.some((o) => o.k === k)) out.push({ k, onde: s.nome, x: a[0], y: a[1], dn: p.dn, oque: p.id, sys: p.sys, furo: p.dn + 50 });
-        }
-      });
-    }
-  });
-  BOX.filter((b) => b.k === 'CS' && b.fl !== 'T').forEach((b) => out.push({ k: b.id, onde: b.fl === '1' ? 'Laje do 1º pavimento' : 'Laje do 2º pavimento', x: b.x, y: b.y, dn: 150, oque: b.id + ' (caixa sifonada no rebaixo)', sys: 'Esgoto', furo: '25×25 cm' }));
-  return out.sort((a, b) => a.onde.localeCompare(b.onde) || a.x - b.x);
-}
-
-const AF = solveAF();
-solveES();
-const VENT = ventDistances();
-const QT = quantities(AF);
-const PASS = passagens();
+// Dados e cálculo do projeto: src/17-hidro.js (o mesmo módulo desenha a camada "Hidráulica" no estúdio).
+const {
+  L1, L2, LR, ZG, VT, PLATAFORMA, CX_BASE, NA_MIN, PESSOAS, PER_CAPITA, TIPOS, FX, FXBY, AFN, AFE, ALN, ALE, pb, ES, ESBY, BOX, BOXBY, SHAFTS, DI, vmax, jFWH, dist3, polyLen, fmtm, fmtn, afPts, solveAF, solveES, LIM_VENT, projOn, lenFrom, lenUpTo, ventDistances, angleAt, quantities, passagens, AF, VENT, QT, PASS, floorOf, pipeList, PIPES,
+} = DD.hidro;
 
 // =====================================================================================================
 //  INTERFACE
 // =====================================================================================================
-const doc = window.DD && DD.data ? DD.data.initialState() : null;
+// Paredes, portas e janelas: a planta as built de referência (src/00-data.js) até chegar a planta salva na nuvem da
+// obra — a mesma que o estúdio edita (tabela projeto_planta). As cotas das pranchas são medidas nas paredes em uso.
+const REF_DOC = window.DD && DD.data ? DD.data.initialState() : null;
+let doc = REF_DOC;
+const DOC_SRC = { kind: 'ref', at: null };
 const PRANCHAS = [
   { id: 'T', label: 'Térreo', fid: 'f0' },
   { id: '1', label: '1º Pav.', fid: 'f1' },
@@ -800,17 +295,6 @@ function label(txt, x, y, color, small, bg) {
   ctx.fillStyle = color || '#1f1d1a'; ctx.fillText(txt, X(x), Y(y));
 }
 function inFloor(z, fl) { const [a, b] = FL_RANGE[fl]; return z >= a && z < b; }
-// prancha de cada trecho pela altura: ramais logo abaixo da laje (até 45 cm) pertencem ao pavimento de cima
-const floorOf = (z) => (z < L1 - 450 ? 'T' : z < L2 - 450 ? '1' : z < LR - 450 ? '2' : 'C');
-function pipeList() {
-  // tudo que pode ser desenhado: {id, sys, dn, pts, fl, kind, info}
-  const L = [];
-  AFE.forEach((e) => L.push({ id: e.id, sys: 'AF', dn: e.dn, pts: e.pts, fl: e.fl, kind: e.fl === 'v' ? 'col' : 'h', info: `${e.tag || 'Ramal'} · ${e.id}\nDN ${e.dn} mm · ${fmtm(e.L)} m\nΣP ${fmtn(e.P, 1)} · Q ${fmtn(e.Q, 2)} L/s · v ${fmtn(e.v, 2)} m/s` }));
-  ALE.forEach((e) => { const pts = e.pts || afPts(e, ALN); L.push({ id: e.id, sys: e.id === 'LADRAO' || e.id === 'LIMPEZA' ? 'AF' : 'AL', dn: e.dn || 25, pts, fl: e.fl, kind: 'h', info: `${e.tag}\nDN ${e.dn || 25} mm · ${fmtm(polyLen(pts))} m` }); });
-  ES.forEach((e) => L.push({ id: e.id, sys: e.sys, dn: e.dn, pts: e.pts, fl: e.fl, kind: e.fl === 'v' ? 'col' : 'h', info: `${e.nome || e.id}\nDN ${e.dn} · ${fmtm(e.L)} m${e.uhc ? ' · ' + e.uhc + ' UHC' : ''}${e.i != null && e.kind !== 'tq' ? ' · i = ' + fmtn(e.i * 100, 1) + ' %' : ''}` }));
-  return L;
-}
-const PIPES = pipeList();
 function visibleSegs(fl) {
   // segmentos horizontais da prancha + prumadas (desenhadas como círculo)
   const segs = [], cols = [];
@@ -1006,6 +490,37 @@ function hoverAt(px, py) {
 
 // ---------------------------------------------------------------------------------------------- 3D
 let R3 = null;
+function buildArch3D(target) {
+  const M = (mm) => mm / 1000;
+  if (!doc) return;
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c6, transparent: true, opacity: 0.16, depthWrite: false });
+  const level = Object.fromEntries(doc.floors.map((f) => [f.id, f.level]));
+  doc.walls.forEach((w) => {
+    const base = level[w.floor] || 0, H = w.height || 2880;
+    const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy);
+    const ops = doc.openings.filter((o) => o.wall === w.id).map((o) => ({ a: o.t - o.width / 2, b: o.t + o.width / 2, z0: o.sill, z1: o.sill + o.height })).sort((p, q) => p.a - q.a);
+    const cuts = [0]; ops.forEach((o) => cuts.push(o.a, o.b)); cuts.push(L);
+    const piece = (s0, s1, z0, z1) => {
+      if (s1 - s0 < 5 || z1 - z0 < 5) return;
+      const g = new THREE.BoxGeometry(M(s1 - s0), M(z1 - z0), M(w.thick));
+      const m = new THREE.Mesh(g, wallMat);
+      const sm = (s0 + s1) / 2;
+      m.position.set(M(w.a.x + dx / L * sm), M(base + (z0 + z1) / 2), M(w.a.y + dy / L * sm));
+      m.rotation.y = -Math.atan2(dy, dx);
+      target.add(m);
+    };
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const s0 = cuts[i], s1 = cuts[i + 1], op = ops.find((o) => o.a === s0 && o.b === s1);
+      if (!op) piece(s0, s1, 0, H); else { piece(s0, s1, 0, op.z0); piece(s0, s1, op.z1, H); }
+    }
+  });
+  // lajes (contorno)
+  const slabMat = new THREE.MeshStandardMaterial({ color: 0xbdb4a5, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
+  [[L1, 1500, 9000, 2850, 15000], [L2, 1500, 9000, 2850, 10500], [LR, 1500, 7500, 2850, 10500]].forEach(([z, x0, x1, y0, y1]) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(M(x1 - x0), 0.16, M(y1 - y0)), slabMat);
+    m.position.set(M((x0 + x1) / 2), M(z) - 0.08, M((y0 + y1) / 2)); target.add(m);
+  });
+}
 function init3D() {
   if (R3) return;
   const host = $('view3d');
@@ -1029,36 +544,10 @@ function init3D() {
   // chão (transparente, para ver o que está enterrado)
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(9, 20), new THREE.MeshStandardMaterial({ color: 0x9db38a, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }));
   ground.rotation.x = -Math.PI / 2; ground.position.set(4.5, M(ZG), 10); scene.add(ground);
-  // paredes com vãos
-  if (doc) {
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c6, transparent: true, opacity: 0.16, depthWrite: false });
-    const level = Object.fromEntries(doc.floors.map((f) => [f.id, f.level]));
-    doc.walls.forEach((w) => {
-      const base = level[w.floor] || 0, H = w.height || 2880;
-      const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy);
-      const ops = doc.openings.filter((o) => o.wall === w.id).map((o) => ({ a: o.t - o.width / 2, b: o.t + o.width / 2, z0: o.sill, z1: o.sill + o.height })).sort((p, q) => p.a - q.a);
-      const cuts = [0]; ops.forEach((o) => cuts.push(o.a, o.b)); cuts.push(L);
-      const piece = (s0, s1, z0, z1) => {
-        if (s1 - s0 < 5 || z1 - z0 < 5) return;
-        const g = new THREE.BoxGeometry(M(s1 - s0), M(z1 - z0), M(w.thick));
-        const m = new THREE.Mesh(g, wallMat);
-        const sm = (s0 + s1) / 2;
-        m.position.set(M(w.a.x + dx / L * sm), M(base + (z0 + z1) / 2), M(w.a.y + dy / L * sm));
-        m.rotation.y = -Math.atan2(dy, dx);
-        groups.WALLS.add(m);
-      };
-      for (let i = 0; i < cuts.length - 1; i++) {
-        const s0 = cuts[i], s1 = cuts[i + 1], op = ops.find((o) => o.a === s0 && o.b === s1);
-        if (!op) piece(s0, s1, 0, H); else { piece(s0, s1, 0, op.z0); piece(s0, s1, op.z1, H); }
-      }
-    });
-    // lajes (contorno)
-    const slabMat = new THREE.MeshStandardMaterial({ color: 0xbdb4a5, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
-    [[L1, 1500, 9000, 2850, 15000], [L2, 1500, 9000, 2850, 10500], [LR, 1500, 7500, 2850, 10500]].forEach(([z, x0, x1, y0, y1]) => {
-      const m = new THREE.Mesh(new THREE.BoxGeometry(M(x1 - x0), 0.16, M(y1 - y0)), slabMat);
-      m.position.set(M((x0 + x1) / 2), M(z) - 0.08, M((y0 + y1) / 2)); groups.WALLS.add(m);
-    });
-  }
+  // paredes com vãos e lajes (refeitas quando a planta da nuvem chega)
+  const arch = new THREE.Group();
+  groups.WALLS.add(arch);
+  buildArch3D(arch);
   // tubos
   const mats = {};
   const mat = (sys) => (mats[sys] = mats[sys] || new THREE.MeshStandardMaterial({ color: COLORS[sys], roughness: 0.5 }));
@@ -1097,7 +586,7 @@ function init3D() {
     const m = new THREE.Mesh(new THREE.BoxGeometry(M(dims[0]), M(dims[2]), M(dims[1])), fxMat);
     m.position.set(M(f.x), M(lvl[f.fl] + zc), M(f.y)); m.rotation.y = -((f.rot || 0) * Math.PI) / 180; groups.BOX.add(m);
   });
-  R3 = { renderer, scene, camera, controls, groups, host };
+  R3 = { renderer, scene, camera, controls, groups, host, arch };
   const loop = () => { if (S.tab === '3d') { controls.update(); renderer.render(scene, camera); } requestAnimationFrame(loop); };
   loop();
 }
@@ -1240,16 +729,16 @@ const SHEETS = [
 ];
 const LVL = { T: 0, 1: L1, 2: L2, C: LR };
 const SIDE_NAME = { esq: 'à esquerda', dir: 'à direita', fundo: 'do fundo', frente: 'da frente' };
-function wallRects(fid) {
-  if (!doc) return [];
-  return doc.walls.filter((w) => w.floor === fid && w.kind !== 'railing').map((w) => {
+function wallRects(fid, d = doc) {
+  if (!d) return [];
+  return d.walls.filter((w) => w.floor === fid && w.kind !== 'railing').map((w) => {
     const r = wallRect(w), xs = r.map((p) => p[0]), ys = r.map((p) => p[1]);
     return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), muro: w.kind === 'muro' };
   });
 }
 /** Medidas de um ponto até as faces das paredes mais próximas (uma na horizontal, uma na vertical da planta). */
-function refsOf(fid, x, y) {
-  const R = wallRects(fid), o = {};
+function refsOf(fid, x, y, dc = doc) {
+  const R = wallRects(fid, dc), o = {};
   const own = R.find((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
   const put = (k, d, face, r) => { if (!o[k] || d < o[k].d) o[k] = { d, face, muro: r.muro }; };
   R.forEach((r) => {
@@ -1375,20 +864,28 @@ function renderSheetImage(sh, pts) {
 }
 function pranchas() {
   const hoje = new Date().toLocaleDateString('pt-BR');
+  let nChanged = 0;
+  const fonte = srcText(true);
   const pages = SHEETS.map((sh, i) => {
     const pts = sheetPoints(sh).map((p) => Object.assign(p, { ref: refsOf(sh.fid, p.x, p.y) }));
+    // planta da nuvem diferente da de referência perto do ponto: a medida mudou → conferir no local
+    if (doc !== REF_DOC) pts.forEach((p) => (p.changed = refText(p.ref) !== refText(refsOf(sh.fid, p.x, p.y, REF_DOC))));
     pts.sort((a, b) => ({ af: 0, al: 1, es: 2, ve: 3 })[a.kind] - ({ af: 0, al: 1, es: 2, ve: 3 })[b.kind] || a.y - b.y || a.x - b.x);
     pts.forEach((p, j) => (p.n = j + 1));
     const img = renderSheetImage(sh, pts);
-    const rows = pts.map((p) => `<tr><td class="num"><span style="background:${KIND_COLOR[p.kind]}">${p.n}</span></td><td>${esc(p.item)}</td><td>${esc(refText(p.ref))}</td><td class="c">${esc(p.alt)}</td><td>${esc(p.obs)}</td></tr>`);
+    const rows = pts.map((p) => `<tr${p.changed ? ' class="chg"' : ''}><td class="num"><span style="background:${KIND_COLOR[p.kind]}">${p.n}</span></td><td>${esc(p.item)}</td><td>${esc(refText(p.ref))}</td><td class="c">${esc(p.alt)}</td><td>${esc(p.obs)}${p.changed ? '<b class="chg-tag"> ⚠ parede mudou em relação ao projeto: conferir</b>' : ''}</td></tr>`);
+    nChanged += pts.filter((p) => p.changed).length;
     return `<section class="sheet">
-      <header class="sh-head"><div><b>Obra Mariára — Projeto hidrossanitário</b><span>${esc(sh.titulo)}</span></div><div class="sh-meta">Prancha ${i + 1}/${SHEETS.length} · ${hoje}<br>ANTEPROJETO — conferir no local e com o responsável técnico</div></header>
+      <header class="sh-head"><div><b>Obra Mariára — Projeto hidrossanitário</b><span>${esc(sh.titulo)}</span></div><div class="sh-meta">Prancha ${i + 1}/${SHEETS.length} · ${hoje} · ${esc(fonte)}<br>ANTEPROJETO — conferir no local e com o responsável técnico</div></header>
       <div class="sh-body"><div class="sh-img"><img src="${img}" alt="${esc(sh.titulo)}"></div>
       <div class="sh-tab"><table class="pts"><thead><tr><th>Nº</th><th>Item</th><th>Medida a partir de (face da parede)</th><th>Altura</th><th>Obs.</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></div>
       <footer class="sh-foot">Medidas em metros, do <b>eixo do ponto/tubo</b> até a <b>face da alvenaria</b> mais próxima (sem reboco), na direção indicada; “alinhamento da face” = prolongamento da face de uma parede próxima, para pontos fora dela (esquerda/direita = olhando a planta com o fundo para cima; fundo = lado do quintal; frente = lado da rua). Alturas a partir do <b>piso acabado</b> do pavimento; caixas enterradas a partir da calçada. Cor: <span style="color:#2f80d8">■ água</span> <span style="color:#7a4fc2">■ alimentador</span> <span style="color:#9a5b2c">■ esgoto</span> <span style="color:#2f9e5f">■ ventilação</span>. Tolerância de execução ±2 cm; na dúvida, priorizar o alinhamento do aparelho.</footer>
     </section>`;
   });
-  return `<div class="noprint" style="margin-bottom:14px"><p class="callout">Pranchas de execução por pavimento, para entregar ao pedreiro/encanador. Cada ponto tem um número na planta e, na tabela, a distância até a face da parede de referência e a altura. Para gerar o PDF: <b>Imprimir → Salvar como PDF</b>, papel <b>A3 paisagem</b> (ou A4 paisagem, com escala reduzida).</p><button class="btn" id="print" type="button">Imprimir / salvar em PDF</button></div>${pages.join('')}`;
+  const aviso = nChanged
+    ? `<p class="callout warn"><b>${nChanged} ${nChanged === 1 ? 'ponto tem' : 'pontos têm'} parede diferente</b> da planta usada no projeto hidráulico (a planta da nuvem foi alterada perto deles). As medidas abaixo já usam as paredes atuais, mas o traçado dos tubos não muda sozinho: confira esses pontos (marcados com ⚠) antes de executar.</p>`
+    : '';
+  return `<div class="noprint" style="margin-bottom:14px">${aviso}<p class="callout">Paredes: <b>${esc(srcText(false))}</b>. Pranchas de execução por pavimento, para entregar ao pedreiro/encanador. Cada ponto tem um número na planta e, na tabela, a distância até a face da parede de referência e a altura. Para gerar o PDF: <b>Imprimir → Salvar como PDF</b>, papel <b>A3 paisagem</b> (ou A4 paisagem, com escala reduzida).</p><button class="btn" id="print" type="button">Imprimir / salvar em PDF</button></div>${pages.join('')}`;
 }
 
 // ---------------------------------------------------------------------------------------------- painel lateral
@@ -1431,6 +928,57 @@ function side() {
     <p class="sub" style="margin-top:14px">Anteprojeto: revisar com responsável técnico (ART/RRT) antes de executar. Detalhes em <b>Memorial e cálculo</b>.</p>`;
 }
 
+// ---------------------------------------------------------------------------------------------- planta da nuvem
+const fmtWhen = (t) => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+function srcText(short) {
+  if (DOC_SRC.kind === 'cloud') return short ? 'paredes: nuvem ' + fmtWhen(DOC_SRC.at) : 'planta salva na nuvem da obra em ' + fmtWhen(DOC_SRC.at) + ' (a mesma do estúdio)';
+  if (DOC_SRC.kind === 'erro') return short ? 'paredes: referência' : 'planta as built de referência (não foi possível ler a nuvem agora)';
+  return short ? 'paredes: referência' : 'planta as built de referência (entre com a conta da obra para usar a planta da nuvem)';
+}
+function setSrcBadge() {
+  const b = $('src-badge');
+  if (!b) return;
+  b.dataset.kind = DOC_SRC.kind;
+  b.textContent = DOC_SRC.kind === 'cloud' ? 'planta da nuvem · ' + fmtWhen(DOC_SRC.at) : 'planta de referência';
+  b.title = srcText(false);
+}
+const planOK = (d) =>
+  !!d && Array.isArray(d.floors) && Array.isArray(d.walls) && Array.isArray(d.openings) &&
+  d.walls.every((w) => w && w.a && w.b && [w.a.x, w.a.y, w.b.x, w.b.y, w.thick].every(Number.isFinite) && typeof w.floor === 'string');
+/** Troca as paredes em uso e redesenha a aba aberta (sem perder o enquadramento da planta). */
+function useDoc(d, src) {
+  doc = d;
+  Object.assign(DOC_SRC, src);
+  setSrcBadge();
+  if (R3) {
+    while (R3.arch.children.length) { const m = R3.arch.children.pop(); if (m.geometry) m.geometry.dispose(); }
+    buildArch3D(R3.arch);
+  }
+  if (['T', '1', '2', 'C'].includes(S.tab)) drawPlan();
+  else if (S.tab === '3d') sync3D();
+  else if (S.tab === 'pdf') { const top = $('doc').scrollTop; setTab('pdf'); $('doc').scrollTop = top; }
+}
+async function loadCloudPlan(auth) {
+  const a = auth || window.projetoAuth;
+  if (!a || !a.ready) return false;
+  try {
+    const ctx = await a.ready;
+    if (!ctx || !ctx.client || !ctx.obraId) return false;
+    const res = await ctx.client.from('projeto_planta').select('doc, atualizado_em').eq('obra_id', ctx.obraId).maybeSingle();
+    if (res.error) throw res.error;
+    if (!res.data || !planOK(res.data.doc)) return false; // a obra ainda não salvou a planta: segue a de referência
+    let d = res.data.doc;
+    try { if (DD.data.migrateAsBuilt) d = DD.data.migrateAsBuilt(Object.assign({ roomSeeds: [], furniture: [] }, d)).doc; } catch (e) { /* usa como veio */ }
+    useDoc(d, { kind: 'cloud', at: res.data.atualizado_em });
+    return true;
+  } catch (e) {
+    console.warn('[hidro] planta da nuvem indisponível', e);
+    DOC_SRC.kind = 'erro';
+    setSrcBadge();
+    return false;
+  }
+}
+
 // ---------------------------------------------------------------------------------------------- abas
 function setTab(id) {
   S.tab = id;
@@ -1454,7 +1002,9 @@ function setTab(id) {
 new ResizeObserver(() => { if (['T', '1', '2', 'C'].includes(S.tab)) { fitView(); drawPlan(); } if (S.tab === '3d') sync3D(); }).observe($('stage'));
 const h0 = (location.hash || '').slice(1);
 setTab(PRANCHAS.some((p) => p.id === h0) ? h0 : 'T');
-window.__hs = { AF, ES, VENT, QT, PASS, FX, setTab }; // para conferência
+setSrcBadge();
+loadCloudPlan();
+window.__hs = { AF, ES, VENT, QT, PASS, FX, setTab, useDoc, loadCloudPlan, refDoc: REF_DOC, src: DOC_SRC }; // para conferência
 </script>
 </body>
 </html>

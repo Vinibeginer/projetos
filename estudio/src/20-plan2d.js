@@ -1150,6 +1150,8 @@
     world('openings', drawOpenings);
     const structure = rc.show.structure !== false && DD.structure && DD.structure.hasData();
     if (structure) world('structure', DD.structure.draw2dWorld); // pilares, vigas do teto, sapatas (15-structure.js)
+    const hidro = rc.show.hidro === true && !!DD.hidro;
+    if (hidro) world('hidro', DD.hidro.draw2dWorld); // água, esgoto e ventilação (17-hidro.js)
     if (rc.isGround) screen('site labels', drawSiteLabels);
     screen('stair labels', drawStairLabels);
     if (rc.show.dims) screen('dimensions', drawDimensions);
@@ -1157,6 +1159,7 @@
     screen('room labels', drawRoomLabels);
     if (rc.show.labels) screen('tags', drawOpeningTags);
     if (structure) screen('structure tags', DD.structure.draw2dScreen);
+    if (hidro) screen('hidro tags', DD.hidro.draw2dScreen);
     if (rc.interactive) layer('overlays', rc, drawOverlays);
     if (!rc.exporting) screen('corner', drawCornerWidgets); // the export has them in its title block
     ctx.restore();
