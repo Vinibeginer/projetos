@@ -18,9 +18,20 @@
   const FCA = 0.7;              // agrupamento: até 3 circuitos por eletroduto (Tabela 42)
   const FCT = 1.0;              // 30 °C (Tabela 40, PVC)
   const QDC_XY = { x: 5925, y: 8750 }; // QDC à direita da porta do quarto do térreo (parede do quarto, lado da sala)
-  // prumadas dos circuitos: na parede do QDC até a laje do 1º; para o 2º, desloca 47,5 cm na laje do 1º até a parede
-  // da escada do 2º (na posição do QDC o 2º não tem parede)
-  const RISER = { T: QDC_XY, 1: QDC_XY, 2: { x: 6400, y: 8750 } };
+  // Um quadro trifásico por andar: os circuitos de cada pavimento saem do quadro do próprio pavimento (caminhos curtos,
+  // sem uma prumada por circuito); o QDC do térreo recebe o alimentador, tem o geral, o DPS e alimenta o QD-1 e o QD-2.
+  const BOARDS = {
+    T: { id: 'QDC', fl: 'T', x: QDC_XY.x, y: QDC_XY.y, nome: 'QDC — térreo (geral)' },
+    1: { id: 'QD-1', fl: '1', x: 5925, y: 8750, nome: 'QD-1 — 1º pavimento' },
+    2: { id: 'QD-2', fl: '2', x: 7100, y: 8600, nome: 'QD-2 — 2º pavimento' },
+  };
+  const RISER = { T: BOARDS.T, 1: BOARDS[1], 2: BOARDS[2] };
+  // alimentadores dos quadros de andar, a partir do QDC (saem pelo topo do QDC, z = 1,85 m)
+  const SUB_ROUTE = {
+    1: [[5925, 8750, 1850], [5925, 8750, 2880 + 1150]], // sobe na mesma parede direto para o QD-1
+    2: [[5925, 8750, 1850], [5925, 8750, 5760 - 100], [7100, 8750, 5760 - 100], [7100, 8675, 5760 - 100], [7100, 8675, 5760 + 1150]], // na laje do 2º até a parede da escada
+  };
+  const FCA_SUB = 0.8; // os dois alimentadores sobem juntos até o 1º (Tabela 42, 2 circuitos)
   // alimentador: padrão (quina do muro esquerdo com o da frente) → enterrado a −0,40 m até a parede do lavabo (lado da
   // garagem) → sobe na parede até a laje do térreo → corre na laje → desce no QDC
   const ALIM_ROUTE = [[400, 19850, 1500], [400, 19850, -400], [400, 19650, -400], [2800, 19650, -400], [2800, 10425, -400], [2800, 10425, TETO], [5925, 10425, TETO], [5925, 8750, TETO], [5925, 8750, 1850]];
@@ -138,6 +149,8 @@
     {id: "1-CH2", fl: "1", k: "tue", eq: "chuveiro", amb: "Banhº", x: 2325, y: 7620, z: 2200, va: 7500, v: 220, desc: "Chuveiro elétrico 7.500 W (220 V) — ponto 1-CH-B"},
     {id: "2-ML1", fl: "2", k: "tue", eq: "mlr", amb: "Área de serviço", x: 2100, y: 8610, z: 1100, va: 1200, v: 127, molhada: true, desc: "Máquina de lavar roupa (1.200 VA, 127 V)"},
     {id: "QDC", fl: "T", k: "qdc", amb: "Sala (pé da escada)", x: 5925, y: 8750, z: 1500, desc: "Quadro de distribuição (QDC) — à direita da porta do quarto, parede do quarto (lado da sala)"},
+    {id: "QD1", fl: "1", k: "qdc", amb: "Circulação (chegada da escada)", x: 5925, y: 8750, z: 1500, desc: "Quadro de distribuição do 1º (QD-1) — acima do QDC, parede do quarto master (lado da circulação)"},
+    {id: "QD2", fl: "2", k: "qdc", amb: "Varanda coberta (parede da escada)", x: 7100, y: 8600, z: 1500, desc: "Quadro de distribuição do 2º (QD-2) — parede da escada, lado da varanda coberta"},
     {id: "PE", fl: "T", k: "medidor", amb: "Muro da frente (quina esquerda)", x: 400, y: 19850, z: 1500, desc: "Padrão de entrada / medição (Enel) com haste de aterramento — quina do muro esquerdo com o da frente"},
     {id: "T-MO1", fl: "T", k: "tue", eq: "microondas", amb: "Cozinha", x: 4150, y: 6900, z: 1600, va: 1500, v: 127, molhada: true, desc: "Micro-ondas / forno (1.500 VA, 127 V)"},
     {id: "T-PT1", fl: "T", k: "tue", eq: "portao", amb: "Garagem (portão)", x: 4400, y: 19850, z: 400, va: 600, v: 127, externa: true, desc: "Motor do portão eletrônico ½ cv (600 VA)"},
@@ -150,7 +163,7 @@
     {id: "T-T-E1", fl: "T", k: "tug", amb: "Quintal", x: 2600, y: 2850, z: 600, va: 100, molhada: true, externa: true, desc: "TUG externa IP44 — quintal"},
     {id: "T-IL-ESC", fl: "T", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (térreo → 1º)"},
     {id: "T-S3a", fl: "T", k: "int3", amb: "Escada", x: 5560, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — pé da escada (térreo)"},
-    {id: "1-S3b", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (1º)"},
+    {id: "1-S3b", fl: "1", k: "int3", amb: "Circulação", x: 5560, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (1º)"},
     {id: "1-IL-ESC", fl: "1", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (1º → 2º)"},
     {id: "1-S3a", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 10350, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — pé da escada (1º)"},
     {id: "2-S3b", fl: "2", k: "int3", amb: "Varanda coberta", x: 6300, y: 8600, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (2º)"},
@@ -235,9 +248,9 @@
   const CIRC = buildCircuits();
 
   // ------------------------------------------------------------------ fases (127 V numa fase; 220 V entre duas)
-  function balance() {
+  function balance(list) {
     const load = { A: 0, B: 0, C: 0 };
-    CIRC.slice().sort((a, b) => b.va - a.va).forEach((c) => {
+    list.slice().sort((a, b) => b.va - a.va).forEach((c) => {
       if (c.v === VFF) {
         const pair = [['A', 'B'], ['B', 'C'], ['C', 'A']].sort((p, q) => load[p[0]] + load[p[1]] - (load[q[0]] + load[q[1]]))[0];
         c.fases = pair.join('');
@@ -250,7 +263,9 @@
     });
     return load;
   }
-  const FASES = balance();
+  // equilíbrio em cada quadro (cada um é trifásico); o total da casa é a soma
+  const FASES_Q = Object.fromEntries(['T', '1', '2'].map((b) => [b, balance(CIRC.filter((c) => c.fl === b))]));
+  const FASES = ['A', 'B', 'C'].reduce((o, f) => ((o[f] = FASES_Q.T[f] + FASES_Q[1][f] + FASES_Q[2][f]), o), {});
 
   // ------------------------------------------------------------------ caminhos (laje + descidas) e comprimentos
   const man = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
@@ -270,9 +285,25 @@
     }
     return { root, edges };
   }
-  /** Subida do quadro (z = 1,50 m no térreo) até a laje do pavimento. */
-  const rise = (fl) => LEVEL[fl] + TETO - 1500 + man(RISER[fl], QDC_XY);
+  /** Do quadro do circuito (centro a 1,50 m) até a laje do pavimento `fl` (o mesmo, ou outro no caso da escada). */
+  const rise = (fl, board) => LEVEL[fl] + TETO - (LEVEL[board || fl] + 1500) + man(BOARDS[board || fl], BOARDS[fl]);
+  /** Comprimentos de um circuito saindo do quadro `board` (eletroduto e caminho até o ponto mais distante). */
+  function lengths(c, board) {
+    const byFl = {};
+    c.pts.forEach((id) => (byFl[PBY[id].fl] = byFl[PBY[id].fl] || []).push(id));
+    let conduite = 0, Lmax = 0;
+    Object.keys(byFl).forEach((fl) => {
+      const t = tree(fl, byFl[fl], fl === board ? { [fl]: BOARDS[board] } : board === 'T' && fl !== 'T' ? { [fl]: fl === '2' ? { x: 6400, y: 8750 } : QDC_XY } : RISER);
+      const depth = new Map([[t.root, 0]]);
+      t.edges.forEach((e) => depth.set(e.b, depth.get(e.a) + e.L));
+      const up = board === 'T' && fl !== 'T' ? LEVEL[fl] + TETO - 1500 + (fl === '2' ? 475 : 0) : rise(fl, board);
+      conduite += t.edges.reduce((a, e) => a + e.L, 0) + byFl[fl].reduce((a, id) => a + Math.max(0, TETO - PBY[id].z), 0) + up;
+      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, up + depth.get(PBY[id]) + Math.max(0, TETO - PBY[id].z))));
+    });
+    return { conduite, Lmax };
+  }
   function routeCircuit(c) {
+    c.board = c.fl;
     const byFl = {};
     c.pts.forEach((id) => (byFl[PBY[id].fl] = byFl[PBY[id].fl] || []).push(id));
     c.trees = {};
@@ -282,16 +313,17 @@
       c.trees[fl] = t;
       horiz += t.edges.reduce((s, e) => s + e.L, 0);
       drops += byFl[fl].reduce((s, id) => s + Math.max(0, TETO - PBY[id].z), 0);
-      risers += rise(fl);
+      risers += rise(fl, c.board);
       // caminho até o ponto mais distante (para a queda de tensão)
       const depth = new Map([[t.root, 0]]);
       t.edges.forEach((e) => depth.set(e.b, depth.get(e.a) + e.L));
-      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, rise(fl) + depth.get(PBY[id]) + Math.max(0, TETO - PBY[id].z))));
+      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, rise(fl, c.board) + depth.get(PBY[id]) + Math.max(0, TETO - PBY[id].z))));
     });
     c.conduite = horiz + drops + risers; // mm de eletroduto do circuito
     c.Lmax = Lmax;
     c.cond = c.tipo === 'il' ? 3 : 3; // F + N (ou F + F) + PE; retornos contados à parte
     c.retorno = c.tipo === 'il' ? c.pts.filter((id) => /int/.test(PBY[id].k)).reduce((s, id) => s + (TETO - PBY[id].z), 0) * 1 : 0;
+    c.unico = lengths(c, 'T'); // o mesmo circuito saindo de um quadro só, no térreo (para comparar)
   }
   CIRC.forEach(routeCircuit);
 
@@ -336,50 +368,78 @@
   // ------------------------------------------------------------------ proteção diferencial (DR 30 mA) e DPS
   // NBR 5410 5.1.3.2.2: DR ≤ 30 mA em banheiros, cozinhas, áreas de serviço, áreas externas e tomadas que possam
   // alimentar equipamentos externos. Aqui: DR em todos os circuitos, em grupos, para um disparo não apagar a casa.
-  const DRS = [
-    { id: 'DR-1', polos: 4, desc: 'Iluminação', f: (c) => c.tipo === 'il' },
-    { id: 'DR-2', polos: 4, desc: 'Tomadas de uso geral e da cozinha/banheiros', f: (c) => c.tipo === 'tug' },
-    { id: 'DR-3', polos: 4, desc: 'Ar-condicionado, micro-ondas, máquina e portão', f: (c) => c.tipo === 'tue' && c.eq !== 'chuveiro' },
+  // Em cada quadro: um DR para iluminação, um para tomadas e um para os demais aparelhos; cada chuveiro com DR próprio.
+  const GRUPOS = [
+    ['Iluminação', (c) => c.tipo === 'il'],
+    ['Tomadas', (c) => c.tipo === 'tug'],
+    ['Aparelhos (ar, micro-ondas, máquina, portão)', (c) => c.tipo === 'tue' && c.eq !== 'chuveiro'],
   ];
-  DRS.forEach((d) => {
-    d.circ = CIRC.filter(d.f).map((c) => c.n);
-    const ia = ['A', 'B', 'C'].map((ph) => CIRC.filter(d.f).filter((c) => c.fases.includes(ph)).reduce((s, c) => s + (c.v === VFF ? c.va / VFF : c.va / VFN), 0));
-    d.in = [25, 40, 63, 80, 100].find((x) => x >= Math.max(...ia)) || 100; // corrente nominal ≥ maior corrente de fase do grupo
+  const DRS = [];
+  ['T', '1', '2'].forEach((b) => {
+    const mine = CIRC.filter((c) => c.board === b);
+    // quadro pequeno (até 4 circuitos sem chuveiro): um DR só para todos
+    const grupos = mine.filter((c) => c.eq !== 'chuveiro').length <= 4 ? [['Todos os circuitos do quadro', (c) => c.eq !== 'chuveiro']] : GRUPOS;
+    grupos.forEach(([desc, f]) => {
+      const L = mine.filter(f);
+      if (!L.length) return;
+      const ia = ['A', 'B', 'C'].map((ph) => L.filter((c) => c.fases.includes(ph)).reduce((s, c) => s + (c.v === VFF ? c.va / VFF : c.va / VFN), 0));
+      const fases = new Set(L.map((c) => c.fases).join('').split('')).size;
+      DRS.push({ id: 'DR-' + (DRS.length + 1), board: b, polos: fases > 2 ? 4 : fases === 2 ? 4 : 2, desc, circ: L.map((c) => c.n), in: [25, 40, 63, 80, 100].find((x) => x >= Math.max(...ia)) || 100 });
+    });
+    mine.filter((c) => c.eq === 'chuveiro').forEach((c) => DRS.push({ id: 'DR-' + (DRS.length + 1), board: b, polos: 2, desc: c.desc, circ: [c.n], in: c.disj <= 40 ? 40 : 63 }));
   });
-  CIRC.filter((c) => c.eq === 'chuveiro').forEach((c) => DRS.push({ id: 'DR-' + (DRS.length + 1), polos: 2, desc: c.desc, circ: [c.n], in: c.disj <= 40 ? 40 : 63 }));
   CIRC.forEach((c) => (c.dr = (DRS.find((d) => d.circ.includes(c.n)) || {}).id));
 
   // ------------------------------------------------------------------ demanda e alimentador
-  function demanda() {
-    const ilW = CIRC.filter((c) => c.tipo === 'il').reduce((s, c) => s + c.va, 0) * 1.0;
-    const tugW = CIRC.filter((c) => c.tipo === 'tug').reduce((s, c) => s + c.va, 0) * 0.8;
+  function demandaDe(L0) {
+    const ilW = L0.filter((c) => c.tipo === 'il').reduce((s, c) => s + c.va, 0) * 1.0;
+    const tugW = L0.filter((c) => c.tipo === 'tug').reduce((s, c) => s + c.va, 0) * 0.8;
     const it = (ilW + tugW) / 1000;
     // fator por faixa, aplicado de forma acumulada (cada kW na sua faixa)
     let rest = it, prev = 0, dIT = 0;
     FD_IT.forEach(([lim, f]) => { const part = Math.max(0, Math.min(rest, lim - prev)); dIT += part * f; rest -= part; prev = lim; });
-    const tues = CIRC.filter((c) => c.tipo === 'tue');
+    const tues = L0.filter((c) => c.tipo === 'tue');
     const pfTue = (c) => (c.eq === 'ac' ? 0.9 : c.eq === 'portao' ? 0.75 : 1);
     const tueW = tues.reduce((s, c) => s + c.va * pfTue(c), 0) / 1000;
     const fTue = FD_TUE[Math.min(tues.length, FD_TUE.length - 1)];
     const D = dIT + tueW * fTue; // kW
     const inst = (ilW + tugW) / 1000 + tueW;
     const I = (D * 1000) / (Math.sqrt(3) * VFF * 0.92);
+    return { ilW, tugW, it, dIT, tueW, fTue, nTue: tues.length, D, inst, I };
+  }
+  function demanda() {
+    const d = demandaDe(CIRC), I = d.I;
     const L = polyLen(ALIM_ROUTE) + 1000; // percurso real + 1 m de sobra nas ligações
     const disj = DISJ.find((d) => d >= I);
     // seção definida (16 mm²): confere capacidade (Iz ≥ In do geral) e a queda de tensão entra no total de 5 %
     const s = ALIM_SECAO, iz = IZ3[s] * FCT;
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
-    return { ilW, tugW, it, dIT, tueW, fTue, nTue: tues.length, D, inst, I, L, disj, secao: s, iz, okIz: disj <= iz, dv, neutro: s, pe: s <= 16 ? s : 16 };
+    return Object.assign(d, { L, disj, secao: s, iz, okIz: disj <= iz, dv, neutro: s, pe: s <= 16 ? s : 16 });
   }
   const ALIM = demanda();
-  // queda total (alimentador + circuito) ≤ 5 %: aumenta a seção do circuito se precisar
+  // alimentadores dos quadros de andar (QDC → QD-1 e QD-2): demanda do andar, disjuntor 3P no QDC, cabo pela capacidade
+  // (2 alimentadores juntos na prumada) e pela queda de tensão (≤ 1 %)
+  const SUB = {};
+  ['1', '2'].forEach((b) => {
+    const d = demandaDe(CIRC.filter((c) => c.board === b));
+    const L = polyLen(SUB_ROUTE[b]) + 1000;
+    // seletividade: um degrau acima do maior disjuntor do quadro do andar
+    const maxDown = Math.max(...CIRC.filter((c) => c.board === b).map((c) => c.disj));
+    const disj = DISJ.find((x) => x >= d.I && x > maxDown);
+    let s = SECOES.find((x) => x >= 6 && IZ3[x] * FCA_SUB * FCT >= disj);
+    const dv = (sec) => (100 * Math.sqrt(3) * RHO * (L / 1000) * d.I) / (sec * VFF);
+    while (dv(s) > 1 && s < 50) s = SECOES[SECOES.indexOf(s) + 1];
+    SUB[b] = Object.assign(d, { board: BOARDS[b], L, disj, secao: s, iz: IZ3[s] * FCA_SUB * FCT, dv: dv(s), neutro: s, pe: s <= 16 ? s : 16, ok: disj <= IZ3[s] * FCA_SUB * FCT });
+  });
+  // queda total (alimentador + alimentador do andar + circuito) ≤ 5 %: aumenta a seção do circuito se precisar
   CIRC.forEach((c) => {
     const dv = (sec) => (200 * RHO * (c.Lmax / 1000) * c.ib) / (sec * c.v);
-    while (dv(c.secao) + ALIM.dv > DV_TOTAL && c.secao < 50) c.secao = SECOES[SECOES.indexOf(c.secao) + 1];
+    const up = ALIM.dv + (SUB[c.board] ? SUB[c.board].dv : 0);
+    while (dv(c.secao) + up > DV_TOTAL && c.secao < 50) c.secao = SECOES[SECOES.indexOf(c.secao) + 1];
     c.dv = dv(c.secao);
     c.iz = IZ2[c.secao] * c.fca * FCT;
     c.pe = c.secao;
-    c.dvTot = c.dv + ALIM.dv;
+    c.dvTot = c.dv + up;
     c.ok = c.ib <= c.disj && c.disj <= c.iz && c.dv <= DV_MAX && c.dvTot <= DV_TOTAL;
   });
 
@@ -393,6 +453,11 @@
       else (addCabo(c.secao, 'fase', L), addCabo(c.secao, 'neutro', L));
       addCabo(c.pe, 'terra', L);
       if (c.retorno) addCabo(c.secao, 'retorno', (c.retorno / 1000) * 1.1 * 1.5);
+    });
+    Object.values(SUB).forEach((d) => {
+      addCabo(d.secao, 'fase', 3 * (d.L / 1000) * 1.1);
+      addCabo(d.neutro, 'neutro', (d.L / 1000) * 1.1);
+      addCabo(d.pe, 'terra', (d.L / 1000) * 1.1);
     });
     addCabo(ALIM.secao, 'fase', 3 * (ALIM.L / 1000) * 1.1);
     addCabo(ALIM.neutro, 'neutro', (ALIM.L / 1000) * 1.1);
@@ -408,7 +473,7 @@
     const e20 = conduit((c) => c.secao <= 2.5) * 0.75, e25 = conduit((c) => c.secao > 2.5) * 0.9;
     it('Eletrodutos', 'Eletroduto corrugado (conduíte) Ø 20 mm (¾")', 'm', Math.ceil(e20 / 5) * 5, 'laje e descidas — iluminação e tomadas');
     it('Eletrodutos', 'Eletroduto corrugado reforçado Ø 25 mm (1")', 'm', Math.ceil(e25 / 5) * 5, 'chuveiros e circuitos de 4 mm² ou mais (um por circuito)');
-    it('Eletrodutos', 'Eletroduto corrugado Ø 32 mm — prumada do quadro', 'm', Math.ceil((rise('2') / 1000) * 3), '3 prumadas do QDC (sob a escada) até as lajes do 1º e do 2º');
+    it('Eletrodutos', 'Eletroduto corrugado reforçado Ø 40 mm — alimentadores dos quadros de andar', 'm', Math.ceil(Object.values(SUB).reduce((s, d) => s + d.L, 0) / 1000 + 1), 'QDC → QD-1 (na parede) e QDC → QD-2 (parede + laje do 2º)');
     it('Eletrodutos', 'Eletroduto PEAD corrugado Ø 50 mm (enterrado) — alimentador', 'm', Math.ceil(ALIM.L / 1000 + 2), 'do padrão de entrada ao QDC, a −0,40 m, com fita de aviso');
     const n = (k, f) => PONTOS.filter((p) => p.k === k && (!f || f(p))).length;
     it('Caixas', 'Caixa octogonal 4×4" de laje (fundo móvel)', 'un', n('il', (p) => p.tipo === 'teto'), 'pontos de luz no teto');
@@ -426,16 +491,22 @@
     it('Dispositivos', 'Interruptor 2 teclas simples 10 A com placa', 'un', nb((b) => b.length === 2 && b.every((p) => p.k === 'int')), 'onde dois comandos ficam na mesma caixa');
     it('Dispositivos', 'Interruptor paralelo (three-way) 10 A com placa', 'un', ints.filter((p) => p.k === 'int3').length, 'escada: um em baixo e um em cima de cada lance');
     it('Dispositivos', 'Conector/terminal para chuveiro 6 mm²', 'un', n('tue', (p) => p.eq === 'chuveiro'), 'ligação direta, sem tomada');
-    // quadro
+    // quadros
     const disj = {};
     CIRC.forEach((c) => { const k = (c.v === VFF ? '2P ' : '1P ') + c.disj + ' A'; disj[k] = (disj[k] || 0) + 1; });
-    Object.keys(disj).sort().forEach((k) => it('Quadro', 'Disjuntor termomagnético DIN curva C ' + k, 'un', disj[k], 'circuitos terminais'));
-    it('Quadro', 'Disjuntor geral DIN curva C 3P ' + ALIM.disj + ' A', 'un', 1, 'no QDC (o do padrão é definido pela Enel)');
-    DRS.forEach((d) => it('Quadro', `Interruptor diferencial (DR) ${d.polos}P ${d.in} A 30 mA`, 'un', 1, d.id + ': ' + d.desc));
-    it('Quadro', 'DPS classe II 275 V 20 kA', 'un', 4, '3 fases + neutro, no QDC (NBR 5410 6.3.5)');
-    const mod = CIRC.reduce((s, c) => s + (c.v === VFF ? 2 : 1), 0) + 3 + DRS.reduce((s, d) => s + d.polos, 0) + 4;
-    const qdc = [24, 36, 48, 56, 72].find((m) => m >= mod * 1.2) || 72;
-    it('Quadro', `Quadro de distribuição de embutir ${qdc} módulos DIN, com barramentos trifásico, neutro e terra`, 'un', 1, mod + ' módulos ocupados + reserva (NBR 5410 6.5.4.7)');
+    Object.keys(disj).sort().forEach((k) => it('Quadros', 'Disjuntor termomagnético DIN curva C ' + k, 'un', disj[k], 'circuitos terminais'));
+    it('Quadros', 'Disjuntor geral DIN curva C 3P ' + ALIM.disj + ' A', 'un', 1, 'no QDC (o do padrão é definido pela Enel)');
+    Object.values(SUB).forEach((d) => it('Quadros', 'Disjuntor DIN curva C 3P ' + d.disj + ' A — alimentador do ' + d.board.id, 'un', 1, 'no QDC'));
+    Object.values(SUB).forEach((d) => it('Quadros', 'Interruptor geral (seccionador) 3P ' + [40, 63, 80, 100].find((x) => x >= d.disj) + ' A — ' + d.board.id, 'un', 1, 'chave geral do quadro do andar'));
+    DRS.forEach((d) => it('Quadros', `Interruptor diferencial (DR) ${d.polos}P ${d.in} A 30 mA`, 'un', 1, BOARDS[d.board].id + ' · ' + d.id + ': ' + d.desc));
+    it('Quadros', 'DPS classe II 275 V 20 kA', 'un', 4, '3 fases + neutro, no QDC (NBR 5410 6.3.5); os quadros de andar ficam a menos de 10 m');
+    const MOD = {};
+    ['T', '1', '2'].forEach((b) => {
+      const mod = CIRC.filter((c) => c.board === b).reduce((s, c) => s + (c.v === VFF ? 2 : 1), 0) + DRS.filter((d) => d.board === b).reduce((s, d) => s + d.polos, 0) + 3 + (b === 'T' ? 4 + 3 * Object.keys(SUB).length : 0);
+      const tam = [12, 18, 24, 36, 48, 56, 72].find((m) => m >= mod * 1.2) || 72;
+      MOD[b] = { mod, tam };
+      it('Quadros', `Quadro de distribuição de embutir ${tam} módulos DIN, barramentos trifásico, neutro e terra — ${BOARDS[b].id}`, 'un', 1, mod + ' módulos ocupados + reserva (NBR 5410 6.5.4.7)');
+    });
     // rede (fibra + Cat6)
     const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap').length;
     it('Rede e fibra', 'Eletroduto PEAD corrugado Ø 32 mm (enterrado) — entrada da fibra', 'm', Math.ceil(TEL.entrada / 1000 + 2), 'da caixa de entrada no muro até a parede do lavabo, 20 cm ao lado do alimentador');
@@ -450,9 +521,22 @@
     it('Aterramento', 'Haste de aterramento cobreada 5/8" × 2,40 m com conector', 'un', 3, 'no padrão de entrada, interligadas (medir ≤ 10 Ω)');
     it('Aterramento', 'Caixa de inspeção do aterramento 30×30', 'un', 1, '');
     it('Acessórios', 'Fita isolante, terminais, abraçadeiras, buchas e arruelas', 'vb', 1, '');
-    return { cabos, items, modulos: mod, qdc };
+    return { cabos, items, MOD, modulos: MOD.T.mod, qdc: MOD.T.tam };
   }
   const QT = quantities();
+  // comparação com um quadro só no térreo (mesmas seções): metros de cabo e de eletroduto dos circuitos
+  const COMPARA = (() => {
+    const cond = (c) => (c.v === VFF ? 2 : 2) + 1; // F+N ou F+F, mais o PE
+    const sum = (f) => CIRC.reduce((s, c) => s + f(c), 0) / 1000;
+    const subCabo = Object.values(SUB).reduce((s, d) => s + (d.L / 1000) * 5, 0);
+    return {
+      cabosQuadros: sum((c) => c.conduite * cond(c)) + subCabo,
+      cabosUnico: sum((c) => c.unico.conduite * cond(c)),
+      dutoQuadros: sum((c) => c.conduite),
+      dutoUnico: sum((c) => c.unico.conduite),
+      subCabo,
+    };
+  })();
 
   // ================================================================================================ camada do estúdio
   const COLOR = { il: '#d39b00', tug: '#e0572f', tue: '#b4235a', qdc: '#2b2b2b', medidor: '#2b2b2b', int: '#d39b00', int3: '#d39b00', tel: '#0e7490', alim: '#2b2b2b' };
@@ -622,11 +706,10 @@
       tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
       if (!b.root && b.z < TETO) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
-    // prumadas do quadro (energia) e do QDT (rede)
-    const R = RISER[fl];
-    if (fl !== 'T') tube([QDC_XY.x, QDC_XY.y, lv - 160], [QDC_XY.x, QDC_XY.y, fl === '2' ? lv - 160 : zc], 0.02, mat('#555555', 0.9));
-    if (fl === '2') tube([QDC_XY.x, QDC_XY.y, lv - 160], [R.x, R.y, lv - 160], 0.02, mat('#555555', 0.9));
-    tube([R.x, R.y, fl === 'T' ? 1500 : lv - 160], [R.x, R.y, zc], 0.02, mat('#555555', 0.9));
+    // subida do quadro do andar até a laje, alimentadores dos quadros de andar e prumada do QDT (rede)
+    const R = BOARDS[fl];
+    tube([R.x, R.y, lv + 1500], [R.x, R.y, zc], 0.02, mat('#555555', 0.9));
+    if (fl === 'T') Object.values(SUB_ROUTE).forEach((Rt) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, 0.02, mat(COLOR.alim, 0.9))));
     tube([QDT_XY.x, QDT_XY.y, fl === 'T' ? 1700 : lv - 160], [QDT_XY.x, QDT_XY.y, zc], 0.016, mat(COLOR.tel, 0.9));
     telConduits(fl).forEach(({ a, b }) => {
       const m = mat(COLOR.tel, 0.85), r = 0.011;
@@ -638,7 +721,7 @@
       [[ALIM_ROUTE, COLOR.alim, 0.022], [TEL_ROUTE, COLOR.tel, 0.016]].forEach(([Rt, col, r]) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, r, mat(col, 0.9))));
     ptsOf(fl).forEach((p) => {
       const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
-      const sz = p.k === 'qdc' ? [0.5, 0.7, 0.12] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
+      const sz = p.k === 'qdc' ? (p.id === 'QDC' ? [0.5, 0.7, 0.12] : [0.4, 0.5, 0.12]) : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
       const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(col, 1));
       m.position.set(p.x * MM, (lv + p.z) * MM, p.y * MM);
       put(m);
@@ -647,7 +730,7 @@
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

@@ -245,6 +245,10 @@ const EXTRA = [
   // quadro de distribuição: debaixo da escada, na parede do quarto do térreo (face do lado da escada)
   // quadro de distribuição: na parede do quarto do térreo, do lado direito da porta (vista da sala), junto ao pé da escada
   { id: 'QDC', fl: 'T', k: 'qdc', amb: 'Sala (pé da escada)', x: 5925, y: 8750, z: 1500, desc: 'Quadro de distribuição (QDC) — à direita da porta do quarto, parede do quarto (lado da sala)' },
+  // quadros trifásicos de andar, alimentados pelo QDC: QD-1 logo acima do QDC (mesma parede); QD-2 na parede da escada,
+  // voltado para a varanda coberta (na prumada do QDC o 2º não tem parede)
+  { id: 'QD1', fl: '1', k: 'qdc', amb: 'Circulação (chegada da escada)', x: 5925, y: 8750, z: 1500, desc: 'Quadro de distribuição do 1º (QD-1) — acima do QDC, parede do quarto master (lado da circulação)' },
+  { id: 'QD2', fl: '2', k: 'qdc', amb: 'Varanda coberta (parede da escada)', x: 7100, y: 8600, z: 1500, desc: 'Quadro de distribuição do 2º (QD-2) — parede da escada, lado da varanda coberta' },
   // padrão da Enel: quina do muro esquerdo com o muro da frente (olhando a casa com a rua nas costas)
   { id: 'PE', fl: 'T', k: 'medidor', amb: 'Muro da frente (quina esquerda)', x: 400, y: 19850, z: 1500, desc: 'Padrão de entrada / medição (Enel) com haste de aterramento — quina do muro esquerdo com o da frente' },
   { id: 'T-MO1', fl: 'T', k: 'tue', eq: 'microondas', amb: 'Cozinha', x: 4150, y: 6900, z: 1600, va: 1500, v: 127, molhada: true, desc: 'Micro-ondas / forno (1.500 VA, 127 V)' },
@@ -260,7 +264,7 @@ const EXTRA = [
   // escada: arandela no patamar e interruptores paralelos (three-way) embaixo e em cima
   { id: 'T-IL-ESC', fl: 'T', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (térreo → 1º)' },
   { id: 'T-S3a', fl: 'T', k: 'int3', amb: 'Escada', x: 5560, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (térreo)' },
-  { id: '1-S3b', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (1º)' },
+  { id: '1-S3b', fl: '1', k: 'int3', amb: 'Circulação', x: 5560, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (1º)' },
   { id: '1-IL-ESC', fl: '1', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (1º → 2º)' },
   { id: '1-S3a', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 10350, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (1º)' },
   { id: '2-S3b', fl: '2', k: 'int3', amb: 'Varanda coberta', x: 6300, y: 8600, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (2º)' },

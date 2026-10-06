@@ -325,11 +325,14 @@ function paintFloor(fl, w, h, print, k) {
       if (S.layers.tel) label('Fibra — PEAD Ø32 enterrado, 20 cm do alimentador', 1600, 18800, COLOR.tel, true);
     }
   } else {
-    // prumadas do quadro (energia) e do QDT (rede)
-    const R = RISER[fl];
-    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(X(R.x), Y(R.y - 75), Math.max(5, 60 * S.view.s), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    if (S.layers.TXT) label('prumada do QDC', R.x - 300, R.y - 420, '#2b2b2b', true);
+    // alimentador do quadro do andar e prumada da rede
+    if (fl === '2') {
+      const Rt = E.SUB_ROUTE['2'];
+      ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2.2; ctx.setLineDash([4, 3]);
+      ctx.beginPath(); ctx.moveTo(X(Rt[1][0]), Y(Rt[1][1])); ctx.lineTo(X(Rt[2][0]), Y(Rt[2][1])); ctx.lineTo(X(Rt[3][0]), Y(Rt[3][1])); ctx.stroke(); ctx.setLineDash([]);
+      if (S.layers.TXT) label('alimentador do QD-2 (laje do 2º)', 6500, 9150, '#2b2b2b', true);
+    }
+    ctx.fillStyle = '#fff';
     if (S.layers.tel) {
       ctx.strokeStyle = COLOR.tel;
       ctx.beginPath(); ctx.arc(X(QDT_XY.x), Y(QDT_XY.y - 75), Math.max(4, 45 * S.view.s), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
@@ -360,7 +363,7 @@ function paintFloor(fl, w, h, print, k) {
   ctx.setTransform(base);
   if (S.layers.TXT) {
     PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => {
-      if (p.k === 'qdc') return label('QDC', p.x, p.y + 330, '#2b2b2b');
+      if (p.k === 'qdc') return label(p.id === 'QDC' ? 'QDC' : p.id === 'QD1' ? 'QD-1' : 'QD-2', p.x, p.y + (p.y > 8700 ? 330 : -330), '#2b2b2b');
       if (p.k === 'medidor') return label('Padrão Enel', p.x + 700, p.y - 300, '#2b2b2b', true);
       if (p.k === 'tel') return label({ entrada: 'Entrada fibra', passagem: 'CP fibra', qdt: 'QDT', rj: 'RJ45', ap: 'Wi-Fi' }[p.tel], p.x + (p.tel === 'entrada' ? 700 : 0), p.y + (p.tel === 'qdt' ? 330 : -260), COLOR.tel, true);
       if (!p.circ) return;
@@ -428,7 +431,7 @@ function hoverAt(px, py) {
   const p = best.p, c = p.circ;
   tip.hidden = false;
   if (p.k === 'tel') { tip.hidden = false; tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m · eletroduto de rede exclusivo`; tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px'; tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px'; return; }
-  tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m${p.va ? ' · ' + p.va + ' VA' : ''}` + (c ? `\ncircuito ${c.n}: ${c.desc}\n${c.v} V · ${c.secao} mm² · disjuntor ${c.disj} A · ${c.dr || ''}` : '');
+  tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m${p.va ? ' · ' + p.va + ' VA' : ''}` + (c ? `\ncircuito ${c.n} (${E.BOARDS[c.board].id}): ${c.desc}\n${c.v} V · ${c.secao} mm² · disjuntor ${c.disj} A · ${c.dr || ''}` : '');
   tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px';
   tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px';
 }
@@ -496,10 +499,9 @@ function buildNet3D(groups) {
       if (!b.root && b.z < TETO) tube(groups.tel, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.011, m);
     });
   });
-  // prumadas: QDC até a laje do 1º e, pela laje do 1º, até a parede da escada do 2º; QDT até a laje do 2º
-  tube(groups.qdc, [QDC_XY.x, QDC_XY.y, 1500], [QDC_XY.x, QDC_XY.y, L1 + TETO], 0.025, mat('#555555'));
-  tube(groups.qdc, [QDC_XY.x, QDC_XY.y, L2 - 100], [RISER['2'].x, RISER['2'].y, L2 - 100], 0.025, mat('#555555'));
-  tube(groups.qdc, [RISER['2'].x, RISER['2'].y, L2 - 100], [RISER['2'].x, RISER['2'].y, L2 + TETO], 0.025, mat('#555555'));
+  // cada quadro sobe até a laje do seu andar; alimentadores QDC → QD-1 e QDC → QD-2; QDT até a laje do 2º
+  ['T', '1', '2'].forEach((fl) => { const B = E.BOARDS[fl]; tube(groups.qdc, [B.x, B.y, LEVEL[fl] + 1500], [B.x, B.y, LEVEL[fl] + TETO], 0.02, mat('#555555')); });
+  Object.values(E.SUB_ROUTE).forEach((Rt) => Rt.slice(1).forEach((q, i) => tube(groups.qdc, Rt[i], q, 0.025, mat('#2b2b2b'))));
   tube(groups.tel, [QDT_XY.x, QDT_XY.y, 1700], [QDT_XY.x, QDT_XY.y, L2 + TETO], 0.018, mat(COLOR.tel));
   ALIM_ROUTE.slice(1).forEach((q, i) => tube(groups.qdc, ALIM_ROUTE[i], q, 0.025, mat('#2b2b2b')));
   TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
@@ -569,13 +571,22 @@ function previsao() {
   return rows;
 }
 function unifilar(w, curto) {
-  // diagrama unifilar simplificado (SVG): entrada → DG → DPS → barramento → DR → circuitos
-  const rowH = 20, top = 120, n = CIRC.length, H = top + n * rowH + 40, W = w || 900;
-  const x0 = 60, xb = curto ? 140 : 250, xdr = curto ? 214 : 330, xc = curto ? 262 : 430;
+  // diagrama unifilar simplificado (SVG): entrada → DG → DPS → barramento do QDC → DR → circuitos do térreo;
+  // do mesmo barramento saem os disjuntores dos alimentadores do QD-1 e do QD-2, cada um com seu barramento
+  const rowH = 20, top = 120, W = w || 900;
+  const x0 = 60, off = { T: 0, 1: 34, 2: 34 };
+  const xb = (curto ? 140 : 250), xdr = (curto ? 214 : 330), xc = (curto ? 262 : 430);
+  const rows = []; // { kind: 'sub'|'c', b, c }
+  ['T', '1', '2'].forEach((b) => {
+    if (b !== 'T') rows.push({ kind: 'sub', b });
+    CIRC.filter((c) => c.board === b).forEach((c) => rows.push({ kind: 'c', b, c }));
+  });
+  const yOf = (i) => top + i * rowH;
+  const H = top + rows.length * rowH + 30;
   const L = [];
-  const t = (x, y, s, o) => L.push(`<text x="${x}" y="${y}" font-size="${(o && o.size) || 10}" font-family="JetBrains Mono, monospace" ${o && o.anchor ? 'text-anchor="' + o.anchor + '"' : ''} fill="${(o && o.fill) || '#1f1d1a'}" ${o && o.bold ? 'font-weight="700"' : ''}>${esc(s)}</text>`);
-  const ln = (a, b, c, d, o) => L.push(`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${(o && o.stroke) || '#1f1d1a'}" stroke-width="${(o && o.w) || 1.2}"/>`);
-  const box = (x, y, w2, h2, s, o) => { L.push(`<rect x="${x}" y="${y}" width="${w2}" height="${h2}" fill="${(o && o.fill) || '#fff'}" stroke="#1f1d1a"/>`); t(x + w2 / 2, y + h2 / 2 + 3.5, s, { anchor: 'middle', size: 9 }); };
+  const t = (x, y, s2, o) => L.push(`<text x="${x}" y="${y}" font-size="${(o && o.size) || 10}" font-family="JetBrains Mono, monospace" ${o && o.anchor ? 'text-anchor="' + o.anchor + '"' : ''} fill="${(o && o.fill) || '#1f1d1a'}" ${o && o.bold ? 'font-weight="700"' : ''}>${esc(s2)}</text>`);
+  const ln = (a, b2, c, d, o) => L.push(`<line x1="${a}" y1="${b2}" x2="${c}" y2="${d}" stroke="${(o && o.stroke) || '#1f1d1a'}" stroke-width="${(o && o.w) || 1.2}"/>`);
+  const box = (x, y, w2, h2, s2, o) => { L.push(`<rect x="${x}" y="${y}" width="${w2}" height="${h2}" fill="${(o && o.fill) || '#fff'}" stroke="#1f1d1a"/>`); t(x + w2 / 2, y + h2 / 2 + 3.5, s2, { anchor: 'middle', size: 9 }); };
   // entrada
   box(x0 - 40, 10, 80, 28, 'Padrão Enel');
   t(x0 + 46, 28, '3F+N 127/220 V', { size: 9 });
@@ -585,39 +596,47 @@ function unifilar(w, curto) {
   ln(x0, 86, x0, 100);
   box(x0 + 60, 90, 70, 20, 'DPS 4× 275 V');
   ln(x0, 100, x0 + 60, 100);
-  // barramento
-  ln(x0, 100, x0, top + (n - 1) * rowH + 6, { w: 3 });
-  t(x0 - 8, top - 6, 'barramento', { size: 8, anchor: 'end' });
-  const drOf = (c) => DRS.find((d) => d.circ.includes(c.n));
-  const drFirst = {};
-  CIRC.forEach((c, i) => {
-    const y = top + i * rowH, d = drOf(c);
-    if (d && drFirst[d.id] == null) drFirst[d.id] = i;
+  t(x0 + 140, 104, 'QDC — térreo', { size: 10, bold: true });
+  // barramento do QDC até o último alimentador de andar
+  const lastSub = rows.map((r, i) => (r.kind === 'sub' ? i : -1)).filter((i) => i >= 0).pop();
+  const lastT = rows.map((r, i) => (r.b === 'T' ? i : -1)).filter((i) => i >= 0).pop();
+  ln(x0, 100, x0, yOf(Math.max(lastSub, lastT)) + 1, { w: 3 });
+  // barramentos dos quadros de andar
+  ['1', '2'].forEach((b) => {
+    const i0 = rows.findIndex((r) => r.kind === 'sub' && r.b === b), i1 = rows.map((r, i) => (r.b === b ? i : -1)).filter((i) => i >= 0).pop();
+    const y = yOf(i0), d = E.SUB[b];
+    ln(x0, y, x0 + 12, y);
+    box(x0 + 12, y - 9, 50, 18, '3P ' + d.disj + 'A');
+    ln(x0 + 62, y, x0 + 76, y);
+    ln(x0 + 76, y, x0 + 76, yOf(i1) + 1, { w: 3 });
+    t(x0 + 84, y + 3.5, `${d.board.id} · #${d.secao} mm² · ${fmtn(d.L / 1000, 1)} m · chave 3P · ${fmtn(d.D, 1)} kW`, { size: 9.5, bold: true });
   });
+  const busX = (b) => (b === 'T' ? x0 : x0 + 76);
   DRS.forEach((d) => {
-    const ys = d.circ.map((n) => top + (CIRC.findIndex((c) => c.n === n)) * rowH);
+    const ys = d.circ.map((n) => yOf(rows.findIndex((r) => r.c && r.c.n === n)));
     const y0 = Math.min(...ys), y1 = Math.max(...ys);
-    ln(x0, y0, xb, y0);
-    box(xb, y0 - 9, 74, 18, d.id + ' ' + d.in + 'A');
-    ln(xb + 74, y0, xdr + 20, y0);
-    ln(xdr + 20, y0, xdr + 20, y1);
+    ln(busX(d.board), y0, xb + off[d.board], y0);
+    box(xb + off[d.board], y0 - 9, 74, 18, d.id + ' ' + d.in + 'A');
+    ln(xb + off[d.board] + 74, y0, xdr + 20 + off[d.board], y0);
+    ln(xdr + 20 + off[d.board], y0, xdr + 20 + off[d.board], y1);
   });
-  CIRC.forEach((c, i) => {
-    const y = top + i * rowH;
-    ln(xdr + 20, y, xc, y);
-    box(xc, y - 8, 46, 16, (c.v === 220 ? '2P ' : '1P ') + c.disj + 'A');
-    ln(xc + 46, y, xc + 70, y);
-    t(xc + 76, y + 3.5, curto ? `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA` : `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA — ${c.desc}`, { size: 9.5, fill: COLOR[c.tipo] === '#d39b00' ? '#8a6400' : COLOR[c.tipo] });
+  rows.forEach((r, i) => {
+    if (r.kind !== 'c') return;
+    const c = r.c, y = yOf(i), o = off[r.b];
+    ln(xdr + 20 + o, y, xc + o, y);
+    box(xc + o, y - 8, 46, 16, (c.v === 220 ? '2P ' : '1P ') + c.disj + 'A');
+    ln(xc + o + 46, y, xc + o + 70, y);
+    t(xc + o + 76, y + 3.5, curto ? `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA` : `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA — ${c.desc}`, { size: 9.5, fill: COLOR[c.tipo] === '#d39b00' ? '#8a6400' : COLOR[c.tipo] });
   });
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;background:#fff" xmlns="http://www.w3.org/2000/svg">${L.join('')}</svg>`;
 }
 function cargasRows() {
-  return CIRC.map((c) => `<tr><td class="c">${c.n}</td><td>${esc(c.desc)}</td><td class="n">${c.pts.filter((id) => !/int/.test(PBY[id].k)).length}</td><td class="n">${c.v}</td><td class="c">${c.fases}</td><td class="n">${c.va}</td><td class="n">${fmtn(c.ib, 1)}</td><td class="n">${fmtn(c.fca, 2)}</td><td class="n">${String(c.secao).replace('.', ',')}</td><td class="n">${fmtn(c.iz, 1)}</td><td class="n">${c.disj}</td><td class="c">${c.dr || '—'}</td><td class="n">${fmtn(c.Lmax / 1000, 1)}</td><td class="n">${fmtn(c.dv, 2)}</td><td class="n">${fmtn(c.dvTot, 2)}</td><td class="${c.ok ? 'ok' : 'bad'}">${c.ok ? 'OK' : 'rever'}</td></tr>`);
+  return CIRC.map((c) => `<tr><td class="c">${c.n}</td><td class="c">${E.BOARDS[c.board].id}</td><td>${esc(c.desc)}</td><td class="n">${c.pts.filter((id) => !/int/.test(PBY[id].k)).length}</td><td class="n">${c.v}</td><td class="c">${c.fases}</td><td class="n">${c.va}</td><td class="n">${fmtn(c.ib, 1)}</td><td class="n">${fmtn(c.fca, 2)}</td><td class="n">${String(c.secao).replace('.', ',')}</td><td class="n">${fmtn(c.iz, 1)}</td><td class="n">${c.disj}</td><td class="c">${c.dr || '—'}</td><td class="n">${fmtn(c.Lmax / 1000, 1)}</td><td class="n">${fmtn(c.dv, 2)}</td><td class="n">${fmtn(c.dvTot, 2)}</td><td class="${c.ok ? 'ok' : 'bad'}">${c.ok ? 'OK' : 'rever'}</td></tr>`);
 }
 function memorial() {
   const fa = FASES, maxF = Math.max(fa.A, fa.B, fa.C), minF = Math.min(fa.A, fa.B, fa.C);
   const des = ((maxF - minF) / maxF) * 100;
-  const drRows = DRS.map((d) => `<tr><td class="c">${d.id}</td><td class="n">${d.polos}P</td><td class="n">${d.in} A</td><td class="n">30 mA</td><td>${esc(d.desc)}</td><td class="c">${d.circ.map((n) => 'C' + n).join(', ')}</td></tr>`);
+  const drRows = DRS.map((d) => `<tr><td class="c">${d.id}</td><td class="c">${E.BOARDS[d.board].id}</td><td class="n">${d.polos}P</td><td class="n">${d.in} A</td><td class="n">30 mA</td><td>${esc(d.desc)}</td><td class="c">${d.circ.map((n) => 'C' + n).join(', ')}</td></tr>`);
   return `
   <p class="callout"><b>Anteprojeto.</b> Feito sobre a planta as built, para orientar a execução e o orçamento. Antes de executar, precisa ser revisado e assinado (ART/RRT) por engenheiro eletricista ou técnico habilitado, e o padrão de entrada precisa ser aprovado pela Enel RJ.</p>
   <h2>1. Premissas e normas</h2>
@@ -625,7 +644,14 @@ function memorial() {
     <li><b>Normas:</b> ABNT NBR 5410:2004 (instalações elétricas de baixa tensão), NBR 5444 (símbolos), NBR 14136 (plugues e tomadas), NBR 5419 (proteção contra descargas atmosféricas, só DPS aqui) e regulamento de fornecimento da Enel RJ.</li>
     <li><b>Fornecimento:</b> trifásico 127/220 V (3 fases + neutro), Enel RJ, Campos dos Goytacazes. <b>Padrão de entrada na quina do muro esquerdo com o muro da frente</b> (olhando a casa com a rua nas costas), com medidor e haste de aterramento.</li>
     <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
-    <li><b>Quadro de distribuição (QDC):</b> <b>na parede do quarto do térreo, do lado direito da porta</b> (olhando da sala), junto ao pé da escada, centro a 1,50 m do piso, com acesso livre na frente (NBR 5410 6.5.4.7). Dali saem todos os circuitos. Os do 1º sobem na mesma parede. Os do 2º sobem até a laje do 1º, andam 47,5 cm nela e continuam pela parede da escada do 2º, porque na posição do quadro o 2º não tem parede. São 3 eletrodutos Ø32.</li>
+    <li><b>Quadros de distribuição — um trifásico por andar:</b>
+      <ul>
+        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem o disjuntor geral, o DPS, os circuitos do térreo e os disjuntores dos alimentadores dos quadros de andar.</li>
+        <li><b>QD-1 (1º pavimento):</b> logo acima do QDC, na mesma parede (lado da circulação). O alimentador sobe direto pela parede.</li>
+        <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até a laje do 2º e anda nela até a parede da escada, porque na prumada do QDC o 2º não tem parede.</li>
+        <li>Cada circuito sai do quadro do seu andar: caminhos mais curtos, nenhum feixe de circuitos subindo pela parede e manutenção por andar. Cada quadro tem chave geral e acesso livre na frente (NBR 5410 6.5.4.7).</li>
+      </ul></li>
+
     <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
     <li><b>Ramal principal (alimentador):</b> cabo de ${E.ALIM_SECAO} mm² definido pela obra; o cálculo confere a capacidade de condução e a queda de tensão total.</li>
@@ -651,7 +677,7 @@ function memorial() {
   ${table(['Cômodo', 'Área (m²)', 'Perímetro (m)', 'Pontos de luz', 'Iluminação (VA)', 'TUG', 'TUG (VA)', 'TUE'], previsao())}
   <h2>3. Quadro de cargas e dimensionamento dos circuitos</h2>
   <p>Disjuntor: I<sub>b</sub> ≤ I<sub>n</sub> ≤ I<sub>z</sub> corrigida (NBR 5410 5.3.4). Seção: a maior entre a mínima, a de capacidade de condução (Tabela 36, B1, 2 condutores carregados) e a de queda de tensão até o ponto mais distante.</p>
-  ${table(['Circ.', 'Descrição', 'Pontos', 'V', 'Fases', 'Pot. (VA)', 'Ib (A)', 'FCA', 'Seção (mm²)', 'Iz corr. (A)', 'Disj. (A)', 'DR', 'Dist. máx. (m)', 'ΔV (%)', 'ΔV total (%)', ''], cargasRows())}
+  ${table(['Circ.', 'Quadro', 'Descrição', 'Pontos', 'V', 'Fases', 'Pot. (VA)', 'Ib (A)', 'FCA', 'Seção (mm²)', 'Iz corr. (A)', 'Disj. (A)', 'DR', 'Dist. máx. (m)', 'ΔV (%)', 'ΔV total (%)', ''], cargasRows())}
   <h3>Equilíbrio das fases</h3>
   <p>Fase A: <b>${fmtn(fa.A / 1000, 2)} kVA</b> · Fase B: <b>${fmtn(fa.B / 1000, 2)} kVA</b> · Fase C: <b>${fmtn(fa.C / 1000, 2)} kVA</b>. Desequilíbrio de ${fmtn(des, 1)} % entre a fase mais carregada e a menos carregada. Circuitos de 127 V ficam numa fase; os de 220 V, entre duas.</p>
   <h2>4. Demanda, padrão de entrada e alimentador</h2>
@@ -669,14 +695,24 @@ function memorial() {
         <li>capacidade do cabo de ${ALIM.secao} mm² (B1, 3 condutores carregados): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do geral — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
         <li>queda de tensão no alimentador de ${fmtn(ALIM.dv, 2)} %; somada à do circuito mais longo, ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %) — <span class="${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'ok' : 'bad'}">${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'OK' : 'rever'}</span>.</li>
       </ul></li>
+    <li><b>Alimentadores dos quadros de andar</b> (saem do QDC, cada um com disjuntor 3P um degrau acima do maior disjuntor do andar, para seletividade):
+      <ul>${['1', '2'].map((b) => { const d = E.SUB[b]; return `<li><b>${d.board.id}:</b> demanda ${fmtn(d.D, 1)} kW (${fmtn(d.I, 1)} A) · 3 fases + N + PE de <b>${d.secao} mm²</b> · ${fmtn(d.L / 1000, 1)} m · disjuntor 3P <b>${d.disj} A</b> no QDC · capacidade ${fmtn(d.iz, 0)} A (2 alimentadores juntos, FCA 0,8) · queda ${fmtn(d.dv, 2)} % — <span class="${d.ok ? 'ok' : 'bad'}">${d.ok ? 'OK' : 'rever'}</span></li>`; }).join('')}</ul></li>
+    <li><b>Quedas de tensão somadas</b> (alimentador + alimentador do andar + circuito): a maior é ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %).</li>
+    <li><b>Quadros por andar × um quadro só:</b>
+      <ul>
+        <li>cabos dos circuitos: <b>${fmtn(E.COMPARA.cabosQuadros, 0)} m</b> com quadros por andar, já com ${fmtn(E.COMPARA.subCabo, 0)} m dos alimentadores dos andares, contra ${fmtn(E.COMPARA.cabosUnico, 0)} m com um quadro só (−${fmtn(E.COMPARA.cabosUnico - E.COMPARA.cabosQuadros, 0)} m);</li>
+        <li>eletrodutos: ${fmtn(E.COMPARA.dutoQuadros, 0)} m contra ${fmtn(E.COMPARA.dutoUnico, 0)} m;</li>
+        <li>a prumada deixa de levar todos os circuitos do 1º e do 2º juntos, e o agrupamento diminui;</li>
+        <li>em compensação, entram 2 quadros, 2 chaves gerais, 2 disjuntores 3P e mais DRs (um grupo por andar).</li>
+      </ul></li>
     <li><b>Categoria do padrão de entrada:</b> definida pela Enel RJ a partir da carga instalada e da demanda (levar este memorial). O disjuntor do padrão e o ramal de ligação seguem a tabela da concessionária; o geral do QDC deve ser igual ou menor que o do padrão.</li>
   </ul>
   <h2>5. Proteções</h2>
   <h3>Dispositivos diferenciais residuais (DR 30 mA)</h3>
-  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR, divididos em grupos, para um disparo não apagar a casa toda. Cada chuveiro tem DR próprio.</p>
-  ${table(['DR', 'Polos', 'In', 'IΔn', 'Grupo', 'Circuitos'], drRows)}
+  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR. Em cada quadro os circuitos ficam divididos em grupos (iluminação, tomadas e demais aparelhos), para um disparo não apagar o andar todo, e cada chuveiro tem DR próprio.</p>
+  ${table(['DR', 'Quadro', 'Polos', 'In', 'IΔn', 'Grupo', 'Circuitos'], drRows)}
   <ul>
-    <li><b>DPS</b> classe II, 275 V / 20 kA, nas 3 fases e no neutro, ligados ao barramento de terra do QDC (NBR 5410 6.3.5).</li>
+    <li><b>DPS</b> classe II, 275 V / 20 kA, nas 3 fases e no neutro, ligados ao barramento de terra do QDC (NBR 5410 6.3.5). Os quadros de andar ficam a menos de 10 m do QDC, então não precisam de DPS próprio.</li>
     <li><b>Aterramento:</b> 3 hastes cobreadas de 2,40 m interligadas no padrão; resistência medida ≤ 10 Ω. Interligar a esse aterramento as massas metálicas, como a estrutura do portão e as tubulações metálicas, se houver (equipotencialização).</li>
     <li><b>Chuveiros:</b> usar modelos com resistência blindada; com resistência nua, o DR pode disparar.</li>
   </ul>
@@ -857,12 +893,12 @@ function pranchas() {
       <footer class="sh-foot">${SYMB}<br>Medidas em metros, do <b>centro da caixa</b> até a <b>face da alvenaria</b> mais próxima (sem reboco), na direção indicada (esquerda/direita = olhando a planta com o fundo para cima; fundo = lado do quintal; frente = lado da rua). Alturas do <b>piso acabado</b> ao centro da caixa. Circuitos e disjuntores: ver o quadro de cargas (prancha ${total}).</footer>
     </section>`;
   });
-  const cRows = CIRC.map((c) => `<tr><td class="c">C${c.n}</td><td>${esc(c.desc)}</td><td class="c">${c.v} V · ${c.fases}</td><td class="n">${c.va}</td><td class="c">${String(c.secao).replace('.', ',')} mm²</td><td class="c">${c.v === 220 ? '2P' : '1P'} ${c.disj} A</td><td class="c">${c.dr || ''}</td></tr>`);
+  const cRows = CIRC.map((c) => `<tr><td class="c">C${c.n}</td><td class="c">${E.BOARDS[c.board].id}</td><td>${esc(c.desc)}</td><td class="c">${c.v} V · ${c.fases}</td><td class="n">${c.va}</td><td class="c">${String(c.secao).replace('.', ',')} mm²</td><td class="c">${c.v === 220 ? '2P' : '1P'} ${c.disj} A</td><td class="c">${c.dr || ''}</td></tr>`);
   pages.push(`<section class="sheet">
-    <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadro de distribuição (QDC): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
+    <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadros de distribuição (QDC, QD-1, QD-2): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
     <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
-    <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
-    <p class="sh-note">Geral: 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC de ${QT.qdc} módulos sob a escada, centro a 1,50 m. Demanda ${fmtn(ALIM.D, 1)} kW (${fmtn(ALIM.I, 0)} A). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
+    <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Quadro</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
+    <p class="sh-note">Geral: 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (${E.SUB[1].secao} mm², 3P ${E.SUB[1].disj} A) · QD-2 ${QT.MOD[2].tam} módulos (${E.SUB[2].secao} mm², 3P ${E.SUB[2].disj} A) · centros a 1,50 m. Demanda ${fmtn(ALIM.D, 1)} kW (${fmtn(ALIM.I, 0)} A). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
     <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
   </section>`);
   const aviso = nChanged
@@ -881,12 +917,12 @@ function side() {
     <h2>${fl === '3d' ? '3D — eletrodutos e pontos' : PRANCHAS.find((p) => p.id === fl).label}</h2>
     <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo. Eletrodutos na laje e descidas nas paredes; o alimentador chega enterrado do padrão ao QDC.' : 'Arraste para mover, roda ou pinça para zoom. Passe o mouse num ponto para ver o circuito. Ao lado de cada ponto: nº do circuito · VA.'}</p>
     <div class="kpis">
-      <div class="kpi"><b>${CIRC.length}</b><span>circuitos no QDC</span></div>
+      <div class="kpi"><b>${CIRC.length}</b><span>circuitos em 3 quadros (um por andar)</span></div>
       <div class="kpi"><b>${fmtn(ALIM.D, 1)} kW</b><span>demanda (${fmtn(ALIM.I, 0)} A, trifásico)</span></div>
       <div class="kpi"><b>${n('il')}</b><span>pontos de luz${fl === '3d' ? '' : ' neste pavimento'}</span></div>
       <div class="kpi"><b>${n('tug') + n('tue')}</b><span>tomadas e pontos de uso específico</span></div>
       <div class="kpi"><b class="${CIRC.every((c) => c.ok) ? 'ok' : 'bad'}">${CIRC.every((c) => c.ok) ? 'OK' : 'rever'}</b><span>disjuntor ≤ cabo e ΔV ≤ ${E.DV_MAX} %</span></div>
-      <div class="kpi"><b>${QT.qdc}</b><span>módulos no QDC (sob a escada)</span></div>
+      <div class="kpi"><b>${QT.MOD.T.tam}/${QT.MOD[1].tam}/${QT.MOD[2].tam}</b><span>módulos: QDC / QD-1 / QD-2</span></div>
     </div>
     <h3>Legenda</h3>
     <div class="leg">
@@ -897,7 +933,7 @@ function side() {
       <span>⊗ luz no teto · ● arandela · □ interruptor · △ tomada · ▲ 600 VA / TUE · ▬ QDC · ◆ RJ45 · ◉ Wi-Fi</span>
     </div>
     <h3>Circuitos ${fl === '3d' ? '' : 'que passam aqui'}</h3>
-    <ul class="list">${circs.map((c) => `<li><b style="color:${COLOR[c.tipo]}">C${c.n}</b> ${esc(c.desc)} — ${c.secao} mm², ${c.disj} A</li>`).join('')}</ul>
+    <ul class="list">${circs.map((c) => `<li><b style="color:${COLOR[c.tipo]}">C${c.n}</b> ${esc(c.desc)} — ${E.BOARDS[c.board].id}, ${c.secao} mm², ${c.disj} A</li>`).join('')}</ul>
     <p class="sub" style="margin-top:14px">Anteprojeto: revisar com responsável técnico (ART/RRT) antes de executar. Detalhes em <b>Quadro de cargas e memorial</b>.</p>`;
 }
 

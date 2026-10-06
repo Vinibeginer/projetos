@@ -30,12 +30,16 @@ check('iluminação separada das tomadas', E.CIRC.every((c) => c.pts.every((id) 
 check('TUE em circuito exclusivo', E.CIRC.filter((c) => c.tipo === 'tue').every((c) => c.pts.length === 1));
 check('chuveiros 7.500 W em 220 V com 6 mm² ou mais e DR próprio', E.CIRC.filter((c) => c.eq === 'chuveiro').every((c) => c.v === 220 && c.secao >= 6 && E.DRS.find((d) => d.id === c.dr).circ.length === 1));
 check('todos os circuitos com DR 30 mA', E.CIRC.every((c) => !!c.dr));
+check('um quadro trifásico por andar; cada circuito sai do quadro do seu andar', ['T', '1', '2'].every((b) => E.BOARDS[b] && P.some((p) => p.k === 'qdc' && p.fl === b)) && E.CIRC.every((c) => c.board === c.fl));
+check('alimentadores dos quadros de andar: Ib ≤ In ≤ Iz e seletivos (acima do maior disjuntor do andar)', ['1', '2'].every((b) => { const d = E.SUB[b]; return d.I <= d.disj && d.ok && E.CIRC.filter((c) => c.board === b).every((c) => c.disj < d.disj); }));
+check('cada quadro equilibrado (≤ 10 %)', ['T', '1', '2'].every((b) => { const f = E.FASES_Q[b], m = Math.max(f.A, f.B, f.C); return (m - Math.min(f.A, f.B, f.C)) / m <= 0.1; }));
+check('quadros de andar gastam menos cabo nos circuitos que um quadro só', E.COMPARA.cabosQuadros < E.COMPARA.cabosUnico);
 const f = E.FASES, mx = Math.max(f.A, f.B, f.C), mn = Math.min(f.A, f.B, f.C);
 check('fases equilibradas (desequilíbrio ≤ 10 %)', (mx - mn) / mx <= 0.1, JSON.stringify(f));
 check('banheiro: tomada a 0,60 m ou mais do chuveiro', P.filter((p) => p.k === 'tug' && /Lav|Banh|Suíte/.test(p.amb)).every((t) => P.filter((c) => c.eq === 'chuveiro' && c.fl === t.fl).every((c) => Math.hypot(c.x - t.x, c.y - t.y) >= 600)));
 check('ramal principal de 16 mm² com disjuntor geral ≤ capacidade', E.ALIM.secao === 16 && E.ALIM.okIz, E.ALIM.secao + ' mm², ' + E.ALIM.disj + ' A, Iz ' + E.ALIM.iz + ' A');
 check('queda de tensão total (alimentador + circuito) ≤ 5 %', E.CIRC.every((c) => c.dvTot <= 5), 'alim ' + E.ALIM.dv.toFixed(2) + ' %, máx ' + Math.max(...E.CIRC.map((c) => c.dvTot)).toFixed(2) + ' %');
-check('lista de materiais com cabos, quadro e dispositivos', ['Cabos', 'Quadro', 'Dispositivos', 'Eletrodutos'].every((g) => E.QT.items.some((i) => i.grupo === g)));
+check('lista de materiais com cabos, quadro e dispositivos', ['Cabos', 'Quadros', 'Dispositivos', 'Eletrodutos'].every((g) => E.QT.items.some((i) => i.grupo === g)));
 ['T', '1', '2'].forEach((fl) => check('pavimento ' + fl + ': eletrodutos desenhados', E.conduits(fl).length > 5));
 console.log(bad ? 'test-eletrica: ' + bad + ' falha(s)' : 'test-eletrica: todos os testes ok');
 process.exit(bad ? 1 : 0);
