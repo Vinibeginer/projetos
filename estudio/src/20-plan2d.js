@@ -1139,25 +1139,30 @@
     }
     const world = (name, fn) => layer(name, rc, (r) => (toWorldSpace(r), fn(r)));
     const screen = (name, fn) => layer(name, rc, (r) => (toScreenSpace(r), fn(r)));
-    if (rc.isGround) world('site', drawSiteGround);
-    if (rc.show.grid && !rc.exporting) world('grid', drawGrid);
-    world('ghost', drawGhostBelow);
-    world('rooms', drawRooms);
-    world('stairs', drawStairs);
-    world('separators', drawSeparators);
-    if (rc.show.furniture) world('furniture', drawFurniture);
-    world('walls', drawWalls);
-    world('openings', drawOpenings);
-    const structure = rc.show.structure !== false && DD.structure && DD.structure.hasData();
-    if (structure) world('structure', DD.structure.draw2dWorld); // pilares, vigas do teto, sapatas (15-structure.js)
     const hidro = rc.show.hidro === true && !!DD.hidro;
+    // "Só hidráulica": só os tubos, com as paredes e vãos apagados como referência
+    const hidroOnly = hidro && !!(rc.ui && rc.ui.hidroOnly);
+    const faint = (name, fn) => world(name, (r) => ((r.ctx.globalAlpha = 0.22), fn(r)));
+    if (rc.isGround && !hidroOnly) world('site', drawSiteGround);
+    if (rc.show.grid && !rc.exporting) world('grid', drawGrid);
+    if (!hidroOnly) {
+      world('ghost', drawGhostBelow);
+      world('rooms', drawRooms);
+      world('stairs', drawStairs);
+      world('separators', drawSeparators);
+      if (rc.show.furniture) world('furniture', drawFurniture);
+    }
+    (hidroOnly ? faint : world)('walls', drawWalls);
+    (hidroOnly ? faint : world)('openings', drawOpenings);
+    const structure = !hidroOnly && rc.show.structure !== false && DD.structure && DD.structure.hasData();
+    if (structure) world('structure', DD.structure.draw2dWorld); // pilares, vigas do teto, sapatas (15-structure.js)
     if (hidro) world('hidro', DD.hidro.draw2dWorld); // água, esgoto e ventilação (17-hidro.js)
-    if (rc.isGround) screen('site labels', drawSiteLabels);
-    screen('stair labels', drawStairLabels);
-    if (rc.show.dims) screen('dimensions', drawDimensions);
+    if (rc.isGround && !hidroOnly) screen('site labels', drawSiteLabels);
+    if (!hidroOnly) screen('stair labels', drawStairLabels);
+    if (rc.show.dims && !hidroOnly) screen('dimensions', drawDimensions);
     screen('measures', drawMeasures);
-    screen('room labels', drawRoomLabels);
-    if (rc.show.labels) screen('tags', drawOpeningTags);
+    if (!hidroOnly) screen('room labels', drawRoomLabels);
+    if (rc.show.labels && !hidroOnly) screen('tags', drawOpeningTags);
     if (structure) screen('structure tags', DD.structure.draw2dScreen);
     if (hidro) screen('hidro tags', DD.hidro.draw2dScreen);
     if (rc.interactive) layer('overlays', rc, drawOverlays);
