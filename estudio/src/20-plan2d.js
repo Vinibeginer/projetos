@@ -1140,8 +1140,9 @@
     const world = (name, fn) => layer(name, rc, (r) => (toWorldSpace(r), fn(r)));
     const screen = (name, fn) => layer(name, rc, (r) => (toScreenSpace(r), fn(r)));
     const hidro = rc.show.hidro === true && !!DD.hidro;
-    // "Só hidráulica": só os tubos, com as paredes e vãos apagados como referência
-    const hidroOnly = hidro && !!(rc.ui && rc.ui.hidroOnly);
+    const eletrica = rc.show.eletrica === true && !!DD.eletrica;
+    // "Só hidráulica" / "Só elétrica": só as instalações, com as paredes e vãos apagados como referência
+    const hidroOnly = (hidro && !!(rc.ui && rc.ui.hidroOnly)) || (eletrica && !!(rc.ui && rc.ui.eletricaOnly));
     const faint = (name, fn) => world(name, (r) => ((r.ctx.globalAlpha = 0.22), fn(r)));
     if (rc.isGround && !hidroOnly) world('site', drawSiteGround);
     if (rc.show.grid && !rc.exporting) world('grid', drawGrid);
@@ -1157,6 +1158,7 @@
     const structure = !hidroOnly && rc.show.structure !== false && DD.structure && DD.structure.hasData();
     if (structure) world('structure', DD.structure.draw2dWorld); // pilares, vigas do teto, sapatas (15-structure.js)
     if (hidro) world('hidro', DD.hidro.draw2dWorld); // água, esgoto e ventilação (17-hidro.js)
+    if (eletrica) world('eletrica', DD.eletrica.draw2dWorld); // pontos e eletrodutos (18-eletrica.js)
     if (rc.isGround && !hidroOnly) screen('site labels', drawSiteLabels);
     if (!hidroOnly) screen('stair labels', drawStairLabels);
     if (rc.show.dims && !hidroOnly) screen('dimensions', drawDimensions);
@@ -1165,6 +1167,7 @@
     if (rc.show.labels && !hidroOnly) screen('tags', drawOpeningTags);
     if (structure) screen('structure tags', DD.structure.draw2dScreen);
     if (hidro) screen('hidro tags', DD.hidro.draw2dScreen);
+    if (eletrica) screen('eletrica tags', DD.eletrica.draw2dScreen);
     if (rc.interactive) layer('overlays', rc, drawOverlays);
     if (!rc.exporting) screen('corner', drawCornerWidgets); // the export has them in its title block
     ctx.restore();

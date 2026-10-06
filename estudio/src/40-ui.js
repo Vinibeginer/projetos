@@ -212,6 +212,7 @@
     walk: '<circle cx="11" cy="3.8" r="1.5"/><path d="M8 18l2-5.5 2.5 2.3V18M6.8 10.2l2.7-3.4 3 .9 1.4 2.8 2 .8M9.5 6.8l-1 4.7"/>',
     recenter: '<circle cx="10" cy="10" r="5.5"/><circle cx="10" cy="10" r="1.6"/><path d="M10 1.8v3M10 15.2v3M1.8 10h3M15.2 10h3"/>',
     layers: '<path d="M10 3 17.5 7 10 11 2.5 7z"/><path d="M2.5 10.5 10 14.5l7.5-4M2.5 14l7.5 4 7.5-4"/>',
+    bolt: '<path d="M11.2 2.5 4.8 11h4.4l-1 6.5L15.2 9h-4.5z"/>',
     drop: '<path d="M10 2.8C7.2 6.6 5.2 9.4 5.2 12.2a4.8 4.8 0 0 0 9.6 0c0-2.8-2-5.6-4.8-9.4z"/>',
     flip: '<path d="M10 2.5v15"/><path d="M7.5 5.5 3 10l4.5 4.5zM12.5 5.5 17 10l-4.5 4.5"/>',
     hinge: '<path d="M4 16.5V3.5"/><path d="M4 3.5a13 13 0 0 1 12.5 13"/><path d="M4 16.5h12.5"/>',
@@ -1021,8 +1022,25 @@
   /** Isola o projeto hidrossanitário: liga a camada e esconde o resto (de novo: volta à casa com a hidráulica). */
   function toggleHidroOnly() {
     const u = ui(), on = !(u.hidroOnly && u.show.hidro);
-    setUI({ hidroOnly: on, structOnly: on ? false : u.structOnly, show: Object.assign({}, u.show, { hidro: on ? true : u.show.hidro }) });
+    setUI({ hidroOnly: on, eletricaOnly: on ? false : u.eletricaOnly, structOnly: on ? false : u.structOnly, show: Object.assign({}, u.show, { hidro: on ? true : u.show.hidro, eletrica: on ? false : u.show.eletrica }) });
     if (on) hidroHint();
+  }
+  /** Camada do projeto elétrico (18-eletrica.js) na planta e no 3D. */
+  function toggleEletrica() {
+    if (ui().show.eletrica && ui().eletricaOnly) setUI({ eletricaOnly: false });
+    toggleShow('eletrica');
+    if (ui().show.eletrica) eletricaHint();
+  }
+  /** Isola o projeto elétrico (de novo: volta à casa com a elétrica). */
+  function toggleEletricaOnly() {
+    const u = ui(), on = !(u.eletricaOnly && u.show.eletrica);
+    setUI({ eletricaOnly: on, hidroOnly: on ? false : u.hidroOnly, structOnly: on ? false : u.structOnly, show: Object.assign({}, u.show, { eletrica: on ? true : u.show.eletrica, hidro: on ? false : u.show.hidro }) });
+    if (on) eletricaHint();
+  }
+  function eletricaHint() {
+    if (S.eletricaHinted) return;
+    S.eletricaHinted = true;
+    DD.toast('Elétrica: iluminação (amarelo), tomadas (laranja) e uso específico (vinho); o número ao lado de cada ponto é o circuito. Quadro de cargas, materiais e pranchas em PDF em “Mais opções › Projeto elétrico”.', 'info');
   }
   function hidroHint() {
     if (S.hidroHinted) return;
@@ -2198,6 +2216,16 @@
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só estrutura', 'data-tip': 'Mostrar só pilares, vigas e sapatas (projeto estrutural)', onclick: () => toggleStructure('only') },
       [icon('layers'), h('span', { class: 'btn-label', text: 'Só estrutura' })]
     );
+    S.el.eletricaChip = h(
+      'button',
+      { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Elétrica', 'data-tip': 'Mostrar pontos e eletrodutos do projeto elétrico', onclick: toggleEletrica },
+      [icon('bolt'), h('span', { class: 'btn-label', text: 'Elétrica' })]
+    );
+    S.el.eletricaOnlyChip = h(
+      'button',
+      { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só elétrica', 'data-tip': 'Isolar o projeto elétrico: esconde paredes, móveis e terreno', onclick: toggleEletricaOnly },
+      [icon('bolt'), h('span', { class: 'btn-label', text: 'Só elétrica' })]
+    );
     S.el.hidroOnlyChip = h(
       'button',
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só hidráulica', 'data-tip': 'Isolar o projeto hidrossanitário: esconde paredes, móveis e terreno', onclick: toggleHidroOnly },
@@ -2208,7 +2236,7 @@
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Hidráulica', 'data-tip': 'Mostrar os tubos de água, esgoto e ventilação por dentro das paredes', onclick: toggleHidro },
       [icon('drop'), h('span', { class: 'btn-label', text: 'Hidráulica' })]
     );
-    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, S.el.hidroChip, S.el.hidroOnlyChip, recenter]));
+    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, S.el.hidroChip, S.el.hidroOnlyChip, S.el.eletricaChip, S.el.eletricaOnlyChip, recenter]));
     S.el.overlayHint = h('div', { class: 'o3d-hint', 'aria-live': 'polite' });
     ov.appendChild(S.el.overlayHint);
   }
@@ -2227,6 +2255,11 @@
       setPressed(S.el.hidroChip, !!(u.show && u.show.hidro));
       S.el.hidroOnlyChip.hidden = !DD.hidro;
       setPressed(S.el.hidroOnlyChip, !!(u.hidroOnly && u.show && u.show.hidro));
+    }
+    if (S.el.eletricaChip) {
+      S.el.eletricaChip.hidden = S.el.eletricaOnlyChip.hidden = !DD.eletrica;
+      setPressed(S.el.eletricaChip, !!(u.show && u.show.eletrica));
+      setPressed(S.el.eletricaOnlyChip, !!(u.eletricaOnly && u.show && u.show.eletrica));
     }
     if (S.el.structChip) {
       S.el.structChip.hidden = !(DD.structure && DD.structure.hasData());
@@ -2424,7 +2457,7 @@
   function toggleStructure(key) {
     const u = ui();
     if (key === 'show') setUI({ show: Object.assign({}, u.show, { structure: u.show.structure === false }) });
-    else setUI({ structOnly: !u.structOnly, hidroOnly: u.structOnly ? u.hidroOnly : false, show: Object.assign({}, u.show, { structure: true }) });
+    else setUI({ structOnly: !u.structOnly, hidroOnly: u.structOnly ? u.hidroOnly : false, eletricaOnly: u.structOnly ? u.eletricaOnly : false, show: Object.assign({}, u.show, { structure: true }) });
   }
   function structureBlock(d, u, floor) {
     const st = DD.structure;
@@ -2908,6 +2941,12 @@
       hidroOnlyBtn.hidden = !DD.hidro;
       hidroOnlyBtn.addEventListener('click', toggleHidroOnly);
     }
+    [['tg-eletrica', toggleEletrica], ['tg-eletrica-only', toggleEletricaOnly]].forEach(([id, fn]) => {
+      const b = document.getElementById(id);
+      if (!b) return;
+      b.hidden = !DD.eletrica;
+      b.addEventListener('click', fn);
+    });
     DD.events.on('plan2d:cursor', onCursor);
     DD.events.on('plan2d:viewport', syncZoom);
     DD.events.on('saved', (p) => {
@@ -2958,6 +2997,9 @@
     if (hidroBtn) setPressed(hidroBtn, !!show.hidro);
     const hidroOnlyBtn = document.getElementById('tg-hidro-only');
     if (hidroOnlyBtn) setPressed(hidroOnlyBtn, !!(show.hidro && u.hidroOnly));
+    const elBtn = document.getElementById('tg-eletrica'), elOnlyBtn = document.getElementById('tg-eletrica-only');
+    if (elBtn) setPressed(elBtn, !!show.eletrica);
+    if (elOnlyBtn) setPressed(elOnlyBtn, !!(show.eletrica && u.eletricaOnly));
   }
   /** Estado da nuvem da obra (16-cloud.js) no mesmo indicador da barra de status. */
   const CLOUD_TEXT = {
@@ -3233,7 +3275,7 @@
       syncOverlay(u);
     }
     if (u.tool !== prev.tool || u.paintMaterial !== prev.paintMaterial) syncPaintStrip(u);
-    if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors || u.structOnly !== prev.structOnly || u.hidroOnly !== prev.hidroOnly || u.show !== prev.show) syncOverlay(u);
+    if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors || u.structOnly !== prev.structOnly || u.hidroOnly !== prev.hidroOnly || u.eletricaOnly !== prev.eletricaOnly || u.show !== prev.show) syncOverlay(u);
     if (u.selection !== prev.selection || u.floor !== prev.floor || u.show !== prev.show || u.structOnly !== prev.structOnly) refreshInspector();
   }
 
