@@ -233,7 +233,7 @@ roomList.forEach((r) => {
 H.FX.filter((f) => f.t === 'ch').forEach((f) => {
   const r = roomList.find((r) => r.fl === f.fl && inside(r, { x: f.x, y: f.y }));
   const n = H.AFN[f.af] || [f.x, f.y]; // na parede do chuveiro, junto ao ponto de água
-  add({ id: nextId(f.fl, 'CH'), fl: f.fl, k: 'tue', eq: 'chuveiro', amb: r ? r.name : 'Banheiro', x: n[0], y: n[1], z: 2200, va: 7500, v: 220, desc: 'Chuveiro elétrico 7.500 W (220 V) — ponto ' + f.id });
+  add({ id: nextId(f.fl, 'CH'), fl: f.fl, k: 'tue', eq: 'chuveiro', amb: r ? r.name : 'Banheiro', x: n[0], y: n[1], z: 2200, va: 6500, v: 220, desc: 'Chuveiro elétrico 6.500 W (220 V) — ponto ' + f.id });
 });
 H.FX.filter((f) => f.t === 'mlr').forEach((f) => {
   const n = H.AFN[f.af] || [f.x, f.y]; // na mesma parede do ponto de água, 30 cm ao lado
