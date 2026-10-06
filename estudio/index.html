@@ -10378,7 +10378,13 @@ kbd {
     1: [[5925, 8750, 1850], [5925, 8750, 2880 + 1150]], // sobe na mesma parede direto para o QD-1
     2: [[5925, 8750, 1850], [5925, 8750, 5760 - 100], [7100, 8750, 5760 - 100], [7100, 8675, 5760 - 100], [7100, 8675, 5760 + 1150]], // na laje do 2º até a parede da escada
   };
-  const FCA_SUB = 0.8; // os dois alimentadores sobem juntos até o 1º (Tabela 42, 2 circuitos)
+  const FCA_SUB = 0.8;
+  // Área coberta por laje em cada pavimento (os eletrodutos correm na laje do teto). Pontos fora dela — motor do
+  // portão no muro da frente, arandelas nos muros da varanda descoberta — são ligados POR BAIXO: enterrados no térreo
+  // (−0,40 m, eletroduto PEAD) ou no contrapiso do 2º, saindo do quadro do andar.
+  const COBERTO = { T: [[1500, 2850, 8925, 10500], [75, 10425, 8925, 15000]], 1: [[1500, 2850, 8925, 10500], [75, 10425, 8925, 16100]], 2: [[1500, 2850, 8925, 10500]] };
+  const coberto = (p) => COBERTO[p.fl].some((r) => p.x >= r[0] - 1 && p.x <= r[2] + 1 && p.y >= r[1] - 1 && p.y <= r[3] + 1);
+  const Z_BAIXO = { T: -400, 1: -50, 2: -50 }; // profundidade do eletroduto por baixo: vala no térreo, contrapiso acima // os dois alimentadores sobem juntos até o 1º (Tabela 42, 2 circuitos)
   // alimentador: padrão (quina do muro esquerdo com o da frente) → enterrado a −0,40 m até a parede do lavabo (lado da
   // garagem) → sobe na parede até a laje do térreo → corre na laje → desce no QDC
   const ALIM_ROUTE = [[400, 19850, 1500], [400, 19850, -400], [400, 19650, -400], [2800, 19650, -400], [2800, 10425, -400], [2800, 10425, TETO], [5925, 10425, TETO], [5925, 8750, TETO], [5925, 8750, 1850]];
@@ -10637,8 +10643,14 @@ kbd {
   /** Comprimentos de um circuito saindo do quadro `board` (eletroduto e caminho até o ponto mais distante). */
   function lengths(c, board) {
     const byFl = {};
-    c.pts.forEach((id) => (byFl[PBY[id].fl] = byFl[PBY[id].fl] || []).push(id));
     let conduite = 0, Lmax = 0;
+    c.pts.forEach((id) => {
+      const p = PBY[id];
+      if (coberto(p)) return (byFl[p.fl] = byFl[p.fl] || []).push(id);
+      const L = plen(baixo(p, p.fl)) + (p.fl !== board ? LEVEL[p.fl] - LEVEL[board] : 0);
+      conduite += L;
+      Lmax = Math.max(Lmax, L);
+    });
     Object.keys(byFl).forEach((fl) => {
       const t = tree(fl, byFl[fl], fl === board ? { [fl]: BOARDS[board] } : board === 'T' && fl !== 'T' ? { [fl]: fl === '2' ? { x: 6400, y: 8750 } : QDC_XY } : RISER);
       const depth = new Map([[t.root, 0]]);
@@ -10649,10 +10661,19 @@ kbd {
     });
     return { conduite, Lmax };
   }
+  /** Caminho por baixo, do quadro do andar até um ponto descoberto (z relativo ao piso do andar). */
+  function baixo(p, board) {
+    const B = BOARDS[board], z = Z_BAIXO[p.fl], yy = p.y > B.y ? p.y - 200 : p.y + 200;
+    return [[B.x, B.y, 1150], [B.x, B.y, z], [B.x, yy, z], [p.x, yy, z], [p.x, p.y, z], [p.x, p.y, p.z]];
+  }
+  const plen = (P) => P.slice(1).reduce((s2, q, i) => s2 + Math.abs(q[0] - P[i][0]) + Math.abs(q[1] - P[i][1]) + Math.abs(q[2] - P[i][2]), 0);
   function routeCircuit(c) {
     c.board = c.fl;
+    // pontos descobertos saem do circuito da laje e vão por baixo
+    c.baixo = c.pts.filter((id) => !coberto(PBY[id]) && PBY[id].fl === c.board).map((id) => ({ id, fl: PBY[id].fl, path: baixo(PBY[id], c.board) }));
+    const fora = new Set(c.baixo.map((b) => b.id));
     const byFl = {};
-    c.pts.forEach((id) => (byFl[PBY[id].fl] = byFl[PBY[id].fl] || []).push(id));
+    c.pts.filter((id) => !fora.has(id)).forEach((id) => (byFl[PBY[id].fl] = byFl[PBY[id].fl] || []).push(id));
     c.trees = {};
     let horiz = 0, drops = 0, risers = 0, Lmax = 0;
     Object.keys(byFl).forEach((fl) => {
@@ -10666,8 +10687,10 @@ kbd {
       t.edges.forEach((e) => depth.set(e.b, depth.get(e.a) + e.L));
       byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, rise(fl, c.board) + depth.get(PBY[id]) + Math.max(0, TETO - PBY[id].z))));
     });
+    c.baixo.forEach((b) => ((horiz += plen(b.path)), (Lmax = Math.max(Lmax, plen(b.path)))));
     c.conduite = horiz + drops + risers; // mm de eletroduto do circuito
     c.Lmax = Lmax;
+    c.enterrado = c.baixo.filter((b) => b.fl === 'T').reduce((s2, b) => s2 + plen(b.path.slice(1, -1)), 0);
     c.cond = c.tipo === 'il' ? 3 : 3; // F + N (ou F + F) + PE; retornos contados à parte
     c.retorno = c.tipo === 'il' ? c.pts.filter((id) => /int/.test(PBY[id].k)).reduce((s, id) => s + (TETO - PBY[id].z), 0) * 1 : 0;
     c.unico = lengths(c, 'T'); // o mesmo circuito saindo de um quadro só, no térreo (para comparar)
@@ -10821,6 +10844,8 @@ kbd {
     it('Eletrodutos', 'Eletroduto corrugado (conduíte) Ø 20 mm (¾")', 'm', Math.ceil(e20 / 5) * 5, 'laje e descidas — iluminação e tomadas');
     it('Eletrodutos', 'Eletroduto corrugado reforçado Ø 25 mm (1")', 'm', Math.ceil(e25 / 5) * 5, 'chuveiros e circuitos de 4 mm² ou mais (um por circuito)');
     it('Eletrodutos', 'Eletroduto corrugado reforçado Ø 40 mm — alimentadores dos quadros de andar', 'm', Math.ceil(Object.values(SUB).reduce((s, d) => s + d.L, 0) / 1000 + 1), 'QDC → QD-1 (na parede) e QDC → QD-2 (parede + laje do 2º)');
+    const ent = CIRC.reduce((s2, c) => s2 + (c.enterrado || 0), 0);
+    if (ent) it('Eletrodutos', 'Eletroduto PEAD corrugado Ø 32 mm (enterrado) — circuitos externos', 'm', Math.ceil(ent / 1000 + 2), 'motor do portão: do QDC por baixo do piso até o muro da frente, a −0,40 m, com fita de aviso');
     it('Eletrodutos', 'Eletroduto PEAD corrugado Ø 50 mm (enterrado) — alimentador', 'm', Math.ceil(ALIM.L / 1000 + 2), 'do padrão de entrada ao QDC, a −0,40 m, com fita de aviso');
     const n = (k, f) => PONTOS.filter((p) => p.k === k && (!f || f(p))).length;
     it('Caixas', 'Caixa octogonal 4×4" de laje (fundo móvel)', 'un', n('il', (p) => p.tipo === 'teto'), 'pontos de luz no teto');
@@ -10973,6 +10998,17 @@ kbd {
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
     });
+    // circuitos que vão por baixo (enterrados / no contrapiso): traço longo
+    ctx.setLineDash([12 * px, 4 * px]);
+    ctx.globalAlpha = 0.9;
+    CIRC.forEach((c) => c.baixo.filter((b) => b.fl === fl).forEach((b) => {
+      ctx.strokeStyle = COLOR[c.tipo];
+      ctx.lineWidth = 2 * px;
+      ctx.beginPath();
+      ctx.moveTo(b.path[1][0], b.path[1][1]);
+      b.path.slice(2).forEach((q) => ctx.lineTo(q[0], q[1]));
+      ctx.stroke();
+    }));
     // rede de dados e entradas (alimentador e fibra) — traço-ponto
     ctx.setLineDash([8 * px, 3 * px, 2 * px, 3 * px]);
     ctx.globalAlpha = 0.8;
@@ -11053,6 +11089,7 @@ kbd {
       tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
       if (!b.root && b.z < TETO) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
+    CIRC.forEach((c) => c.baixo.filter((b) => b.fl === fl).forEach((b) => b.path.slice(1).forEach((q, i) => tube([b.path[i][0], b.path[i][1], lv + b.path[i][2]], [q[0], q[1], lv + q[2]], 0.014, mat(COLOR[c.tipo], 0.9)))));
     // subida do quadro do andar até a laje, alimentadores dos quadros de andar e prumada do QDT (rede)
     const R = BOARDS[fl];
     tube([R.x, R.y, lv + 1500], [R.x, R.y, zc], 0.02, mat('#555555', 0.9));
@@ -11077,7 +11114,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

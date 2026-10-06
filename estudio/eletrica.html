@@ -339,6 +339,13 @@ function paintFloor(fl, w, h, print, k) {
       if (S.layers.TXT) label('prumada da rede', QDT_XY.x + 500, QDT_XY.y - 250, COLOR.tel, true);
     }
   }
+  // circuitos por baixo (pontos fora da área coberta): enterrados no térreo, no contrapiso no 2º — traço longo
+  CIRC.forEach((c) => c.baixo.filter((b) => b.fl === fl && S.layers[c.tipo]).forEach((b) => {
+    ctx.strokeStyle = COLOR[c.tipo]; ctx.lineWidth = 2.2; ctx.setLineDash([12, 4]);
+    ctx.beginPath(); ctx.moveTo(X(b.path[1][0]), Y(b.path[1][1])); b.path.slice(2).forEach((q) => ctx.lineTo(X(q[0]), Y(q[1]))); ctx.stroke();
+    ctx.setLineDash([]);
+    if (S.layers.TXT) { const m = b.path[2]; label(fl === 'T' ? 'C' + c.n + ' enterrado −0,40 m (PEAD Ø32)' : 'C' + c.n + ' no contrapiso', (m[0] + b.path[3][0]) / 2, m[1] - 250, COLOR[c.tipo], true); }
+  }));
   // rede de dados (Cat6) na laje, traço-ponto
   if (S.layers.tel) {
     ctx.strokeStyle = COLOR.tel; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.4; ctx.setLineDash([8, 3, 2, 3]);
@@ -499,6 +506,7 @@ function buildNet3D(groups) {
       if (!b.root && b.z < TETO) tube(groups.tel, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.011, m);
     });
   });
+  CIRC.forEach((c) => c.baixo.forEach((b) => { const lv = LEVEL[b.fl]; b.path.slice(1).forEach((q, i) => tube(groups[c.tipo], [b.path[i][0], b.path[i][1], lv + b.path[i][2]], [q[0], q[1], lv + q[2]], 0.014, mat(COLOR[c.tipo]))); }));
   // cada quadro sobe até a laje do seu andar; alimentadores QDC → QD-1 e QDC → QD-2; QDT até a laje do 2º
   ['T', '1', '2'].forEach((fl) => { const B = E.BOARDS[fl]; tube(groups.qdc, [B.x, B.y, LEVEL[fl] + 1500], [B.x, B.y, LEVEL[fl] + TETO], 0.02, mat('#555555')); });
   Object.values(E.SUB_ROUTE).forEach((Rt) => Rt.slice(1).forEach((q, i) => tube(groups.qdc, Rt[i], q, 0.025, mat('#2b2b2b'))));
@@ -748,6 +756,8 @@ function memorial() {
       Todas as alturas são contadas do piso acabado até o centro da caixa.</li>
     <li><b>Cores dos condutores:</b> neutro azul-claro e terra verde ou verde-amarelo (obrigatórios, NBR 5410 6.1.5.3); fases preto, vermelho e branco, uma cor por fase; retornos de interruptor amarelos.</li>
     <li><b>Banheiros:</b> nenhuma tomada no volume do box. As tomadas dos lavatórios ficam a 0,60 m ou mais do chuveiro, como já posicionadas.</li>
+    <li><b>Pontos fora da área coberta vão por baixo, nunca pelo ar:</b>
+      <ul>${CIRC.flatMap((c) => c.baixo.map((b) => `<li>${esc(PBY[b.id].desc)} (C${c.n}): ${b.fl === 'T' ? `sai do QDC, desce pela parede e vai <b>enterrado a −0,40 m</b> (PEAD Ø32, com fita de aviso) por baixo do piso da sala e do jardim da frente até o muro, e sobe no muro até o ponto. Cruza o alimentador de água (que está a −0,76 m) por cima, em ângulo reto` : `sai do QD-2, desce para o <b>contrapiso</b> da varanda e corre nele até o muro, e sobe no muro até a arandela. Deixar o eletroduto antes do contrapiso e da impermeabilização`} — ${fmtn((b.path.slice(1).reduce((s2, q, i) => s2 + Math.abs(q[0] - b.path[i][0]) + Math.abs(q[1] - b.path[i][1]) + Math.abs(q[2] - b.path[i][2]), 0)) / 1000, 1)} m.</li>`)).join('')}</ul></li>
     <li><b>Lajes:</b> os eletrodutos e as caixas octogonais dos pontos de luz são colocados <b>antes da concretagem</b> de cada laje, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
     <li><b>Hidráulica:</b> não passar eletroduto no mesmo rasgo de tubo de água, e manter 20 cm dos shafts (SH-1, SH-2, SH-3) e das prumadas de esgoto.</li>
     <li><b>Teste final:</b> continuidade do PE em todas as tomadas, isolamento (≥ 1 MΩ a 500 V), teste do botão dos DR e polaridade das tomadas (fase à direita, olhando de frente, no padrão NBR 14136).</li>
