@@ -17,7 +17,18 @@
   const ALIM_SECAO = 16;          // mm² — cabo do ramal principal (padrão → QDC) definido pela obra
   const FCA = 0.7;              // agrupamento: até 3 circuitos por eletroduto (Tabela 42)
   const FCT = 1.0;              // 30 °C (Tabela 40, PVC)
-  const QDC_XY = { x: 6650, y: 8750 }; // quadro sob a escada (prumada sobe na mesma parede)
+  const QDC_XY = { x: 5925, y: 8750 }; // QDC à direita da porta do quarto do térreo (parede do quarto, lado da sala)
+  // prumadas dos circuitos: na parede do QDC até a laje do 1º; para o 2º, desloca 47,5 cm na laje do 1º até a parede
+  // da escada do 2º (na posição do QDC o 2º não tem parede)
+  const RISER = { T: QDC_XY, 1: QDC_XY, 2: { x: 6400, y: 8750 } };
+  // alimentador: padrão (quina do muro esquerdo com o da frente) → enterrado a −0,40 m até a parede do lavabo (lado da
+  // garagem) → sobe na parede até a laje do térreo → corre na laje → desce no QDC
+  const ALIM_ROUTE = [[400, 19850, 1500], [400, 19850, -400], [400, 19650, -400], [2800, 19650, -400], [2800, 10425, -400], [2800, 10425, TETO], [5925, 10425, TETO], [5925, 8750, TETO], [5925, 8750, 1850]];
+  // fibra / rede: caixa de entrada no muro esquerdo → vala paralela, 20 cm ao lado → caixa de passagem na parede do
+  // lavabo → laje → quadro de telecom (QDT) sob a escada; distribuição Cat6 em eletrodutos próprios
+  const QDT_XY = { x: 6650, y: 8750 };
+  const TEL_ROUTE = [[150, 19300, 1500], [150, 19300, -400], [150, 19450, -400], [2600, 19450, -400], [2600, 10500, -400], [2600, 10500, 300], [2600, 10425, 300], [2600, 10425, TETO], [2600, 9800, TETO], [6650, 9800, TETO], [6650, 8750, TETO], [6650, 8750, 1700]];
+  const TEL_RISER = { T: QDT_XY, 1: QDT_XY, 2: QDT_XY };
 
   // <PONTOS> gerado por tools/gera-eletrica.js — não editar à mão
   const PONTOS = [
@@ -126,8 +137,8 @@
     {id: "1-CH1", fl: "1", k: "tue", eq: "chuveiro", amb: "Suíte", x: 2325, y: 7530, z: 2200, va: 7500, v: 220, desc: "Chuveiro elétrico 7.500 W (220 V) — ponto 1-CH-S"},
     {id: "1-CH2", fl: "1", k: "tue", eq: "chuveiro", amb: "Banhº", x: 2325, y: 7620, z: 2200, va: 7500, v: 220, desc: "Chuveiro elétrico 7.500 W (220 V) — ponto 1-CH-B"},
     {id: "2-ML1", fl: "2", k: "tue", eq: "mlr", amb: "Área de serviço", x: 2100, y: 8610, z: 1100, va: 1200, v: 127, molhada: true, desc: "Máquina de lavar roupa (1.200 VA, 127 V)"},
-    {id: "QDC", fl: "T", k: "qdc", amb: "Sala (sob a escada)", x: 6650, y: 8750, z: 1500, desc: "Quadro de distribuição (QDC) — sob a escada, parede do quarto"},
-    {id: "PE", fl: "T", k: "medidor", amb: "Muro da frente", x: 7400, y: 19850, z: 1500, desc: "Padrão de entrada / medição (Enel) com haste de aterramento"},
+    {id: "QDC", fl: "T", k: "qdc", amb: "Sala (pé da escada)", x: 5925, y: 8750, z: 1500, desc: "Quadro de distribuição (QDC) — à direita da porta do quarto, parede do quarto (lado da sala)"},
+    {id: "PE", fl: "T", k: "medidor", amb: "Muro da frente (quina esquerda)", x: 400, y: 19850, z: 1500, desc: "Padrão de entrada / medição (Enel) com haste de aterramento — quina do muro esquerdo com o da frente"},
     {id: "T-MO1", fl: "T", k: "tue", eq: "microondas", amb: "Cozinha", x: 4150, y: 6900, z: 1600, va: 1500, v: 127, molhada: true, desc: "Micro-ondas / forno (1.500 VA, 127 V)"},
     {id: "T-PT1", fl: "T", k: "tue", eq: "portao", amb: "Garagem (portão)", x: 4400, y: 19850, z: 400, va: 600, v: 127, externa: true, desc: "Motor do portão eletrônico ½ cv (600 VA)"},
     {id: "T-IL-E1", fl: "T", k: "il", tipo: "arandela", amb: "Fachada", x: 4650, y: 15000, z: 2200, va: 100, externa: true, desc: "Arandela externa — fachada, ao lado da porta"},
@@ -138,11 +149,24 @@
     {id: "T-S-Q", fl: "T", k: "int", amb: "Cozinha", x: 3025, y: 3000, z: 1100, liga: ["T-IL-E3","T-IL-E4"], desc: "Interruptor das arandelas do quintal e do corredor (junto à porta dos fundos) (mesma caixa do T-S1)", caixa: "T-S1"},
     {id: "T-T-E1", fl: "T", k: "tug", amb: "Quintal", x: 2600, y: 2850, z: 600, va: 100, molhada: true, externa: true, desc: "TUG externa IP44 — quintal"},
     {id: "T-IL-ESC", fl: "T", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (térreo → 1º)"},
-    {id: "T-S3a", fl: "T", k: "int3", amb: "Escada", x: 5900, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — pé da escada (térreo)"},
+    {id: "T-S3a", fl: "T", k: "int3", amb: "Escada", x: 5560, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — pé da escada (térreo)"},
     {id: "1-S3b", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (1º)"},
     {id: "1-IL-ESC", fl: "1", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (1º → 2º)"},
     {id: "1-S3a", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 10350, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — pé da escada (1º)"},
     {id: "2-S3b", fl: "2", k: "int3", amb: "Varanda coberta", x: 6300, y: 8600, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (2º)"},
+    {id: "T-T-QDT", fl: "T", k: "tug", amb: "Sala (pé da escada)", x: 7000, y: 8750, z: 1500, va: 100, desc: "TUG do roteador / ONT da fibra (ao lado do QDT)"},
+    {id: "CXT", fl: "T", k: "tel", tel: "entrada", amb: "Muro esquerdo (frente)", x: 150, y: 19300, z: 1500, desc: "Caixa de entrada da fibra (operadora) — muro esquerdo, ao lado do padrão"},
+    {id: "CPT", fl: "T", k: "tel", tel: "passagem", amb: "Garagem", x: 2600, y: 10500, z: 300, desc: "Caixa de passagem 4×4 da fibra — parede do lavabo, lado da garagem"},
+    {id: "QDT", fl: "T", k: "tel", tel: "qdt", amb: "Sala (sob a escada)", x: 6650, y: 8750, z: 1500, desc: "Quadro de telecom (QDT) 40×40 — ONT da fibra, roteador e distribuição Cat6"},
+    {id: "T-RJ1", fl: "T", k: "tel", tel: "rj", amb: "Sala", x: 4300, y: 12900, z: 300, desc: "Ponto de rede RJ45 (TV) — Sala"},
+    {id: "T-RJ2", fl: "T", k: "tel", tel: "rj", amb: "Quarto", x: 4300, y: 6450, z: 300, desc: "Ponto de rede RJ45 — Quarto"},
+    {id: "T-AP1", fl: "T", k: "tel", tel: "ap", amb: "Sala", x: 6500, y: 11800, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Sala"},
+    {id: "1-RJ1", fl: "1", k: "tel", tel: "rj", amb: "Quarto Master", x: 3150, y: 7063, z: 300, desc: "Ponto de rede RJ45 — Quarto Master"},
+    {id: "1-RJ2", fl: "1", k: "tel", tel: "rj", amb: "Quarto 1", x: 4150, y: 13063, z: 300, desc: "Ponto de rede RJ45 — Quarto 1"},
+    {id: "1-RJ3", fl: "1", k: "tel", tel: "rj", amb: "Quarto 2", x: 4300, y: 11975, z: 300, desc: "Ponto de rede RJ45 — Quarto 2"},
+    {id: "1-AP1", fl: "1", k: "tel", tel: "ap", amb: "Circulação", x: 4700, y: 9550, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Circulação do 1º"},
+    {id: "2-RJ1", fl: "2", k: "tel", tel: "rj", amb: "Varanda coberta", x: 7350, y: 7800, z: 300, desc: "Ponto de rede RJ45 (TV) — Varanda coberta"},
+    {id: "2-AP1", fl: "2", k: "tel", tel: "ap", amb: "Varanda coberta", x: 5250, y: 6700, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Varanda coberta"},
   ];
   // </PONTOS>
   const PBY = Object.fromEntries(PONTOS.map((p) => [p.id, p]));
@@ -230,9 +254,11 @@
 
   // ------------------------------------------------------------------ caminhos (laje + descidas) e comprimentos
   const man = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  const polyLen = (P) => P.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - P[i][0], q[1] - P[i][1], q[2] - P[i][2]), 0);
   /** Árvore (Prim, distância ortogonal) ligando a prumada do quadro aos pontos do circuito naquele pavimento. */
-  function tree(fl, ids) {
-    const root = { id: 'R' + fl, x: QDC_XY.x, y: QDC_XY.y, z: TETO, fl, root: true };
+  function tree(fl, ids, riser) {
+    const r = (riser || RISER)[fl];
+    const root = { id: 'R' + fl, x: r.x, y: r.y, z: TETO, fl, root: true };
     const nodes = [root].concat(ids.map((id) => PBY[id]));
     const inT = new Set([0]), edges = [], dist = nodes.map((n) => man(n, root)), par = nodes.map(() => 0);
     while (inT.size < nodes.length) {
@@ -245,7 +271,7 @@
     return { root, edges };
   }
   /** Subida do quadro (z = 1,50 m no térreo) até a laje do pavimento. */
-  const rise = (fl) => LEVEL[fl] + TETO - 1500;
+  const rise = (fl) => LEVEL[fl] + TETO - 1500 + man(RISER[fl], QDC_XY);
   function routeCircuit(c) {
     const byFl = {};
     c.pts.forEach((id) => (byFl[PBY[id].fl] = byFl[PBY[id].fl] || []).push(id));
@@ -268,6 +294,28 @@
     c.retorno = c.tipo === 'il' ? c.pts.filter((id) => /int/.test(PBY[id].k)).reduce((s, id) => s + (TETO - PBY[id].z), 0) * 1 : 0;
   }
   CIRC.forEach(routeCircuit);
+
+  // ------------------------------------------------------------------ rede de dados (Cat6 em estrela a partir do QDT)
+  function telNet() {
+    const pts = PONTOS.filter((p) => p.k === 'tel' && (p.tel === 'rj' || p.tel === 'ap'));
+    const trees = {}, cabos = [];
+    ['T', '1', '2'].forEach((fl) => {
+      const ids = pts.filter((p) => p.fl === fl).map((p) => p.id);
+      if (!ids.length) return;
+      const t = tree(fl, ids, TEL_RISER);
+      trees[fl] = t;
+      const depth = new Map([[t.root, 0]]);
+      t.edges.forEach((e) => depth.set(e.b, depth.get(e.a) + e.L));
+      ids.forEach((id) => {
+        const p = PBY[id];
+        // cada ponto tem seu cabo do QDT: prumada + caminho na laje + descida + 3 m de folga (patch no QDT)
+        cabos.push({ id, L: LEVEL[fl] + TETO - 1500 + depth.get(p) + Math.max(0, TETO - p.z) + 3000 });
+      });
+    });
+    const conduite = Object.keys(trees).reduce((s, fl) => s + trees[fl].edges.reduce((a, e) => a + e.L, 0) + pts.filter((p) => p.fl === fl).reduce((a, p) => a + Math.max(0, TETO - p.z), 0) + (fl === 'T' ? TETO - 1500 : LEVEL[fl] + TETO - 1500), 0);
+    return { pts, trees, cabos, conduite, entrada: polyLen(TEL_ROUTE) };
+  }
+  const TEL = telNet();
 
   // ------------------------------------------------------------------ dimensionamento
   function size(c) {
@@ -316,7 +364,7 @@
     const D = dIT + tueW * fTue; // kW
     const inst = (ilW + tugW) / 1000 + tueW;
     const I = (D * 1000) / (Math.sqrt(3) * VFF * 0.92);
-    const L = man(PBY.PE || { x: 7400, y: 19850 }, QDC_XY) + 400 + 1500 + 1000; // vala (−0,40 m) + subida no muro e no quadro
+    const L = polyLen(ALIM_ROUTE) + 1000; // percurso real + 1 m de sobra nas ligações
     const disj = DISJ.find((d) => d >= I);
     // seção definida (16 mm²): confere capacidade (Iz ≥ In do geral) e a queda de tensão entra no total de 5 %
     const s = ALIM_SECAO, iz = IZ3[s] * FCT;
@@ -388,6 +436,17 @@
     const mod = CIRC.reduce((s, c) => s + (c.v === VFF ? 2 : 1), 0) + 3 + DRS.reduce((s, d) => s + d.polos, 0) + 4;
     const qdc = [24, 36, 48, 56, 72].find((m) => m >= mod * 1.2) || 72;
     it('Quadro', `Quadro de distribuição de embutir ${qdc} módulos DIN, com barramentos trifásico, neutro e terra`, 'un', 1, mod + ' módulos ocupados + reserva (NBR 5410 6.5.4.7)');
+    // rede (fibra + Cat6)
+    const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap').length;
+    it('Rede e fibra', 'Eletroduto PEAD corrugado Ø 32 mm (enterrado) — entrada da fibra', 'm', Math.ceil(TEL.entrada / 1000 + 2), 'da caixa de entrada no muro até a parede do lavabo, 20 cm ao lado do alimentador');
+    it('Rede e fibra', 'Eletroduto corrugado Ø 25 mm (1") — rede, exclusivo', 'm', Math.ceil(((TEL.conduite + 8000) / 1000) * 1.1 / 5) * 5, 'laje, prumadas e descidas — nunca junto com cabos de energia');
+    it('Rede e fibra', 'Arame-guia galvanizado (ou fita-guia) em todos os eletrodutos de rede', 'm', Math.ceil((TEL.entrada + TEL.conduite) / 1000 * 1.2), 'deixar dentro de cada eletroduto, amarrado nas caixas');
+    it('Rede e fibra', 'Quadro de telecom (QDT) de embutir 40×40×12 cm com tampa', 'un', 1, 'sob a escada, ao lado do QDC — ONT, roteador e patch panel');
+    it('Rede e fibra', 'Caixa de entrada de telecom 20×20 (muro) e caixa de passagem 4×4', 'un', 2, 'entrada no muro esquerdo e passagem na parede do lavabo (lado da garagem)');
+    it('Rede e fibra', 'Cabo U/UTP Cat6 (por metro ou caixa de 305 m)', 'm', Math.ceil((TEL.cabos.reduce((s, c) => s + c.L, 0) / 1000) / 5) * 5, nRJ + ' pontos RJ45 + ' + nAP + ' pontos de Wi-Fi, um cabo por ponto, do QDT');
+    it('Rede e fibra', 'Tomada RJ45 Cat6 com placa 4×2', 'un', nRJ, 'ao lado de uma tomada de energia');
+    it('Rede e fibra', 'Caixa octogonal 4×4" de laje para Wi-Fi (access point PoE)', 'un', nAP, 'um por pavimento, no teto');
+    it('Rede e fibra', 'Patch panel 12 portas Cat6 + patch cords', 'un', 1, 'no QDT');
     it('Aterramento', 'Haste de aterramento cobreada 5/8" × 2,40 m com conector', 'un', 3, 'no padrão de entrada, interligadas (medir ≤ 10 Ω)');
     it('Aterramento', 'Caixa de inspeção do aterramento 30×30', 'un', 1, '');
     it('Acessórios', 'Fita isolante, terminais, abraçadeiras, buchas e arruelas', 'vb', 1, '');
@@ -396,8 +455,8 @@
   const QT = quantities();
 
   // ================================================================================================ camada do estúdio
-  const COLOR = { il: '#d39b00', tug: '#e0572f', tue: '#b4235a', qdc: '#2b2b2b', medidor: '#2b2b2b', int: '#d39b00', int3: '#d39b00' };
-  const TIPO_NAME = { il: 'Iluminação', tug: 'Tomadas (TUG)', tue: 'Uso específico (TUE)' };
+  const COLOR = { il: '#d39b00', tug: '#e0572f', tue: '#b4235a', qdc: '#2b2b2b', medidor: '#2b2b2b', int: '#d39b00', int3: '#d39b00', tel: '#0e7490', alim: '#2b2b2b' };
+  const TIPO_NAME = { il: 'Iluminação', tug: 'Tomadas (TUG)', tue: 'Uso específico (TUE)', tel: 'Rede / internet' };
   const planKey = (floor) => { const lv = floor && floor.level ? floor.level : 0; return lv >= 5000 ? '2' : lv >= 2000 ? '1' : 'T'; };
   const ptsOf = (fl) => PONTOS.filter((p) => p.fl === fl);
   /** Trechos de eletroduto da prancha: [{a, b, c}] em L (primeiro x, depois y). */
@@ -412,13 +471,31 @@
   }
   const cache = {};
   const conduitsOf = (fl) => cache[fl] || (cache[fl] = conduits(fl));
+  const telConduits = (fl) => (TEL.trees[fl] ? TEL.trees[fl].edges.map((e) => ({ a: e.a, b: e.b })) : []);
+  /** Trechos (x, y) de um percurso 3D que ficam no pavimento: térreo leva o enterrado e a laje do térreo. */
+  const routeXY = (R, fl) => (fl === 'T' ? R.slice(1).map((q, i) => [R[i], q]).filter(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1]) > 1) : []);
   /** Símbolo de um ponto na planta, em mm (contexto do mundo); s = tamanho base em mm. */
   function symbol(ctx, p, s, lw) {
-    const col = p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
+    const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
     ctx.strokeStyle = col;
     ctx.fillStyle = col;
     ctx.lineWidth = lw;
     ctx.beginPath();
+    if (p.k === 'tel') {
+      if (p.tel === 'rj') {
+        ctx.moveTo(p.x, p.y - s); ctx.lineTo(p.x + s, p.y); ctx.lineTo(p.x, p.y + s); ctx.lineTo(p.x - s, p.y); ctx.closePath();
+        ctx.fill();
+      } else if (p.tel === 'ap') {
+        ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
+        ctx.beginPath(); ctx.arc(p.x, p.y, s * 0.45, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
+      } else {
+        const w = p.tel === 'qdt' ? 2.6 : 1.4;
+        ctx.rect(p.x - s * w / 2, p.y - s * 0.6, s * w, s * 1.2);
+        ctx.fillStyle = col; ctx.fill();
+      }
+      return;
+    }
     if (p.k === 'il' && p.tipo === 'teto') {
       ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
       ctx.fillStyle = '#fff';
@@ -465,6 +542,17 @@
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
     });
+    // rede de dados e entradas (alimentador e fibra) — traço-ponto
+    ctx.setLineDash([8 * px, 3 * px, 2 * px, 3 * px]);
+    ctx.globalAlpha = 0.8;
+    ctx.lineWidth = 1.4 * px;
+    ctx.strokeStyle = COLOR.tel;
+    telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
+    [[ALIM_ROUTE, COLOR.alim, 2.4], [TEL_ROUTE, COLOR.tel, 1.8]].forEach(([R, col, w]) => {
+      ctx.strokeStyle = col;
+      ctx.lineWidth = w * px;
+      routeXY(R, fl).forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); });
+    });
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
     const s = Math.max(70, 4.2 * px);
@@ -490,7 +578,7 @@
       });
     }
     // legenda
-    const items = [['il', 'Iluminação'], ['tug', 'Tomadas'], ['tue', 'Uso específico']];
+    const items = [['il', 'Iluminação'], ['tug', 'Tomadas'], ['tue', 'Uso específico'], ['tel', 'Rede']];
     ctx.font = '500 10px ' + mono;
     const widths = items.map(([, t]) => ctx.measureText(t).width + 30), total = widths.reduce((a, b) => a + b, 0) + 10;
     const x0 = 210, y0 = v.height - (rc.footer || 0) - 32 - (rc.show && rc.show.hidro ? 26 : 0);
@@ -534,11 +622,23 @@
       tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
       if (!b.root && b.z < TETO) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
-    // prumada do quadro
-    if (fl === 'T' || CIRC.some((c) => c.trees[fl])) tube([QDC_XY.x, QDC_XY.y, fl === 'T' ? 1500 : lv - 160], [QDC_XY.x, QDC_XY.y, zc], 0.02, mat('#555555', 0.9));
+    // prumadas do quadro (energia) e do QDT (rede)
+    const R = RISER[fl];
+    if (fl !== 'T') tube([QDC_XY.x, QDC_XY.y, lv - 160], [QDC_XY.x, QDC_XY.y, fl === '2' ? lv - 160 : zc], 0.02, mat('#555555', 0.9));
+    if (fl === '2') tube([QDC_XY.x, QDC_XY.y, lv - 160], [R.x, R.y, lv - 160], 0.02, mat('#555555', 0.9));
+    tube([R.x, R.y, fl === 'T' ? 1500 : lv - 160], [R.x, R.y, zc], 0.02, mat('#555555', 0.9));
+    tube([QDT_XY.x, QDT_XY.y, fl === 'T' ? 1700 : lv - 160], [QDT_XY.x, QDT_XY.y, zc], 0.016, mat(COLOR.tel, 0.9));
+    telConduits(fl).forEach(({ a, b }) => {
+      const m = mat(COLOR.tel, 0.85), r = 0.011;
+      tube([a.x, a.y, zc], [b.x, a.y, zc], r, m);
+      tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
+      if (!b.root && b.z < TETO) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
+    });
+    if (fl === 'T')
+      [[ALIM_ROUTE, COLOR.alim, 0.022], [TEL_ROUTE, COLOR.tel, 0.016]].forEach(([Rt, col, r]) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, r, mat(col, 0.9))));
     ptsOf(fl).forEach((p) => {
-      const col = p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
-      const sz = p.k === 'qdc' ? [0.5, 0.6, 0.12] : p.k === 'il' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
+      const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
+      const sz = p.k === 'qdc' ? [0.5, 0.7, 0.12] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
       const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(col, 1));
       m.position.set(p.x * MM, (lv + p.z) * MM, p.y * MM);
       put(m);
@@ -547,7 +647,7 @@
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
-    COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, symbol, draw2dWorld, draw2dScreen, build3d,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

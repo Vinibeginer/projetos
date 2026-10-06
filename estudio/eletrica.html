@@ -23,7 +23,7 @@
   --text: #ede8df; --muted: #a39a8c; --faint: #7a7266;
   --accent: #e0703f; --accent-soft: rgba(224,112,63,.15); --accent-ink: #1c0f08;
   --warn: #e3a53a; --ok: #46a758; --bad: #e5484d; --hover: rgba(237,232,223,.06);
-  --il: #d39b00; --tug: #e0572f; --tue: #b4235a;
+  --il: #d39b00; --tug: #e0572f; --tue: #b4235a; --tel: #0e7490;
   --font-ui: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
 }
@@ -178,6 +178,7 @@ table.pts.fix td { overflow-wrap: anywhere; }
         <label><input type="checkbox" data-layer="il" checked><i style="background:var(--il)"></i>Iluminação</label>
         <label><input type="checkbox" data-layer="tug" checked><i style="background:var(--tug)"></i>Tomadas</label>
         <label><input type="checkbox" data-layer="tue" checked><i style="background:var(--tue)"></i>Uso específico</label>
+        <label><input type="checkbox" data-layer="tel" checked><i style="background:var(--tel)"></i>Internet</label>
         <label><input type="checkbox" data-layer="TXT" checked>Circuitos</label>
         <label id="lbl-walls" hidden><input type="checkbox" data-layer="WALLS" checked>Paredes</label>
       </div>
@@ -197,7 +198,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 //  Pontos, circuitos e cálculos: src/18-eletrica.js (o mesmo módulo desenha a camada "Elétrica" no estúdio).
 // =====================================================================================================
 const E = DD.eletrica;
-const { PONTOS, PBY, CIRC, FASES, DRS, ALIM, QT, COLOR, LEVEL, TETO, QDC_XY, fmtm, fmtn } = E;
+const { PONTOS, PBY, CIRC, FASES, DRS, ALIM, QT, COLOR, LEVEL, TETO, QDC_XY, QDT_XY, RISER, ALIM_ROUTE, TEL_ROUTE, TEL, fmtm, fmtn } = E;
 const L1 = 2880, L2 = 5760, LR = 8640;
 const REF_DOC = window.DD && DD.data ? DD.data.initialState() : null;
 let doc = REF_DOC;
@@ -212,9 +213,10 @@ const PRANCHAS = [
   { id: 'pdf', label: 'Pranchas (PDF)' },
 ];
 const PLAN_TABS = ['T', '1', '2'];
-const KCOL = { il: COLOR.il, int: COLOR.il, int3: COLOR.il, tug: COLOR.tug, tue: COLOR.tue, qdc: COLOR.qdc, medidor: COLOR.qdc };
-const tipoOf = (p) => (p.k === 'int' || p.k === 'int3' || p.k === 'il' ? 'il' : p.k === 'tug' ? 'tug' : p.k === 'tue' ? 'tue' : 'qdc');
-const S = { tab: 'T', layers: { il: true, tug: true, tue: true, TXT: true, WALLS: true }, view: null, hover: null };
+const KCOL = { il: COLOR.il, int: COLOR.il, int3: COLOR.il, tug: COLOR.tug, tue: COLOR.tue, qdc: COLOR.qdc, medidor: COLOR.qdc, tel: COLOR.tel };
+const tipoOf = (p) => (p.k === 'int' || p.k === 'int3' || p.k === 'il' ? 'il' : p.k === 'tug' ? 'tug' : p.k === 'tue' ? 'tue' : p.k === 'tel' ? 'tel' : 'qdc');
+const TEL_LABEL = { entrada: 'Caixa de entrada da fibra', passagem: 'Caixa de passagem da fibra', qdt: 'Quadro de telecom (QDT)', rj: 'Ponto de rede RJ45', ap: 'Ponto de Wi-Fi no teto' };
+const S = { tab: 'T', layers: { il: true, tug: true, tue: true, tel: true, TXT: true, WALLS: true }, view: null, hover: null };
 const KIND_LABEL = { il: 'Ponto de luz', int: 'Interruptor', int3: 'Interruptor paralelo', tug: 'Tomada de uso geral', tue: 'Tomada/ponto de uso específico', qdc: 'Quadro de distribuição', medidor: 'Padrão de entrada' };
 
 const $ = (id) => document.getElementById(id);
@@ -306,18 +308,39 @@ function paintFloor(fl, w, h, print, k) {
   const P = PRANCHAS.find((p) => p.id === fl);
   ctx.strokeStyle = '#b3aa9b'; ctx.setLineDash([6, 4]); ctx.strokeRect(X(0), Y(0), 9000 * S.view.s, 20000 * S.view.s); ctx.setLineDash([]);
   drawWalls(P.fid, false);
-  // alimentador (térreo): padrão de entrada → QDC, enterrado
+  // alimentador e entrada da fibra (térreo): enterrados (traço longo) e na laje (traço curto)
   if (fl === 'T') {
-    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2.4; ctx.setLineDash([9, 4]);
-    const pe = PBY.PE;
-    ctx.beginPath(); ctx.moveTo(X(pe.x), Y(pe.y)); ctx.lineTo(X(pe.x), Y(QDC_XY.y + 150)); ctx.lineTo(X(QDC_XY.x), Y(QDC_XY.y + 150)); ctx.lineTo(X(QDC_XY.x), Y(QDC_XY.y)); ctx.stroke();
+    [[ALIM_ROUTE, '#2b2b2b', 2.6, true], [TEL_ROUTE, COLOR.tel, 2, S.layers.tel]].forEach(([R, col, w, on]) => {
+      if (!on) return;
+      ctx.strokeStyle = col; ctx.lineWidth = w;
+      E.routeXY(R, 'T').forEach(([a, b]) => {
+        ctx.setLineDash(a[2] < 0 ? [10, 4] : [4, 3]);
+        ctx.beginPath(); ctx.moveTo(X(a[0]), Y(a[1])); ctx.lineTo(X(b[0]), Y(b[1])); ctx.stroke();
+      });
+    });
     ctx.setLineDash([]);
-    if (S.layers.TXT) label('Alimentador ' + String(ALIM.secao) + ' mm² enterrado (PEAD Ø50)', pe.x - 1500, 17200, '#2b2b2b', true);
+    if (S.layers.TXT) {
+      label('Alimentador 3×' + ALIM.secao + ' + N + PE ' + ALIM.pe + ' mm² — enterrado (PEAD Ø50, −0,40 m)', 2800, 15800, '#2b2b2b', true);
+      label('sobe na parede do lavabo → laje → QDC', 2800, 11000, '#2b2b2b', true);
+      if (S.layers.tel) label('Fibra — PEAD Ø32 enterrado, 20 cm do alimentador', 1600, 18800, COLOR.tel, true);
+    }
   } else {
-    // prumada do quadro
+    // prumadas do quadro (energia) e do QDT (rede)
+    const R = RISER[fl];
     ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2;
-    ctx.beginPath(); ctx.arc(X(QDC_XY.x), Y(QDC_XY.y - 75), Math.max(5, 60 * S.view.s), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
-    if (S.layers.TXT) label('prumada do QDC', QDC_XY.x, QDC_XY.y - 420, '#2b2b2b', true);
+    ctx.beginPath(); ctx.arc(X(R.x), Y(R.y - 75), Math.max(5, 60 * S.view.s), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (S.layers.TXT) label('prumada do QDC', R.x - 300, R.y - 420, '#2b2b2b', true);
+    if (S.layers.tel) {
+      ctx.strokeStyle = COLOR.tel;
+      ctx.beginPath(); ctx.arc(X(QDT_XY.x), Y(QDT_XY.y - 75), Math.max(4, 45 * S.view.s), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+      if (S.layers.TXT) label('prumada da rede', QDT_XY.x + 500, QDT_XY.y - 250, COLOR.tel, true);
+    }
+  }
+  // rede de dados (Cat6) na laje, traço-ponto
+  if (S.layers.tel) {
+    ctx.strokeStyle = COLOR.tel; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.4; ctx.setLineDash([8, 3, 2, 3]);
+    E.telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke(); });
+    ctx.setLineDash([]); ctx.globalAlpha = 1;
   }
   // eletrodutos (laje): em L, tracejados, cor do tipo de circuito
   E.conduits(fl).forEach(({ c, a, b }) => {
@@ -338,7 +361,8 @@ function paintFloor(fl, w, h, print, k) {
   if (S.layers.TXT) {
     PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => {
       if (p.k === 'qdc') return label('QDC', p.x, p.y + 330, '#2b2b2b');
-      if (p.k === 'medidor') return label('Padrão Enel', p.x, p.y - 300, '#2b2b2b', true);
+      if (p.k === 'medidor') return label('Padrão Enel', p.x + 700, p.y - 300, '#2b2b2b', true);
+      if (p.k === 'tel') return label({ entrada: 'Entrada fibra', passagem: 'CP fibra', qdt: 'QDT', rj: 'RJ45', ap: 'Wi-Fi' }[p.tel], p.x + (p.tel === 'entrada' ? 700 : 0), p.y + (p.tel === 'qdt' ? 330 : -260), COLOR.tel, true);
       if (!p.circ) return;
       ctx.font = '600 9.5px "JetBrains Mono", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       const t = (p.k === 'int' || p.k === 'int3') ? 'S' : p.k === 'il' ? String(p.va) : p.va >= 600 || p.k === 'tue' ? String(p.va) : '';
@@ -403,6 +427,7 @@ function hoverAt(px, py) {
   if (!best) { tip.hidden = true; return; }
   const p = best.p, c = p.circ;
   tip.hidden = false;
+  if (p.k === 'tel') { tip.hidden = false; tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m · eletroduto de rede exclusivo`; tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px'; tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px'; return; }
   tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m${p.va ? ' · ' + p.va + ' VA' : ''}` + (c ? `\ncircuito ${c.n}: ${c.desc}\n${c.v} V · ${c.secao} mm² · disjuntor ${c.disj} A · ${c.dr || ''}` : '');
   tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px';
   tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px';
@@ -463,12 +488,24 @@ function buildNet3D(groups) {
       if (!b.root && b.z < TETO) tube(g, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.012, m);
     });
   });
-  tube(groups.qdc, [QDC_XY.x, QDC_XY.y, 1500], [QDC_XY.x, QDC_XY.y, L2 + TETO], 0.025, mat('#555555'));
-  const pe = PBY.PE;
-  [[[pe.x, pe.y, 1500], [pe.x, pe.y, -400]], [[pe.x, pe.y, -400], [pe.x, QDC_XY.y + 150, -400]], [[pe.x, QDC_XY.y + 150, -400], [QDC_XY.x, QDC_XY.y + 150, -400]], [[QDC_XY.x, QDC_XY.y + 150, -400], [QDC_XY.x, QDC_XY.y, 1500]]].forEach(([a, b]) => tube(groups.qdc, a, b, 0.025, mat('#2b2b2b')));
+  ['T', '1', '2'].forEach((fl) => {
+    const lv = LEVEL[fl], zc = lv + TETO, m = mat(COLOR.tel);
+    E.telConduits(fl).forEach(({ a, b }) => {
+      tube(groups.tel, [a.x, a.y, zc], [b.x, a.y, zc], 0.012, m);
+      tube(groups.tel, [b.x, a.y, zc], [b.x, b.y, zc], 0.012, m);
+      if (!b.root && b.z < TETO) tube(groups.tel, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.011, m);
+    });
+  });
+  // prumadas: QDC até a laje do 1º e, pela laje do 1º, até a parede da escada do 2º; QDT até a laje do 2º
+  tube(groups.qdc, [QDC_XY.x, QDC_XY.y, 1500], [QDC_XY.x, QDC_XY.y, L1 + TETO], 0.025, mat('#555555'));
+  tube(groups.qdc, [QDC_XY.x, QDC_XY.y, L2 - 100], [RISER['2'].x, RISER['2'].y, L2 - 100], 0.025, mat('#555555'));
+  tube(groups.qdc, [RISER['2'].x, RISER['2'].y, L2 - 100], [RISER['2'].x, RISER['2'].y, L2 + TETO], 0.025, mat('#555555'));
+  tube(groups.tel, [QDT_XY.x, QDT_XY.y, 1700], [QDT_XY.x, QDT_XY.y, L2 + TETO], 0.018, mat(COLOR.tel));
+  ALIM_ROUTE.slice(1).forEach((q, i) => tube(groups.qdc, ALIM_ROUTE[i], q, 0.025, mat('#2b2b2b')));
+  TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
   PONTOS.forEach((p) => {
     const t = tipoOf(p), g = groups[t] || groups.qdc;
-    const sz = p.k === 'qdc' ? [0.5, 0.6, 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.k === 'il' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
+    const sz = p.k === 'qdc' ? [0.5, 0.7, 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
     const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(KCOL[p.k] || '#333'));
     m.position.set(M(p.x), M(LEVEL[p.fl] + p.z), M(p.y));
     g.add(m);
@@ -490,7 +527,7 @@ function init3D() {
   controls.enableDamping = true;
   scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8070, 1.6));
   const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-6, 14, 8); scene.add(sun);
-  const groups = { WALLS: new THREE.Group(), il: new THREE.Group(), tug: new THREE.Group(), tue: new THREE.Group(), qdc: new THREE.Group() };
+  const groups = { WALLS: new THREE.Group(), il: new THREE.Group(), tug: new THREE.Group(), tue: new THREE.Group(), tel: new THREE.Group(), qdc: new THREE.Group() };
   Object.values(groups).forEach((g) => scene.add(g));
   const ground = new THREE.Mesh(new THREE.PlaneGeometry(9, 20), new THREE.MeshStandardMaterial({ color: 0x9db38a, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }));
   ground.rotation.x = -Math.PI / 2; ground.position.set(4.5, -0.36, 10); scene.add(ground);
@@ -504,7 +541,7 @@ function init3D() {
 }
 function sync3D() {
   if (!R3) return;
-  ['il', 'tug', 'tue', 'WALLS'].forEach((k) => (R3.groups[k].visible = !!S.layers[k]));
+  ['il', 'tug', 'tue', 'tel', 'WALLS'].forEach((k) => (R3.groups[k].visible = !!S.layers[k]));
   const w = R3.host.clientWidth, h = R3.host.clientHeight;
   if (w && h) { R3.renderer.setSize(w, h, false); R3.camera.aspect = w / h; R3.camera.updateProjectionMatrix(); }
 }
@@ -586,9 +623,9 @@ function memorial() {
   <h2>1. Premissas e normas</h2>
   <ul>
     <li><b>Normas:</b> ABNT NBR 5410:2004 (instalações elétricas de baixa tensão), NBR 5444 (símbolos), NBR 14136 (plugues e tomadas), NBR 5419 (proteção contra descargas atmosféricas, só DPS aqui) e regulamento de fornecimento da Enel RJ.</li>
-    <li><b>Fornecimento:</b> trifásico 127/220 V (3 fases + neutro), Enel RJ, Campos dos Goytacazes. Padrão de entrada no muro da frente, com medidor e haste de aterramento.</li>
+    <li><b>Fornecimento:</b> trifásico 127/220 V (3 fases + neutro), Enel RJ, Campos dos Goytacazes. <b>Padrão de entrada na quina do muro esquerdo com o muro da frente</b> (olhando a casa com a rua nas costas), com medidor e haste de aterramento.</li>
     <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
-    <li><b>Quadro de distribuição (QDC):</b> <b>debaixo da escada, na parede do quarto do térreo</b>, voltado para a escada, centro a 1,50 m do piso, com acesso livre na frente (NBR 5410 6.5.4.7). Dali saem todos os circuitos; os do 1º e do 2º sobem por 3 eletrodutos Ø32 na mesma parede até as lajes.</li>
+    <li><b>Quadro de distribuição (QDC):</b> <b>na parede do quarto do térreo, do lado direito da porta</b> (olhando da sala), junto ao pé da escada, centro a 1,50 m do piso, com acesso livre na frente (NBR 5410 6.5.4.7). Dali saem todos os circuitos. Os do 1º sobem na mesma parede. Os do 2º sobem até a laje do 1º, andam 47,5 cm nela e continuam pela parede da escada do 2º, porque na posição do quadro o 2º não tem parede. São 3 eletrodutos Ø32.</li>
     <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
     <li><b>Ramal principal (alimentador):</b> cabo de ${E.ALIM_SECAO} mm² definido pela obra; o cálculo confere a capacidade de condução e a queda de tensão total.</li>
@@ -622,8 +659,11 @@ function memorial() {
     <li>Potência instalada: <b>${fmtn(ALIM.inst, 1)} kW</b> (iluminação ${fmtn(ALIM.ilW / 1000, 2)} kW, tomadas ${fmtn(ALIM.tugW / 1000, 2)} kW a fp 0,8, aparelhos de uso específico ${fmtn(ALIM.tueW, 2)} kW).</li>
     <li>Demanda: iluminação + tomadas com os fatores por faixa (${fmtn(ALIM.it, 2)} kW → ${fmtn(ALIM.dIT, 2)} kW) e aparelhos com fator ${fmtn(ALIM.fTue, 2)} para ${ALIM.nTue} aparelhos → <b>${fmtn(ALIM.D, 1)} kW</b>.</li>
     <li>Corrente de demanda: I = D / (√3 · 220 · 0,92) = <b>${fmtn(ALIM.I, 1)} A</b>.</li>
-    <li><b>Alimentador</b> (padrão → QDC, ${fmtn(ALIM.L / 1000, 1)} m, enterrado em PEAD Ø50 a −0,40 m):
+    <li><b>Alimentador</b> (padrão → QDC, ${fmtn(ALIM.L / 1000, 1)} m com 1 m de sobra):
       <ul>
+        <li>percurso: sai do padrão na quina do muro e corre <b>enterrado</b> em PEAD Ø50 a −0,40 m, por baixo da garagem, até a <b>parede do lavabo</b> (lado da garagem, x = 2,80 m). Ali <b>sobe embutido</b> na parede até a laje do térreo, corre na laje (eletroduto Ø50) e <b>desce no QDC</b>;</li>
+        <li>com caixa de passagem na base da subida. Em vala, cobrir com areia e pôr fita de aviso 10 cm acima;</li>
+        <li>cruzamentos: passa <b>por cima</b> do alimentador de água (que está a −0,76 m) junto à parede do lavabo e por cima da saída do esgoto (que está a −0,8 m) perto do muro da frente. Cruzar sempre em ângulo reto;</li>
         <li>3 fases de ${ALIM.secao} mm², neutro de ${ALIM.neutro} mm² e PE de ${ALIM.pe} mm²;</li>
         <li>disjuntor geral 3P de ${ALIM.disj} A no QDC;</li>
         <li>capacidade do cabo de ${ALIM.secao} mm² (B1, 3 condutores carregados): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do geral — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
@@ -642,7 +682,22 @@ function memorial() {
   </ul>
   <h2>6. Diagrama unifilar</h2>
   ${unifilar(980)}
-  <h2>7. Execução</h2>
+  <h2>7. Infraestrutura de internet (fibra e rede)</h2>
+  <p>Tubulação pronta para a operadora passar a fibra sem quebrar nada, e cabeamento estruturado Cat6 em estrela (NBR 14565 / NBR 16264). Tudo em <b>eletrodutos só de telecom</b>, nunca no mesmo eletroduto ou caixa dos cabos de energia.</p>
+  <ul>
+    <li><b>Entrada:</b> caixa de entrada 20×20 no muro esquerdo, ao lado do padrão (a fibra da operadora chega do poste até ela).</li>
+    <li><b>Percurso da fibra (${fmtn(TEL.entrada / 1000, 1)} m):</b>
+      <ul>
+        <li>PEAD Ø32 enterrado na mesma vala do alimentador, <b>20 cm ao lado</b>;</li>
+        <li><b>caixa de passagem 4×4</b> na parede do lavabo (lado da garagem, a 0,30 m);</li>
+        <li>sobe na parede, corre na laje e desce no <b>quadro de telecom (QDT)</b>.</li>
+      </ul></li>
+    <li><b>QDT:</b> caixa de embutir 40×40×12 com tampa, <b>sob a escada</b>, ao lado do QDC (centro a 1,50 m). Ali ficam a ONT da operadora, o roteador e um patch panel. Há uma tomada de energia ao lado (T-T-QDT).</li>
+    <li><b>Pontos:</b> ${PONTOS.filter((p) => p.tel === 'rj').length} tomadas RJ45 (sala/TV, quartos e varanda gourmet) e ${PONTOS.filter((p) => p.tel === 'ap').length} pontos de Wi-Fi no teto, um por pavimento, para access point com alimentação PoE pelo próprio cabo. Cada ponto tem o seu cabo Cat6 direto do QDT; o mais longo tem ${fmtn(Math.max(...TEL.cabos.map((c) => c.L)) / 1000, 1)} m, contra o limite de 90 m.</li>
+    <li><b>Eletrodutos de rede:</b> Ø25 na laje e nas descidas, com uma prumada própria ao lado da do QDC. Usar curvas suaves, no máximo 2 curvas de 90° entre caixas, e <b>arame-guia</b> deixado em todos os trechos.</li>
+    <li><b>Separação da energia:</b> pelo menos 20 cm de eletrodutos de energia em trechos paralelos. Cruzamentos sempre em ângulo reto.</li>
+  </ul>
+  <h2>8. Execução</h2>
   <ul>
     <li><b>Alturas:</b>
       <ul>
@@ -686,11 +741,11 @@ function csv() {
 
 // ---------------------------------------------------------------------------------------------- pranchas de execução (PDF)
 // Duas folhas por pavimento — iluminação/interruptores e tomadas/uso específico — mais a do quadro.
-const LUZ = { il: true, tug: false, tue: false }, TOM = { il: false, tug: true, tue: true };
+const LUZ = { il: true, tug: false, tue: false, tel: false }, TOM = { il: false, tug: true, tue: true, tel: true };
 const SHEETS = [];
 [['T', 'f0', 'Térreo', [-100, 1800, 9100, 20200]], ['1', 'f1', '1º pavimento', [-100, 2300, 9100, 16300]], ['2', 'f2', '2º pavimento', [-100, 2300, 9100, 15100]]].forEach(([fl, fid, nome, bounds]) => {
   SHEETS.push({ id: fl + 'L', fl, fid, titulo: nome + ' — iluminação e interruptores', bounds, layers: LUZ });
-  SHEETS.push({ id: fl + 'T', fl, fid, titulo: nome + ' — tomadas e pontos de uso específico', bounds, layers: TOM });
+  SHEETS.push({ id: fl + 'T', fl, fid, titulo: nome + ' — tomadas, uso específico e rede', bounds, layers: TOM });
 });
 const SIDE_NAME = { esq: 'à esquerda', dir: 'à direita', fundo: 'do fundo', frente: 'da frente' };
 function wallRects(fid, d = doc) {
@@ -735,13 +790,13 @@ function refText(r) {
   return t.join(' · ');
 }
 
-const KIND_ORDER = { qdc: 0, medidor: 0, il: 1, int: 2, int3: 2, tug: 3, tue: 4 };
+const KIND_ORDER = { qdc: 0, medidor: 0, il: 1, int: 2, int3: 2, tug: 3, tue: 4, tel: 5 };
 function sheetPoints(sh) {
   return PONTOS.filter((p) => p.fl === sh.fl && (p.k === 'qdc' || p.k === 'medidor' ? sh.layers.il : sh.layers[tipoOf(p)])).map((p) => ({
     p, x: p.x, y: p.y, kind: tipoOf(p),
-    item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no teto') : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
-    circ: p.circ ? 'C' + p.circ.n : p.k === 'qdc' ? 'QDC' : '—',
-    alt: p.k === 'il' && p.tipo === 'teto' ? 'teto' : fmtm(p.z) + ' m',
+    item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no teto') : p.k === 'tel' ? TEL_LABEL[p.tel] : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
+    circ: p.circ ? 'C' + p.circ.n : p.k === 'qdc' ? 'QDC' : p.k === 'tel' ? 'rede' : '—',
+    alt: (p.k === 'il' && p.tipo === 'teto') || p.tel === 'ap' ? 'teto' : fmtm(p.z) + ' m',
   }));
 }
 function renderSheetImage(sh, pts) {
@@ -782,7 +837,7 @@ function renderSheetImage(sh, pts) {
     return url;
   }
 }
-const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no teto · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · tracejado = eletroduto na laje</span>`;
+const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no teto · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · <b style="color:${COLOR.tel}">◆</b> RJ45 · <b style="color:${COLOR.tel}">◉</b> Wi-Fi · tracejado = eletroduto na laje · traço-ponto azul = rede</span>`;
 function pranchas() {
   const hoje = new Date().toLocaleDateString('pt-BR');
   let nChanged = 0;
@@ -838,7 +893,8 @@ function side() {
       <span><i style="border-color:${COLOR.il};border-top-style:dashed"></i>Iluminação (pontos, arandelas, interruptores)</span>
       <span><i style="border-color:${COLOR.tug};border-top-style:dashed"></i>Tomadas de uso geral (TUG)</span>
       <span><i style="border-color:${COLOR.tue};border-top-style:dashed"></i>Uso específico (TUE)</span>
-      <span>⊗ luz no teto · ● arandela · □ interruptor · △ tomada · ▲ 600 VA / TUE · ▬ QDC</span>
+      <span><i style="border-color:${COLOR.tel};border-top-style:dotted"></i>Rede / internet (eletrodutos exclusivos)</span>
+      <span>⊗ luz no teto · ● arandela · □ interruptor · △ tomada · ▲ 600 VA / TUE · ▬ QDC · ◆ RJ45 · ◉ Wi-Fi</span>
     </div>
     <h3>Circuitos ${fl === '3d' ? '' : 'que passam aqui'}</h3>
     <ul class="list">${circs.map((c) => `<li><b style="color:${COLOR[c.tipo]}">C${c.n}</b> ${esc(c.desc)} — ${c.secao} mm², ${c.disj} A</li>`).join('')}</ul>
