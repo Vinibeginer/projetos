@@ -14,7 +14,7 @@
   const VFN = 127, VFF = 220;   // Enel RJ (Campos dos Goytacazes): 127/220 V
   const RHO = 0.0225;           // Ω·mm²/m — cobre a 70 °C (queda de tensão em operação)
   const DV_MAX = 4, DV_TOTAL = 5; // % — circuitos terminais; total do padrão ao ponto (NBR 5410 6.2.7)
-  const ALIM_SECAO = 16;          // mm² — cabo do ramal principal (padrão → QDC) definido pela obra
+  const ALIM_SECAO = 16;          // mm² — seção mínima do ramal principal definida pela obra (sobe se a demanda passar)
   const FCA = 0.7;              // agrupamento: até 3 circuitos por eletroduto (Tabela 42)
   const FCT = 1.0;              // 30 °C (Tabela 40, PVC)
   const QDC_XY = { x: 5925, y: 8750 }; // QDC à direita da porta do quarto do térreo (parede do quarto, lado da sala)
@@ -51,11 +51,11 @@
   const PONTOS = [
     {id: "T-IL1", fl: "T", k: "il", tipo: "teto", amb: "Cozinha", x: 2900, y: 5800, z: 2780, va: 220, desc: "Ponto de luz no teto — Cozinha"},
     {id: "T-S1", fl: "T", k: "int", amb: "Cozinha", x: 3025, y: 3000, z: 1100, liga: ["T-IL1"], desc: "Interruptor simples — Cozinha"},
-    {id: "T-T1", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 5150, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Cozinha"},
-    {id: "T-T2", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 6550, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Cozinha"},
-    {id: "T-T3", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 4350, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Cozinha"},
+    {id: "T-T1", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 5800, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Cozinha"},
+    {id: "T-T2", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 6500, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Cozinha"},
+    {id: "T-T3", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 4200, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Cozinha"},
     {id: "T-T4", fl: "T", k: "tug", amb: "Cozinha", x: 4150, y: 4850, z: 300, va: 100, molhada: true, desc: "TUG — Cozinha"},
-    {id: "T-T5", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 7500, z: 300, va: 100, molhada: true, desc: "TUG — Cozinha"},
+    {id: "T-T5", fl: "T", k: "tug", amb: "Cozinha", x: 1650, y: 6300, z: 300, va: 100, molhada: true, desc: "TUG — Cozinha"},
     {id: "T-IL2", fl: "T", k: "il", tipo: "teto", amb: "Desp.", x: 4600, y: 3800, z: 2780, va: 100, desc: "Ponto de luz no teto — Desp."},
     {id: "T-S2", fl: "T", k: "int", amb: "Desp.", x: 4300, y: 3575, z: 1100, liga: ["T-IL2"], desc: "Interruptor simples — Desp."},
     {id: "T-T6", fl: "T", k: "tug", amb: "Desp.", x: 4900, y: 4300, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Desp."},
@@ -74,16 +74,16 @@
     {id: "T-IL6", fl: "T", k: "il", tipo: "teto", amb: "Sala", x: 6000, y: 10580, z: 2780, va: 200, desc: "Ponto de luz no teto — Sala"},
     {id: "T-IL7", fl: "T", k: "il", tipo: "teto", amb: "Sala", x: 6000, y: 13020, z: 2780, va: 200, desc: "Ponto de luz no teto — Sala"},
     {id: "T-S6", fl: "T", k: "int", amb: "Sala", x: 6350, y: 14850, z: 1100, liga: ["T-IL6","T-IL7"], desc: "Interruptor simples — Sala"},
-    {id: "T-T12", fl: "T", k: "tug", amb: "Sala", x: 4310, y: 8750, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
-    {id: "T-T13", fl: "T", k: "tug", amb: "Sala", x: 8850, y: 10430, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
-    {id: "T-T14", fl: "T", k: "tug", amb: "Sala", x: 8550, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
+    {id: "T-T12", fl: "T", k: "tug", amb: "Sala", x: 7210, y: 8750, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
+    {id: "T-T13", fl: "T", k: "tug", amb: "Sala", x: 8850, y: 10280, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
+    {id: "T-T14", fl: "T", k: "tug", amb: "Sala", x: 6550, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
     {id: "T-T15", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 14530, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
-    {id: "T-T16", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 10710, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
+    {id: "T-T16", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 10860, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Sala"},
     {id: "T-IL8", fl: "T", k: "il", tipo: "teto", amb: "Garagem", x: 2150, y: 11850, z: 2780, va: 140, desc: "Ponto de luz no teto — Garagem"},
     {id: "T-IL9", fl: "T", k: "il", tipo: "teto", amb: "Garagem", x: 2150, y: 13650, z: 2780, va: 140, desc: "Ponto de luz no teto — Garagem"},
     {id: "T-S7", fl: "T", k: "int", amb: "Garagem", x: 3050, y: 10500, z: 1100, liga: ["T-IL8","T-IL9"], desc: "Interruptor simples — Garagem"},
-    {id: "T-T17", fl: "T", k: "tug", amb: "Garagem", x: 4150, y: 11650, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
-    {id: "T-T18", fl: "T", k: "tug", amb: "Garagem", x: 150, y: 14750, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
+    {id: "T-T17", fl: "T", k: "tug", amb: "Garagem", x: 4150, y: 11350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
+    {id: "T-T18", fl: "T", k: "tug", amb: "Garagem", x: 150, y: 14550, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
     {id: "1-IL1", fl: "1", k: "il", tipo: "teto", amb: "Closet", x: 2900, y: 3800, z: 2780, va: 100, desc: "Ponto de luz no teto — Closet"},
     {id: "1-S1", fl: "1", k: "int", amb: "Closet", x: 3050, y: 4600, z: 1100, liga: ["1-IL1"], desc: "Interruptor simples — Closet"},
     {id: "1-T1", fl: "1", k: "tug", amb: "Closet", x: 3700, y: 3000, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
@@ -94,9 +94,9 @@
     {id: "1-T4", fl: "1", k: "tug", amb: "Closet", x: 4300, y: 4275, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
     {id: "1-IL3", fl: "1", k: "il", tipo: "teto", amb: "Quarto Master", x: 4284, y: 6675, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto Master"},
     {id: "1-IL4", fl: "1", k: "il", tipo: "teto", amb: "Quarto Master", x: 6216, y: 6675, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto Master"},
-    {id: "1-S3", fl: "1", k: "int", amb: "Quarto Master", x: 4250, y: 4750, z: 1100, liga: ["1-IL3","1-IL4"], desc: "Interruptor simples — Quarto Master"},
+    {id: "1-S3", fl: "1", k: "int", amb: "Quarto Master", x: 5450, y: 4750, z: 1100, liga: ["1-IL3","1-IL4"], desc: "Interruptor simples — Quarto Master"},
     {id: "1-T5", fl: "1", k: "tug", amb: "Quarto Master", x: 6213, y: 4750, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
-    {id: "1-T6", fl: "1", k: "tug", amb: "Quarto Master", x: 7350, y: 6588, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
+    {id: "1-T6", fl: "1", k: "tug", amb: "Quarto Master", x: 7350, y: 7038, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-T7", fl: "1", k: "tug", amb: "Quarto Master", x: 5338, y: 8600, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-T8", fl: "1", k: "tug", amb: "Quarto Master", x: 3150, y: 6763, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-AC1", fl: "1", k: "tue", eq: "ac", amb: "Quarto Master", x: 7350, y: 7750, z: 2200, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto Master — parede lateral, depois da janela"},
@@ -105,25 +105,25 @@
     {id: "1-T9", fl: "1", k: "tug", amb: "Suíte", x: 1650, y: 4750, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Suíte"},
     {id: "1-IL6", fl: "1", k: "il", tipo: "teto", amb: "Banhº", x: 2325, y: 9000, z: 2780, va: 100, desc: "Ponto de luz no teto — Banhº"},
     {id: "1-S5", fl: "1", k: "int", amb: "Banhº", x: 3000, y: 9325, z: 1100, liga: ["1-IL6"], desc: "Interruptor simples — Banhº"},
-    {id: "1-T10", fl: "1", k: "tug", amb: "Banhº", x: 1650, y: 9220, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Banhº"},
+    {id: "1-T10", fl: "1", k: "tug", amb: "Banhº", x: 1650, y: 9620, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Banhº"},
     {id: "1-IL7", fl: "1", k: "il", tipo: "teto", amb: "Circulação", x: 6000, y: 9550, z: 2780, va: 100, desc: "Ponto de luz no teto — Circulação"},
     {id: "1-S6", fl: "1", k: "int", amb: "Circulação", x: 3150, y: 9325, z: 1100, liga: ["1-IL7"], desc: "Interruptor simples — Circulação"},
-    {id: "1-T11", fl: "1", k: "tug", amb: "Circulação", x: 4400, y: 8750, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
+    {id: "1-T11", fl: "1", k: "tug", amb: "Circulação", x: 4600, y: 8750, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
     {id: "1-T12", fl: "1", k: "tug", amb: "Circulação", x: 5500, y: 10350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
     {id: "1-IL8", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 11805, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
     {id: "1-IL9", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 13545, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
     {id: "1-S7", fl: "1", k: "int", amb: "Quarto 1", x: 3700, y: 14850, z: 1100, liga: ["1-IL8","1-IL9"], desc: "Interruptor simples — Quarto 1"},
     {id: "1-T13", fl: "1", k: "tug", amb: "Quarto 1", x: 2238, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
-    {id: "1-T14", fl: "1", k: "tug", amb: "Quarto 1", x: 4150, y: 12763, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
-    {id: "1-T15", fl: "1", k: "tug", amb: "Quarto 1", x: 2063, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
+    {id: "1-T14", fl: "1", k: "tug", amb: "Quarto 1", x: 4150, y: 12663, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
+    {id: "1-T15", fl: "1", k: "tug", amb: "Quarto 1", x: 2463, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-T16", fl: "1", k: "tug", amb: "Quarto 1", x: 150, y: 12588, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-AC2", fl: "1", k: "tue", eq: "ac", amb: "Quarto 1", x: 1700, y: 14850, z: 2450, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto 1 — acima da janela (fachada)"},
     {id: "1-IL10", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 5529, y: 12675, z: 2780, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
     {id: "1-IL11", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 7622, y: 12675, z: 2780, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
-    {id: "1-S8", fl: "1", k: "int", amb: "Quarto 2", x: 6000, y: 14850, z: 1100, liga: ["1-IL10","1-IL11"], desc: "Interruptor simples — Quarto 2"},
+    {id: "1-S8", fl: "1", k: "int", amb: "Quarto 2", x: 7400, y: 14850, z: 1100, liga: ["1-IL10","1-IL11"], desc: "Interruptor simples — Quarto 2"},
     {id: "1-T17", fl: "1", k: "tug", amb: "Quarto 2", x: 6525, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-T18", fl: "1", k: "tug", amb: "Quarto 2", x: 8850, y: 12625, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
-    {id: "1-T19", fl: "1", k: "tug", amb: "Quarto 2", x: 6925, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
+    {id: "1-T19", fl: "1", k: "tug", amb: "Quarto 2", x: 7625, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-T20", fl: "1", k: "tug", amb: "Quarto 2", x: 4300, y: 11675, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-AC3", fl: "1", k: "tue", eq: "ac", amb: "Quarto 2", x: 8000, y: 14850, z: 2200, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto 2 — fachada, à direita da janela"},
     {id: "1-IL12", fl: "1", k: "il", tipo: "teto", amb: "Varanda", x: 4500, y: 15525, z: 2780, va: 100, desc: "Ponto de luz no teto — Varanda"},
@@ -135,9 +135,9 @@
     {id: "2-IL3", fl: "2", k: "il", tipo: "teto", amb: "Varanda coberta", x: 3450, y: 8513, z: 2780, va: 150, desc: "Ponto de luz no teto — Varanda coberta"},
     {id: "2-IL4", fl: "2", k: "il", tipo: "teto", amb: "Varanda coberta", x: 7050, y: 8513, z: 2780, va: 150, desc: "Ponto de luz no teto — Varanda coberta"},
     {id: "2-S1", fl: "2", k: "int", amb: "Varanda coberta", x: 5450, y: 10350, z: 1100, liga: ["2-IL1","2-IL2","2-IL3","2-IL4"], desc: "Interruptor simples — Varanda coberta"},
-    {id: "2-T1", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 5150, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
-    {id: "2-T2", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 6550, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
-    {id: "2-T3", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 4350, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
+    {id: "2-T1", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 6200, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
+    {id: "2-T2", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 6500, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
+    {id: "2-T3", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 3800, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
     {id: "2-T4", fl: "2", k: "tug", amb: "Varanda coberta", x: 5958, y: 3000, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
     {id: "2-T5", fl: "2", k: "tug", amb: "Varanda coberta", x: 6478, y: 8600, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
     {id: "2-T6", fl: "2", k: "tug", amb: "Varanda coberta", x: 3150, y: 10023, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
@@ -162,7 +162,7 @@
     {id: "T-PT1", fl: "T", k: "tue", eq: "portao", amb: "Garagem (portão)", x: 4400, y: 19850, z: 400, va: 600, v: 127, externa: true, desc: "Motor do portão eletrônico ½ cv (600 VA)"},
     {id: "T-IL-E1", fl: "T", k: "il", tipo: "arandela", amb: "Fachada", x: 4650, y: 15000, z: 2200, va: 100, externa: true, desc: "Arandela externa — fachada, ao lado da porta"},
     {id: "T-IL-E2", fl: "T", k: "il", tipo: "arandela", amb: "Fachada", x: 6450, y: 15000, z: 2200, va: 100, externa: true, desc: "Arandela externa — fachada"},
-    {id: "T-IL-E3", fl: "T", k: "il", tipo: "arandela", amb: "Quintal", x: 4300, y: 2850, z: 2200, va: 100, externa: true, desc: "Arandela externa — quintal (fundos)"},
+    {id: "T-IL-E3", fl: "T", k: "il", tipo: "arandela", amb: "Quintal", x: 3950, y: 2850, z: 2200, va: 100, externa: true, desc: "Arandela externa — quintal (fundos)"},
     {id: "T-IL-E4", fl: "T", k: "il", tipo: "arandela", amb: "Corredor lateral", x: 1500, y: 6000, z: 2200, va: 100, externa: true, desc: "Arandela externa — corredor lateral"},
     {id: "T-S-E", fl: "T", k: "int", amb: "Sala", x: 4700, y: 14850, z: 1100, liga: ["T-IL-E1","T-IL-E2"], desc: "Interruptor das arandelas da fachada (junto à porta de entrada)"},
     {id: "T-S-Q", fl: "T", k: "int", amb: "Cozinha", x: 3025, y: 3000, z: 1100, liga: ["T-IL-E3","T-IL-E4"], desc: "Interruptor das arandelas do quintal e do corredor (junto à porta dos fundos) (mesma caixa do T-S1)", caixa: "T-S1"},
@@ -173,15 +173,19 @@
     {id: "1-IL-ESC", fl: "1", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (1º → 2º)"},
     {id: "1-S3a", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 10350, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — pé da escada (1º)"},
     {id: "2-S3b", fl: "2", k: "int3", amb: "Varanda coberta", x: 6300, y: 8600, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (2º)"},
+    {id: "T-TV1", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 12500, z: 300, va: 100, desc: "TUG da TV (1/3) — parede da TV, atrás do rack"},
+    {id: "T-TV2", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 12700, z: 300, va: 100, desc: "TUG da TV (2/3) — parede da TV, atrás do rack"},
+    {id: "T-TV3", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 13300, z: 300, va: 100, desc: "TUG da TV (3/3) — parede da TV, atrás do rack"},
+    {id: "T-T-RT", fl: "T", k: "tug", amb: "Sala", x: 4600, y: 14550, z: 2780, va: 100, desc: "Tomada no teto para o roteador Wi-Fi (junto ao ponto de rede)"},
     {id: "T-T-QDT", fl: "T", k: "tug", amb: "Sala (pé da escada)", x: 7000, y: 8750, z: 1500, va: 100, desc: "TUG do roteador / ONT da fibra (ao lado do QDT)"},
     {id: "CXT", fl: "T", k: "tel", tel: "entrada", amb: "Muro esquerdo (frente)", x: 150, y: 19300, z: 1500, desc: "Caixa de entrada da fibra (operadora) — muro esquerdo, ao lado do padrão"},
     {id: "CPT", fl: "T", k: "tel", tel: "passagem", amb: "Garagem", x: 2600, y: 10500, z: 300, desc: "Caixa de passagem 4×4 da fibra — parede do lavabo, lado da garagem"},
     {id: "QDT", fl: "T", k: "tel", tel: "qdt", amb: "Sala (sob a escada)", x: 6650, y: 8750, z: 1500, desc: "Quadro de telecom (QDT) 40×40 — ONT da fibra, roteador e distribuição Cat6"},
-    {id: "T-RJ1", fl: "T", k: "tel", tel: "rj", amb: "Sala", x: 4300, y: 12900, z: 300, desc: "Ponto de rede RJ45 (TV) — Sala"},
+    {id: "T-RJ1", fl: "T", k: "tel", tel: "rj", amb: "Sala", x: 4300, y: 13500, z: 300, desc: "Ponto de rede RJ45 (TV) — Sala, ao lado das tomadas da TV"},
     {id: "T-RJ2", fl: "T", k: "tel", tel: "rj", amb: "Quarto", x: 4300, y: 6450, z: 300, desc: "Ponto de rede RJ45 — Quarto"},
-    {id: "T-AP1", fl: "T", k: "tel", tel: "ap", amb: "Sala", x: 6500, y: 11800, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Sala"},
+    {id: "T-RT1", fl: "T", k: "tel", tel: "roteador", amb: "Sala", x: 4600, y: 14550, z: 2780, desc: "Ponto no teto para o roteador Wi-Fi (Cat6 do QDT + tomada no teto) — Sala, depois da 2ª janela da parede da garagem"},
     {id: "1-RJ1", fl: "1", k: "tel", tel: "rj", amb: "Quarto Master", x: 3150, y: 7063, z: 300, desc: "Ponto de rede RJ45 — Quarto Master"},
-    {id: "1-RJ2", fl: "1", k: "tel", tel: "rj", amb: "Quarto 1", x: 4150, y: 13063, z: 300, desc: "Ponto de rede RJ45 — Quarto 1"},
+    {id: "1-RJ2", fl: "1", k: "tel", tel: "rj", amb: "Quarto 1", x: 4150, y: 13163, z: 300, desc: "Ponto de rede RJ45 — Quarto 1"},
     {id: "1-RJ3", fl: "1", k: "tel", tel: "rj", amb: "Quarto 2", x: 4300, y: 11975, z: 300, desc: "Ponto de rede RJ45 — Quarto 2"},
     {id: "1-AP1", fl: "1", k: "tel", tel: "ap", amb: "Circulação", x: 4700, y: 9550, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Circulação do 1º"},
     {id: "2-RJ1", fl: "2", k: "tel", tel: "rj", amb: "Varanda coberta", x: 7350, y: 7800, z: 300, desc: "Ponto de rede RJ45 (TV) — Varanda coberta"},
@@ -352,7 +356,7 @@
 
   // ------------------------------------------------------------------ rede de dados (Cat6 em estrela a partir do QDT)
   function telNet() {
-    const pts = PONTOS.filter((p) => p.k === 'tel' && (p.tel === 'rj' || p.tel === 'ap'));
+    const pts = PONTOS.filter((p) => p.k === 'tel' && (p.tel === 'rj' || p.tel === 'ap' || p.tel === 'roteador'));
     const trees = {}, cabos = [];
     ['T', '1', '2'].forEach((fl) => {
       const ids = pts.filter((p) => p.fl === fl).map((p) => p.id);
@@ -435,9 +439,9 @@
     const L = polyLen(ALIM_ROUTE) + 1000; // percurso real + 1 m de sobra nas ligações
     const disj = DISJ.find((d) => d >= I);
     // seção definida (16 mm²): confere capacidade (Iz ≥ In do geral) e a queda de tensão entra no total de 5 %
-    const s = ALIM_SECAO, iz = IZ3[s] * FCT;
+    const s = SECOES.find((x) => x >= ALIM_SECAO && IZ3[x] * FCT >= disj), iz = IZ3[s] * FCT;
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
-    return Object.assign(d, { L, disj, secao: s, iz, okIz: disj <= iz, dv, neutro: s, pe: s <= 16 ? s : 16 });
+    return Object.assign(d, { L, disj, secao: s, iz, okIz: disj <= iz, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16 });
   }
   const ALIM = demanda();
   // alimentadores dos quadros de andar (QDC → QD-1 e QD-2): demanda do andar, disjuntor 3P no QDC, cabo pela capacidade
@@ -533,7 +537,7 @@
       it('Quadros', `Quadro de distribuição de embutir ${tam} módulos DIN, barramentos trifásico, neutro e terra — ${BOARDS[b].id}`, 'un', 1, mod + ' módulos ocupados + reserva (NBR 5410 6.5.4.7)');
     });
     // rede (fibra + Cat6)
-    const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap').length;
+    const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap' || p.tel === 'roteador').length;
     it('Rede e fibra', 'Eletroduto PEAD corrugado Ø 32 mm (enterrado) — entrada da fibra', 'm', Math.ceil(TEL.entrada / 1000 + 2), 'da caixa de entrada no muro até a parede do lavabo, 20 cm ao lado do alimentador');
     it('Rede e fibra', 'Eletroduto corrugado Ø 25 mm (1") — rede, exclusivo', 'm', Math.ceil(((TEL.conduite + 8000) / 1000) * 1.1 / 5) * 5, 'laje, prumadas e descidas — nunca junto com cabos de energia');
     it('Rede e fibra', 'Arame-guia galvanizado (ou fita-guia) em todos os eletrodutos de rede', 'm', Math.ceil((TEL.entrada + TEL.conduite) / 1000 * 1.2), 'deixar dentro de cada eletroduto, amarrado nas caixas');
@@ -541,7 +545,7 @@
     it('Rede e fibra', 'Caixa de entrada de telecom 20×20 (muro) e caixa de passagem 4×4', 'un', 2, 'entrada no muro esquerdo e passagem na parede do lavabo (lado da garagem)');
     it('Rede e fibra', 'Cabo U/UTP Cat6 (por metro ou caixa de 305 m)', 'm', Math.ceil((TEL.cabos.reduce((s, c) => s + c.L, 0) / 1000) / 5) * 5, nRJ + ' pontos RJ45 + ' + nAP + ' pontos de Wi-Fi, um cabo por ponto, do QDT');
     it('Rede e fibra', 'Tomada RJ45 Cat6 com placa 4×2', 'un', nRJ, 'ao lado de uma tomada de energia');
-    it('Rede e fibra', 'Caixa octogonal 4×4" de laje para Wi-Fi (access point PoE)', 'un', nAP, 'um por pavimento, no teto');
+    it('Rede e fibra', 'Caixa octogonal 4×4" de laje para Wi-Fi (roteador / access point)', 'un', nAP, 'roteador no teto da sala (térreo) e access points PoE no 1º e no 2º');
     it('Rede e fibra', 'Patch panel 12 portas Cat6 + patch cords', 'un', 1, 'no QDT');
     it('Aterramento', 'Haste de aterramento cobreada 5/8" × 2,40 m com conector', 'un', 3, 'no padrão de entrada, interligadas (medir ≤ 10 Ω)');
     it('Aterramento', 'Caixa de inspeção do aterramento 30×30', 'un', 1, '');
@@ -594,7 +598,7 @@
       if (p.tel === 'rj') {
         ctx.moveTo(p.x, p.y - s); ctx.lineTo(p.x + s, p.y); ctx.lineTo(p.x, p.y + s); ctx.lineTo(p.x - s, p.y); ctx.closePath();
         ctx.fill();
-      } else if (p.tel === 'ap') {
+      } else if (p.tel === 'ap' || p.tel === 'roteador') {
         ctx.arc(p.x, p.y, s, 0, Math.PI * 2);
         ctx.fillStyle = '#fff'; ctx.fill(); ctx.stroke();
         ctx.beginPath(); ctx.arc(p.x, p.y, s * 0.45, 0, Math.PI * 2); ctx.fillStyle = col; ctx.fill();
@@ -758,7 +762,7 @@
       [[ALIM_ROUTE, COLOR.alim, 0.022], [TEL_ROUTE, COLOR.tel, 0.016]].forEach(([Rt, col, r]) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, r, mat(col, 0.9))));
     ptsOf(fl).forEach((p) => {
       const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
-      const sz = p.k === 'qdc' ? (p.id === 'QDC' ? [0.5, 0.7, 0.12] : [0.4, 0.5, 0.12]) : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
+      const sz = p.k === 'qdc' ? (p.id === 'QDC' ? [0.5, 0.7, 0.12] : [0.4, 0.5, 0.12]) : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' || p.tel === 'roteador' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
       const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(col, 1));
       m.position.set(p.x * MM, (lv + p.z) * MM, p.y * MM);
       put(m);

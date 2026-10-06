@@ -268,6 +268,12 @@ const EXTRA = [
   { id: '1-IL-ESC', fl: '1', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (1º → 2º)' },
   { id: '1-S3a', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 10350, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (1º)' },
   { id: '2-S3b', fl: '2', k: 'int3', amb: 'Varanda coberta', x: 6300, y: 8600, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (2º)' },
+  // parede da TV (sala/garagem, entre as janelas, atrás do rack): 3 tomadas a 0,30 m
+  { id: 'T-TV1', fl: 'T', k: 'tug', amb: 'Sala', x: 4300, y: 12500, z: 300, va: 100, desc: 'TUG da TV (1/3) — parede da TV, atrás do rack' },
+  { id: 'T-TV2', fl: 'T', k: 'tug', amb: 'Sala', x: 4300, y: 12700, z: 300, va: 100, desc: 'TUG da TV (2/3) — parede da TV, atrás do rack' },
+  { id: 'T-TV3', fl: 'T', k: 'tug', amb: 'Sala', x: 4300, y: 12900, z: 300, va: 100, desc: 'TUG da TV (3/3) — parede da TV, atrás do rack' },
+  // tomada no teto para o roteador
+  { id: 'T-T-RT', fl: 'T', k: 'tug', amb: 'Sala', x: 4600, y: 14550, z: TETO, va: 100, desc: 'Tomada no teto para o roteador Wi-Fi (junto ao ponto de rede)' },
   // tomada do roteador/ONT, ao lado do quadro de telecom (QDT)
   { id: 'T-T-QDT', fl: 'T', k: 'tug', amb: 'Sala (pé da escada)', x: 7000, y: 8750, z: 1500, va: 100, desc: 'TUG do roteador / ONT da fibra (ao lado do QDT)' },
 ];
@@ -279,9 +285,10 @@ const TEL = [
   { id: 'CXT', fl: 'T', k: 'tel', tel: 'entrada', amb: 'Muro esquerdo (frente)', x: 150, y: 19300, z: 1500, desc: 'Caixa de entrada da fibra (operadora) — muro esquerdo, ao lado do padrão' },
   { id: 'CPT', fl: 'T', k: 'tel', tel: 'passagem', amb: 'Garagem', x: 2600, y: 10500, z: 300, desc: 'Caixa de passagem 4×4 da fibra — parede do lavabo, lado da garagem' },
   { id: 'QDT', fl: 'T', k: 'tel', tel: 'qdt', amb: 'Sala (sob a escada)', x: 6650, y: 8750, z: 1500, desc: 'Quadro de telecom (QDT) 40×40 — ONT da fibra, roteador e distribuição Cat6' },
-  { id: 'T-RJ1', fl: 'T', k: 'tel', tel: 'rj', amb: 'Sala', x: 4300, y: 12900, z: 300, desc: 'Ponto de rede RJ45 (TV) — Sala' },
+  { id: 'T-RJ1', fl: 'T', k: 'tel', tel: 'rj', amb: 'Sala', x: 4300, y: 13100, z: 300, desc: 'Ponto de rede RJ45 (TV) — Sala, ao lado das tomadas da TV' },
   { id: 'T-RJ2', fl: 'T', k: 'tel', tel: 'rj', amb: 'Quarto', x: 4300, y: 6450, z: 300, desc: 'Ponto de rede RJ45 — Quarto' },
-  { id: 'T-AP1', fl: 'T', k: 'tel', tel: 'ap', amb: 'Sala', x: 6500, y: 11800, z: TETO, desc: 'Ponto de Wi-Fi no teto (access point) — Sala' },
+  // roteador no teto da sala, depois da 2ª janela da parede sala/garagem (lado da rua), a 30 cm da parede
+  { id: 'T-RT1', fl: 'T', k: 'tel', tel: 'roteador', amb: 'Sala', x: 4600, y: 14550, z: TETO, desc: 'Ponto no teto para o roteador Wi-Fi (Cat6 do QDT + tomada no teto) — Sala, depois da 2ª janela da parede da garagem' },
   { id: '1-RJ1', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto Master', x: 3150, y: 7063, z: 300, desc: 'Ponto de rede RJ45 — Quarto Master' },
   { id: '1-RJ2', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 1', x: 4150, y: 13063, z: 300, desc: 'Ponto de rede RJ45 — Quarto 1' },
   { id: '1-RJ3', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 2', x: 4300, y: 11975, z: 300, desc: 'Ponto de rede RJ45 — Quarto 2' },
@@ -307,6 +314,71 @@ pts.filter((p) => p.k === 'int' || p.k === 'int3').forEach((p, i, all) => {
   const q = all.slice(0, i).find((o) => o.fl === p.fl && o.amb === p.amb && Math.hypot(o.x - p.x, o.y - p.y) < 250);
   if (q) Object.assign(p, { x: q.x, y: q.y, caixa: q.caixa || q.id, desc: p.desc + ' (mesma caixa do ' + (q.caixa || q.id) + ')' });
 });
+
+// ------------------------------------------------------------------ compatibilização: pilares e vãos
+// Os eletrodutos descem da laje pela parede até a caixa. Um ponto não pode ficar:
+//   • sobre um pilar — o corte para a caixa e para o eletroduto enfraqueceria o pilar;
+//   • na prumada de uma janela ou porta — a descida passaria pelo vão (sem parede para embutir).
+// Pontos nessas posições escorregam ao longo da mesma parede até a posição livre mais próxima, sem sair do cômodo.
+// Os pilares vêm do projeto estrutural, que é privado (private/estrutura.json, fora do repositório): sem ele, só os
+// vãos são conferidos.
+const STF = path.join(__dirname, '..', 'private', 'estrutura.json');
+const PILARES = fs.existsSync(STF) ? JSON.parse(fs.readFileSync(STF, 'utf8')).pilares : null;
+if (!PILARES) console.warn('aviso: private/estrutura.json ausente — pontos não conferidos contra os pilares');
+const LVL = { T: 0, 1: 2880, 2: 5760 }, FID = { T: 'f0', 1: 'f1', 2: 'f2' };
+const desceDoTeto = (p) => !(p.fl === 'T' && p.id === 'T-PT1') && !/^2-IL[78]$/.test(p.id); // os de baixo vêm do piso
+function wallOf(p) {
+  let best = null;
+  wallsOf(FID[p.fl]).forEach((w) => {
+    const d = distSeg(p, w.a, w.b);
+    if (d <= w.thick / 2 + 90 && (!best || d < best.d)) best = { w, d };
+  });
+  return best && best.w;
+}
+function conflito(p, q) {
+  const fid = FID[p.fl], lv = LVL[p.fl];
+  if (PILARES && PILARES.some((c) => c.topo > lv + 100 && q.x > c.x0 - 60 && q.x < c.x1 + 60 && q.y > c.y0 - 60 && q.y < c.y1 + 60)) return 'pilar';
+  const vao = doc.openings.find((o) => {
+    const w = doc.walls.find((x) => x.id === o.wall);
+    if (!w || w.floor !== fid) return false;
+    const f = DD.geom.openingFrame(w, o);
+    const along = (q.x - f.c.x) * f.d.x + (q.y - f.c.y) * f.d.y, across = (q.x - f.c.x) * f.n.x + (q.y - f.c.y) * f.n.y;
+    if (Math.abs(across) > w.thick / 2 + 90 || Math.abs(along) > o.width / 2 + 150) return false;
+    const sill = o.sill || 0, top = sill + o.height;
+    return desceDoTeto(p) ? top > p.z - 100 : sill < p.z + 100;
+  });
+  return vao ? 'vao' : null;
+}
+const relocados = [];
+pts.forEach((p) => {
+  if (/qdc|medidor/.test(p.k) || p.z >= TETO || (p.k === 'tel' && p.tel !== 'rj')) return;
+  if (!conflito(p, p)) return;
+  const w = wallOf(p);
+  if (!w) return;
+  const L = Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y), d = { x: (w.b.x - w.a.x) / L, y: (w.b.y - w.a.y) / L }, n = { x: -d.y, y: d.x };
+  const side = Math.sign((p.x - w.a.x) * n.x + (p.y - w.a.y) * n.y) || 1;
+  const room = roomList.find((r) => r.fl === p.fl && r.name === p.amb && inside(r, { x: p.x + n.x * side * 120, y: p.y + n.y * side * 120 }));
+  const outros = pts.filter((o) => o !== p && o.fl === p.fl && o.z < TETO && !(p.caixa && (o.id === p.caixa || o.caixa === p.caixa)) && o.caixa !== p.id);
+  for (let k = 1; k <= 60; k++) {
+    for (const sg of [1, -1]) {
+      const q = { x: Math.round(p.x + d.x * sg * k * 50), y: Math.round(p.y + d.y * sg * k * 50) };
+      const t = (q.x - w.a.x) * d.x + (q.y - w.a.y) * d.y;
+      if (t < 150 || t > L - 150) continue;
+      if (conflito(p, q)) continue;
+      if (room && !inside(room, { x: q.x + n.x * side * 120, y: q.y + n.y * side * 120 })) continue;
+      if (outros.some((o) => Math.hypot(o.x - q.x, o.y - q.y) < (o.k === 'qdc' || o.tel === 'qdt' ? 450 : 180))) continue;
+      relocados.push(p.id + ' ' + (k * 50) + ' mm');
+      p.x = q.x; p.y = q.y;
+      k = 99;
+      break;
+    }
+  }
+  // interruptores na mesma caixa acompanham
+  pts.filter((o) => o.caixa === p.id).forEach((o) => ((o.x = p.x), (o.y = p.y)));
+});
+const restam = pts.filter((p) => !/qdc|medidor/.test(p.k) && p.z < TETO && !(p.k === 'tel' && p.tel !== 'rj') && conflito(p, p));
+if (restam.length) console.warn('ATENÇÃO — pontos ainda em conflito: ' + restam.map((p) => p.id + ' (' + conflito(p, p) + ')').join(', '));
+console.log('compatibilização: ' + relocados.length + ' pontos deslocados ao longo da parede');
 
 // ------------------------------------------------------------------ saída
 const fmt = (p) => '    ' + JSON.stringify(p).replace(/"(\w+)":/g, '$1: ').replace(/,(?=\w+: )/g, ', ');
