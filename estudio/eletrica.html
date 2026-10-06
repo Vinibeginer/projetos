@@ -662,7 +662,7 @@ function memorial() {
 
     <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
-    <li><b>Ramal principal (alimentador):</b> mínimo de ${E.ALIM_SECAO} mm², definido pela obra. O cálculo confere a capacidade de condução e a queda de tensão total, e aumenta a seção se a demanda passar da capacidade.${ALIM.subiu ? ` <b class="warnc">Com a carga atual, a demanda (${fmtn(ALIM.I, 1)} A) passou do disjuntor de 63 A que cabe no ${E.ALIM_SECAO} mm² (68 A), e o ramal subiu para ${ALIM.secao} mm² com geral de ${ALIM.disj} A.</b>` : ''}</li>
+    <li><b>Ramal principal (alimentador):</b> mínimo de ${E.ALIM_SECAO} mm², definido pela obra. O cálculo confere a capacidade de condução e a queda de tensão total, e aumenta a seção se a demanda passar da capacidade.${ALIM.subiu ? ` <b class="warnc">Com a carga atual, a demanda (${fmtn(ALIM.Iproj, 1)} A) passou do disjuntor de 63 A que cabe no ${E.ALIM_SECAO} mm² (68 A), e o ramal subiu para ${ALIM.secao} mm² com geral de ${ALIM.disj} A.</b>` : ''}</li>
     <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
       <ul>
         <li>iluminação: 100 VA nos primeiros 6 m² e +60 VA a cada 4 m² inteiros;</li>
@@ -691,8 +691,31 @@ function memorial() {
   <h2>4. Demanda, padrão de entrada e alimentador</h2>
   <ul>
     <li>Potência instalada: <b>${fmtn(ALIM.inst, 1)} kW</b> (iluminação ${fmtn(ALIM.ilW / 1000, 2)} kW, tomadas ${fmtn(ALIM.tugW / 1000, 2)} kW a fp 0,8, aparelhos de uso específico ${fmtn(ALIM.tueW, 2)} kW).</li>
-    <li>Demanda: iluminação + tomadas com os fatores por faixa (${fmtn(ALIM.it, 2)} kW → ${fmtn(ALIM.dIT, 2)} kW) e aparelhos com fator ${fmtn(ALIM.fTue, 2)} para ${ALIM.nTue} aparelhos → <b>${fmtn(ALIM.D, 1)} kW</b>.</li>
-    <li>Corrente de demanda: I = D / (√3 · 220 · 0,92) = <b>${fmtn(ALIM.I, 1)} A</b>.</li>
+    <li><b>Demanda pela tabela usual das concessionárias</b> (vale para o pedido do padrão na Enel):
+      <ul>
+        <li>iluminação + tomadas com fatores por faixa de kW: ${fmtn(ALIM.it, 2)} kW → ${fmtn(ALIM.dIT, 2)} kW;</li>
+        <li>aparelhos com fator ${fmtn(ALIM.fTue, 2)} para ${ALIM.nTue} aparelhos;</li>
+        <li>total de ${fmtn(ALIM.D, 1)} kW, equivalente a ${fmtn(ALIM.Iconc, 1)} A trifásico, com I = D / (√3 · 220 · 0,92).</li>
+      </ul></li>
+    <li><b>Demanda pelo uso real</b> (usada no ramal e no geral do QDC; a NBR 5410 deixa a demanda a critério do projetista):
+      <ul>
+        <li>corrente em cada fase = Σ (corrente do circuito × Fu × Fs);</li>
+        <li><b>Fu, fator de utilização:</b> parte da potência que o aparelho usa quando está ligado;</li>
+        <li><b>Fs, fator de simultaneidade:</b> parte dos pontos do grupo ligados ao mesmo tempo no pico;</li>
+        <li>os chuveiros entram um a um: no pico, os dois que mais carregam a mesma fase. Cada chuveiro fica num par de fases diferente (AB, BC e CA).</li>
+      </ul>
+      ${table(['Grupo', 'Fu', 'Fs', 'Por quê'], Object.values(E.FATORES).map((f) => `<tr><td>${esc(f.nome)}</td><td class="n">${fmtn(f.fu, 2)}</td><td class="n">${fmtn(f.fs, 2)}</td><td>${esc(f.obs)}</td></tr>`).concat([`<tr><td>Chuveiros</td><td class="n">0,55 / 1</td><td class="n">2 de 3</td><td>posição verão / inverno; banhos de 10 a 15 min</td></tr>`]))}
+      ${table(['Cenário', 'Fase A (A)', 'Fase B (A)', 'Fase C (A)', 'Maior / geral'], E.CENARIO.map((c) => `<tr${c.projeto ? ' class="group"' : ''}><td>${esc(c.nome)}${c.projeto ? ' — <b>cenário de projeto</b>' : ''}</td><td class="n">${fmtn(c.I.A, 1)}</td><td class="n">${fmtn(c.I.B, 1)}</td><td class="n">${fmtn(c.I.C, 1)}</td><td class="n">${fmtn(c.max / ALIM.disj, 2)} × In</td></tr>`))}
+      <ul>
+        <li><b>Corrente de projeto do ramal:</b> ${fmtn(ALIM.Iproj, 1)} A, a maior fase no pico típico (verão, que em Campos dos Goytacazes é a maior parte do ano), com geral de <b>${ALIM.disj} A</b>.</li>
+        <li><b>No inverno, com 2 chuveiros na posição inverno ao mesmo tempo:</b> uma fase chega a ${fmtn(ALIM.raros.find((r) => r.id === 'inverno').max, 0)} A (${fmtn(ALIM.raros.find((r) => r.id === 'inverno').xIn, 2)} × In).
+          <ul>
+            <li>O disjuntor curva C não desarma até 1,13 × In e só desarma em menos de 1 h acima de 1,45 × In.</li>
+            <li>Por isso dois banhos de 10 a 15 min no mesmo horário não devem desarmar o geral. Banhos longos e seguidos, com os dois chuveiros no inverno, podem.</li>
+            <li>Se isso incomodar, a saída é o ramal de 25 mm² com geral de 70 A.</li>
+          </ul></li>
+        <li><b>Sem chuveiro</b> (ar, luzes e tomadas no pico de verão): ${fmtn(E.CENARIO.find((c) => c.id === 'semch').max, 0)} A por fase. Os chuveiros são o que define a entrada.</li>
+      </ul></li>
     <li><b>Alimentador</b> (padrão → QDC, ${fmtn(ALIM.L / 1000, 1)} m com 1 m de sobra):
       <ul>
         <li>percurso: sai do padrão na quina do muro e corre <b>enterrado</b> em PEAD Ø50 a −0,40 m, por baixo da garagem, até a <b>parede do lavabo</b> (lado da garagem, x = 2,80 m). Ali <b>sobe embutido</b> na parede até a laje do térreo, corre na laje (eletroduto Ø50) e <b>desce no QDC</b>;</li>
@@ -915,7 +938,7 @@ function pranchas() {
     <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadros de distribuição (QDC, QD-1, QD-2): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
     <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
     <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Quadro</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
-    <p class="sh-note">Geral: 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (${E.SUB[1].secao} mm², 3P ${E.SUB[1].disj} A) · QD-2 ${QT.MOD[2].tam} módulos (${E.SUB[2].secao} mm², 3P ${E.SUB[2].disj} A) · centros a 1,50 m. Demanda ${fmtn(ALIM.D, 1)} kW (${fmtn(ALIM.I, 0)} A). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
+    <p class="sh-note">Geral: 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (${E.SUB[1].secao} mm², 3P ${E.SUB[1].disj} A) · QD-2 ${QT.MOD[2].tam} módulos (${E.SUB[2].secao} mm², 3P ${E.SUB[2].disj} A) · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
     <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
   </section>`);
   const aviso = nChanged
@@ -935,7 +958,7 @@ function side() {
     <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo. Eletrodutos na laje e descidas nas paredes; o alimentador chega enterrado do padrão ao QDC.' : 'Arraste para mover, roda ou pinça para zoom. Passe o mouse num ponto para ver o circuito. Ao lado de cada ponto: nº do circuito · VA.'}</p>
     <div class="kpis">
       <div class="kpi"><b>${CIRC.length}</b><span>circuitos em 3 quadros (um por andar)</span></div>
-      <div class="kpi"><b>${fmtn(ALIM.D, 1)} kW</b><span>demanda (${fmtn(ALIM.I, 0)} A, trifásico)</span></div>
+      <div class="kpi"><b>${fmtn(ALIM.Iproj, 0)} A</b><span>pico típico na fase mais carregada (geral ${ALIM.disj} A)</span></div>
       <div class="kpi"><b>${n('il')}</b><span>pontos de luz${fl === '3d' ? '' : ' neste pavimento'}</span></div>
       <div class="kpi"><b>${n('tug') + n('tue')}</b><span>tomadas e pontos de uso específico</span></div>
       <div class="kpi"><b class="${CIRC.every((c) => c.ok) ? 'ok' : 'bad'}">${CIRC.every((c) => c.ok) ? 'OK' : 'rever'}</b><span>disjuntor ≤ cabo e ΔV ≤ ${E.DV_MAX} %</span></div>

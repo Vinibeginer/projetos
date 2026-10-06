@@ -10605,9 +10605,13 @@ kbd {
   const CIRC = buildCircuits();
 
   // ------------------------------------------------------------------ fases (127 V numa fase; 220 V entre duas)
+  // Chuveiros primeiro, cada um num par de fases diferente (AB, BC, CA): dois ligados juntos nunca somam 2 × 34 A nas
+  // mesmas duas fases. Os demais circuitos equilibram cada quadro partindo da carga dos chuveiros daquele quadro.
+  CIRC.filter((c) => c.eq === 'chuveiro').forEach((c, i) => (c.fases = ['AB', 'BC', 'CA'][i % 3]));
   function balance(list) {
     const load = { A: 0, B: 0, C: 0 };
-    list.slice().sort((a, b) => b.va - a.va).forEach((c) => {
+    list.filter((c) => c.eq === 'chuveiro').forEach((c) => c.fases.split('').forEach((f) => (load[f] += c.va / 2)));
+    list.filter((c) => c.eq !== 'chuveiro').sort((a, b) => b.va - a.va).forEach((c) => {
       if (c.v === VFF) {
         const pair = [['A', 'B'], ['B', 'C'], ['C', 'A']].sort((p, q) => load[p[0]] + load[p[1]] - (load[q[0]] + load[q[1]]))[0];
         c.fases = pair.join('');
@@ -10781,14 +10785,62 @@ kbd {
     const I = (D * 1000) / (Math.sqrt(3) * VFF * 0.92);
     return { ilW, tugW, it, dIT, tueW, fTue, nTue: tues.length, D, inst, I };
   }
+  // ------------------------------------------------------------------ demanda pelo uso real (cenários de pico)
+  // A NBR 5410 deixa a demanda a critério do projetista; a concessionária usa as tabelas dela só para o padrão.
+  // Aqui: corrente em cada fase = Σ Ib × Fu × Fs, com
+  //   Fu (fator de utilização) — fração da potência nominal que o aparelho usa quando está ligado;
+  //   Fs (fator de simultaneidade) — fração dos pontos/aparelhos do grupo ligados ao mesmo tempo no pico.
+  // Chuveiros são contados um a um: no pico, os dois que mais carregam a mesma fase.
+  const FATORES = {
+    il: { fu: 0.4, fs: 0.6, nome: 'Iluminação', obs: 'LED consome ~40 % da carga mínima da NBR; 60 % das luzes acesas' },
+    tug: { fu: 1, fs: 0.15, nome: 'Tomadas de uso geral (100 VA)', obs: 'carregadores, TV, notebook…: poucos ao mesmo tempo' },
+    tug600: { fu: 1, fs: 0.3, nome: 'Tomadas de bancada e banheiro (600 VA)', obs: 'liquidificador, cafeteira, secador: uso curto' },
+    ac: { fu: 0.8, fs: 0.75, nome: 'Ar-condicionado', obs: '3 dos 4 ligados; compressor não fica 100 % do tempo' },
+    microondas: { fu: 1, fs: 0.3, nome: 'Micro-ondas', obs: 'uso de poucos minutos' },
+    mlr: { fu: 0.6, fs: 0.5, nome: 'Máquina de lavar', obs: 'ciclo com aquecimento só parte do tempo' },
+    portao: { fu: 1, fs: 0.05, nome: 'Portão', obs: 'segundos por acionamento' },
+  };
+  const CENARIOS = [
+    { id: 'verao', nome: 'Noite de verão: ar ligado, 2 chuveiros juntos na posição verão', chuveiros: 2, fuCh: 0.55, ac: true, projeto: true },
+    { id: 'inverno', nome: 'Noite de inverno: ar desligado, 2 chuveiros juntos na posição inverno', chuveiros: 2, fuCh: 1, ac: false },
+    { id: 'inverno3', nome: 'Raro: 3 chuveiros juntos na posição inverno', chuveiros: 3, fuCh: 1, ac: false },
+    { id: 'semch', nome: 'Noite de verão sem chuveiro', chuveiros: 0, fuCh: 0, ac: true },
+  ];
+  function cenario(cn) {
+    const sh = CIRC.filter((c) => c.eq === 'chuveiro');
+    const combos = cn.chuveiros === 0 ? [[]] : cn.chuveiros >= sh.length ? [sh] : sh.flatMap((a, i) => sh.slice(i + 1).map((b) => [a, b]));
+    let pior = null;
+    combos.forEach((on) => {
+      const I = { A: 0, B: 0, C: 0 };
+      CIRC.forEach((c) => {
+        let k;
+        if (c.eq === 'chuveiro') { if (!on.includes(c)) return; k = { fu: cn.fuCh, fs: 1 }; }
+        else if (c.eq === 'ac') k = cn.ac ? FATORES.ac : { fu: 0, fs: 0 };
+        else if (c.tipo === 'tue') k = FATORES[c.eq];
+        else if (c.tipo === 'tug') k = c.pts.some((id) => PBY[id].va >= 600) ? FATORES.tug600 : FATORES.tug;
+        else k = FATORES.il;
+        const ib = (c.va / c.v) * k.fu * k.fs;
+        c.fases.split('').forEach((f) => (I[f] += ib));
+      });
+      const m = Math.max(I.A, I.B, I.C);
+      if (!pior || m > pior.max) pior = { I, max: m };
+    });
+    return Object.assign({}, cn, pior);
+  }
+  const CENARIO = CENARIOS.map(cenario);
   function demanda() {
-    const d = demandaDe(CIRC), I = d.I;
+    // corrente de projeto do ramal: a maior fase no cenário de projeto (pico típico) — não a média trifásica
+    const d = demandaDe(CIRC), proj = CENARIO.find((c) => c.projeto), I = proj.max;
+    d.Iconc = d.I;
     const L = polyLen(ALIM_ROUTE) + 1000; // percurso real + 1 m de sobra nas ligações
     const disj = DISJ.find((d) => d >= I);
     // seção definida (16 mm²): confere capacidade (Iz ≥ In do geral) e a queda de tensão entra no total de 5 %
     const s = SECOES.find((x) => x >= ALIM_SECAO && IZ3[x] * FCT >= disj), iz = IZ3[s] * FCT;
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
-    return Object.assign(d, { L, disj, secao: s, iz, okIz: disj <= iz, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16 });
+    // situações mais raras (2 ou 3 chuveiros no inverno): a corrente pode passar do In por alguns minutos; o disjuntor
+    // curva C não desarma até 1,13 × In e só desarma em menos de 1 h acima de 1,45 × In (NBR NM 60898)
+    const raros = CENARIO.filter((c) => !c.projeto).map((c) => ({ id: c.id, nome: c.nome, max: c.max, xIn: c.max / disj }));
+    return Object.assign(d, { Iproj: I, L, disj, secao: s, iz, okIz: disj <= iz, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16, raros });
   }
   const ALIM = demanda();
   // alimentadores dos quadros de andar (QDC → QD-1 e QD-2): demanda do andar, disjuntor 3P no QDC, cabo pela capacidade
@@ -11118,7 +11170,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, FATORES, CENARIO, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();
