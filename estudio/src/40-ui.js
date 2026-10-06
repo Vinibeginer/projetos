@@ -1014,11 +1014,20 @@
   }
   /** Camada do projeto hidrossanitário (17-hidro.js) na planta e no 3D. */
   function toggleHidro() {
+    if (ui().show.hidro && ui().hidroOnly) setUI({ hidroOnly: false });
     toggleShow('hidro');
-    if (ui().show.hidro && !S.hidroHinted) {
-      S.hidroHinted = true;
-      DD.toast('Hidráulica: água fria (azul), esgoto (marrom), ventilação (verde) e alimentador (roxo). Medidas, cálculo e pranchas em PDF em “Mais opções › Projeto hidrossanitário”.', 'info');
-    }
+    if (ui().show.hidro) hidroHint();
+  }
+  /** Isola o projeto hidrossanitário: liga a camada e esconde o resto (de novo: volta à casa com a hidráulica). */
+  function toggleHidroOnly() {
+    const u = ui(), on = !(u.hidroOnly && u.show.hidro);
+    setUI({ hidroOnly: on, structOnly: on ? false : u.structOnly, show: Object.assign({}, u.show, { hidro: on ? true : u.show.hidro }) });
+    if (on) hidroHint();
+  }
+  function hidroHint() {
+    if (S.hidroHinted) return;
+    S.hidroHinted = true;
+    DD.toast('Hidráulica: água fria (azul), esgoto (marrom), ventilação (verde) e alimentador (roxo). Medidas, cálculo e pranchas em PDF em “Mais opções › Projeto hidrossanitário”.', 'info');
   }
   function escapeAction() {
     if (S.openMenu) return closeMenu(S.openMenu, true);
@@ -2189,12 +2198,17 @@
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só estrutura', 'data-tip': 'Mostrar só pilares, vigas e sapatas (projeto estrutural)', onclick: () => toggleStructure('only') },
       [icon('layers'), h('span', { class: 'btn-label', text: 'Só estrutura' })]
     );
+    S.el.hidroOnlyChip = h(
+      'button',
+      { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Só hidráulica', 'data-tip': 'Isolar o projeto hidrossanitário: esconde paredes, móveis e terreno', onclick: toggleHidroOnly },
+      [icon('drop'), h('span', { class: 'btn-label', text: 'Só hidráulica' })]
+    );
     S.el.hidroChip = h(
       'button',
       { type: 'button', class: 'chip', 'aria-pressed': 'false', 'aria-label': 'Hidráulica', 'data-tip': 'Mostrar os tubos de água, esgoto e ventilação por dentro das paredes', onclick: toggleHidro },
       [icon('drop'), h('span', { class: 'btn-label', text: 'Hidráulica' })]
     );
-    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, S.el.hidroChip, recenter]));
+    ov.appendChild(h('div', { class: 'o3d-bar' }, [seg, S.el.panChip, S.el.floorsChip, S.el.structChip, S.el.hidroChip, S.el.hidroOnlyChip, recenter]));
     S.el.overlayHint = h('div', { class: 'o3d-hint', 'aria-live': 'polite' });
     ov.appendChild(S.el.overlayHint);
   }
@@ -2211,6 +2225,8 @@
     if (S.el.hidroChip) {
       S.el.hidroChip.hidden = !DD.hidro;
       setPressed(S.el.hidroChip, !!(u.show && u.show.hidro));
+      S.el.hidroOnlyChip.hidden = !DD.hidro;
+      setPressed(S.el.hidroOnlyChip, !!(u.hidroOnly && u.show && u.show.hidro));
     }
     if (S.el.structChip) {
       S.el.structChip.hidden = !(DD.structure && DD.structure.hasData());
@@ -2408,7 +2424,7 @@
   function toggleStructure(key) {
     const u = ui();
     if (key === 'show') setUI({ show: Object.assign({}, u.show, { structure: u.show.structure === false }) });
-    else setUI({ structOnly: !u.structOnly, show: Object.assign({}, u.show, { structure: true }) });
+    else setUI({ structOnly: !u.structOnly, hidroOnly: u.structOnly ? u.hidroOnly : false, show: Object.assign({}, u.show, { structure: true }) });
   }
   function structureBlock(d, u, floor) {
     const st = DD.structure;
@@ -2887,6 +2903,11 @@
       hidroBtn.hidden = !DD.hidro;
       hidroBtn.addEventListener('click', toggleHidro);
     }
+    const hidroOnlyBtn = document.getElementById('tg-hidro-only');
+    if (hidroOnlyBtn) {
+      hidroOnlyBtn.hidden = !DD.hidro;
+      hidroOnlyBtn.addEventListener('click', toggleHidroOnly);
+    }
     DD.events.on('plan2d:cursor', onCursor);
     DD.events.on('plan2d:viewport', syncZoom);
     DD.events.on('saved', (p) => {
@@ -2935,6 +2956,8 @@
     setPressed(document.getElementById('tg-labels'), !!show.labels);
     const hidroBtn = document.getElementById('tg-hidro');
     if (hidroBtn) setPressed(hidroBtn, !!show.hidro);
+    const hidroOnlyBtn = document.getElementById('tg-hidro-only');
+    if (hidroOnlyBtn) setPressed(hidroOnlyBtn, !!(show.hidro && u.hidroOnly));
   }
   /** Estado da nuvem da obra (16-cloud.js) no mesmo indicador da barra de status. */
   const CLOUD_TEXT = {
@@ -3210,7 +3233,7 @@
       syncOverlay(u);
     }
     if (u.tool !== prev.tool || u.paintMaterial !== prev.paintMaterial) syncPaintStrip(u);
-    if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors || u.structOnly !== prev.structOnly || u.show !== prev.show) syncOverlay(u);
+    if (u.cam3d !== prev.cam3d || u.showAllFloors !== prev.showAllFloors || u.structOnly !== prev.structOnly || u.hidroOnly !== prev.hidroOnly || u.show !== prev.show) syncOverlay(u);
     if (u.selection !== prev.selection || u.floor !== prev.floor || u.show !== prev.show || u.structOnly !== prev.structOnly) refreshInspector();
   }
 

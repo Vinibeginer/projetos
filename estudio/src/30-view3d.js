@@ -2077,19 +2077,20 @@
     const only = showStruct && !!ui.structOnly && !!(DD.structure && DD.structure.hasData()); // "Só estrutura"
     const showHidro = !!ui.show && ui.show.hidro === true;
     if (showHidro) syncHidro(doc, ui);
+    const onlyH = showHidro && !!ui.hidroOnly && !!DD.hidro; // "Só hidráulica"
     doc.floors.forEach((f, i) => {
       const fg = S.floors.get(f.id);
       if (!fg) return;
       const show = floorShouldShow(doc, ui, i);
       if (show !== fg.shown) startFloorAnim(fg, show, animate);
-      fg.furn.visible = showFurniture && !only;
-      if (fg.arch) fg.arch.visible = !only;
-      if (fg.struct) fg.struct.visible = showStruct;
-      if (fg.marks) fg.marks.visible = showStruct;
+      fg.furn.visible = showFurniture && !only && !onlyH;
+      if (fg.arch) fg.arch.visible = !only && !onlyH;
+      if (fg.struct) fg.struct.visible = showStruct && !onlyH;
+      if (fg.marks) fg.marks.visible = showStruct && !onlyH;
       if (fg.hidro) fg.hidro.visible = showHidro;
-      if (fg.roof) fg.roof.visible = showsUpper(ui) && !only;
+      if (fg.roof) fg.roof.visible = showsUpper(ui) && !only && !onlyH;
     });
-    if (S.site) S.site.visible = !only;
+    if (S.site) S.site.visible = !only && !onlyH;
     requestRender();
   }
   /**
@@ -3051,7 +3052,7 @@
   }
   function onUIChange(ui, prev) {
     if (ui.selection !== prev.selection || ui.hover !== prev.hover) S.dirty.highlight = true;
-    if (ui.showAllFloors !== prev.showAllFloors || ui.show !== prev.show || ui.structOnly !== prev.structOnly) S.dirty.visibility = true;
+    if (ui.showAllFloors !== prev.showAllFloors || ui.show !== prev.show || ui.structOnly !== prev.structOnly || ui.hidroOnly !== prev.hidroOnly) S.dirty.visibility = true;
     if (ui.showAllFloors !== prev.showAllFloors && S.ready && S.active && S.atHome && !S.tween && !isWalking())
       tweenCamera(currentPose(), aerialHome(), 600, { home: true }); // re-frame: with or without the upper floors
     if (ui.floor !== prev.floor) onFloorChange(ui.floor);
