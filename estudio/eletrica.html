@@ -1,0 +1,926 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<script src="../auth/sessao.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Projeto Elétrico</title>
+<meta name="description" content="Anteprojeto elétrico (NBR 5410) da Obra Mariára sobre o projeto 3D: plantas por pavimento com pontos e circuitos, 3D, quadro de cargas, diagrama unifilar, lista de materiais e pranchas em PDF.">
+<script>
+  try { var t = localStorage.getItem('dd.decor.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<script src="./src/00-data.js"></script>
+<script src="./src/01-core.js"></script>
+<script src="./src/18-eletrica.js"></script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #151412; --panel: #1e1d1a; --panel-2: #26241f; --line: #34312b; --line-soft: #2a2823;
+  --text: #ede8df; --muted: #a39a8c; --faint: #7a7266;
+  --accent: #e0703f; --accent-soft: rgba(224,112,63,.15); --accent-ink: #1c0f08;
+  --warn: #e3a53a; --ok: #46a758; --bad: #e5484d; --hover: rgba(237,232,223,.06);
+  --il: #d39b00; --tug: #e0572f; --tue: #b4235a;
+  --font-ui: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #e8e4dc; --panel: #f6f3ee; --panel-2: #eeeae3; --line: #d7d0c4; --line-soft: #e3ddd2;
+  --text: #211e1a; --muted: #6b6356; --faint: #8f8679; --accent: #c65a2b; --accent-soft: rgba(198,90,43,.12);
+  --accent-ink: #fff8f3; --warn: #a8700f; --ok: #2e8540; --bad: #cc3a3f; --hover: rgba(33,30,26,.05);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: #e8e4dc; --panel: #f6f3ee; --panel-2: #eeeae3; --line: #d7d0c4; --line-soft: #e3ddd2;
+    --text: #211e1a; --muted: #6b6356; --faint: #8f8679; --accent: #c65a2b; --accent-soft: rgba(198,90,43,.12);
+    --accent-ink: #fff8f3; --warn: #a8700f; --ok: #2e8540; --bad: #cc3a3f; --hover: rgba(33,30,26,.05);
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 var(--font-ui); }
+body { overflow: hidden; }
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); height: 100vh; height: 100dvh; }
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; }
+.brand b { display: block; font-size: 14px; font-weight: 600; }
+.brand small { display: block; font: 500 11px/1.3 var(--font-mono); color: var(--muted); }
+.badge { font: 500 10.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 5px 8px; border-radius: 99px; border: 1px solid var(--warn); color: var(--warn); white-space: nowrap; }
+.spacer { flex: 1; }
+.tabs { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line-soft); overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.tabs button { flex: none; border: 0; background: transparent; color: var(--muted); font: 500 13px/1 var(--font-ui); padding: 8px 11px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+.tabs button:hover { background: var(--hover); color: var(--text); }
+.tabs button[aria-selected='true'] { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.link { color: var(--muted); font-size: 12.5px; text-decoration: none; border: 1px solid var(--line); padding: 7px 10px; border-radius: 8px; white-space: nowrap; }
+.link:hover { color: var(--text); background: var(--hover); }
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; min-height: 0; min-width: 0; }
+.main.wide { grid-template-columns: minmax(0, 1fr); }
+.stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: var(--bg); }
+#plan { position: absolute; inset: 0; width: 100%; height: 100%; background: #f3efe6; touch-action: none; cursor: grab; }
+#plan:active { cursor: grabbing; }
+#view3d { position: absolute; inset: 0; }
+#view3d canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.layers { position: absolute; left: 10px; top: 10px; z-index: 3; display: flex; flex-wrap: wrap; gap: 6px; max-width: calc(100% - 20px); }
+.layers label { display: flex; align-items: center; gap: 6px; font: 500 12px/1 var(--font-ui); padding: 7px 9px; border-radius: 8px; background: rgba(20,19,17,.78); color: #ede8df; cursor: pointer; user-select: none; }
+.layers i { width: 14px; height: 4px; border-radius: 2px; display: inline-block; }
+.layers input { margin: 0; accent-color: var(--accent); }
+.tip { position: absolute; z-index: 5; pointer-events: none; font: 500 11.5px/1.4 var(--font-mono); background: rgba(20,19,17,.92); color: #ede8df; padding: 6px 8px; border-radius: 6px; max-width: 280px; white-space: pre-line; }
+.hint { position: absolute; right: 10px; bottom: 10px; z-index: 3; font: 500 11px/1.4 var(--font-mono); color: #ede8df; background: rgba(20,19,17,.66); padding: 6px 8px; border-radius: 6px; pointer-events: none; }
+.doc { position: absolute; inset: 0; overflow-y: auto; padding: 22px 26px 60px; scrollbar-width: thin; }
+.doc h2 { margin: 26px 0 8px; font-size: 18px; }
+.doc h2:first-child { margin-top: 0; }
+.doc h3 { margin: 18px 0 6px; font: 500 11.5px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.doc p { margin: 6px 0; max-width: 980px; }
+.doc ul { margin: 6px 0; padding-left: 20px; max-width: 980px; }
+.doc li { margin: 3px 0; }
+table { border-collapse: collapse; margin: 8px 0 4px; font-size: 12.5px; min-width: 520px; }
+.tw { overflow-x: auto; max-width: 100%; }
+th, td { border-bottom: 1px solid var(--line-soft); padding: 6px 9px; text-align: left; vertical-align: top; }
+th { font: 500 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); background: var(--panel-2); position: sticky; top: 0; }
+td.n { font-family: var(--font-mono); text-align: right; white-space: nowrap; }
+td.c { font-family: var(--font-mono); white-space: nowrap; }
+.ok { color: var(--ok); font-weight: 600; }
+.bad { color: var(--bad); font-weight: 600; }
+.warnc { color: var(--warn); font-weight: 600; }
+.group td { background: var(--accent-soft); font-weight: 600; }
+.btn { display: inline-flex; align-items: center; gap: 8px; border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: 500 13px/1 var(--font-ui); padding: 9px 12px; border-radius: 8px; cursor: pointer; text-decoration: none; }
+.btn:hover { background: var(--hover); }
+.callout { margin: 10px 0; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--warn); background: rgba(227,165,58,.10); max-width: 980px; }
+.side { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 16px 16px 24px; scrollbar-width: thin; }
+.side h2 { margin: 0 0 4px; font-size: 17px; }
+.side .sub { margin: 0 0 12px; color: var(--muted); font-size: 13px; }
+.side h3 { margin: 16px 0 8px; font: 500 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { border: 1px solid var(--line-soft); border-radius: 9px; padding: 8px 10px; background: var(--panel-2); }
+.kpi b { display: block; font: 600 16px/1.2 var(--font-mono); }
+.kpi span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.leg { display: grid; gap: 6px; font-size: 12.5px; }
+.leg span { display: flex; align-items: center; gap: 8px; }
+.leg i { width: 22px; height: 0; border-top: 3px solid; display: inline-block; }
+.list { margin: 0; padding-left: 18px; font-size: 13px; }
+.list li { margin: 4px 0; }
+/* pranchas */
+.sheet { background: #fff; color: #1f1d1a; border: 1px solid #ccc; margin: 0 auto 24px; padding: 10mm; max-width: 1580px; aspect-ratio: 420 / 297; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+.sh-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f1d1a; padding-bottom: 4px; }
+.sh-head b { display: block; font-size: 15px; }
+.sh-head span { font-size: 13px; }
+.sh-meta { text-align: right; font: 500 10px/1.4 var(--font-mono); }
+.sh-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 54% 46%; gap: 8px; }
+.sh-img { min-height: 0; display: flex; align-items: flex-start; justify-content: center; }
+.sh-img img { max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid #ddd; }
+.sh-tab { overflow: hidden; }
+table.pts { min-width: 0; width: 100%; font-size: 9.5px; line-height: 1.25; }
+table.pts th { position: static; background: #eee; color: #333; font-size: 8.5px; padding: 3px 4px; }
+table.pts td { padding: 2px 4px; border-bottom: 1px solid #e3e3e3; color: #1f1d1a; }
+tr.chg td { background: #fff4e0; }
+.chg-tag { color: #a3560b; font-weight: 600; }
+.callout.warn { border-width: 2px; font-weight: 500; }
+.badge.src { border-color: var(--line); color: var(--muted); }
+.badge.src[data-kind='cloud'] { border-color: var(--ok); color: var(--ok); }
+td.num span { display: inline-grid; place-items: center; min-width: 17px; height: 17px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-mono); }
+.sh-foot { font-size: 9px; color: #444; border-top: 1px solid #999; padding-top: 4px; }
+@page { size: A3 landscape; margin: 8mm; }
+@media print {
+  html, body { height: auto; overflow: visible; background: #fff; }
+  .app { display: block; height: auto; }
+  .topbar, .layers, .side, .hint, #plan, #view3d, .noprint, .tip { display: none !important; }
+  .main, .stage { display: block; height: auto; overflow: visible; }
+  .doc { position: static; overflow: visible; padding: 0; }
+  .sheet { margin: 0; border: 0; box-shadow: none; padding: 0; width: 100%; max-width: none; height: 280mm; aspect-ratio: auto; break-after: page; page-break-after: always; }
+}
+@media (max-width: 999px) {
+  html, body { overflow-x: hidden; }
+  body { overflow-y: auto; }
+  .app { height: auto; min-height: 100vh; }
+  .badge { display: none; }
+  .tabs { order: 5; width: 100%; }
+  .main, .main.wide { grid-template-columns: minmax(0, 1fr); }
+  .stage { height: 68vh; }
+  .stage.docmode { height: auto; min-height: 60vh; }
+  .stage.docmode .doc { position: static; }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+  .hint { display: none; }
+}
+
+.sy b { font-weight: 700; }
+.sh-body.q { grid-template-columns: 44% 56%; }
+.sh-uni { overflow: hidden; }
+.sh-uni svg { width: 100%; height: auto; }
+.sh-note { font-size: 9.5px; margin: 6px 0 0; }
+table.pts.fix { table-layout: fixed; }
+table.pts.fix td { overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="./" title="Voltar ao estúdio">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x=".5" y=".5" width="27" height="27" rx="7" fill="#d39b00"/><path d="M15.5 5 8.5 15.5h5L12 23l7.5-11h-5.2z" fill="#1c1404"/></svg>
+      <span><b>Projeto elétrico</b><small>NBR 5410 · 127/220 V trifásico — as built</small></span>
+    </a>
+    <span class="badge" title="Precisa de revisão e ART/RRT de profissional habilitado antes de executar">anteprojeto · revisar com ART</span>
+    <span class="badge src" id="src-badge" data-kind="ref" title="Paredes usadas nas plantas e nas medidas das pranchas">planta de referência</span>
+    <span class="spacer"></span>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Pranchas"></nav>
+    <a class="link" href="./">← Estúdio</a>
+  </header>
+  <div class="main" id="main">
+    <section class="stage" id="stage">
+      <canvas id="plan" aria-label="Planta elétrica"></canvas>
+      <div id="view3d" hidden></div>
+      <div class="doc" id="doc" hidden></div>
+      <div class="layers" id="layers">
+        <label><input type="checkbox" data-layer="il" checked><i style="background:var(--il)"></i>Iluminação</label>
+        <label><input type="checkbox" data-layer="tug" checked><i style="background:var(--tug)"></i>Tomadas</label>
+        <label><input type="checkbox" data-layer="tue" checked><i style="background:var(--tue)"></i>Uso específico</label>
+        <label><input type="checkbox" data-layer="TXT" checked>Circuitos</label>
+        <label id="lbl-walls" hidden><input type="checkbox" data-layer="WALLS" checked>Paredes</label>
+      </div>
+      <div class="tip" id="tip" hidden></div>
+      <div class="hint" id="hint">Arraste para mover · roda/pinça para zoom · passe o mouse num ponto</div>
+    </section>
+    <aside class="side" id="side"></aside>
+  </div>
+</div>
+
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// =====================================================================================================
+//  ANTEPROJETO ELÉTRICO — Obra Mariára (as built) — NBR 5410:2004
+//  Pontos, circuitos e cálculos: src/18-eletrica.js (o mesmo módulo desenha a camada "Elétrica" no estúdio).
+// =====================================================================================================
+const E = DD.eletrica;
+const { PONTOS, PBY, CIRC, FASES, DRS, ALIM, QT, COLOR, LEVEL, TETO, QDC_XY, fmtm, fmtn } = E;
+const L1 = 2880, L2 = 5760, LR = 8640;
+const REF_DOC = window.DD && DD.data ? DD.data.initialState() : null;
+let doc = REF_DOC;
+const DOC_SRC = { kind: 'ref', at: null };
+const PRANCHAS = [
+  { id: 'T', label: 'Térreo', fid: 'f0' },
+  { id: '1', label: '1º Pav.', fid: 'f1' },
+  { id: '2', label: '2º Pav.', fid: 'f2' },
+  { id: '3d', label: '3D' },
+  { id: 'calc', label: 'Quadro de cargas e memorial' },
+  { id: 'mat', label: 'Materiais' },
+  { id: 'pdf', label: 'Pranchas (PDF)' },
+];
+const PLAN_TABS = ['T', '1', '2'];
+const KCOL = { il: COLOR.il, int: COLOR.il, int3: COLOR.il, tug: COLOR.tug, tue: COLOR.tue, qdc: COLOR.qdc, medidor: COLOR.qdc };
+const tipoOf = (p) => (p.k === 'int' || p.k === 'int3' || p.k === 'il' ? 'il' : p.k === 'tug' ? 'tug' : p.k === 'tue' ? 'tue' : 'qdc');
+const S = { tab: 'T', layers: { il: true, tug: true, tue: true, TXT: true, WALLS: true }, view: null, hover: null };
+const KIND_LABEL = { il: 'Ponto de luz', int: 'Interruptor', int3: 'Interruptor paralelo', tug: 'Tomada de uso geral', tue: 'Tomada/ponto de uso específico', qdc: 'Quadro de distribuição', medidor: 'Padrão de entrada' };
+
+const $ = (id) => document.getElementById(id);
+const tabs = $('tabs');
+PRANCHAS.forEach((p) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.setAttribute('role', 'tab'); b.dataset.tab = p.id; b.textContent = p.label;
+  b.addEventListener('click', () => setTab(p.id));
+  tabs.appendChild(b);
+});
+$('layers').addEventListener('change', (e) => {
+  const k = e.target.dataset.layer;
+  if (!k) return;
+  S.layers[k] = e.target.checked;
+  drawPlan(); if (S.tab === '3d') sync3D();
+});
+
+// ---------------------------------------------------------------------------------------------- planta
+const plan = $('plan');
+let ctx = plan.getContext('2d');
+const BOUNDS = { T: [-300, 1700, 9300, 20400], 1: [-300, 2300, 9300, 16500], 2: [-300, 2300, 9300, 15300] };
+function fitView() {
+  const [x0, y0, x1, y1] = BOUNDS[S.tab] || BOUNDS.T;
+  const w = plan.clientWidth, h = plan.clientHeight;
+  const s = Math.min((w - 30) / (x1 - x0), (h - 30) / (y1 - y0));
+  S.view = { s, ox: (w - (x1 - x0) * s) / 2 - x0 * s, oy: (h - (y1 - y0) * s) / 2 - y0 * s };
+}
+const X = (x) => S.view.ox + x * S.view.s;
+const Y = (y) => S.view.oy + y * S.view.s;
+function wallRect(w) {
+  const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy) || 1;
+  const nx = -dy / L * w.thick / 2, ny = dx / L * w.thick / 2;
+  return [[w.a.x + nx, w.a.y + ny], [w.b.x + nx, w.b.y + ny], [w.b.x - nx, w.b.y - ny], [w.a.x - nx, w.a.y - ny]];
+}
+function drawWalls(fid, faint) {
+  if (!doc) return;
+  const walls = doc.walls.filter((w) => w.floor === fid);
+  walls.forEach((w) => {
+    const r = wallRect(w);
+    ctx.beginPath(); r.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.closePath();
+    ctx.fillStyle = faint ? 'rgba(46,42,38,.18)' : w.kind === 'structural' ? '#3a3631' : w.kind === 'partition' ? '#8c8375' : w.kind === 'railing' ? 'rgba(46,42,38,.35)' : '#b3aa9b';
+    ctx.fill();
+  });
+  if (faint) return;
+  doc.openings.forEach((o) => {
+    const w = walls.find((x) => x.id === o.wall);
+    if (!w) return;
+    const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const c0 = o.t - o.width / 2, c1 = o.t + o.width / 2;
+    const fake = { a: { x: w.a.x + ux * c0, y: w.a.y + uy * c0 }, b: { x: w.a.x + ux * c1, y: w.a.y + uy * c1 }, thick: w.thick + 6 };
+    const r = wallRect(fake);
+    ctx.beginPath(); r.forEach((p, i) => (i ? ctx.lineTo(X(p[0]), Y(p[1])) : ctx.moveTo(X(p[0]), Y(p[1])))); ctx.closePath();
+    ctx.fillStyle = '#f3efe6'; ctx.fill();
+    if (o.type === 'window') {
+      ctx.strokeStyle = '#3a3631'; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(X(fake.a.x), Y(fake.a.y)); ctx.lineTo(X(fake.b.x), Y(fake.b.y)); ctx.stroke();
+      ctx.stroke(new Path2D(r.map((p, i) => (i ? 'L' : 'M') + X(p[0]) + ' ' + Y(p[1])).join(' ') + 'Z'));
+    }
+  });
+}
+
+function label(txt, x, y, color, small, bg) {
+  ctx.font = (small ? '500 10px' : '600 11px') + ' "JetBrains Mono", monospace';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(txt).width + 6;
+  ctx.fillStyle = bg || 'rgba(243,239,230,.88)'; ctx.fillRect(X(x) - w / 2, Y(y) - 7, w, 14);
+  ctx.fillStyle = color || '#1f1d1a'; ctx.fillText(txt, X(x), Y(y));
+}
+
+const visible = (p) => p.k === 'qdc' || p.k === 'medidor' || S.layers[tipoOf(p)];
+function drawPlan() {
+  if (!PLAN_TABS.includes(S.tab)) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = plan.clientWidth, h = plan.clientHeight;
+  if (!w || !h) return;
+  if (!S.view) fitView();
+  plan.width = Math.round(w * dpr); plan.height = Math.round(h * dpr);
+  ctx = plan.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  paintFloor(S.tab, w, h, false, dpr);
+}
+function paintFloor(fl, w, h, print, k) {
+  ctx.fillStyle = print ? '#ffffff' : '#f3efe6'; ctx.fillRect(0, 0, w, h);
+  ctx.strokeStyle = '#e7e1d5'; ctx.lineWidth = 1;
+  const g = 1000 * S.view.s;
+  if (g > 12) {
+    for (let x = S.view.ox % g; x < w; x += g) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
+    for (let y = S.view.oy % g; y < h; y += g) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  }
+  const P = PRANCHAS.find((p) => p.id === fl);
+  ctx.strokeStyle = '#b3aa9b'; ctx.setLineDash([6, 4]); ctx.strokeRect(X(0), Y(0), 9000 * S.view.s, 20000 * S.view.s); ctx.setLineDash([]);
+  drawWalls(P.fid, false);
+  // alimentador (térreo): padrão de entrada → QDC, enterrado
+  if (fl === 'T') {
+    ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2.4; ctx.setLineDash([9, 4]);
+    const pe = PBY.PE;
+    ctx.beginPath(); ctx.moveTo(X(pe.x), Y(pe.y)); ctx.lineTo(X(pe.x), Y(QDC_XY.y + 150)); ctx.lineTo(X(QDC_XY.x), Y(QDC_XY.y + 150)); ctx.lineTo(X(QDC_XY.x), Y(QDC_XY.y)); ctx.stroke();
+    ctx.setLineDash([]);
+    if (S.layers.TXT) label('Alimentador ' + String(ALIM.secao) + ' mm² enterrado (PEAD Ø50)', pe.x - 1500, 17200, '#2b2b2b', true);
+  } else {
+    // prumada do quadro
+    ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.arc(X(QDC_XY.x), Y(QDC_XY.y - 75), Math.max(5, 60 * S.view.s), 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    if (S.layers.TXT) label('prumada do QDC', QDC_XY.x, QDC_XY.y - 420, '#2b2b2b', true);
+  }
+  // eletrodutos (laje): em L, tracejados, cor do tipo de circuito
+  E.conduits(fl).forEach(({ c, a, b }) => {
+    if (!S.layers[c.tipo]) return;
+    const hl = S.hover && PBY[S.hover] && PBY[S.hover].circ === c;
+    ctx.strokeStyle = COLOR[c.tipo]; ctx.globalAlpha = hl ? 1 : 0.7; ctx.lineWidth = hl ? 2.6 : 1.3; ctx.setLineDash([6, 3]);
+    ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke();
+  });
+  ctx.setLineDash([]); ctx.globalAlpha = 1;
+  // símbolos (desenhados no espaço do mundo, em mm)
+  const base = ctx.getTransform();
+  ctx.save();
+  ctx.transform(S.view.s, 0, 0, S.view.s, S.view.ox, S.view.oy);
+  const sz = Math.max(70, 4.6 / S.view.s), lw = 1.3 / S.view.s;
+  PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => E.symbol(ctx, p, p.id === S.hover ? sz * 1.4 : sz, lw));
+  ctx.restore();
+  ctx.setTransform(base);
+  if (S.layers.TXT) {
+    PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => {
+      if (p.k === 'qdc') return label('QDC', p.x, p.y + 330, '#2b2b2b');
+      if (p.k === 'medidor') return label('Padrão Enel', p.x, p.y - 300, '#2b2b2b', true);
+      if (!p.circ) return;
+      ctx.font = '600 9.5px "JetBrains Mono", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      const t = (p.k === 'int' || p.k === 'int3') ? 'S' : p.k === 'il' ? String(p.va) : p.va >= 600 || p.k === 'tue' ? String(p.va) : '';
+      const txt = p.circ.n + (t ? '·' + t : '');
+      const tw = ctx.measureText(txt).width + 5;
+      ctx.fillStyle = 'rgba(255,255,255,.85)'; ctx.fillRect(X(p.x) + 6, Y(p.y) - 15, tw, 12);
+      ctx.fillStyle = COLOR[p.circ.tipo]; ctx.fillText(txt, X(p.x) + 8.5, Y(p.y) - 9);
+    });
+  }
+  ctx.font = '600 13px "Space Grotesk", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#1f1d1a';
+  const titles = { T: 'Térreo — pontos, circuitos (nº·VA) e eletrodutos na laje', 1: '1º pavimento', 2: '2º pavimento' };
+  if (!print) ctx.fillText(titles[fl], 12, h - 14);
+  const m = 1000 * S.view.s;
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - 20 - m, h - 18); ctx.lineTo(w - 20, h - 18); ctx.stroke();
+  ctx.font = '500 10px "JetBrains Mono"'; ctx.textAlign = 'center'; ctx.fillStyle = '#1f1d1a'; ctx.fillText('1 m', w - 20 - m / 2, h - 28);
+}
+// mover/zoom
+let drag = null;
+const pointers = new Map();
+plan.addEventListener('pointerdown', (e) => { plan.setPointerCapture(e.pointerId); pointers.set(e.pointerId, { x: e.clientX, y: e.clientY }); drag = { x: e.clientX, y: e.clientY }; });
+plan.addEventListener('pointermove', (e) => {
+  const r = plan.getBoundingClientRect();
+  if (pointers.has(e.pointerId)) {
+    const prev = pointers.get(e.pointerId);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      const d0 = Math.hypot(a.x - b.x, a.y - b.y);
+      prev.x = e.clientX; prev.y = e.clientY;
+      const [c, d] = [...pointers.values()];
+      const d1 = Math.hypot(c.x - d.x, c.y - d.y);
+      zoomAt((c.x + d.x) / 2 - r.left, (c.y + d.y) / 2 - r.top, d1 / (d0 || d1));
+      return;
+    }
+    S.view.ox += e.clientX - prev.x; S.view.oy += e.clientY - prev.y;
+    prev.x = e.clientX; prev.y = e.clientY;
+    $('tip').hidden = true;
+    drawPlan();
+    return;
+  }
+  hoverAt(e.clientX - r.left, e.clientY - r.top);
+});
+['pointerup', 'pointercancel'].forEach((t) => plan.addEventListener(t, (e) => pointers.delete(e.pointerId)));
+plan.addEventListener('wheel', (e) => { e.preventDefault(); const r = plan.getBoundingClientRect(); zoomAt(e.clientX - r.left, e.clientY - r.top, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+plan.addEventListener('dblclick', () => { fitView(); drawPlan(); });
+function zoomAt(px, py, k) {
+  const s2 = Math.max(0.01, Math.min(1.2, S.view.s * k));
+  const wx = (px - S.view.ox) / S.view.s, wy = (py - S.view.oy) / S.view.s;
+  S.view.s = s2; S.view.ox = px - wx * s2; S.view.oy = py - wy * s2;
+  drawPlan();
+}
+
+function hoverAt(px, py) {
+  if (!S.view) return;
+  let best = null;
+  PONTOS.filter((p) => p.fl === S.tab && visible(p)).forEach((p) => {
+    const d = Math.hypot(X(p.x) - px, Y(p.y) - py);
+    if (d < 11 && (!best || d < best.d)) best = { d, p };
+  });
+  const tip = $('tip');
+  const id = best ? best.p.id : null;
+  if (id !== S.hover) { S.hover = id; drawPlan(); }
+  if (!best) { tip.hidden = true; return; }
+  const p = best.p, c = p.circ;
+  tip.hidden = false;
+  tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m${p.va ? ' · ' + p.va + ' VA' : ''}` + (c ? `\ncircuito ${c.n}: ${c.desc}\n${c.v} V · ${c.secao} mm² · disjuntor ${c.disj} A · ${c.dr || ''}` : '');
+  tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px';
+  tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px';
+}
+
+// ---------------------------------------------------------------------------------------------- 3D
+let R3 = null;
+function buildArch3D(target) {
+  const M = (mm) => mm / 1000;
+  if (!doc) return;
+  const wallMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c6, transparent: true, opacity: 0.16, depthWrite: false });
+  const level = Object.fromEntries(doc.floors.map((f) => [f.id, f.level]));
+  doc.walls.forEach((w) => {
+    const base = level[w.floor] || 0, H = w.height || 2880;
+    const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy);
+    const ops = doc.openings.filter((o) => o.wall === w.id).map((o) => ({ a: o.t - o.width / 2, b: o.t + o.width / 2, z0: o.sill, z1: o.sill + o.height })).sort((p, q) => p.a - q.a);
+    const cuts = [0]; ops.forEach((o) => cuts.push(o.a, o.b)); cuts.push(L);
+    const piece = (s0, s1, z0, z1) => {
+      if (s1 - s0 < 5 || z1 - z0 < 5) return;
+      const g = new THREE.BoxGeometry(M(s1 - s0), M(z1 - z0), M(w.thick));
+      const m = new THREE.Mesh(g, wallMat);
+      const sm = (s0 + s1) / 2;
+      m.position.set(M(w.a.x + dx / L * sm), M(base + (z0 + z1) / 2), M(w.a.y + dy / L * sm));
+      m.rotation.y = -Math.atan2(dy, dx);
+      target.add(m);
+    };
+    for (let i = 0; i < cuts.length - 1; i++) {
+      const s0 = cuts[i], s1 = cuts[i + 1], op = ops.find((o) => o.a === s0 && o.b === s1);
+      if (!op) piece(s0, s1, 0, H); else { piece(s0, s1, 0, op.z0); piece(s0, s1, op.z1, H); }
+    }
+  });
+  // lajes (contorno)
+  const slabMat = new THREE.MeshStandardMaterial({ color: 0xbdb4a5, transparent: true, opacity: 0.12, depthWrite: false, side: THREE.DoubleSide });
+  [[L1, 1500, 9000, 2850, 15000], [L2, 1500, 9000, 2850, 10500], [LR, 1500, 7500, 2850, 10500]].forEach(([z, x0, x1, y0, y1]) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(M(x1 - x0), 0.16, M(y1 - y0)), slabMat);
+    m.position.set(M((x0 + x1) / 2), M(z) - 0.08, M((y0 + y1) / 2)); target.add(m);
+  });
+}
+
+function buildNet3D(groups) {
+  const M = (mm) => mm / 1000, up = new THREE.Vector3(0, 1, 0);
+  const mats = {};
+  const mat = (col) => (mats[col] = mats[col] || new THREE.MeshStandardMaterial({ color: col, roughness: 0.5 }));
+  const tube = (g, a, b, r, m) => {
+    const A = new THREE.Vector3(M(a[0]), M(a[2]), M(a[1])), B = new THREE.Vector3(M(b[0]), M(b[2]), M(b[1])), L = A.distanceTo(B);
+    if (L < 0.005) return;
+    const cyl = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, 8), m);
+    cyl.position.copy(A).lerp(B, 0.5);
+    cyl.quaternion.setFromUnitVectors(up, B.clone().sub(A).normalize());
+    g.add(cyl);
+  };
+  ['T', '1', '2'].forEach((fl) => {
+    const lv = LEVEL[fl], zc = lv + TETO;
+    E.conduits(fl).forEach(({ c, a, b }) => {
+      const g = groups[c.tipo], m = mat(COLOR[c.tipo]);
+      tube(g, [a.x, a.y, zc], [b.x, a.y, zc], 0.014, m);
+      tube(g, [b.x, a.y, zc], [b.x, b.y, zc], 0.014, m);
+      if (!b.root && b.z < TETO) tube(g, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.012, m);
+    });
+  });
+  tube(groups.qdc, [QDC_XY.x, QDC_XY.y, 1500], [QDC_XY.x, QDC_XY.y, L2 + TETO], 0.025, mat('#555555'));
+  const pe = PBY.PE;
+  [[[pe.x, pe.y, 1500], [pe.x, pe.y, -400]], [[pe.x, pe.y, -400], [pe.x, QDC_XY.y + 150, -400]], [[pe.x, QDC_XY.y + 150, -400], [QDC_XY.x, QDC_XY.y + 150, -400]], [[QDC_XY.x, QDC_XY.y + 150, -400], [QDC_XY.x, QDC_XY.y, 1500]]].forEach(([a, b]) => tube(groups.qdc, a, b, 0.025, mat('#2b2b2b')));
+  PONTOS.forEach((p) => {
+    const t = tipoOf(p), g = groups[t] || groups.qdc;
+    const sz = p.k === 'qdc' ? [0.5, 0.6, 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.k === 'il' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
+    const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(KCOL[p.k] || '#333'));
+    m.position.set(M(p.x), M(LEVEL[p.fl] + p.z), M(p.y));
+    g.add(m);
+  });
+}
+function init3D() {
+  if (R3) return;
+  const host = $('view3d');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  host.appendChild(renderer.domElement);
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0xe9e5dd);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 200);
+  camera.position.set(-9, 13, 25);
+  const controls = new OrbitControls(camera, renderer.domElement);
+  controls.target.set(4.5, 3, 9.5);
+  controls.enableDamping = true;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a8070, 1.6));
+  const sun = new THREE.DirectionalLight(0xffffff, 1.2); sun.position.set(-6, 14, 8); scene.add(sun);
+  const groups = { WALLS: new THREE.Group(), il: new THREE.Group(), tug: new THREE.Group(), tue: new THREE.Group(), qdc: new THREE.Group() };
+  Object.values(groups).forEach((g) => scene.add(g));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(9, 20), new THREE.MeshStandardMaterial({ color: 0x9db38a, transparent: true, opacity: 0.25, side: THREE.DoubleSide, depthWrite: false }));
+  ground.rotation.x = -Math.PI / 2; ground.position.set(4.5, -0.36, 10); scene.add(ground);
+  const arch = new THREE.Group();
+  groups.WALLS.add(arch);
+  buildArch3D(arch);
+  buildNet3D(groups);
+  R3 = { renderer, scene, camera, controls, groups, host, arch };
+  const loop = () => { if (S.tab === '3d') { controls.update(); renderer.render(scene, camera); } requestAnimationFrame(loop); };
+  loop();
+}
+function sync3D() {
+  if (!R3) return;
+  ['il', 'tug', 'tue', 'WALLS'].forEach((k) => (R3.groups[k].visible = !!S.layers[k]));
+  const w = R3.host.clientWidth, h = R3.host.clientHeight;
+  if (w && h) { R3.renderer.setSize(w, h, false); R3.camera.aspect = w / h; R3.camera.updateProjectionMatrix(); }
+}
+
+// ---------------------------------------------------------------------------------------------- memorial
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function table(head, rows, cls) {
+  return `<div class="tw"><table class="${cls || ''}"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.join('')}</tbody></table></div>`;
+}
+
+const roomsOf = (fid) => (DD.rooms && REF_DOC ? DD.rooms.compute(REF_DOC, fid).filter((r) => !r.open) : []);
+function previsao() {
+  const rows = [];
+  [['T', 'f0'], ['1', 'f1'], ['2', 'f2']].forEach(([fl, fid]) => {
+    rows.push(`<tr class="group"><td colspan="8">${{ T: 'Térreo', 1: '1º pavimento', 2: '2º pavimento' }[fl]}</td></tr>`);
+    const names = [...new Set(PONTOS.filter((p) => p.fl === fl && p.k !== 'qdc' && p.k !== 'medidor').map((p) => p.amb))];
+    names.forEach((amb) => {
+      const r = roomsOf(fid).find((x) => x.name === amb);
+      const P = PONTOS.filter((p) => p.fl === fl && p.amb === amb);
+      const il = P.filter((p) => p.k === 'il'), tug = P.filter((p) => p.k === 'tug'), tue = P.filter((p) => p.k === 'tue');
+      const sum = (L) => L.reduce((s, p) => s + (p.va || 0), 0);
+      rows.push(`<tr><td>${esc(amb)}</td><td class="n">${r ? fmtn(r.area, 2) : '—'}</td><td class="n">${r ? fmtn(r.perimeter / 1000, 2) : '—'}</td><td class="n">${il.length}</td><td class="n">${sum(il) || '—'}</td><td class="n">${tug.length}</td><td class="n">${sum(tug) || '—'}</td><td>${tue.map((p) => esc(p.desc.split(' — ')[0]) + ' (' + p.va + ' VA)').join('; ') || '—'}</td></tr>`);
+    });
+  });
+  return rows;
+}
+function unifilar(w, curto) {
+  // diagrama unifilar simplificado (SVG): entrada → DG → DPS → barramento → DR → circuitos
+  const rowH = 20, top = 120, n = CIRC.length, H = top + n * rowH + 40, W = w || 900;
+  const x0 = 60, xb = curto ? 140 : 250, xdr = curto ? 214 : 330, xc = curto ? 262 : 430;
+  const L = [];
+  const t = (x, y, s, o) => L.push(`<text x="${x}" y="${y}" font-size="${(o && o.size) || 10}" font-family="JetBrains Mono, monospace" ${o && o.anchor ? 'text-anchor="' + o.anchor + '"' : ''} fill="${(o && o.fill) || '#1f1d1a'}" ${o && o.bold ? 'font-weight="700"' : ''}>${esc(s)}</text>`);
+  const ln = (a, b, c, d, o) => L.push(`<line x1="${a}" y1="${b}" x2="${c}" y2="${d}" stroke="${(o && o.stroke) || '#1f1d1a'}" stroke-width="${(o && o.w) || 1.2}"/>`);
+  const box = (x, y, w2, h2, s, o) => { L.push(`<rect x="${x}" y="${y}" width="${w2}" height="${h2}" fill="${(o && o.fill) || '#fff'}" stroke="#1f1d1a"/>`); t(x + w2 / 2, y + h2 / 2 + 3.5, s, { anchor: 'middle', size: 9 }); };
+  // entrada
+  box(x0 - 40, 10, 80, 28, 'Padrão Enel');
+  t(x0 + 46, 28, '3F+N 127/220 V', { size: 9 });
+  ln(x0, 38, x0, 62);
+  box(x0 - 45, 62, 90, 24, 'DG 3P ' + ALIM.disj + ' A');
+  t(x0 + 52, 78, '#' + ALIM.secao + ' mm² · ' + fmtn(ALIM.L / 1000, 1) + ' m', { size: 9 });
+  ln(x0, 86, x0, 100);
+  box(x0 + 60, 90, 70, 20, 'DPS 4× 275 V');
+  ln(x0, 100, x0 + 60, 100);
+  // barramento
+  ln(x0, 100, x0, top + (n - 1) * rowH + 6, { w: 3 });
+  t(x0 - 8, top - 6, 'barramento', { size: 8, anchor: 'end' });
+  const drOf = (c) => DRS.find((d) => d.circ.includes(c.n));
+  const drFirst = {};
+  CIRC.forEach((c, i) => {
+    const y = top + i * rowH, d = drOf(c);
+    if (d && drFirst[d.id] == null) drFirst[d.id] = i;
+  });
+  DRS.forEach((d) => {
+    const ys = d.circ.map((n) => top + (CIRC.findIndex((c) => c.n === n)) * rowH);
+    const y0 = Math.min(...ys), y1 = Math.max(...ys);
+    ln(x0, y0, xb, y0);
+    box(xb, y0 - 9, 74, 18, d.id + ' ' + d.in + 'A');
+    ln(xb + 74, y0, xdr + 20, y0);
+    ln(xdr + 20, y0, xdr + 20, y1);
+  });
+  CIRC.forEach((c, i) => {
+    const y = top + i * rowH;
+    ln(xdr + 20, y, xc, y);
+    box(xc, y - 8, 46, 16, (c.v === 220 ? '2P ' : '1P ') + c.disj + 'A');
+    ln(xc + 46, y, xc + 70, y);
+    t(xc + 76, y + 3.5, curto ? `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA` : `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA — ${c.desc}`, { size: 9.5, fill: COLOR[c.tipo] === '#d39b00' ? '#8a6400' : COLOR[c.tipo] });
+  });
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;background:#fff" xmlns="http://www.w3.org/2000/svg">${L.join('')}</svg>`;
+}
+function cargasRows() {
+  return CIRC.map((c) => `<tr><td class="c">${c.n}</td><td>${esc(c.desc)}</td><td class="n">${c.pts.filter((id) => !/int/.test(PBY[id].k)).length}</td><td class="n">${c.v}</td><td class="c">${c.fases}</td><td class="n">${c.va}</td><td class="n">${fmtn(c.ib, 1)}</td><td class="n">${fmtn(c.fca, 2)}</td><td class="n">${String(c.secao).replace('.', ',')}</td><td class="n">${fmtn(c.iz, 1)}</td><td class="n">${c.disj}</td><td class="c">${c.dr || '—'}</td><td class="n">${fmtn(c.Lmax / 1000, 1)}</td><td class="n">${fmtn(c.dv, 2)}</td><td class="${c.ok ? 'ok' : 'bad'}">${c.ok ? 'OK' : 'rever'}</td></tr>`);
+}
+function memorial() {
+  const fa = FASES, maxF = Math.max(fa.A, fa.B, fa.C), minF = Math.min(fa.A, fa.B, fa.C);
+  const des = ((maxF - minF) / maxF) * 100;
+  const drRows = DRS.map((d) => `<tr><td class="c">${d.id}</td><td class="n">${d.polos}P</td><td class="n">${d.in} A</td><td class="n">30 mA</td><td>${esc(d.desc)}</td><td class="c">${d.circ.map((n) => 'C' + n).join(', ')}</td></tr>`);
+  return `
+  <p class="callout"><b>Anteprojeto.</b> Feito sobre a planta as built, para orientar a execução e o orçamento. Antes de executar, precisa ser revisado e assinado (ART/RRT) por engenheiro eletricista ou técnico habilitado, e o padrão de entrada precisa ser aprovado pela Enel RJ.</p>
+  <h2>1. Premissas e normas</h2>
+  <ul>
+    <li><b>Normas:</b> ABNT NBR 5410:2004 (instalações elétricas de baixa tensão), NBR 5444 (símbolos), NBR 14136 (plugues e tomadas), NBR 5419 (proteção contra descargas atmosféricas, só DPS aqui) e regulamento de fornecimento da Enel RJ.</li>
+    <li><b>Fornecimento:</b> trifásico 127/220 V (3 fases + neutro), Enel RJ, Campos dos Goytacazes. Padrão de entrada no muro da frente, com medidor e haste de aterramento.</li>
+    <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
+    <li><b>Quadro de distribuição (QDC):</b> <b>debaixo da escada, na parede do quarto do térreo</b>, voltado para a escada, centro a 1,50 m do piso, com acesso livre na frente (NBR 5410 6.5.4.7). Dali saem todos os circuitos; os do 1º e do 2º sobem por 3 eletrodutos Ø32 na mesma parede até as lajes.</li>
+    <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
+    <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_ALIM} % no alimentador (total ≤ 5 %).</li>
+    <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
+      <ul>
+        <li>iluminação: 100 VA nos primeiros 6 m² e +60 VA a cada 4 m² inteiros;</li>
+        <li>tomadas de cozinha e área de serviço: 1 a cada 3,5 m de perímetro, as 3 primeiras com 600 VA;</li>
+        <li>tomadas de banheiro: 1 junto ao lavatório, com 600 VA;</li>
+        <li>demais cômodos: 1 tomada a cada 5 m de perímetro, com 100 VA;</li>
+        <li>varandas, garagem e circulação: ao menos 1 tomada.</li>
+      </ul></li>
+    <li><b>Aparelhos de uso específico adotados:</b>
+      <ul>
+        <li>3 chuveiros de 7.500 W / 220 V, nos mesmos pontos do projeto hidrossanitário;</li>
+        <li>4 ar-condicionados split de 12.000 BTU/h (1.500 VA / 220 V);</li>
+        <li>micro-ondas de 1.500 VA na cozinha;</li>
+        <li>máquina de lavar de 1.200 VA no 2º;</li>
+        <li>motor do portão, ½ cv.</li>
+      </ul>
+      Fogão a gás (sem forno elétrico) e sem bomba d'água (a caixa é abastecida por gravidade). Se mudar algum aparelho, refazer o circuito dele.</li>
+  </ul>
+  <h2>2. Previsão de cargas por cômodo</h2>
+  ${table(['Cômodo', 'Área (m²)', 'Perímetro (m)', 'Pontos de luz', 'Iluminação (VA)', 'TUG', 'TUG (VA)', 'TUE'], previsao())}
+  <h2>3. Quadro de cargas e dimensionamento dos circuitos</h2>
+  <p>Disjuntor: I<sub>b</sub> ≤ I<sub>n</sub> ≤ I<sub>z</sub> corrigida (NBR 5410 5.3.4). Seção: a maior entre a mínima, a de capacidade de condução (Tabela 36, B1, 2 condutores carregados) e a de queda de tensão até o ponto mais distante.</p>
+  ${table(['Circ.', 'Descrição', 'Pontos', 'V', 'Fases', 'Pot. (VA)', 'Ib (A)', 'FCA', 'Seção (mm²)', 'Iz corr. (A)', 'Disj. (A)', 'DR', 'Dist. máx. (m)', 'ΔV (%)', ''], cargasRows())}
+  <h3>Equilíbrio das fases</h3>
+  <p>Fase A: <b>${fmtn(fa.A / 1000, 2)} kVA</b> · Fase B: <b>${fmtn(fa.B / 1000, 2)} kVA</b> · Fase C: <b>${fmtn(fa.C / 1000, 2)} kVA</b>. Desequilíbrio de ${fmtn(des, 1)} % entre a fase mais carregada e a menos carregada. Circuitos de 127 V ficam numa fase; os de 220 V, entre duas.</p>
+  <h2>4. Demanda, padrão de entrada e alimentador</h2>
+  <ul>
+    <li>Potência instalada: <b>${fmtn(ALIM.inst, 1)} kW</b> (iluminação ${fmtn(ALIM.ilW / 1000, 2)} kW, tomadas ${fmtn(ALIM.tugW / 1000, 2)} kW a fp 0,8, aparelhos de uso específico ${fmtn(ALIM.tueW, 2)} kW).</li>
+    <li>Demanda: iluminação + tomadas com os fatores por faixa (${fmtn(ALIM.it, 2)} kW → ${fmtn(ALIM.dIT, 2)} kW) e aparelhos com fator ${fmtn(ALIM.fTue, 2)} para ${ALIM.nTue} aparelhos → <b>${fmtn(ALIM.D, 1)} kW</b>.</li>
+    <li>Corrente de demanda: I = D / (√3 · 220 · 0,92) = <b>${fmtn(ALIM.I, 1)} A</b>.</li>
+    <li><b>Alimentador</b> (padrão → QDC, ${fmtn(ALIM.L / 1000, 1)} m, enterrado em PEAD Ø50 a −0,40 m):
+      <ul>
+        <li>3 fases de ${ALIM.secao} mm², neutro de ${ALIM.neutro} mm² e PE de ${ALIM.pe} mm²;</li>
+        <li>disjuntor geral 3P de ${ALIM.disj} A no QDC;</li>
+        <li>queda de tensão de ${fmtn(ALIM.dv, 2)} %.</li>
+      </ul></li>
+    <li><b>Categoria do padrão de entrada:</b> definida pela Enel RJ a partir da carga instalada e da demanda (levar este memorial). O disjuntor do padrão e o ramal de ligação seguem a tabela da concessionária; o geral do QDC deve ser igual ou menor que o do padrão.</li>
+  </ul>
+  <h2>5. Proteções</h2>
+  <h3>Dispositivos diferenciais residuais (DR 30 mA)</h3>
+  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR, divididos em grupos, para um disparo não apagar a casa toda. Cada chuveiro tem DR próprio.</p>
+  ${table(['DR', 'Polos', 'In', 'IΔn', 'Grupo', 'Circuitos'], drRows)}
+  <ul>
+    <li><b>DPS</b> classe II, 275 V / 20 kA, nas 3 fases e no neutro, ligados ao barramento de terra do QDC (NBR 5410 6.3.5).</li>
+    <li><b>Aterramento:</b> 3 hastes cobreadas de 2,40 m interligadas no padrão; resistência medida ≤ 10 Ω. Interligar a esse aterramento as massas metálicas, como a estrutura do portão e as tubulações metálicas, se houver (equipotencialização).</li>
+    <li><b>Chuveiros:</b> usar modelos com resistência blindada; com resistência nua, o DR pode disparar.</li>
+  </ul>
+  <h2>6. Diagrama unifilar</h2>
+  ${unifilar(980)}
+  <h2>7. Execução</h2>
+  <ul>
+    <li><b>Alturas:</b>
+      <ul>
+        <li>tomadas baixas a 0,30 m;</li>
+        <li>tomadas de bancada, de banheiro e da máquina a 1,10 m;</li>
+        <li>micro-ondas a 1,60 m;</li>
+        <li>tomadas de ar-condicionado e chuveiros a 2,20 m (o ar do quarto 1 a 2,45 m, acima da janela);</li>
+        <li>interruptores a 1,10 m;</li>
+        <li>arandelas a 2,20 m (2,40 m na escada);</li>
+        <li>QDC com o centro a 1,50 m.</li>
+      </ul>
+      Todas as alturas são contadas do piso acabado até o centro da caixa.</li>
+    <li><b>Cores dos condutores:</b> neutro azul-claro e terra verde ou verde-amarelo (obrigatórios, NBR 5410 6.1.5.3); fases preto, vermelho e branco, uma cor por fase; retornos de interruptor amarelos.</li>
+    <li><b>Banheiros:</b> nenhuma tomada no volume do box. As tomadas dos lavatórios ficam a 0,60 m ou mais do chuveiro, como já posicionadas.</li>
+    <li><b>Lajes:</b> os eletrodutos e as caixas octogonais dos pontos de luz são colocados <b>antes da concretagem</b> de cada laje, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
+    <li><b>Hidráulica:</b> não passar eletroduto no mesmo rasgo de tubo de água, e manter 20 cm dos shafts (SH-1, SH-2, SH-3) e das prumadas de esgoto.</li>
+    <li><b>Teste final:</b> continuidade do PE em todas as tomadas, isolamento (≥ 1 MΩ a 500 V), teste do botão dos DR e polaridade das tomadas (fase à direita, olhando de frente, no padrão NBR 14136).</li>
+  </ul>`;
+}
+function materiais() {
+  const iRows = [];
+  let g = '';
+  QT.items.forEach((i) => {
+    if (i.grupo !== g) { g = i.grupo; iRows.push(`<tr class="group"><td colspan="4">${esc(g)}</td></tr>`); }
+    iRows.push(`<tr><td>${esc(i.desc)}</td><td class="c">${i.un}</td><td class="n">${Math.ceil(i.q)}</td><td>${esc(i.obs)}</td></tr>`);
+  });
+  return `
+  <p class="callout">Quantidades levantadas do traçado dos eletrodutos (laje + descidas) de cada circuito, com <b>+10 % de sobras</b> nos cabos. Os cabos são comprados em rolos de 100 m; a divisão por cor está na observação. Lâmpadas, luminárias, chuveiros e aparelhos não estão incluídos.</p>
+  <p><button class="btn" id="csv" type="button">Baixar lista (CSV para planilha)</button></p>
+  ${table(['Item', 'Un.', 'Qtd.', 'Observação'], iRows)}`;
+}
+function csv() {
+  const lines = [['Grupo', 'Item', 'Unidade', 'Quantidade', 'Observação']];
+  QT.items.forEach((i) => lines.push([i.grupo, i.desc, i.un, Math.ceil(i.q), i.obs]));
+  const txt = lines.map((l) => l.map((v) => '"' + String(v).replace(/"/g, '""') + '"').join(';')).join('\r\n');
+  const blob = new Blob(['﻿' + txt], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'eletrico-materiais.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+// ---------------------------------------------------------------------------------------------- pranchas de execução (PDF)
+// Duas folhas por pavimento — iluminação/interruptores e tomadas/uso específico — mais a do quadro.
+const LUZ = { il: true, tug: false, tue: false }, TOM = { il: false, tug: true, tue: true };
+const SHEETS = [];
+[['T', 'f0', 'Térreo', [-100, 1800, 9100, 20200]], ['1', 'f1', '1º pavimento', [-100, 2300, 9100, 16300]], ['2', 'f2', '2º pavimento', [-100, 2300, 9100, 15100]]].forEach(([fl, fid, nome, bounds]) => {
+  SHEETS.push({ id: fl + 'L', fl, fid, titulo: nome + ' — iluminação e interruptores', bounds, layers: LUZ });
+  SHEETS.push({ id: fl + 'T', fl, fid, titulo: nome + ' — tomadas e pontos de uso específico', bounds, layers: TOM });
+});
+const SIDE_NAME = { esq: 'à esquerda', dir: 'à direita', fundo: 'do fundo', frente: 'da frente' };
+function wallRects(fid, d = doc) {
+  if (!d) return [];
+  return d.walls.filter((w) => w.floor === fid && w.kind !== 'railing').map((w) => {
+    const r = wallRect(w), xs = r.map((p) => p[0]), ys = r.map((p) => p[1]);
+    return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), muro: w.kind === 'muro' };
+  });
+}
+/** Medidas de um ponto até as faces das paredes mais próximas (uma na horizontal, uma na vertical da planta). */
+function refsOf(fid, x, y, dc = doc) {
+  const R = wallRects(fid, dc), o = {};
+  const own = R.find((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
+  const put = (k, d, face, r) => { if (!o[k] || d < o[k].d) o[k] = { d, face, muro: r.muro }; };
+  R.forEach((r) => {
+    if (r === own) return;
+    if (y >= r.y0 - 1 && y <= r.y1 + 1) { if (r.x1 <= x + 1) put('esq', x - r.x1, r.x1, r); if (r.x0 >= x - 1) put('dir', r.x0 - x, r.x0, r); }
+    if (x >= r.x0 - 1 && x <= r.x1 + 1) { if (r.y1 <= y + 1) put('fundo', y - r.y1, r.y1, r); if (r.y0 >= y - 1) put('frente', r.y0 - y, r.y0, r); }
+  });
+  // fora do alcance de uma parede numa direção (ponto externo): mede até o alinhamento da face/quina mais próxima
+  const gap = (r) => Math.max(r.x0 - x, x - r.x1, r.y0 - y, y - r.y1, 0);
+  const free = { esq: !o.esq || o.esq.muro, dir: !o.dir || o.dir.muro, fundo: !o.fundo || o.fundo.muro, frente: !o.frente || o.frente.muro };
+  [1500, 6000].forEach((lim) => {
+    const k0 = Object.keys(o).filter((k) => o[k].alinh || !o[k].muro);
+    const lx = !k0.some((k) => k === 'esq' || k === 'dir'), ly = !k0.some((k) => k === 'fundo' || k === 'frente');
+    if (!lx && !ly) return;
+    const align = (k, d, face) => { if (free[k] && d >= 0 && (!o[k] || o[k].alinh ? !o[k] || d < o[k].d : d < o[k].d - 1000)) o[k] = { d, face, alinh: true }; };
+    R.filter((r) => r !== own && !r.muro && gap(r) < lim).forEach((r) => {
+      if (lx) { if (r.x1 <= x + 1) align('esq', x - r.x1, r.x1); if (r.x0 >= x - 1) align('dir', r.x0 - x, r.x0); }
+      if (ly) { if (r.y1 <= y + 1) align('fundo', y - r.y1, r.y1); if (r.y0 >= y - 1) align('frente', r.y0 - y, r.y0); }
+    });
+  });
+  const pick = (a, b) => (o[a] && (!o[b] || o[a].d <= o[b].d) ? [a, o[a]] : o[b] ? [b, o[b]] : null);
+  const ownV = own && own.y1 - own.y0 > own.x1 - own.x0; // ponto dentro de parede vertical
+  return { hx: own && ownV ? null : pick('esq', 'dir'), hy: own && !ownV ? null : pick('fundo', 'frente'), own, ownV };
+}
+function refText(r) {
+  const part = (p) => p ? `${fmtm(p[1].d)} m ${p[1].alinh ? 'do alinhamento da face da parede' : p[1].muro ? 'do muro' : 'da parede'} ${SIDE_NAME[p[0]]}` : null;
+  const t = [];
+  if (r.own) t.push('na parede ' + (r.ownV ? '(lateral)' : '(transversal)'));
+  [part(r.hx), part(r.hy)].forEach((x) => x && t.push(x));
+  return t.join(' · ');
+}
+
+const KIND_ORDER = { qdc: 0, medidor: 0, il: 1, int: 2, int3: 2, tug: 3, tue: 4 };
+function sheetPoints(sh) {
+  return PONTOS.filter((p) => p.fl === sh.fl && (p.k === 'qdc' || p.k === 'medidor' ? sh.layers.il : sh.layers[tipoOf(p)])).map((p) => ({
+    p, x: p.x, y: p.y, kind: tipoOf(p),
+    item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no teto') : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
+    circ: p.circ ? 'C' + p.circ.n : p.k === 'qdc' ? 'QDC' : '—',
+    alt: p.k === 'il' && p.tipo === 'teto' ? 'teto' : fmtm(p.z) + ' m',
+  }));
+}
+function renderSheetImage(sh, pts) {
+  const W = 1000, H = 1100, k = 2;
+  const cv = document.createElement('canvas'); cv.width = W * k; cv.height = H * k;
+  const keepCtx = ctx, keepView = S.view, keepLayers = S.layers, keepHover = S.hover;
+  ctx = cv.getContext('2d'); ctx.setTransform(k, 0, 0, k, 0, 0);
+  S.layers = Object.assign({ TXT: false, WALLS: true }, sh.layers); S.hover = null;
+  const [x0, y0, x1, y1] = sh.bounds;
+  const s = Math.min((W - 40) / (x1 - x0), (H - 40) / (y1 - y0));
+  S.view = { s, ox: (W - (x1 - x0) * s) / 2 - x0 * s, oy: (H - (y1 - y0) * s) / 2 - y0 * s };
+  try {
+    paintFloor(sh.fl, W, H, true, k);
+    ctx.font = '600 9px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    pts.forEach((p) => {
+      ctx.strokeStyle = '#555'; ctx.globalAlpha = 0.6; ctx.lineWidth = 0.8; ctx.setLineDash([3, 2]);
+      if (p.ref.hx) { ctx.beginPath(); ctx.moveTo(X(p.x), Y(p.y)); ctx.lineTo(X(p.ref.hx[1].face), Y(p.y)); ctx.stroke(); }
+      if (p.ref.hy) { ctx.beginPath(); ctx.moveTo(X(p.x), Y(p.y)); ctx.lineTo(X(p.x), Y(p.ref.hy[1].face)); ctx.stroke(); }
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    });
+    const placed = [];
+    pts.forEach((p) => {
+      const lx = X(p.x), ly = Y(p.y);
+      const dirs = [[13, -13], [-13, -13], [13, 13], [-13, 13], [22, 0], [-22, 0], [0, -22], [0, 22], [26, -22], [-26, 22], [26, 22], [-26, -22], [34, 0], [-34, 0]];
+      let pos = null;
+      for (const [dx, dy] of dirs) { const c = [lx + dx, ly + dy]; if (!placed.some((q) => Math.hypot(q[0] - c[0], q[1] - c[1]) < 16) && !pts.some((o) => Math.hypot(X(o.x) - c[0], Y(o.y) - c[1]) < 7)) { pos = c; break; } }
+      pos = pos || [lx + 15, ly - 15];
+      placed.push(pos);
+      ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(pos[0], pos[1]); ctx.stroke();
+      ctx.fillStyle = KCOL[p.p.k] || '#333'; ctx.beginPath(); ctx.arc(pos[0], pos[1], 7.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(String(p.n), pos[0], pos[1] + 0.5);
+    });
+    ctx.font = '600 11px "Space Grotesk", sans-serif'; ctx.fillStyle = '#1f1d1a'; ctx.textAlign = 'left';
+    ctx.fillText('↑ FUNDO (quintal)', 12, 18); ctx.fillText('↓ FRENTE (rua)', 12, H - 12);
+  } finally {
+    const url = cv.toDataURL('image/png');
+    ctx = keepCtx; S.view = keepView; S.layers = keepLayers; S.hover = keepHover;
+    return url;
+  }
+}
+const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no teto · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · tracejado = eletroduto na laje</span>`;
+function pranchas() {
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  let nChanged = 0;
+  const fonte = srcText(true), total = SHEETS.length + 1;
+  const pages = SHEETS.map((sh, i) => {
+    const pts = sheetPoints(sh).map((p) => Object.assign(p, { ref: refsOf(sh.fid, p.x, p.y) }));
+    if (doc !== REF_DOC) pts.forEach((p) => (p.changed = refText(p.ref) !== refText(refsOf(sh.fid, p.x, p.y, REF_DOC))));
+    pts.sort((a, b) => KIND_ORDER[a.p.k] - KIND_ORDER[b.p.k] || a.y - b.y || a.x - b.x);
+    pts.forEach((p, j) => (p.n = j + 1));
+    const img = renderSheetImage(sh, pts);
+    const rows = pts.map((p) => `<tr${p.changed ? ' class="chg"' : ''}><td class="num"><span style="background:${KCOL[p.p.k]}">${p.n}</span></td><td>${esc(p.item)}${p.changed ? '<b class="chg-tag"> ⚠ conferir</b>' : ''}</td><td class="c">${esc(p.circ)}</td><td>${esc(refText(p.ref))}</td><td class="c">${esc(p.alt)}</td></tr>`);
+    nChanged += pts.filter((p) => p.changed).length;
+    return `<section class="sheet">
+      <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>${esc(sh.titulo)}</span></div><div class="sh-meta">Prancha ${i + 1}/${total} · ${hoje} · ${esc(fonte)}<br>ANTEPROJETO — conferir no local e com o responsável técnico</div></header>
+      <div class="sh-body"><div class="sh-img"><img src="${img}" alt="${esc(sh.titulo)}"></div>
+      <div class="sh-tab"><table class="pts fix"><colgroup><col style="width:5%"><col style="width:35%"><col style="width:6%"><col style="width:44%"><col style="width:10%"></colgroup><thead><tr><th>Nº</th><th>Item</th><th>Circ.</th><th>Medida a partir de (face da parede)</th><th>Altura</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></div>
+      <footer class="sh-foot">${SYMB}<br>Medidas em metros, do <b>centro da caixa</b> até a <b>face da alvenaria</b> mais próxima (sem reboco), na direção indicada (esquerda/direita = olhando a planta com o fundo para cima; fundo = lado do quintal; frente = lado da rua). Alturas do <b>piso acabado</b> ao centro da caixa. Circuitos e disjuntores: ver o quadro de cargas (prancha ${total}).</footer>
+    </section>`;
+  });
+  const cRows = CIRC.map((c) => `<tr><td class="c">C${c.n}</td><td>${esc(c.desc)}</td><td class="c">${c.v} V · ${c.fases}</td><td class="n">${c.va}</td><td class="c">${String(c.secao).replace('.', ',')} mm²</td><td class="c">${c.v === 220 ? '2P' : '1P'} ${c.disj} A</td><td class="c">${c.dr || ''}</td></tr>`);
+  pages.push(`<section class="sheet">
+    <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadro de distribuição (QDC): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
+    <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
+    <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
+    <p class="sh-note">Geral: 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC de ${QT.qdc} módulos sob a escada, centro a 1,50 m. Demanda ${fmtn(ALIM.D, 1)} kW (${fmtn(ALIM.I, 0)} A). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
+    <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
+  </section>`);
+  const aviso = nChanged
+    ? `<p class="callout warn"><b>${nChanged} ${nChanged === 1 ? 'ponto tem' : 'pontos têm'} parede diferente</b> da planta usada no projeto elétrico (a planta da nuvem foi alterada perto deles). As medidas já usam as paredes atuais; confira esses pontos (⚠) antes de executar.</p>`
+    : '';
+  return `<div class="noprint" style="margin-bottom:14px">${aviso}<p class="callout">Paredes: <b>${esc(srcText(false))}</b>. Pranchas de execução por pavimento para o eletricista, mais o quadro de distribuição. Cada ponto tem um número na planta e, na tabela, o circuito, a distância até a face da parede de referência e a altura. Para gerar o PDF: <b>Imprimir → Salvar como PDF</b>, papel <b>A3 paisagem</b>.</p><button class="btn" id="print" type="button">Imprimir / salvar em PDF</button></div>${pages.join('')}`;
+}
+
+// ---------------------------------------------------------------------------------------------- painel lateral
+function side() {
+  const fl = S.tab;
+  const P = PONTOS.filter((p) => p.fl === fl || fl === '3d');
+  const n = (k) => P.filter((p) => p.k === k).length;
+  const circs = CIRC.filter((c) => fl === '3d' || c.pts.some((id) => PBY[id].fl === fl));
+  $('side').innerHTML = `
+    <h2>${fl === '3d' ? '3D — eletrodutos e pontos' : PRANCHAS.find((p) => p.id === fl).label}</h2>
+    <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo. Eletrodutos na laje e descidas nas paredes; o alimentador chega enterrado do padrão ao QDC.' : 'Arraste para mover, roda ou pinça para zoom. Passe o mouse num ponto para ver o circuito. Ao lado de cada ponto: nº do circuito · VA.'}</p>
+    <div class="kpis">
+      <div class="kpi"><b>${CIRC.length}</b><span>circuitos no QDC</span></div>
+      <div class="kpi"><b>${fmtn(ALIM.D, 1)} kW</b><span>demanda (${fmtn(ALIM.I, 0)} A, trifásico)</span></div>
+      <div class="kpi"><b>${n('il')}</b><span>pontos de luz${fl === '3d' ? '' : ' neste pavimento'}</span></div>
+      <div class="kpi"><b>${n('tug') + n('tue')}</b><span>tomadas e pontos de uso específico</span></div>
+      <div class="kpi"><b class="${CIRC.every((c) => c.ok) ? 'ok' : 'bad'}">${CIRC.every((c) => c.ok) ? 'OK' : 'rever'}</b><span>disjuntor ≤ cabo e ΔV ≤ ${E.DV_MAX} %</span></div>
+      <div class="kpi"><b>${QT.qdc}</b><span>módulos no QDC (sob a escada)</span></div>
+    </div>
+    <h3>Legenda</h3>
+    <div class="leg">
+      <span><i style="border-color:${COLOR.il};border-top-style:dashed"></i>Iluminação (pontos, arandelas, interruptores)</span>
+      <span><i style="border-color:${COLOR.tug};border-top-style:dashed"></i>Tomadas de uso geral (TUG)</span>
+      <span><i style="border-color:${COLOR.tue};border-top-style:dashed"></i>Uso específico (TUE)</span>
+      <span>⊗ luz no teto · ● arandela · □ interruptor · △ tomada · ▲ 600 VA / TUE · ▬ QDC</span>
+    </div>
+    <h3>Circuitos ${fl === '3d' ? '' : 'que passam aqui'}</h3>
+    <ul class="list">${circs.map((c) => `<li><b style="color:${COLOR[c.tipo]}">C${c.n}</b> ${esc(c.desc)} — ${c.secao} mm², ${c.disj} A</li>`).join('')}</ul>
+    <p class="sub" style="margin-top:14px">Anteprojeto: revisar com responsável técnico (ART/RRT) antes de executar. Detalhes em <b>Quadro de cargas e memorial</b>.</p>`;
+}
+
+// ---------------------------------------------------------------------------------------------- planta da nuvem
+const fmtWhen = (t) => { const d = new Date(t); return isNaN(d) ? '' : d.toLocaleDateString('pt-BR') + ' ' + d.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); };
+function srcText(short) {
+  if (DOC_SRC.kind === 'cloud') return short ? 'paredes: nuvem ' + fmtWhen(DOC_SRC.at) : 'planta salva na nuvem da obra em ' + fmtWhen(DOC_SRC.at) + ' (a mesma do estúdio)';
+  if (DOC_SRC.kind === 'erro') return short ? 'paredes: referência' : 'planta as built de referência (não foi possível ler a nuvem agora)';
+  return short ? 'paredes: referência' : 'planta as built de referência (entre com a conta da obra para usar a planta da nuvem)';
+}
+function setSrcBadge() {
+  const b = $('src-badge');
+  if (!b) return;
+  b.dataset.kind = DOC_SRC.kind;
+  b.textContent = DOC_SRC.kind === 'cloud' ? 'planta da nuvem · ' + fmtWhen(DOC_SRC.at) : 'planta de referência';
+  b.title = srcText(false);
+}
+const planOK = (d) =>
+  !!d && Array.isArray(d.floors) && Array.isArray(d.walls) && Array.isArray(d.openings) &&
+  d.walls.every((w) => w && w.a && w.b && [w.a.x, w.a.y, w.b.x, w.b.y, w.thick].every(Number.isFinite) && typeof w.floor === 'string');
+/** Troca as paredes em uso e redesenha a aba aberta (sem perder o enquadramento da planta). */
+function useDoc(d, src) {
+  doc = d;
+  Object.assign(DOC_SRC, src);
+  setSrcBadge();
+  if (R3) {
+    while (R3.arch.children.length) { const m = R3.arch.children.pop(); if (m.geometry) m.geometry.dispose(); }
+    buildArch3D(R3.arch);
+  }
+  if (['T', '1', '2', 'C'].includes(S.tab)) drawPlan();
+  else if (S.tab === '3d') sync3D();
+  else if (S.tab === 'pdf') { const top = $('doc').scrollTop; setTab('pdf'); $('doc').scrollTop = top; }
+}
+async function loadCloudPlan(auth) {
+  const a = auth || window.projetoAuth;
+  if (!a || !a.ready) return false;
+  try {
+    const ctx = await a.ready;
+    if (!ctx || !ctx.client || !ctx.obraId) return false;
+    const res = await ctx.client.from('projeto_planta').select('doc, atualizado_em').eq('obra_id', ctx.obraId).maybeSingle();
+    if (res.error) throw res.error;
+    if (!res.data || !planOK(res.data.doc)) return false; // a obra ainda não salvou a planta: segue a de referência
+    let d = res.data.doc;
+    try { if (DD.data.migrateAsBuilt) d = DD.data.migrateAsBuilt(Object.assign({ roomSeeds: [], furniture: [] }, d)).doc; } catch (e) { /* usa como veio */ }
+    useDoc(d, { kind: 'cloud', at: res.data.atualizado_em });
+    return true;
+  } catch (e) {
+    console.warn('[eletrica] planta da nuvem indisponível', e);
+    DOC_SRC.kind = 'erro';
+    setSrcBadge();
+    return false;
+  }
+}
+
+
+// ---------------------------------------------------------------------------------------------- abas
+function setTab(id) {
+  S.tab = id;
+  [...tabs.children].forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === id ? 'true' : 'false'));
+  const isPlan = PLAN_TABS.includes(id), is3d = id === '3d', isDoc = id === 'calc' || id === 'mat' || id === 'pdf';
+  plan.hidden = !isPlan; $('view3d').hidden = !is3d; $('doc').hidden = !isDoc;
+  $('layers').hidden = isDoc; $('hint').hidden = !isPlan; $('lbl-walls').hidden = !is3d; $('tip').hidden = true;
+  $('main').classList.toggle('wide', isDoc);
+  $('stage').classList.toggle('docmode', isDoc);
+  $('side').hidden = isDoc;
+  try { history.replaceState(null, '', '#' + id); } catch (e) { /* file:// */ }
+  if (isPlan) { S.view = null; requestAnimationFrame(() => { fitView(); drawPlan(); }); side(); }
+  if (is3d) { init3D(); requestAnimationFrame(sync3D); side(); }
+  if (isDoc) {
+    $('doc').innerHTML = id === 'calc' ? memorial() : id === 'mat' ? materiais() : pranchas();
+    $('doc').scrollTop = 0;
+    const b = $('csv'); if (b) b.addEventListener('click', csv);
+    const pr = $('print'); if (pr) pr.addEventListener('click', () => window.print());
+  }
+}
+new ResizeObserver(() => { if (PLAN_TABS.includes(S.tab)) { fitView(); drawPlan(); } if (S.tab === '3d') sync3D(); }).observe($('stage'));
+const h0 = (location.hash || '').slice(1);
+setTab(PRANCHAS.some((p) => p.id === h0) ? h0 : 'T');
+setSrcBadge();
+loadCloudPlan();
+window.__el = { E, setTab, useDoc, loadCloudPlan, refDoc: REF_DOC, src: DOC_SRC };
+</script>
+</body>
+</html>

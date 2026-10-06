@@ -1804,7 +1804,7 @@
       furn.name = 'furniture:' + f.id;
       root.add(furn);
       S.world.add(root);
-      S.floors.set(f.id, { root, arch: null, roof: null, furn, struct: null, marks: null, structKey: null, markKey: null, hidro: null, hidroKey: null, sig: null, shown: true, anim: null });
+      S.floors.set(f.id, { root, arch: null, roof: null, furn, struct: null, marks: null, structKey: null, markKey: null, hidro: null, hidroKey: null, eletrica: null, eletricaKey: null, sig: null, shown: true, anim: null });
     });
   }
   /** Identity list of everything the architecture of a floor is built from. */
@@ -2047,6 +2047,18 @@
     });
     return changed;
   }
+  /** Eletrodutos e pontos do projeto elétrico (18-eletrica.js), também em "raio X". */
+  function syncEletrica(doc) {
+    const T = S.THREE, levels = doc.floors.map((f) => f.level).join(',');
+    doc.floors.forEach((f) => {
+      const fg = S.floors.get(f.id);
+      if (!fg || (fg.eletrica && fg.eletricaKey === levels + '|' + f.level)) return;
+      disposeTree(fg.eletrica);
+      fg.eletrica = DD.eletrica.build3d(T, doc, f);
+      fg.root.add(fg.eletrica);
+      fg.eletricaKey = levels + '|' + f.level;
+    });
+  }
   /** Leva a câmera (vista aérea) até o ponto de um item da compatibilização. */
   function flyToIssue(it) {
     if (!it || it.x == null || !S.ready || !S.active || isWalking() || !S.orbit) return;
@@ -2077,7 +2089,10 @@
     const only = showStruct && !!ui.structOnly && !!(DD.structure && DD.structure.hasData()); // "Só estrutura"
     const showHidro = !!ui.show && ui.show.hidro === true;
     if (showHidro) syncHidro(doc, ui);
-    const onlyH = showHidro && !!ui.hidroOnly && !!DD.hidro; // "Só hidráulica"
+    const showEl = !!ui.show && ui.show.eletrica === true && !!DD.eletrica;
+    if (showEl) syncEletrica(doc);
+    // "Só hidráulica" / "Só elétrica": esconde casa, móveis e terreno
+    const onlyH = (showHidro && !!ui.hidroOnly && !!DD.hidro) || (showEl && !!ui.eletricaOnly);
     doc.floors.forEach((f, i) => {
       const fg = S.floors.get(f.id);
       if (!fg) return;
@@ -2088,6 +2103,7 @@
       if (fg.struct) fg.struct.visible = showStruct && !onlyH;
       if (fg.marks) fg.marks.visible = showStruct && !onlyH;
       if (fg.hidro) fg.hidro.visible = showHidro;
+      if (fg.eletrica) fg.eletrica.visible = showEl;
       if (fg.roof) fg.roof.visible = showsUpper(ui) && !only && !onlyH;
     });
     if (S.site) S.site.visible = !only && !onlyH;
@@ -3052,7 +3068,7 @@
   }
   function onUIChange(ui, prev) {
     if (ui.selection !== prev.selection || ui.hover !== prev.hover) S.dirty.highlight = true;
-    if (ui.showAllFloors !== prev.showAllFloors || ui.show !== prev.show || ui.structOnly !== prev.structOnly || ui.hidroOnly !== prev.hidroOnly) S.dirty.visibility = true;
+    if (ui.showAllFloors !== prev.showAllFloors || ui.show !== prev.show || ui.structOnly !== prev.structOnly || ui.hidroOnly !== prev.hidroOnly || ui.eletricaOnly !== prev.eletricaOnly) S.dirty.visibility = true;
     if (ui.showAllFloors !== prev.showAllFloors && S.ready && S.active && S.atHome && !S.tween && !isWalking())
       tweenCamera(currentPose(), aerialHome(), 600, { home: true }); // re-frame: with or without the upper floors
     if (ui.floor !== prev.floor) onFloorChange(ui.floor);
