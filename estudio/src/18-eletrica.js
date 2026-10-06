@@ -150,9 +150,9 @@
     {id: "2-IL8", fl: "2", k: "il", tipo: "arandela", amb: "Varanda descoberta", x: 150, y: 14550, z: 2200, va: 180, desc: "Arandela — Varanda descoberta"},
     {id: "2-S3", fl: "2", k: "int", amb: "Varanda descoberta", x: 5450, y: 10500, z: 1100, liga: ["2-IL6","2-IL7","2-IL8"], desc: "Interruptor simples — Varanda descoberta"},
     {id: "2-T9", fl: "2", k: "tug", amb: "Varanda descoberta", x: 6450, y: 10500, z: 600, va: 100, molhada: true, externa: true, desc: "TUG externa (IP44) — Varanda descoberta"},
-    {id: "T-CH1", fl: "T", k: "tue", eq: "chuveiro", amb: "Suíte", x: 6950, y: 2990, z: 2200, va: 7500, v: 220, desc: "Chuveiro elétrico 7.500 W (220 V) — ponto T-CH2"},
-    {id: "1-CH1", fl: "1", k: "tue", eq: "chuveiro", amb: "Suíte", x: 2325, y: 7530, z: 2200, va: 7500, v: 220, desc: "Chuveiro elétrico 7.500 W (220 V) — ponto 1-CH-S"},
-    {id: "1-CH2", fl: "1", k: "tue", eq: "chuveiro", amb: "Banhº", x: 2325, y: 7620, z: 2200, va: 7500, v: 220, desc: "Chuveiro elétrico 7.500 W (220 V) — ponto 1-CH-B"},
+    {id: "T-CH1", fl: "T", k: "tue", eq: "chuveiro", amb: "Suíte", x: 6950, y: 2990, z: 2200, va: 6500, v: 220, desc: "Chuveiro elétrico 6.500 W (220 V) — ponto T-CH2"},
+    {id: "1-CH1", fl: "1", k: "tue", eq: "chuveiro", amb: "Suíte", x: 2325, y: 7530, z: 2200, va: 6500, v: 220, desc: "Chuveiro elétrico 6.500 W (220 V) — ponto 1-CH-S"},
+    {id: "1-CH2", fl: "1", k: "tue", eq: "chuveiro", amb: "Banhº", x: 2325, y: 7620, z: 2200, va: 6500, v: 220, desc: "Chuveiro elétrico 6.500 W (220 V) — ponto 1-CH-B"},
     {id: "2-ML1", fl: "2", k: "tue", eq: "mlr", amb: "Área de serviço", x: 2100, y: 8610, z: 1100, va: 1200, v: 127, molhada: true, desc: "Máquina de lavar roupa (1.200 VA, 127 V)"},
     {id: "QDC", fl: "T", k: "qdc", amb: "Sala (pé da escada)", x: 5925, y: 8750, z: 1500, desc: "Quadro de distribuição (QDC) — à direita da porta do quarto, parede do quarto (lado da sala)"},
     {id: "QD1", fl: "1", k: "qdc", amb: "Circulação (chegada da escada)", x: 5925, y: 8750, z: 1500, desc: "Quadro de distribuição do 1º (QD-1) — acima do QDC, parede do quarto master (lado da circulação)"},
@@ -385,7 +385,8 @@
     c.ib = c.va / c.v;
     c.fca = c.eq === 'chuveiro' ? 1 : FCA; // chuveiros em eletroduto exclusivo
     c.disj = DISJ.find((d) => d >= c.ib);
-    let s = SECOES.find((x) => x >= (c.tipo === 'il' ? 1.5 : 2.5) && IZ2[x] * c.fca * FCT >= c.disj);
+    // mínimo: 1,5 iluminação, 2,5 força; chuveiros 6 mm² (recomendação dos fabricantes para 220 V acima de 5.500 W)
+    let s = SECOES.find((x) => x >= (c.tipo === 'il' ? 1.5 : c.eq === 'chuveiro' ? 6 : 2.5) && IZ2[x] * c.fca * FCT >= c.disj);
     const dv = (sec) => (200 * RHO * (c.Lmax / 1000) * c.ib) / (sec * c.v);
     while (dv(s) > DV_MAX && s < 50) s = SECOES[SECOES.indexOf(s) + 1];
     c.secao = s;

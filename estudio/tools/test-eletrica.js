@@ -30,7 +30,7 @@ check('circuitos: Ib ≤ In ≤ Iz e ΔV ≤ 4 %', E.CIRC.every((c) => c.ok), E.
 check('seções mínimas (1,5 iluminação / 2,5 força)', E.CIRC.every((c) => c.secao >= (c.tipo === 'il' ? 1.5 : 2.5)));
 check('iluminação separada das tomadas', E.CIRC.every((c) => c.pts.every((id) => (c.tipo === 'il') === /il|int/.test(E.PBY[id].k))));
 check('TUE em circuito exclusivo', E.CIRC.filter((c) => c.tipo === 'tue').every((c) => c.pts.length === 1));
-check('chuveiros 7.500 W em 220 V com 6 mm² ou mais e DR próprio', E.CIRC.filter((c) => c.eq === 'chuveiro').every((c) => c.v === 220 && c.secao >= 6 && E.DRS.find((d) => d.id === c.dr).circ.length === 1));
+check('chuveiros 6.500 W em 220 V, cabo de 6 mm² e DR próprio', E.CIRC.filter((c) => c.eq === 'chuveiro').every((c) => c.v === 220 && c.va === 6500 && c.secao >= 6 && E.DRS.find((d) => d.id === c.dr).circ.length === 1));
 check('todos os circuitos com DR 30 mA', E.CIRC.every((c) => !!c.dr));
 check('um quadro trifásico por andar; cada circuito sai do quadro do seu andar', ['T', '1', '2'].every((b) => E.BOARDS[b] && P.some((p) => p.k === 'qdc' && p.fl === b)) && E.CIRC.every((c) => c.board === c.fl));
 check('alimentadores dos quadros de andar: Ib ≤ In ≤ Iz e seletivos (acima do maior disjuntor do andar)', ['1', '2'].every((b) => { const d = E.SUB[b]; return d.I <= d.disj && d.ok && E.CIRC.filter((c) => c.board === b).every((c) => c.disj < d.disj); }));
