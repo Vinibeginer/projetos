@@ -575,7 +575,7 @@ function unifilar(w, curto) {
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;background:#fff" xmlns="http://www.w3.org/2000/svg">${L.join('')}</svg>`;
 }
 function cargasRows() {
-  return CIRC.map((c) => `<tr><td class="c">${c.n}</td><td>${esc(c.desc)}</td><td class="n">${c.pts.filter((id) => !/int/.test(PBY[id].k)).length}</td><td class="n">${c.v}</td><td class="c">${c.fases}</td><td class="n">${c.va}</td><td class="n">${fmtn(c.ib, 1)}</td><td class="n">${fmtn(c.fca, 2)}</td><td class="n">${String(c.secao).replace('.', ',')}</td><td class="n">${fmtn(c.iz, 1)}</td><td class="n">${c.disj}</td><td class="c">${c.dr || '—'}</td><td class="n">${fmtn(c.Lmax / 1000, 1)}</td><td class="n">${fmtn(c.dv, 2)}</td><td class="${c.ok ? 'ok' : 'bad'}">${c.ok ? 'OK' : 'rever'}</td></tr>`);
+  return CIRC.map((c) => `<tr><td class="c">${c.n}</td><td>${esc(c.desc)}</td><td class="n">${c.pts.filter((id) => !/int/.test(PBY[id].k)).length}</td><td class="n">${c.v}</td><td class="c">${c.fases}</td><td class="n">${c.va}</td><td class="n">${fmtn(c.ib, 1)}</td><td class="n">${fmtn(c.fca, 2)}</td><td class="n">${String(c.secao).replace('.', ',')}</td><td class="n">${fmtn(c.iz, 1)}</td><td class="n">${c.disj}</td><td class="c">${c.dr || '—'}</td><td class="n">${fmtn(c.Lmax / 1000, 1)}</td><td class="n">${fmtn(c.dv, 2)}</td><td class="n">${fmtn(c.dvTot, 2)}</td><td class="${c.ok ? 'ok' : 'bad'}">${c.ok ? 'OK' : 'rever'}</td></tr>`);
 }
 function memorial() {
   const fa = FASES, maxF = Math.max(fa.A, fa.B, fa.C), minF = Math.min(fa.A, fa.B, fa.C);
@@ -590,7 +590,8 @@ function memorial() {
     <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
     <li><b>Quadro de distribuição (QDC):</b> <b>debaixo da escada, na parede do quarto do térreo</b>, voltado para a escada, centro a 1,50 m do piso, com acesso livre na frente (NBR 5410 6.5.4.7). Dali saem todos os circuitos; os do 1º e do 2º sobem por 3 eletrodutos Ø32 na mesma parede até as lajes.</li>
     <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
-    <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_ALIM} % no alimentador (total ≤ 5 %).</li>
+    <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
+    <li><b>Ramal principal (alimentador):</b> cabo de ${E.ALIM_SECAO} mm² definido pela obra; o cálculo confere a capacidade de condução e a queda de tensão total.</li>
     <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
       <ul>
         <li>iluminação: 100 VA nos primeiros 6 m² e +60 VA a cada 4 m² inteiros;</li>
@@ -613,7 +614,7 @@ function memorial() {
   ${table(['Cômodo', 'Área (m²)', 'Perímetro (m)', 'Pontos de luz', 'Iluminação (VA)', 'TUG', 'TUG (VA)', 'TUE'], previsao())}
   <h2>3. Quadro de cargas e dimensionamento dos circuitos</h2>
   <p>Disjuntor: I<sub>b</sub> ≤ I<sub>n</sub> ≤ I<sub>z</sub> corrigida (NBR 5410 5.3.4). Seção: a maior entre a mínima, a de capacidade de condução (Tabela 36, B1, 2 condutores carregados) e a de queda de tensão até o ponto mais distante.</p>
-  ${table(['Circ.', 'Descrição', 'Pontos', 'V', 'Fases', 'Pot. (VA)', 'Ib (A)', 'FCA', 'Seção (mm²)', 'Iz corr. (A)', 'Disj. (A)', 'DR', 'Dist. máx. (m)', 'ΔV (%)', ''], cargasRows())}
+  ${table(['Circ.', 'Descrição', 'Pontos', 'V', 'Fases', 'Pot. (VA)', 'Ib (A)', 'FCA', 'Seção (mm²)', 'Iz corr. (A)', 'Disj. (A)', 'DR', 'Dist. máx. (m)', 'ΔV (%)', 'ΔV total (%)', ''], cargasRows())}
   <h3>Equilíbrio das fases</h3>
   <p>Fase A: <b>${fmtn(fa.A / 1000, 2)} kVA</b> · Fase B: <b>${fmtn(fa.B / 1000, 2)} kVA</b> · Fase C: <b>${fmtn(fa.C / 1000, 2)} kVA</b>. Desequilíbrio de ${fmtn(des, 1)} % entre a fase mais carregada e a menos carregada. Circuitos de 127 V ficam numa fase; os de 220 V, entre duas.</p>
   <h2>4. Demanda, padrão de entrada e alimentador</h2>
@@ -625,7 +626,8 @@ function memorial() {
       <ul>
         <li>3 fases de ${ALIM.secao} mm², neutro de ${ALIM.neutro} mm² e PE de ${ALIM.pe} mm²;</li>
         <li>disjuntor geral 3P de ${ALIM.disj} A no QDC;</li>
-        <li>queda de tensão de ${fmtn(ALIM.dv, 2)} %.</li>
+        <li>capacidade do cabo de ${ALIM.secao} mm² (B1, 3 condutores carregados): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do geral — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
+        <li>queda de tensão no alimentador de ${fmtn(ALIM.dv, 2)} %; somada à do circuito mais longo, ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %) — <span class="${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'ok' : 'bad'}">${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'OK' : 'rever'}</span>.</li>
       </ul></li>
     <li><b>Categoria do padrão de entrada:</b> definida pela Enel RJ a partir da carga instalada e da demanda (levar este memorial). O disjuntor do padrão e o ramal de ligação seguem a tabela da concessionária; o geral do QDC deve ser igual ou menor que o do padrão.</li>
   </ul>
