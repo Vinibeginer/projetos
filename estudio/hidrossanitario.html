@@ -102,6 +102,30 @@ td.c { font-family: var(--font-mono); white-space: nowrap; }
 .leg i { width: 22px; height: 0; border-top: 3px solid; display: inline-block; }
 .list { margin: 0; padding-left: 18px; font-size: 13px; }
 .list li { margin: 4px 0; }
+/* pranchas */
+.sheet { background: #fff; color: #1f1d1a; border: 1px solid #ccc; margin: 0 auto 24px; padding: 10mm; max-width: 1580px; aspect-ratio: 420 / 297; display: flex; flex-direction: column; gap: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.18); }
+.sh-head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #1f1d1a; padding-bottom: 4px; }
+.sh-head b { display: block; font-size: 15px; }
+.sh-head span { font-size: 13px; }
+.sh-meta { text-align: right; font: 500 10px/1.4 var(--font-mono); }
+.sh-body { flex: 1; min-height: 0; display: grid; grid-template-columns: 54% 46%; gap: 8px; }
+.sh-img { min-height: 0; display: flex; align-items: flex-start; justify-content: center; }
+.sh-img img { max-width: 100%; max-height: 100%; object-fit: contain; border: 1px solid #ddd; }
+.sh-tab { overflow: hidden; }
+table.pts { min-width: 0; width: 100%; font-size: 9.5px; line-height: 1.25; }
+table.pts th { position: static; background: #eee; color: #333; font-size: 8.5px; padding: 3px 4px; }
+table.pts td { padding: 2px 4px; border-bottom: 1px solid #e3e3e3; color: #1f1d1a; }
+td.num span { display: inline-grid; place-items: center; min-width: 17px; height: 17px; border-radius: 50%; color: #fff; font: 600 9px/1 var(--font-mono); }
+.sh-foot { font-size: 9px; color: #444; border-top: 1px solid #999; padding-top: 4px; }
+@page { size: A3 landscape; margin: 8mm; }
+@media print {
+  html, body { height: auto; overflow: visible; background: #fff; }
+  .app { display: block; height: auto; }
+  .topbar, .layers, .side, .hint, #plan, #view3d, .noprint, .tip { display: none !important; }
+  .main, .stage { display: block; height: auto; overflow: visible; }
+  .doc { position: static; overflow: visible; padding: 0; }
+  .sheet { margin: 0; border: 0; box-shadow: none; padding: 0; width: 100%; max-width: none; height: 280mm; aspect-ratio: auto; break-after: page; page-break-after: always; }
+}
 @media (max-width: 999px) {
   html, body { overflow-x: hidden; }
   body { overflow-y: auto; }
@@ -686,6 +710,7 @@ const PRANCHAS = [
   { id: '3d', label: '3D' },
   { id: 'calc', label: 'Memorial e cálculo' },
   { id: 'mat', label: 'Materiais' },
+  { id: 'pdf', label: 'Pranchas (PDF)' },
 ];
 const FL_RANGE = { T: [-2000, L1], 1: [L1, L2], 2: [L2, LR], C: [LR, 20000] };
 const COLORS = { AF: '#2f80d8', ES: '#9a5b2c', VE: '#2f9e5f', AL: '#7a4fc2' };
@@ -708,7 +733,7 @@ $('layers').addEventListener('change', (e) => {
 
 // ---------------------------------------------------------------------------------------------- planta
 const plan = $('plan');
-const ctx = plan.getContext('2d');
+let ctx = plan.getContext('2d');
 const BOUNDS = { T: [-2900, 1700, 9300, 20400], 1: [-2900, 2300, 7900, 11000], 2: [-2900, 2300, 7900, 11000], C: [-2900, 2300, 7900, 11000] };
 function fitView() {
   const [x0, y0, x1, y1] = BOUNDS[S.tab] || BOUNDS.T;
@@ -807,20 +832,23 @@ function visibleSegs(fl) {
   return { segs, cols };
 }
 function drawPlan() {
-  if (S.tab === '3d' || S.tab === 'calc' || S.tab === 'mat') return;
+  if (!['T', '1', '2', 'C'].includes(S.tab)) return;
   const dpr = Math.min(window.devicePixelRatio || 1, 2), w = plan.clientWidth, h = plan.clientHeight;
   if (!w || !h) return;
   if (!S.view) fitView();
   plan.width = Math.round(w * dpr); plan.height = Math.round(h * dpr);
+  ctx = plan.getContext('2d');
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  ctx.fillStyle = '#f3efe6'; ctx.fillRect(0, 0, w, h);
+  paintFloor(S.tab, w, h, false);
+}
+function paintFloor(fl, w, h, print) {
+  ctx.fillStyle = print ? '#ffffff' : '#f3efe6'; ctx.fillRect(0, 0, w, h);
   ctx.strokeStyle = '#e7e1d5'; ctx.lineWidth = 1;
   const g = 1000 * S.view.s;
   if (g > 12) {
     for (let x = S.view.ox % g; x < w; x += g) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); }
     for (let y = S.view.oy % g; y < h; y += g) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
   }
-  const fl = S.tab;
   const P = PRANCHAS.find((p) => p.id === fl);
   // lote
   ctx.strokeStyle = '#b3aa9b'; ctx.setLineDash([6, 4]); ctx.strokeRect(X(0), Y(0), 9000 * S.view.s, 20000 * S.view.s); ctx.setLineDash([]);
@@ -891,7 +919,7 @@ function drawPlan() {
     ctx.beginPath(); ctx.arc(X(c.x), Y(c.y), r, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
     ctx.fillStyle = COLORS[c.p.sys]; ctx.beginPath(); ctx.arc(X(c.x), Y(c.y), r * 0.45, 0, Math.PI * 2); ctx.fill();
   });
-  if (S.layers.TXT) {
+  if (S.layers.TXT && !print) {
     // rótulos das prumadas na margem, com linha de chamada
     const tags = [
       ['SH-3 · AF-3 · CV-3 Ø50', 6400, 2780, fl === 'T' ? 2450 : 3300],
@@ -914,7 +942,7 @@ function drawPlan() {
   // título
   ctx.font = '600 13px "Space Grotesk", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#1f1d1a';
   const titles = { T: 'Térreo — água fria, esgoto (enterrado tracejado) e ventilação', 1: '1º pavimento — ramais sob a laje e nas paredes', 2: '2º pavimento', C: "Cobertura — caixa d'água, barrilete e terminais de ventilação" };
-  ctx.fillText(titles[fl], 12, h - 14);
+  if (!print) ctx.fillText(titles[fl], 12, h - 14);
   // escala
   const m = 1000 * S.view.s;
   ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - 20 - m, h - 18); ctx.lineTo(w - 20, h - 18); ctx.stroke();
@@ -1201,6 +1229,168 @@ function csv() {
   document.body.appendChild(a); a.click(); a.remove();
 }
 
+// ---------------------------------------------------------------------------------------------- pranchas de execução (PDF)
+// Uma folha A3 por pavimento: planta com os pontos numerados e cotados até as paredes de referência + tabela.
+const SHEETS = [
+  { id: 'T', fl: 'T', fid: 'f0', titulo: 'Térreo — pontos de água e esgoto', bounds: [300, 1900, 7900, 11200] },
+  { id: 'TE', fl: 'T', fid: 'f0', titulo: 'Térreo — rede enterrada: coletor, caixas e alimentador', bounds: [-200, 1600, 9200, 20400], enterrado: true },
+  { id: '1', fl: '1', fid: 'f1', titulo: '1º pavimento — pontos de água e esgoto', bounds: [300, 2300, 7900, 11000] },
+  { id: '2', fl: '2', fid: 'f2', titulo: '2º pavimento — pontos de água e esgoto', bounds: [300, 2300, 7900, 11000] },
+  { id: 'C', fl: 'C', fid: 'f2', titulo: "Cobertura — caixa d'água, barrilete e ventilação", bounds: [300, 2300, 7900, 11000] },
+];
+const LVL = { T: 0, 1: L1, 2: L2, C: LR };
+const SIDE_NAME = { esq: 'à esquerda', dir: 'à direita', fundo: 'do fundo', frente: 'da frente' };
+function wallRects(fid) {
+  if (!doc) return [];
+  return doc.walls.filter((w) => w.floor === fid && w.kind !== 'railing').map((w) => {
+    const r = wallRect(w), xs = r.map((p) => p[0]), ys = r.map((p) => p[1]);
+    return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys), muro: w.kind === 'muro' };
+  });
+}
+/** Medidas de um ponto até as faces das paredes mais próximas (uma na horizontal, uma na vertical da planta). */
+function refsOf(fid, x, y) {
+  const R = wallRects(fid), o = {};
+  const own = R.find((r) => x >= r.x0 - 1 && x <= r.x1 + 1 && y >= r.y0 - 1 && y <= r.y1 + 1);
+  const put = (k, d, face, r) => { if (!o[k] || d < o[k].d) o[k] = { d, face, muro: r.muro }; };
+  R.forEach((r) => {
+    if (r === own) return;
+    if (y >= r.y0 - 1 && y <= r.y1 + 1) { if (r.x1 <= x + 1) put('esq', x - r.x1, r.x1, r); if (r.x0 >= x - 1) put('dir', r.x0 - x, r.x0, r); }
+    if (x >= r.x0 - 1 && x <= r.x1 + 1) { if (r.y1 <= y + 1) put('fundo', y - r.y1, r.y1, r); if (r.y0 >= y - 1) put('frente', r.y0 - y, r.y0, r); }
+  });
+  // fora do alcance de uma parede numa direção (ponto externo): mede até o alinhamento da face/quina mais próxima
+  const gap = (r) => Math.max(r.x0 - x, x - r.x1, r.y0 - y, y - r.y1, 0);
+  const free = { esq: !o.esq || o.esq.muro, dir: !o.dir || o.dir.muro, fundo: !o.fundo || o.fundo.muro, frente: !o.frente || o.frente.muro };
+  [1500, 6000].forEach((lim) => {
+    const k0 = Object.keys(o).filter((k) => o[k].alinh || !o[k].muro);
+    const lx = !k0.some((k) => k === 'esq' || k === 'dir'), ly = !k0.some((k) => k === 'fundo' || k === 'frente');
+    if (!lx && !ly) return;
+    const align = (k, d, face) => { if (free[k] && d >= 0 && (!o[k] || o[k].alinh ? !o[k] || d < o[k].d : d < o[k].d - 1000)) o[k] = { d, face, alinh: true }; };
+    R.filter((r) => r !== own && !r.muro && gap(r) < lim).forEach((r) => {
+      if (lx) { if (r.x1 <= x + 1) align('esq', x - r.x1, r.x1); if (r.x0 >= x - 1) align('dir', r.x0 - x, r.x0); }
+      if (ly) { if (r.y1 <= y + 1) align('fundo', y - r.y1, r.y1); if (r.y0 >= y - 1) align('frente', r.y0 - y, r.y0); }
+    });
+  });
+  const pick = (a, b) => (o[a] && (!o[b] || o[a].d <= o[b].d) ? [a, o[a]] : o[b] ? [b, o[b]] : null);
+  const ownV = own && own.y1 - own.y0 > own.x1 - own.x0; // ponto dentro de parede vertical
+  return { hx: own && ownV ? null : pick('esq', 'dir'), hy: own && !ownV ? null : pick('fundo', 'frente'), own, ownV };
+}
+function refText(r) {
+  const part = (p) => p ? `${fmtm(p[1].d)} m ${p[1].alinh ? 'do alinhamento da face da parede' : p[1].muro ? 'do muro' : 'da parede'} ${SIDE_NAME[p[0]]}` : null;
+  const t = [];
+  if (r.own) t.push('na parede ' + (r.ownV ? '(lateral)' : '(transversal)'));
+  [part(r.hx), part(r.hy)].forEach((x) => x && t.push(x));
+  return t.join(' · ');
+}
+const PRUMADAS = [
+  ['TQ-1 Ø100 — esgoto dos banheiros empilhados', 2000, 10280, 'T12'], ['VP-1 Ø100 — ventilação (prolongamento do TQ-1)', 2000, 10280, 'C'],
+  ['CV-1 Ø50 — ventilação do lavabo do térreo', 1800, 10300, 'T12'], ['AF-1 — coluna de água fria', 2130, 10300, 'T12C'],
+  ['Alimentador Ø25 — sobe para a caixa', 2200, 10300, 'T12C'], ['TQ-2 Ø100 — esgoto da suíte do 1º', 1745, 7225, 'T1'],
+  ['TG-1 Ø75 — gordura das pias (externo)', 1380, 6650, 'T12C'], ['AF-2 Ø20 — água das pias (externo)', 1300, 6850, 'T12C'],
+  ['VP-2 Ø100 — ventilação do TQ-2 (externo)', 1380, 7225, '12C'], ['TS-1 Ø75 — tanque e máquina (externo)', 1420, 8565, 'T12C'],
+  ['CV-3 Ø50 — ventilação da suíte do térreo (externo, fundos)', 6330, 2780, 'T12C'], ['AF-3 Ø20 — água da suíte do térreo (externo, fundos)', 6450, 2780, 'T12C'],
+];
+function sheetPoints(sh) {
+  const P = [], lv = LVL[sh.fl];
+  const add = (item, x, y, alt, obs, kind) => P.push({ item, x, y, alt, obs: obs || '', kind });
+  if (sh.enterrado) {
+    BOX.filter((b) => b.k !== 'CS' && b.fl === 'T').forEach((b) => add(b.id + (b.k === 'CI' ? ' — caixa de inspeção 60×60' : ' — caixa de gordura simples Ø40'), b.x, b.y, 'fundo a ' + fmtm(ZG - b.z) + ' m', 'recebe ' + ES.filter((e) => e.to === b.id).map((e) => e.id).join(', '), 'es'));
+    ['TQ-1', 'TQ-2', 'TG-1', 'TS-1'].forEach((id) => { const e = ESBY[id]; add('Pé do ' + id + ' (curva 90° longa)', e.pts[0][0], e.pts[0][1], fmtm(-e.pts[0][2]) + ' m abaixo do piso', 'Ø' + e.dn, 'es'); });
+    add('Saída para a rede pública Ø100', 550, 19850, 'prof. ≈ ' + fmtm(ZG - ESBY['CL-4'].pts[1][2]) + ' m', 'confirmar a cota da rede', 'es');
+    add('Hidrômetro / cavalete (concessionária)', 6750, 19800, '—', 'alimentador Ø25 a 0,40 m de profundidade', 'al');
+    add('Alimentador: deriva da garagem', 3850, 12500, '0,40 m de prof.', 'tê Ø25', 'al');
+    add('Alimentador: entra no shaft SH-1', 2200, 10600, '0,40 m de prof.', 'sobe no shaft até a cobertura', 'al');
+    add('Torneira da garagem (direto da rede)', 4100, 12500, '0,60 m do piso', '', 'al');
+    add('Torneira da frente (direto da rede)', 7100, 19850, '0,60 m', 'no muro', 'al');
+    return P;
+  }
+  if (sh.fl !== 'C') {
+    FX.filter((f) => f.fl === sh.fl && !f.direto).forEach((f) => {
+      const n = AFN[f.af];
+      if (n) add(f.id + ' — água: ' + TIPOS[f.t].nome.toLowerCase(), n[0], n[1], fmtm(n[2] - lv) + ' m', 'Ø20 (½")', 'af');
+      if (f.es && ESBY[f.es]) {
+        const p0 = ESBY[f.es].pts[0];
+        add(f.id + ' — esgoto' + (f.cs ? ' (vai para ' + f.cs + ')' : ''), p0[0], p0[1], f.t === 'vaso' || f.t === 'ch' ? 'no piso (eixo)' : fmtm(p0[2] - lv) + ' m', 'Ø' + ESBY[f.es].dn, 'es');
+      }
+    });
+    BOX.filter((b) => b.k === 'CS' && b.fl === sh.fl).forEach((b) => add(b.id + ' — caixa sifonada 150×150', b.x, b.y, 'no piso (grelha)', 'saída Ø' + ESBY[b.out].dn, 'es'));
+    AFE.filter((e) => e.rp && e.fl === sh.fl).forEach((e) => { const v = e.via[0]; add('Registro de pressão — ' + e.b.replace(/^f/, ''), v[0], v[1], fmtm(v[2] - lv) + ' m', 'chuveiro', 'af'); });
+  }
+  AFE.filter((e) => e.rg && e.fl === sh.fl).forEach((e) => { const n = AFN[['BR', 'CX'].includes(e.a) ? e.a : e.b]; add('Registro de gaveta — ' + e.rg.replace(/^Registro (geral )?(d[aoe]s? )?/i, ''), n[0], n[1], fmtm(n[2] - lv) + ' m', 'Ø' + e.dn, 'af'); });
+  const laje = { 1: 'Laje do 1º pavimento', 2: 'Laje do 2º pavimento', C: 'Laje de cobertura' }[sh.fl];
+  const furos = PASS.filter((p) => p.onde === laje);
+  PRUMADAS.filter((p) => p[3].includes(sh.fl)).forEach(([nome, x, y]) => {
+    const f = furos.find((q) => Math.abs(q.x - x) < 30 && Math.abs(q.y - y) < 30);
+    add('Prumada ' + nome, x, y, '—', f ? 'furo/camisa na laje ' + (typeof f.furo === 'number' ? 'Ø' + f.furo + ' mm' : f.furo) : '', /AF|Alimentador/.test(nome) ? 'af' : /VP|CV/.test(nome) ? 've' : 'es');
+  });
+  furos.filter((q) => !PRUMADAS.some((p) => p[3].includes(sh.fl) && Math.abs(q.x - p[1]) < 30 && Math.abs(q.y - p[2]) < 30)).forEach((q) =>
+    add('Furo/espera na laje — ' + q.oque, q.x, q.y, 'laje', typeof q.furo === 'number' ? 'Ø' + q.furo + ' mm' : q.furo, q.sys === 'Água fria' || q.sys === 'Alimentador' ? 'af' : 'es'));
+  if (sh.fl === 'C') {
+    add("Caixa d'água 1.500 L (centro) sobre plataforma h = 1,00 m", 2500, 7900, 'base a 1,00 m da laje', 'plataforma 1,80 × 1,80 sobre vigas', 'af');
+    add('Extravasor e limpeza Ø32 (descarga na laje)', 3600, 7950, 'na laje', 'visível, perto do ralo', 'af');
+  }
+  return P;
+}
+const KIND_COLOR = { af: '#2f80d8', es: '#9a5b2c', ve: '#2f9e5f', al: '#7a4fc2' };
+function renderSheetImage(sh, pts) {
+  const W = 1100, H = 1000, k = 2;
+  const cv = document.createElement('canvas'); cv.width = W * k; cv.height = H * k;
+  const keepCtx = ctx, keepView = S.view, keepLayers = S.layers, keepHover = S.hover;
+  ctx = cv.getContext('2d'); ctx.setTransform(k, 0, 0, k, 0, 0);
+  S.layers = { AF: true, ES: true, VE: true, AL: true, TXT: true, WALLS: true }; S.hover = null;
+  const [x0, y0, x1, y1] = sh.bounds;
+  const s = Math.min((W - 40) / (x1 - x0), (H - 40) / (y1 - y0));
+  S.view = { s, ox: (W - (x1 - x0) * s) / 2 - x0 * s, oy: (H - (y1 - y0) * s) / 2 - y0 * s };
+  try {
+    paintFloor(sh.fl, W, H, true);
+    // cotas até as paredes de referência + marcadores numerados
+    ctx.font = '600 9.5px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    pts.forEach((p) => {
+      const col = KIND_COLOR[p.kind] || '#333';
+      ctx.strokeStyle = col; ctx.globalAlpha = 0.85; ctx.lineWidth = 1; ctx.setLineDash([4, 2]);
+      if (p.ref.hx) { ctx.beginPath(); ctx.moveTo(X(p.x), Y(p.y)); ctx.lineTo(X(p.ref.hx[1].face), Y(p.y)); ctx.stroke(); }
+      if (p.ref.hy) { ctx.beginPath(); ctx.moveTo(X(p.x), Y(p.y)); ctx.lineTo(X(p.x), Y(p.ref.hy[1].face)); ctx.stroke(); }
+      ctx.setLineDash([]); ctx.globalAlpha = 1;
+    });
+    const placed = [];
+    pts.forEach((p) => {
+      let lx = X(p.x), ly = Y(p.y);
+      const dirs = [[14, -14], [-14, -14], [14, 14], [-14, 14], [26, 0], [-26, 0], [0, -26], [0, 26], [30, -26], [-30, 26], [30, 26], [-30, -26]];
+      let pos = null;
+      for (const [dx, dy] of dirs) { const c = [lx + dx, ly + dy]; if (!placed.some((q) => Math.hypot(q[0] - c[0], q[1] - c[1]) < 18) && !pts.some((o) => Math.hypot(X(o.x) - c[0], Y(o.y) - c[1]) < 7)) { pos = c; break; } }
+      pos = pos || [lx + 16, ly - 16];
+      placed.push(pos);
+      ctx.strokeStyle = 'rgba(0,0,0,.45)'; ctx.lineWidth = 0.8; ctx.beginPath(); ctx.moveTo(lx, ly); ctx.lineTo(pos[0], pos[1]); ctx.stroke();
+      ctx.fillStyle = KIND_COLOR[p.kind] || '#333'; ctx.beginPath(); ctx.arc(pos[0], pos[1], 8, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#fff'; ctx.fillText(String(p.n), pos[0], pos[1] + 0.5);
+      ctx.fillStyle = '#000'; ctx.beginPath(); ctx.arc(lx, ly, 2, 0, Math.PI * 2); ctx.fill();
+    });
+    // norte da planta: fundo em cima, rua embaixo
+    ctx.font = '600 11px "Space Grotesk", sans-serif'; ctx.fillStyle = '#1f1d1a'; ctx.textAlign = 'left';
+    ctx.fillText('↑ FUNDO (quintal)', 12, 18); ctx.fillText('↓ FRENTE (rua)', 12, H - 12);
+  } finally {
+    const url = cv.toDataURL('image/png');
+    ctx = keepCtx; S.view = keepView; S.layers = keepLayers; S.hover = keepHover;
+    return url;
+  }
+}
+function pranchas() {
+  const hoje = new Date().toLocaleDateString('pt-BR');
+  const pages = SHEETS.map((sh, i) => {
+    const pts = sheetPoints(sh).map((p) => Object.assign(p, { ref: refsOf(sh.fid, p.x, p.y) }));
+    pts.sort((a, b) => ({ af: 0, al: 1, es: 2, ve: 3 })[a.kind] - ({ af: 0, al: 1, es: 2, ve: 3 })[b.kind] || a.y - b.y || a.x - b.x);
+    pts.forEach((p, j) => (p.n = j + 1));
+    const img = renderSheetImage(sh, pts);
+    const rows = pts.map((p) => `<tr><td class="num"><span style="background:${KIND_COLOR[p.kind]}">${p.n}</span></td><td>${esc(p.item)}</td><td>${esc(refText(p.ref))}</td><td class="c">${esc(p.alt)}</td><td>${esc(p.obs)}</td></tr>`);
+    return `<section class="sheet">
+      <header class="sh-head"><div><b>Obra Mariára — Projeto hidrossanitário</b><span>${esc(sh.titulo)}</span></div><div class="sh-meta">Prancha ${i + 1}/${SHEETS.length} · ${hoje}<br>ANTEPROJETO — conferir no local e com o responsável técnico</div></header>
+      <div class="sh-body"><div class="sh-img"><img src="${img}" alt="${esc(sh.titulo)}"></div>
+      <div class="sh-tab"><table class="pts"><thead><tr><th>Nº</th><th>Item</th><th>Medida a partir de (face da parede)</th><th>Altura</th><th>Obs.</th></tr></thead><tbody>${rows.join('')}</tbody></table></div></div>
+      <footer class="sh-foot">Medidas em metros, do <b>eixo do ponto/tubo</b> até a <b>face da alvenaria</b> mais próxima (sem reboco), na direção indicada; “alinhamento da face” = prolongamento da face de uma parede próxima, para pontos fora dela (esquerda/direita = olhando a planta com o fundo para cima; fundo = lado do quintal; frente = lado da rua). Alturas a partir do <b>piso acabado</b> do pavimento; caixas enterradas a partir da calçada. Cor: <span style="color:#2f80d8">■ água</span> <span style="color:#7a4fc2">■ alimentador</span> <span style="color:#9a5b2c">■ esgoto</span> <span style="color:#2f9e5f">■ ventilação</span>. Tolerância de execução ±2 cm; na dúvida, priorizar o alinhamento do aparelho.</footer>
+    </section>`;
+  });
+  return `<div class="noprint" style="margin-bottom:14px"><p class="callout">Pranchas de execução por pavimento, para entregar ao pedreiro/encanador. Cada ponto tem um número na planta e, na tabela, a distância até a face da parede de referência e a altura. Para gerar o PDF: <b>Imprimir → Salvar como PDF</b>, papel <b>A3 paisagem</b> (ou A4 paisagem, com escala reduzida).</p><button class="btn" id="print" type="button">Imprimir / salvar em PDF</button></div>${pages.join('')}`;
+}
+
 // ---------------------------------------------------------------------------------------------- painel lateral
 function side() {
   const low = AF.pontos.filter((p) => !p.ok).length;
@@ -1245,7 +1435,7 @@ function side() {
 function setTab(id) {
   S.tab = id;
   [...tabs.children].forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === id ? 'true' : 'false'));
-  const isPlan = ['T', '1', '2', 'C'].includes(id), is3d = id === '3d', isDoc = id === 'calc' || id === 'mat';
+  const isPlan = ['T', '1', '2', 'C'].includes(id), is3d = id === '3d', isDoc = id === 'calc' || id === 'mat' || id === 'pdf';
   plan.hidden = !isPlan; $('view3d').hidden = !is3d; $('doc').hidden = !isDoc;
   $('layers').hidden = isDoc; $('hint').hidden = !isPlan; $('lbl-walls').hidden = !is3d; $('tip').hidden = true;
   $('main').classList.toggle('wide', isDoc);
@@ -1255,9 +1445,10 @@ function setTab(id) {
   if (isPlan) { S.view = null; requestAnimationFrame(() => { fitView(); drawPlan(); }); side(); }
   if (is3d) { init3D(); requestAnimationFrame(sync3D); side(); }
   if (isDoc) {
-    $('doc').innerHTML = id === 'calc' ? memorial() : materiais();
+    $('doc').innerHTML = id === 'calc' ? memorial() : id === 'mat' ? materiais() : pranchas();
     $('doc').scrollTop = 0;
     const b = $('csv'); if (b) b.addEventListener('click', csv);
+    const pr = $('print'); if (pr) pr.addEventListener('click', () => window.print());
   }
 }
 new ResizeObserver(() => { if (['T', '1', '2', 'C'].includes(S.tab)) { fitView(); drawPlan(); } if (S.tab === '3d') sync3D(); }).observe($('stage'));
