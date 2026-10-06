@@ -10802,14 +10802,18 @@ kbd {
     portao: { fu: 1, fs: 0.05, nome: 'Portão', obs: 'segundos por acionamento' },
   };
   const CENARIOS = [
-    { id: 'verao', nome: 'Noite de verão: ar ligado, 2 chuveiros juntos na posição verão', chuveiros: 2, fuCh: 0.55, ac: true, projeto: true },
-    { id: 'inverno', nome: 'Noite de inverno: ar desligado, 2 chuveiros juntos na posição inverno', chuveiros: 2, fuCh: 1, ac: false },
-    { id: 'inverno3', nome: 'Raro: 3 chuveiros juntos na posição inverno', chuveiros: 3, fuCh: 1, ac: false },
-    { id: 'semch', nome: 'Noite de verão sem chuveiro', chuveiros: 0, fuCh: 0, ac: true },
+    // uso da casa: um chuveiro de cada vez (definido pelo proprietário)
+    { id: 'verao', nome: 'Noite de verão: ar ligado, 1 chuveiro na posição verão', chuveiros: 1, fuCh: 0.55, ac: true, projeto: true },
+    { id: 'veraoQ', nome: 'Noite de verão: ar ligado, 1 chuveiro na posição inverno', chuveiros: 1, fuCh: 1, ac: true, projeto: true },
+    { id: 'inverno', nome: 'Noite de inverno: ar desligado, 1 chuveiro na posição inverno', chuveiros: 1, fuCh: 1, ac: false, projeto: true },
+    { id: 'semch', nome: 'Noite de verão sem chuveiro', chuveiros: 0, fuCh: 0, ac: true, projeto: true },
+    { id: 'dois', nome: 'Fora do uso previsto: 2 chuveiros juntos na posição inverno, ar ligado', chuveiros: 2, fuCh: 1, ac: true },
   ];
   function cenario(cn) {
     const sh = CIRC.filter((c) => c.eq === 'chuveiro');
-    const combos = cn.chuveiros === 0 ? [[]] : cn.chuveiros >= sh.length ? [sh] : sh.flatMap((a, i) => sh.slice(i + 1).map((b) => [a, b]));
+    // todas as combinações de n chuveiros ligados juntos
+    const comb = (L, n) => (n === 0 ? [[]] : L.flatMap((x, i) => comb(L.slice(i + 1), n - 1).map((r) => [x].concat(r))));
+    const combos = comb(sh, Math.min(cn.chuveiros, sh.length));
     let pior = null;
     combos.forEach((on) => {
       const I = { A: 0, B: 0, C: 0 };
@@ -10831,7 +10835,8 @@ kbd {
   const CENARIO = CENARIOS.map(cenario);
   function demanda() {
     // corrente de projeto do ramal: a maior fase no cenário de projeto (pico típico) — não a média trifásica
-    const d = demandaDe(CIRC), proj = CENARIO.find((c) => c.projeto), I = proj.max;
+    const d = demandaDe(CIRC), proj = CENARIO.filter((c) => c.projeto).sort((a, b) => b.max - a.max)[0], I = proj.max;
+    d.cenarioProjeto = proj.id;
     d.Iconc = d.I;
     const L = polyLen(ALIM_ROUTE) + 1000; // percurso real + 1 m de sobra nas ligações
     const disj = DISJ.find((d) => d >= I);
@@ -10840,7 +10845,7 @@ kbd {
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
     // situações mais raras (2 ou 3 chuveiros no inverno): a corrente pode passar do In por alguns minutos; o disjuntor
     // curva C não desarma até 1,13 × In e só desarma em menos de 1 h acima de 1,45 × In (NBR NM 60898)
-    const raros = CENARIO.filter((c) => !c.projeto).map((c) => ({ id: c.id, nome: c.nome, max: c.max, xIn: c.max / disj }));
+    const raros = CENARIO.filter((c) => !c.projeto || c === proj).map((c) => ({ id: c.id, nome: c.nome, max: c.max, xIn: c.max / disj }));
     return Object.assign(d, { Iproj: I, L, disj, secao: s, iz, okIz: disj <= iz, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16, raros });
   }
   const ALIM = demanda();

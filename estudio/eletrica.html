@@ -702,17 +702,17 @@ function memorial() {
         <li>corrente em cada fase = Σ (corrente do circuito × Fu × Fs);</li>
         <li><b>Fu, fator de utilização:</b> parte da potência que o aparelho usa quando está ligado;</li>
         <li><b>Fs, fator de simultaneidade:</b> parte dos pontos do grupo ligados ao mesmo tempo no pico;</li>
-        <li>os chuveiros entram um a um: no pico, os dois que mais carregam a mesma fase. Cada chuveiro fica num par de fases diferente (AB, BC e CA).</li>
+        <li><b>chuveiros: um de cada vez</b>, como é o uso da casa. O cálculo testa cada um (o que mais carrega uma fase). Cada chuveiro fica num par de fases diferente (AB, BC e CA).</li>
       </ul>
-      ${table(['Grupo', 'Fu', 'Fs', 'Por quê'], Object.values(E.FATORES).map((f) => `<tr><td>${esc(f.nome)}</td><td class="n">${fmtn(f.fu, 2)}</td><td class="n">${fmtn(f.fs, 2)}</td><td>${esc(f.obs)}</td></tr>`).concat([`<tr><td>Chuveiros</td><td class="n">0,55 / 1</td><td class="n">2 de 3</td><td>posição verão / inverno; banhos de 10 a 15 min</td></tr>`]))}
-      ${table(['Cenário', 'Fase A (A)', 'Fase B (A)', 'Fase C (A)', 'Maior / geral'], E.CENARIO.map((c) => `<tr${c.projeto ? ' class="group"' : ''}><td>${esc(c.nome)}${c.projeto ? ' — <b>cenário de projeto</b>' : ''}</td><td class="n">${fmtn(c.I.A, 1)}</td><td class="n">${fmtn(c.I.B, 1)}</td><td class="n">${fmtn(c.I.C, 1)}</td><td class="n">${fmtn(c.max / ALIM.disj, 2)} × In</td></tr>`))}
+      ${table(['Grupo', 'Fu', 'Fs', 'Por quê'], Object.values(E.FATORES).map((f) => `<tr><td>${esc(f.nome)}</td><td class="n">${fmtn(f.fu, 2)}</td><td class="n">${fmtn(f.fs, 2)}</td><td>${esc(f.obs)}</td></tr>`).concat([`<tr><td>Chuveiros</td><td class="n">0,55 / 1</td><td class="n">1 de 3</td><td>posição verão / inverno; um banho de cada vez</td></tr>`]))}
+      ${table(['Cenário', 'Fase A (A)', 'Fase B (A)', 'Fase C (A)', 'Maior / geral'], E.CENARIO.map((c) => `<tr${c.id === ALIM.cenarioProjeto ? ' class="group"' : ''}><td>${esc(c.nome)}${c.id === ALIM.cenarioProjeto ? ' — <b>maior corrente prevista (projeto)</b>' : c.projeto ? '' : ' — só verificação'}</td><td class="n">${fmtn(c.I.A, 1)}</td><td class="n">${fmtn(c.I.B, 1)}</td><td class="n">${fmtn(c.I.C, 1)}</td><td class="n">${fmtn(c.max / ALIM.disj, 2)} × In</td></tr>`))}
       <ul>
-        <li><b>Corrente de projeto do ramal:</b> ${fmtn(ALIM.Iproj, 1)} A, a maior fase no pico típico (verão, que em Campos dos Goytacazes é a maior parte do ano), com geral de <b>${ALIM.disj} A</b>.</li>
-        <li><b>No inverno, com 2 chuveiros na posição inverno ao mesmo tempo:</b> uma fase chega a ${fmtn(ALIM.raros.find((r) => r.id === 'inverno').max, 0)} A (${fmtn(ALIM.raros.find((r) => r.id === 'inverno').xIn, 2)} × In).
+        <li><b>Corrente de projeto do ramal:</b> ${fmtn(ALIM.Iproj, 1)} A, a maior fase entre os cenários previstos (um chuveiro de cada vez), com geral de <b>${ALIM.disj} A</b> e cabo de ${ALIM.secao} mm²${ALIM.secao > ALIM.Iproj / 3 ? '' : ''}. O cabo de 16 mm² (68 A) fica com folga.</li>
+        <li><b>Se um dia dois chuveiros forem ligados juntos</b> (fora do uso previsto): uma fase chega a ${fmtn(ALIM.raros.find((r) => r.id === 'dois').max, 0)} A (${fmtn(ALIM.raros.find((r) => r.id === 'dois').xIn, 2)} × In).
           <ul>
-            <li>O disjuntor curva C não desarma até 1,13 × In e só desarma em menos de 1 h acima de 1,45 × In.</li>
-            <li>Por isso dois banhos de 10 a 15 min no mesmo horário não devem desarmar o geral. Banhos longos e seguidos, com os dois chuveiros no inverno, podem.</li>
-            <li>Se isso incomodar, a saída é o ramal de 25 mm² com geral de 70 A.</li>
+            <li>O disjuntor curva C não desarma até 1,13 × In e desarma em menos de 1 h acima de 1,45 × In.</li>
+            <li>${ALIM.raros.find((r) => r.id === 'dois').xIn > 1.45 ? 'Nesse caso o geral desarma em alguns minutos: ele protege o cabo, mas apaga a casa.' : 'Banhos curtos ao mesmo tempo não devem desarmar o geral.'}</li>
+            <li>Se esse uso mudar, refazer o cálculo.</li>
           </ul></li>
         <li><b>Sem chuveiro</b> (ar, luzes e tomadas no pico de verão): ${fmtn(E.CENARIO.find((c) => c.id === 'semch').max, 0)} A por fase. Os chuveiros são o que define a entrada.</li>
       </ul></li>
