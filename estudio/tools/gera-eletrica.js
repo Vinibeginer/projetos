@@ -243,8 +243,10 @@ H.FX.filter((f) => f.t === 'mlr').forEach((f) => {
 // ------------------------------------------------------------------ pontos escolhidos no projeto
 const EXTRA = [
   // quadro de distribuição: debaixo da escada, na parede do quarto do térreo (face do lado da escada)
-  { id: 'QDC', fl: 'T', k: 'qdc', amb: 'Sala (sob a escada)', x: 6650, y: 8750, z: 1500, desc: 'Quadro de distribuição (QDC) — sob a escada, parede do quarto' },
-  { id: 'PE', fl: 'T', k: 'medidor', amb: 'Muro da frente', x: 7400, y: 19850, z: 1500, desc: 'Padrão de entrada / medição (Enel) com haste de aterramento' },
+  // quadro de distribuição: na parede do quarto do térreo, do lado direito da porta (vista da sala), junto ao pé da escada
+  { id: 'QDC', fl: 'T', k: 'qdc', amb: 'Sala (pé da escada)', x: 5925, y: 8750, z: 1500, desc: 'Quadro de distribuição (QDC) — à direita da porta do quarto, parede do quarto (lado da sala)' },
+  // padrão da Enel: quina do muro esquerdo com o muro da frente (olhando a casa com a rua nas costas)
+  { id: 'PE', fl: 'T', k: 'medidor', amb: 'Muro da frente (quina esquerda)', x: 400, y: 19850, z: 1500, desc: 'Padrão de entrada / medição (Enel) com haste de aterramento — quina do muro esquerdo com o da frente' },
   { id: 'T-MO1', fl: 'T', k: 'tue', eq: 'microondas', amb: 'Cozinha', x: 4150, y: 6900, z: 1600, va: 1500, v: 127, molhada: true, desc: 'Micro-ondas / forno (1.500 VA, 127 V)' },
   { id: 'T-PT1', fl: 'T', k: 'tue', eq: 'portao', amb: 'Garagem (portão)', x: 4400, y: 19850, z: 400, va: 600, v: 127, externa: true, desc: 'Motor do portão eletrônico ½ cv (600 VA)' },
   // iluminação externa
@@ -257,13 +259,33 @@ const EXTRA = [
   { id: 'T-T-E1', fl: 'T', k: 'tug', amb: 'Quintal', x: 2600, y: 2850, z: 600, va: 100, molhada: true, externa: true, desc: 'TUG externa IP44 — quintal' },
   // escada: arandela no patamar e interruptores paralelos (three-way) embaixo e em cima
   { id: 'T-IL-ESC', fl: 'T', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (térreo → 1º)' },
-  { id: 'T-S3a', fl: 'T', k: 'int3', amb: 'Escada', x: 5900, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (térreo)' },
+  { id: 'T-S3a', fl: 'T', k: 'int3', amb: 'Escada', x: 5560, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (térreo)' },
   { id: '1-S3b', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (1º)' },
   { id: '1-IL-ESC', fl: '1', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (1º → 2º)' },
   { id: '1-S3a', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 10350, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (1º)' },
   { id: '2-S3b', fl: '2', k: 'int3', amb: 'Varanda coberta', x: 6300, y: 8600, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (2º)' },
+  // tomada do roteador/ONT, ao lado do quadro de telecom (QDT)
+  { id: 'T-T-QDT', fl: 'T', k: 'tug', amb: 'Sala (pé da escada)', x: 7000, y: 8750, z: 1500, va: 100, desc: 'TUG do roteador / ONT da fibra (ao lado do QDT)' },
 ];
 EXTRA.forEach(add);
+
+// ------------------------------------------------------------------ infraestrutura de rede (fibra + cabeamento Cat6)
+// Eletrodutos só de telecom (nunca no mesmo eletroduto da elétrica), com arame-guia, curvas suaves e caixas de passagem.
+const TEL = [
+  { id: 'CXT', fl: 'T', k: 'tel', tel: 'entrada', amb: 'Muro esquerdo (frente)', x: 150, y: 19300, z: 1500, desc: 'Caixa de entrada da fibra (operadora) — muro esquerdo, ao lado do padrão' },
+  { id: 'CPT', fl: 'T', k: 'tel', tel: 'passagem', amb: 'Garagem', x: 2600, y: 10500, z: 300, desc: 'Caixa de passagem 4×4 da fibra — parede do lavabo, lado da garagem' },
+  { id: 'QDT', fl: 'T', k: 'tel', tel: 'qdt', amb: 'Sala (sob a escada)', x: 6650, y: 8750, z: 1500, desc: 'Quadro de telecom (QDT) 40×40 — ONT da fibra, roteador e distribuição Cat6' },
+  { id: 'T-RJ1', fl: 'T', k: 'tel', tel: 'rj', amb: 'Sala', x: 4300, y: 12900, z: 300, desc: 'Ponto de rede RJ45 (TV) — Sala' },
+  { id: 'T-RJ2', fl: 'T', k: 'tel', tel: 'rj', amb: 'Quarto', x: 4300, y: 6450, z: 300, desc: 'Ponto de rede RJ45 — Quarto' },
+  { id: 'T-AP1', fl: 'T', k: 'tel', tel: 'ap', amb: 'Sala', x: 6500, y: 11800, z: TETO, desc: 'Ponto de Wi-Fi no teto (access point) — Sala' },
+  { id: '1-RJ1', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto Master', x: 3150, y: 7063, z: 300, desc: 'Ponto de rede RJ45 — Quarto Master' },
+  { id: '1-RJ2', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 1', x: 4150, y: 13063, z: 300, desc: 'Ponto de rede RJ45 — Quarto 1' },
+  { id: '1-RJ3', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 2', x: 4300, y: 11975, z: 300, desc: 'Ponto de rede RJ45 — Quarto 2' },
+  { id: '1-AP1', fl: '1', k: 'tel', tel: 'ap', amb: 'Circulação', x: 4700, y: 9550, z: TETO, desc: 'Ponto de Wi-Fi no teto (access point) — Circulação do 1º' },
+  { id: '2-RJ1', fl: '2', k: 'tel', tel: 'rj', amb: 'Varanda coberta', x: 7350, y: 7800, z: 300, desc: 'Ponto de rede RJ45 (TV) — Varanda coberta' },
+  { id: '2-AP1', fl: '2', k: 'tel', tel: 'ap', amb: 'Varanda coberta', x: 5250, y: 6700, z: TETO, desc: 'Ponto de Wi-Fi no teto (access point) — Varanda coberta' },
+];
+TEL.forEach(add);
 
 // ------------------------------------------------------------------ ajustes do projeto
 // Ar-condicionado: evaporadora em parede de fachada (condensadora fora, sem invadir o vizinho)

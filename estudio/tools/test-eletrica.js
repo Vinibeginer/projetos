@@ -13,7 +13,15 @@ const P = E.PONTOS;
 check('pontos gerados', P.length > 80, P.length + ' pontos');
 check('ids únicos', new Set(P.map((p) => p.id)).size === P.length);
 const qdc = P.find((p) => p.k === 'qdc');
-check('QDC sob a escada, na parede do quarto do térreo (y = 8,75 m, x entre 6,15 e 8,85 m)', qdc && qdc.fl === 'T' && qdc.y === 8750 && qdc.x > 6150 && qdc.x < 8850);
+const porta = global.DD.data.initialState().openings.find((o) => o.id === 'o0_p1_quarto'); // vão em t = 850 (x = 4,15 + 0,85 m)
+check('QDC na parede do quarto do térreo, à direita da porta (vista da sala) e antes da escada', qdc && qdc.fl === 'T' && qdc.y === 8750 && qdc.x - 250 > 4150 + porta.t + porta.width / 2 && qdc.x + 250 <= 6200);
+const pe = E.PBY.PE;
+check('padrão na quina do muro esquerdo com o muro da frente', pe.x < 700 && pe.y >= 19800);
+const R = E.ALIM_ROUTE;
+check('alimentador enterrado até a parede do lavabo e subindo para o QDC', R.some((q) => q[2] < 0 && q[0] === 2800 && q[1] === 10425) && R[R.length - 1][0] === qdc.x && R[R.length - 1][1] === qdc.y);
+check('rede: QDT, entrada da fibra, pontos RJ45 nos quartos e sala, Wi-Fi em cada pavimento', ['QDT', 'CXT', 'CPT'].every((id) => E.PBY[id]) && ['T', '1', '2'].every((fl) => P.some((p) => p.fl === fl && p.tel === 'ap')) && P.filter((p) => p.tel === 'rj').length >= 6);
+check('rede: vala da fibra a 20 cm ou mais da do alimentador', (() => { const T = E.TEL_ROUTE; return Math.abs(T[4][0] - R[4][0]) >= 200 && Math.abs(T[3][1] - R[3][1]) >= 200; })());
+check('rede: cabo Cat6 de cada ponto até o QDT com até 90 m', E.TEL.cabos.every((c) => c.L <= 90000));
 check('todo ponto de luz, tomada e TUE está num circuito', P.filter((p) => /il|tug|tue/.test(p.k)).every((p) => p.circ));
 check('todo interruptor comanda um ponto de luz existente', P.filter((p) => /int/.test(p.k)).every((p) => (p.liga || []).every((id) => E.PBY[id] && E.PBY[id].k === 'il')));
 check('circuitos: Ib ≤ In ≤ Iz e ΔV ≤ 4 %', E.CIRC.every((c) => c.ok), E.CIRC.filter((c) => !c.ok).map((c) => 'C' + c.n).join(','));
