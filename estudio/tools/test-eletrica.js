@@ -39,6 +39,8 @@ check('quadros de andar gastam menos cabo nos circuitos que um quadro só', E.CO
 const f = E.FASES, mx = Math.max(f.A, f.B, f.C), mn = Math.min(f.A, f.B, f.C);
 check('fases equilibradas (desequilíbrio ≤ 10 %)', (mx - mn) / mx <= 0.1, JSON.stringify(f));
 check('banheiro: tomada a 0,60 m ou mais do chuveiro', P.filter((p) => p.k === 'tug' && /Lav|Banh|Suíte/.test(p.amb)).every((t) => P.filter((c) => c.eq === 'chuveiro' && c.fl === t.fl).every((c) => Math.hypot(c.x - t.x, c.y - t.y) >= 600)));
+check('chuveiros em pares de fases diferentes', new Set(E.CIRC.filter((c) => c.eq === 'chuveiro').map((c) => c.fases)).size === 3);
+check('cenário de projeto (pico típico) dentro do geral; inverno com 2 chuveiros abaixo de 1,45 × In', E.ALIM.Iproj <= E.ALIM.disj && E.ALIM.raros.every((r) => r.xIn < 1.45), E.ALIM.Iproj.toFixed(1) + ' A, ' + E.ALIM.raros.map((r) => r.xIn.toFixed(2)).join('/'));
 check('ramal principal com no mínimo 16 mm² e disjuntor geral ≤ capacidade', E.ALIM.secao >= 16 && E.ALIM.okIz, E.ALIM.secao + ' mm², ' + E.ALIM.disj + ' A, Iz ' + E.ALIM.iz + ' A');
 check('queda de tensão total (alimentador + circuito) ≤ 5 %', E.CIRC.every((c) => c.dvTot <= 5), 'alim ' + E.ALIM.dv.toFixed(2) + ' %, máx ' + Math.max(...E.CIRC.map((c) => c.dvTot)).toFixed(2) + ' %');
 check('lista de materiais com cabos, quadro e dispositivos', ['Cabos', 'Quadros', 'Dispositivos', 'Eletrodutos'].every((g) => E.QT.items.some((i) => i.grupo === g)));
