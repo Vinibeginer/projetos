@@ -215,7 +215,7 @@ const PRANCHAS = [
 const PLAN_TABS = ['T', '1', '2'];
 const KCOL = { il: COLOR.il, int: COLOR.il, int3: COLOR.il, tug: COLOR.tug, tue: COLOR.tue, qdc: COLOR.qdc, medidor: COLOR.qdc, tel: COLOR.tel };
 const tipoOf = (p) => (p.k === 'int' || p.k === 'int3' || p.k === 'il' ? 'il' : p.k === 'tug' ? 'tug' : p.k === 'tue' ? 'tue' : p.k === 'tel' ? 'tel' : 'qdc');
-const TEL_LABEL = { entrada: 'Caixa de entrada da fibra', passagem: 'Caixa de passagem da fibra', qdt: 'Quadro de telecom (QDT)', rj: 'Ponto de rede RJ45', ap: 'Ponto de Wi-Fi no teto' };
+const TEL_LABEL = { entrada: 'Caixa de entrada da fibra', passagem: 'Caixa de passagem da fibra', qdt: 'Quadro de telecom (QDT)', rj: 'Ponto de rede RJ45', ap: 'Ponto de Wi-Fi no teto', roteador: 'Roteador Wi-Fi no teto' };
 const S = { tab: 'T', layers: { il: true, tug: true, tue: true, tel: true, TXT: true, WALLS: true }, view: null, hover: null };
 const KIND_LABEL = { il: 'Ponto de luz', int: 'Interruptor', int3: 'Interruptor paralelo', tug: 'Tomada de uso geral', tue: 'Tomada/ponto de uso específico', qdc: 'Quadro de distribuição', medidor: 'Padrão de entrada' };
 
@@ -372,7 +372,7 @@ function paintFloor(fl, w, h, print, k) {
     PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => {
       if (p.k === 'qdc') return label(p.id === 'QDC' ? 'QDC' : p.id === 'QD1' ? 'QD-1' : 'QD-2', p.x, p.y + (p.y > 8700 ? 330 : -330), '#2b2b2b');
       if (p.k === 'medidor') return label('Padrão Enel', p.x + 700, p.y - 300, '#2b2b2b', true);
-      if (p.k === 'tel') return label({ entrada: 'Entrada fibra', passagem: 'CP fibra', qdt: 'QDT', rj: 'RJ45', ap: 'Wi-Fi' }[p.tel], p.x + (p.tel === 'entrada' ? 700 : 0), p.y + (p.tel === 'qdt' ? 330 : -260), COLOR.tel, true);
+      if (p.k === 'tel') return label({ entrada: 'Entrada fibra', passagem: 'CP fibra', qdt: 'QDT', rj: 'RJ45', ap: 'Wi-Fi', roteador: 'Roteador' }[p.tel], p.x + (p.tel === 'entrada' ? 700 : 0), p.y + (p.tel === 'qdt' ? 330 : -260), COLOR.tel, true);
       if (!p.circ) return;
       ctx.font = '600 9.5px "JetBrains Mono", monospace'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       const t = (p.k === 'int' || p.k === 'int3') ? 'S' : p.k === 'il' ? String(p.va) : p.va >= 600 || p.k === 'tue' ? String(p.va) : '';
@@ -515,7 +515,7 @@ function buildNet3D(groups) {
   TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
   PONTOS.forEach((p) => {
     const t = tipoOf(p), g = groups[t] || groups.qdc;
-    const sz = p.k === 'qdc' ? [0.5, 0.7, 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
+    const sz = p.k === 'qdc' ? [0.5, 0.7, 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' || p.tel === 'roteador' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
     const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(KCOL[p.k] || '#333'));
     m.position.set(M(p.x), M(LEVEL[p.fl] + p.z), M(p.y));
     g.add(m);
@@ -662,7 +662,7 @@ function memorial() {
 
     <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
-    <li><b>Ramal principal (alimentador):</b> cabo de ${E.ALIM_SECAO} mm² definido pela obra; o cálculo confere a capacidade de condução e a queda de tensão total.</li>
+    <li><b>Ramal principal (alimentador):</b> mínimo de ${E.ALIM_SECAO} mm², definido pela obra. O cálculo confere a capacidade de condução e a queda de tensão total, e aumenta a seção se a demanda passar da capacidade.${ALIM.subiu ? ` <b class="warnc">Com a carga atual, a demanda (${fmtn(ALIM.I, 1)} A) passou do disjuntor de 63 A que cabe no ${E.ALIM_SECAO} mm² (68 A), e o ramal subiu para ${ALIM.secao} mm² com geral de ${ALIM.disj} A.</b>` : ''}</li>
     <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
       <ul>
         <li>iluminação: 100 VA nos primeiros 6 m² e +60 VA a cada 4 m² inteiros;</li>
@@ -737,7 +737,7 @@ function memorial() {
         <li>sobe na parede, corre na laje e desce no <b>quadro de telecom (QDT)</b>.</li>
       </ul></li>
     <li><b>QDT:</b> caixa de embutir 40×40×12 com tampa, <b>sob a escada</b>, ao lado do QDC (centro a 1,50 m). Ali ficam a ONT da operadora, o roteador e um patch panel. Há uma tomada de energia ao lado (T-T-QDT).</li>
-    <li><b>Pontos:</b> ${PONTOS.filter((p) => p.tel === 'rj').length} tomadas RJ45 (sala/TV, quartos e varanda gourmet) e ${PONTOS.filter((p) => p.tel === 'ap').length} pontos de Wi-Fi no teto, um por pavimento, para access point com alimentação PoE pelo próprio cabo. Cada ponto tem o seu cabo Cat6 direto do QDT; o mais longo tem ${fmtn(Math.max(...TEL.cabos.map((c) => c.L)) / 1000, 1)} m, contra o limite de 90 m.</li>
+    <li><b>Pontos:</b> ${PONTOS.filter((p) => p.tel === 'rj').length} tomadas RJ45 (sala/TV, quartos e varanda gourmet) e <b>roteador no teto da sala</b>, depois da 2ª janela da parede da garagem, com tomada no teto ao lado, e ${PONTOS.filter((p) => p.tel === 'ap').length} pontos de Wi-Fi no teto do 1º e do 2º (access point alimentado pelo próprio cabo, PoE). Cada ponto tem o seu cabo Cat6 direto do QDT; o mais longo tem ${fmtn(Math.max(...TEL.cabos.map((c) => c.L)) / 1000, 1)} m, contra o limite de 90 m.</li>
     <li><b>Eletrodutos de rede:</b> Ø25 na laje e nas descidas, com uma prumada própria ao lado da do QDC. Usar curvas suaves, no máximo 2 curvas de 90° entre caixas, e <b>arame-guia</b> deixado em todos os trechos.</li>
     <li><b>Separação da energia:</b> pelo menos 20 cm de eletrodutos de energia em trechos paralelos. Cruzamentos sempre em ângulo reto.</li>
   </ul>
@@ -758,6 +758,13 @@ function memorial() {
     <li><b>Banheiros:</b> nenhuma tomada no volume do box. As tomadas dos lavatórios ficam a 0,60 m ou mais do chuveiro, como já posicionadas.</li>
     <li><b>Pontos fora da área coberta vão por baixo, nunca pelo ar:</b>
       <ul>${CIRC.flatMap((c) => c.baixo.map((b) => `<li>${esc(PBY[b.id].desc)} (C${c.n}): ${b.fl === 'T' ? `sai do QDC, desce pela parede e vai <b>enterrado a −0,40 m</b> (PEAD Ø32, com fita de aviso) por baixo do piso da sala e do jardim da frente até o muro, e sobe no muro até o ponto. Cruza o alimentador de água (que está a −0,76 m) por cima, em ângulo reto` : `sai do QD-2, desce para o <b>contrapiso</b> da varanda e corre nele até o muro, e sobe no muro até a arandela. Deixar o eletroduto antes do contrapiso e da impermeabilização`} — ${fmtn((b.path.slice(1).reduce((s2, q, i) => s2 + Math.abs(q[0] - b.path[i][0]) + Math.abs(q[1] - b.path[i][1]) + Math.abs(q[2] - b.path[i][2]), 0)) / 1000, 1)} m.</li>`)).join('')}</ul></li>
+    <li><b>Compatibilização com a estrutura e os vãos</b> (conferida ponto a ponto):
+      <ul>
+        <li><b>nenhum ponto sobre pilar:</b> caixa e eletroduto em pilar exigiriam um corte grande no concreto. Os pontos que caíam em pilar foram deslocados ao longo da mesma parede;</li>
+        <li><b>nenhuma descida na prumada de janela ou porta:</b> o eletroduto desce da laje por dentro da parede, e sobre um vão não há parede. Tomadas sob janela foram para o lado do vão, a pelo menos 15 cm do batente;</li>
+        <li><b>descidas que passam por viga:</b> deixar espera (tubo-camisa de PVC) na forma <b>antes de concretar</b>, conferida com o calculista;</li>
+        <li><b>nunca rasgar ou furar pilar ou viga</b> depois de pronto: se um ponto precisar mudar de lugar na obra, mover ao longo da alvenaria.</li>
+      </ul></li>
     <li><b>Lajes:</b> os eletrodutos e as caixas octogonais dos pontos de luz são colocados <b>antes da concretagem</b> de cada laje, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
     <li><b>Hidráulica:</b> não passar eletroduto no mesmo rasgo de tubo de água, e manter 20 cm dos shafts (SH-1, SH-2, SH-3) e das prumadas de esgoto.</li>
     <li><b>Teste final:</b> continuidade do PE em todas as tomadas, isolamento (≥ 1 MΩ a 500 V), teste do botão dos DR e polaridade das tomadas (fase à direita, olhando de frente, no padrão NBR 14136).</li>
@@ -842,7 +849,7 @@ function sheetPoints(sh) {
     p, x: p.x, y: p.y, kind: tipoOf(p),
     item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no teto') : p.k === 'tel' ? TEL_LABEL[p.tel] : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
     circ: p.circ ? 'C' + p.circ.n : p.k === 'qdc' ? 'QDC' : p.k === 'tel' ? 'rede' : '—',
-    alt: (p.k === 'il' && p.tipo === 'teto') || p.tel === 'ap' ? 'teto' : fmtm(p.z) + ' m',
+    alt: (p.k === 'il' && p.tipo === 'teto') || p.tel === 'ap' || p.tel === 'roteador' || p.z >= TETO ? 'teto' : fmtm(p.z) + ' m',
   }));
 }
 function renderSheetImage(sh, pts) {
