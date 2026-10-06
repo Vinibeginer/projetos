@@ -10360,7 +10360,8 @@ kbd {
   const TETO = 2780;            // face inferior da laje (os eletrodutos correm na laje e descem nas paredes)
   const VFN = 127, VFF = 220;   // Enel RJ (Campos dos Goytacazes): 127/220 V
   const RHO = 0.0225;           // Ω·mm²/m — cobre a 70 °C (queda de tensão em operação)
-  const DV_MAX = 4, DV_ALIM = 1; // % — circuitos terminais e alimentador (total ≤ 5 %, NBR 5410 6.2.7)
+  const DV_MAX = 4, DV_TOTAL = 5; // % — circuitos terminais; total do padrão ao ponto (NBR 5410 6.2.7)
+  const ALIM_SECAO = 16;          // mm² — cabo do ramal principal (padrão → QDC) definido pela obra
   const FCA = 0.7;              // agrupamento: até 3 circuitos por eletroduto (Tabela 42)
   const FCT = 1.0;              // 30 °C (Tabela 40, PVC)
   const QDC_XY = { x: 6650, y: 8750 }; // quadro sob a escada (prumada sobe na mesma parede)
@@ -10664,12 +10665,22 @@ kbd {
     const I = (D * 1000) / (Math.sqrt(3) * VFF * 0.92);
     const L = man(PBY.PE || { x: 7400, y: 19850 }, QDC_XY) + 400 + 1500 + 1000; // vala (−0,40 m) + subida no muro e no quadro
     const disj = DISJ.find((d) => d >= I);
-    let s = SECOES.find((x) => x >= 6 && IZ3[x] * FCT >= disj);
-    const dv = (sec) => (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (sec * VFF);
-    while (dv(s) > DV_ALIM && s < 50) s = SECOES[SECOES.indexOf(s) + 1];
-    return { ilW, tugW, it, dIT, tueW, fTue, nTue: tues.length, D, inst, I, L, disj, secao: s, dv: dv(s), neutro: s, pe: s <= 16 ? s : 16 };
+    // seção definida (16 mm²): confere capacidade (Iz ≥ In do geral) e a queda de tensão entra no total de 5 %
+    const s = ALIM_SECAO, iz = IZ3[s] * FCT;
+    const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
+    return { ilW, tugW, it, dIT, tueW, fTue, nTue: tues.length, D, inst, I, L, disj, secao: s, iz, okIz: disj <= iz, dv, neutro: s, pe: s <= 16 ? s : 16 };
   }
   const ALIM = demanda();
+  // queda total (alimentador + circuito) ≤ 5 %: aumenta a seção do circuito se precisar
+  CIRC.forEach((c) => {
+    const dv = (sec) => (200 * RHO * (c.Lmax / 1000) * c.ib) / (sec * c.v);
+    while (dv(c.secao) + ALIM.dv > DV_TOTAL && c.secao < 50) c.secao = SECOES[SECOES.indexOf(c.secao) + 1];
+    c.dv = dv(c.secao);
+    c.iz = IZ2[c.secao] * c.fca * FCT;
+    c.pe = c.secao;
+    c.dvTot = c.dv + ALIM.dv;
+    c.ok = c.ib <= c.disj && c.disj <= c.iz && c.dv <= DV_MAX && c.dvTot <= DV_TOTAL;
+  });
 
   // ------------------------------------------------------------------ materiais
   function quantities() {
@@ -10883,7 +10894,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_ALIM, FCA, FCT, QDC_XY, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();
