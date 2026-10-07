@@ -347,7 +347,18 @@ function conflito(p, q) {
     const sill = o.sill || 0, top = sill + o.height;
     return desceDoTeto(p) ? top > p.z - 100 : sill < p.z + 100;
   });
-  return vao ? 'vao' : null;
+  if (vao) return 'vao';
+  // tubulação do hidrossanitário: caixa elétrica a pelo menos 15 cm de qualquer tubo que passe na altura dela
+  const z0 = lv + p.z - 100, z1 = lv + p.z + 100;
+  const cano = H.PIPES.some((pp) => pp.pts.slice(1).some((b, i) => {
+    const a = pp.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 25));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
+      if (z > z0 && z < z1 && Math.hypot(x - q.x, y - q.y) < 150) return true;
+    }
+    return false;
+  }));
+  return cano ? 'tubo' : null;
 }
 const relocados = [];
 pts.forEach((p) => {
