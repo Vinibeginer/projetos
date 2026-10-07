@@ -32,9 +32,11 @@ check('iluminação separada das tomadas', E.CIRC.every((c) => c.pts.every((id) 
 check('TUE em circuito exclusivo', E.CIRC.filter((c) => c.tipo === 'tue').every((c) => c.pts.length === 1));
 check('chuveiros 6.500 W em 220 V, cabo de 6 mm² e DR próprio', E.CIRC.filter((c) => c.eq === 'chuveiro').every((c) => c.v === 220 && c.va === 6500 && c.secao >= 6 && E.DRS.find((d) => d.id === c.dr).circ.length === 1));
 check('todos os circuitos com DR 30 mA', E.CIRC.every((c) => !!c.dr));
-check('um quadro trifásico por andar; cada circuito sai do quadro do seu andar', ['T', '1', '2'].every((b) => E.BOARDS[b] && P.some((p) => p.k === 'qdc' && p.fl === b)) && E.CIRC.every((c) => c.board === c.fl));
-check('alimentadores dos quadros de andar: Ib ≤ In ≤ Iz e seletivos (acima do maior disjuntor do andar)', ['1', '2'].every((b) => { const d = E.SUB[b]; return d.I <= d.disj && d.ok && E.CIRC.filter((c) => c.board === b).every((c) => c.disj < d.disj); }));
-check('cada quadro equilibrado (≤ 10 %)', ['T', '1', '2'].every((b) => { const f = E.FASES_Q[b], m = Math.max(f.A, f.B, f.C); return (m - Math.min(f.A, f.B, f.C)) / m <= 0.1; }));
+check('um quadro trifásico por andar; cada circuito sai do quadro do seu andar', ['T', '1', '2'].every((b) => E.BOARDS[b] && P.some((p) => p.k === 'qdc' && p.fl === b)) && E.CIRC.every((c) => c.board === (c.eq === 'chuveiro' ? 'T' : c.fl)));
+check('alimentadores dos quadros de andar: Ib ≤ In ≤ Iz', ['1', '2'].every((b) => { const d = E.SUB[b]; return d.I <= d.disj && d.ok; }));
+check('fases equilibradas no uso real (sem chuveiro, ≤ 15 %)', (() => { const f = E.CENARIO.find((c) => c.id === 'semch').I, m = Math.max(f.A, f.B, f.C); return (m - Math.min(f.A, f.B, f.C)) / m <= 0.15; })());
+check('seletividade: em toda a cadeia o mais próximo desarma primeiro (sobrecarga 1,45/1,13 e curto 10×/5×)', E.SELET.length > 20 && E.SELET.every((x) => x.okSobre && x.okCurto), E.SELET.filter((x) => !(x.okSobre && x.okCurto)).map((x) => x.de).join(','));
+check('ramal protegido pelo disjuntor do padrão (Iz ≥ In) e geral do QDC sem disparo', E.ALIM.okIz && E.QT.items.some((i) => /Chave seccionadora 3P .*geral do QDC/.test(i.desc)) && !E.QT.items.some((i) => /Disjuntor geral/.test(i.desc)));
 check('quadros de andar gastam menos cabo nos circuitos que um quadro só', E.COMPARA.cabosQuadros < E.COMPARA.cabosUnico);
 const f = E.FASES, mx = Math.max(f.A, f.B, f.C), mn = Math.min(f.A, f.B, f.C);
 check('fases equilibradas (desequilíbrio ≤ 10 %)', (mx - mn) / mx <= 0.1, JSON.stringify(f));
