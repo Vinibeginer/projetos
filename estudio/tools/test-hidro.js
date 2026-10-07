@@ -46,6 +46,9 @@ const doc = global.DD.data.initialState();
 const groups = doc.floors.map((f) => H.build3d(T, doc, f));
 check('3D: tubos em todos os pavimentos', groups.every((g) => g.children.length > 10), groups.map((g) => g.children.length).join('/'));
 check('3D: peças fora do clique e por cima das paredes', made.every((m) => m.userData.noPick && m.material.depthTest === false));
+check('3D: caixas sifonadas chegam até a grelha no piso', H.BOX.filter((b) => b.k === 'CS').every((b) => { const q = H.boxSolid(b); return q.z1 === { T: 0, 1: H.L1, 2: H.L2 }[b.fl] && q.z0 < b.z; }));
+check('3D: camisa em toda travessia de laje e no baldrame', H.SLEEVES.filter((c) => c.onde === 'laje').length === H.PASS.filter((p) => !/caixa sifonada/.test(p.oque)).length && H.SLEEVES.some((c) => c.onde === 'baldrame'), H.SLEEVES.length + ' camisas');
+check('3D: camisas desenhadas', made.filter((m) => m.material.color === '#8a8f98').length === H.SLEEVES.length);
 
 // nenhum tubo cruza janela ou porta (nem desce colado ao batente)
 {
