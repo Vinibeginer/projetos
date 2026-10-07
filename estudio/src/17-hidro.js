@@ -64,9 +64,9 @@
     CX: [1725, 7900, CX_BASE + 60], BR: [1650, 7900, LR + 100],
     // AF-1 — prumada do shaft interno SH-1 (lavabo térreo / banheiro 1º / lavabo 2º)
     A1T: [2130, 10300, LR + 100], A1_2: [2130, 10300, L2 + 1200], A1_1: [2130, 10300, L1 + 1200], A1_0: [2130, 10300, 1200],
-    R2: [1900, 10360, L2 + 1200], K2: [1640, 10360, L2 + 1200], L2n: [1640, 9300, L2 + 1200], S2n: [1640, 8610, L2 + 1200], M2n: [1800, 8610, L2 + 1200],
+    R2: [1900, 10360, L2 + 1200], K2: [1720, 10360, L2 + 1200], L2n: [1640, 9300, L2 + 1200], S2n: [1640, 8610, L2 + 1200], M2n: [1800, 8610, L2 + 1200],
     f2VS: [2725, 10360, L2 + 200], f2LAV: [1640, 9300, L2 + 600], f2MLR: [1800, 8610, L2 + 1100], f2TQ: [2700, 8610, L2 + 1100],
-    R1: [1900, 10360, L1 + 1200], K1: [1640, 10360, L1 + 1200], B1L: [1640, 9670, L1 + 1200], B1V: [1640, 9130, L1 + 1200], SW2: [2325, 7575, L1 + 1200],
+    R1: [1900, 10360, L1 + 1200], K1: [1720, 10360, L1 + 1200], B1L: [1640, 9670, L1 + 1200], B1V: [1640, 9130, L1 + 1200], SW2: [2325, 7575, L1 + 1200],
     f1LAVB: [1640, 9670, L1 + 600], f1VSB: [1640, 9130, L1 + 200], f1CHB: [2325, 7620, L1 + 2100], f1CHS: [2325, 7530, L1 + 2100],
     SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L2 - 580], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
     R0: [1900, 10360, 1200], f0VS: [2650, 10360, 200], fTLAV1: [1640, 9150, 600],
@@ -87,7 +87,7 @@
     { id: '2-r', a: 'A1_2', b: 'R2', fl: '2', rg: 'Registro do lavabo e serviço (2º)' },
     { id: '2-vs', a: 'R2', b: 'f2VS', via: [[2725, 10360, L2 + 1200]], fl: '2' },
     { id: '2-k', a: 'R2', b: 'K2', fl: '2' },
-    { id: '2-l', a: 'K2', b: 'L2n', fl: '2' },
+    { id: '2-l', a: 'K2', b: 'L2n', via: [[1720, 9980, L2 + 1200], [1640, 9980, L2 + 1200]], fl: '2' }, // contorna o pilar do canto pela boneca
     { id: '2-lav', a: 'L2n', b: 'f2LAV', fl: '2' },
     { id: '2-s', a: 'L2n', b: 'S2n', fl: '2' },
     { id: '2-m', a: 'S2n', b: 'M2n', fl: '2' },
@@ -95,7 +95,7 @@
     { id: '2-tq', a: 'M2n', b: 'f2TQ', via: [[2700, 8610, L2 + 1200]], fl: '2' },
     { id: '1-r', a: 'A1_1', b: 'R1', fl: '1', rg: 'Registro do banheiro (1º)' },
     { id: '1-k', a: 'R1', b: 'K1', fl: '1' },
-    { id: '1-bl', a: 'K1', b: 'B1L', fl: '1' },
+    { id: '1-bl', a: 'K1', b: 'B1L', via: [[1720, 9980, L1 + 1200], [1640, 9980, L1 + 1200]], fl: '1' }, // contorna o pilar do canto pela boneca
     { id: '1-lavb', a: 'B1L', b: 'f1LAVB', fl: '1' },
     { id: '1-bv', a: 'B1L', b: 'B1V', fl: '1' },
     { id: '1-vsb', a: 'B1V', b: 'f1VSB', fl: '1' },
@@ -108,7 +108,7 @@
     { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L2 - 580], [1640, 5200, L2 - 580]], fl: '1' },
     { id: 'T-r', a: 'A1_0', b: 'R0', fl: 'T', rg: 'Registro do lavabo (térreo)' },
     { id: 'T-vs1', a: 'R0', b: 'fTVS1', via: [[2650, 10360, 1200]], fl: 'T' },
-    { id: 'T-lav1', a: 'R0', b: 'fTLAV1', via: [[1640, 10360, 1200], [1640, 9150, 1200]], fl: 'T' },
+    { id: 'T-lav1', a: 'R0', b: 'fTLAV1', via: [[1720, 10360, 1200], [1720, 9980, 1200], [1640, 9980, 1200], [1640, 9150, 1200]], fl: 'T' }, // contorna o pilar do canto pela boneca
     { id: 'AF2-c', a: 'BR', b: 'A2T', via: [[1650, 6850, LR + 100]], fl: 'C', tag: 'AF-2', rg: 'Registro da coluna AF-2' },
     { id: 'AF2-2', a: 'A2T', b: 'A2_2', fl: 'v', tag: 'AF-2' },
     { id: '2-g', a: 'A2_2', b: 'G2', fl: '2', rg: 'Registro da pia gourmet (2º)' },
@@ -219,6 +219,7 @@
   // shafts (para desenho)
   const SHAFTS = [
     { id: 'SH-1', nome: 'Shaft interno (canto do pilar P11)', x0: 1650, x1: 2260, y0: 10230, y1: 10350, ext: false },
+    { id: 'SH-1b', nome: 'Boneca junto ao pilar do canto do lavabo (ramal dos lavatórios contorna o pilar)', x0: 1670, x1: 1770, y0: 9950, y1: 10230, ext: false },
     { id: 'SH-2', nome: 'Shaft externo lateral (em frente ao pilar P6)', x0: 1240, x1: 1500, y0: 6560, y1: 7290, ext: true },
     { id: 'SH-2b', nome: 'Caixa do TQ-2 na cozinha / suíte (junto ao pilar P6)', x0: 1650, x1: 1820, y0: 7160, y1: 7300, ext: false },
     { id: 'SH-3', nome: 'Shaft externo dos fundos', x0: 6280, x1: 6520, y0: 2700, y1: 2850, ext: true },
