@@ -45,5 +45,22 @@ const groups = doc.floors.map((f) => H.build3d(T, doc, f));
 check('3D: tubos em todos os pavimentos', groups.every((g) => g.children.length > 10), groups.map((g) => g.children.length).join('/'));
 check('3D: peças fora do clique e por cima das paredes', made.every((m) => m.userData.noPick && m.material.depthTest === false));
 
+// compatibilização com a estrutura (só quando o projeto estrutural privado existe nesta máquina)
+{
+  const fs = require('fs'), stf = require('path').join(__dirname, '..', 'private', 'estrutura.json');
+  if (fs.existsSync(stf)) {
+    const pil = JSON.parse(fs.readFileSync(stf, 'utf8')).pilares, hits = [];
+    H.PIPES.forEach((p) => {
+      for (let i = 1; i < p.pts.length; i++) {
+        const a = p.pts[i - 1], b = p.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 20));
+        for (let k = 0; k <= n; k++) {
+          const t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
+          if (pil.some((c) => x > c.x0 - 20 && x < c.x1 + 20 && y > c.y0 - 20 && y < c.y1 + 20 && z > -200 && z < c.topo)) { hits.push(p.id); break; }
+        }
+      }
+    });
+    check('nenhum tubo atravessa pilar (projeto estrutural privado)', !hits.length, [...new Set(hits)].join(','));
+  } else console.log('SKIP pilares: private/estrutura.json ausente');
+}
 console.log(bad ? 'test-hidro: ' + bad + ' falha(s)' : 'test-hidro: todos os testes ok');
 process.exit(bad ? 1 : 0);
