@@ -320,7 +320,7 @@ function paintFloor(fl, w, h, print, k) {
     });
     ctx.setLineDash([]);
     if (S.layers.TXT) {
-      label('Alimentador 3×' + ALIM.secao + ' + N + PE ' + ALIM.pe + ' mm² — enterrado (PEAD Ø50, −0,40 m)', 2800, 15800, '#2b2b2b', true);
+      label('Alimentador 3×' + ALIM.secao + ' + N + PE ' + ALIM.pe + ' mm² 0,6/1 kV EPR — enterrado (PEAD Ø50, −0,40 m)', 2800, 15800, '#2b2b2b', true);
       label('sobe na parede do lavabo → laje → QDC', 2800, 11000, '#2b2b2b', true);
       if (S.layers.tel) label('Fibra — PEAD Ø32 enterrado, 20 cm do alimentador', 1600, 18800, COLOR.tel, true);
     }
@@ -662,7 +662,7 @@ function memorial() {
 
     <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
-    <li><b>Ramal principal (alimentador):</b> mínimo de ${E.ALIM_SECAO} mm², definido pela obra. O cálculo confere a capacidade de condução e a queda de tensão total, e aumenta a seção se a demanda passar da capacidade.${ALIM.subiu ? ` <b class="warnc">Com a carga atual, a demanda (${fmtn(ALIM.Iproj, 1)} A) passou do disjuntor de 63 A que cabe no ${E.ALIM_SECAO} mm² (68 A), e o ramal subiu para ${ALIM.secao} mm² com geral de ${ALIM.disj} A.</b>` : ''}</li>
+    <li><b>Ramal principal (alimentador):</b> <b>${ALIM.secao} mm² em cabo 0,6/1 kV com isolação EPR/XLPE (90 °C)</b>. Esse tipo de cabo é obrigatório no trecho enterrado (o cabo comum de 750 V não pode ser enterrado) e conduz mais corrente que o de PVC. A capacidade vale no trecho mais desfavorável, o enterrado (método D, solo a 25 °C), e cobre o disjuntor do padrão.</li>
     <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
       <ul>
         <li>iluminação: 100 VA nos primeiros 6 m² e +60 VA a cada 4 m² inteiros;</li>
@@ -723,7 +723,7 @@ function memorial() {
         <li>cruzamentos: passa <b>por cima</b> do alimentador de água (que está a −0,76 m) junto à parede do lavabo e por cima da saída do esgoto (que está a −0,8 m) perto do muro da frente. Cruzar sempre em ângulo reto;</li>
         <li>3 fases de ${ALIM.secao} mm², neutro de ${ALIM.neutro} mm² e PE de ${ALIM.pe} mm²;</li>
         <li>protegido pelo <b>disjuntor do padrão, 3P ${ALIM.disj} A</b>; no QDC fica só a chave seccionadora 3P ${ALIM.disj} A;</li>
-        <li>capacidade do cabo de ${ALIM.secao} mm² (B1, 3 condutores carregados): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do padrão — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
+        <li>capacidade do cabo 0,6/1 kV EPR de ${ALIM.secao} mm², enterrado (método D, 3 condutores carregados, × ${fmtn(E.FCT_SOLO, 2)} pelo solo a 25 °C): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do padrão — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
         <li>queda de tensão no alimentador de ${fmtn(ALIM.dv, 2)} %; somada à do circuito mais longo, ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %) — <span class="${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'ok' : 'bad'}">${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'OK' : 'rever'}</span>.</li>
       </ul></li>
     <li><b>Alimentadores dos quadros de andar</b> (saem do QDC, cada um com disjuntor 3P um degrau acima do maior disjuntor do andar, para seletividade):
