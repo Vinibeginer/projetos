@@ -9673,12 +9673,12 @@ kbd {
     { id: 'T-lav2', a: 'V3', b: 'fTLAV2', via: [[5040, 2990, 1200], [5040, 4230, 1200]], fl: 'T' },
   ];
   // Alimentador predial (rede pública → hidrômetro → caixa d'água) e saídas diretas da rede (torneiras externas)
-  const ALN = { HD: [6750, 19800, 400], AL2: [6750, 19500, -760], AL4: [3850, 12500, -760], CXE: [2500, 8700, CX_BASE + 1000], fTJG: [4100, 12500, 600], fTJF: [7100, 19850, 600] };
+  const ALN = { HD: [6750, 19800, 400], AL2: [6750, 19500, -760], AL4: [3850, 12500, -760], CXE: [2500, 8700, CX_BASE + 1000], fTJG: [4040, 12500, 600], fTJF: [7100, 19850, 600] };
   const ALE = [
     { id: 'AL-a', a: 'HD', b: 'AL2', via: [[6750, 19800, -760]], fl: 'T', tag: 'Alimentador' },
     { id: 'AL-b', a: 'AL2', b: 'AL4', via: [[3850, 19500, -760]], fl: 'T', tag: 'Alimentador' },
     { id: 'AL-c', a: 'AL4', b: 'CXE', via: [[3850, 10600, -760], [2200, 10600, -760], [2200, 10300, -760], [2200, 10300, LR + 100], [2500, 10300, LR + 100], [2500, 8700, LR + 100]], fl: 'T', tag: 'Alimentador' },
-    { id: 'AL-g', a: 'AL4', b: 'fTJG', via: [[4100, 12500, -760]], fl: 'T', tag: 'Torneira da garagem (direto da rede)' },
+    { id: 'AL-g', a: 'AL4', b: 'fTJG', via: [[4040, 12500, -760]], fl: 'T', tag: 'Torneira da garagem (direto da rede)' },
     { id: 'AL-f', a: 'AL2', b: 'fTJF', via: [[7100, 19500, -760], [7100, 19850, -760]], fl: 'T', tag: 'Torneira da frente (direto da rede)' },
     { id: 'LADRAO', a: null, b: null, pts: [[3275, 7900, CX_BASE + 900], [3650, 7900, CX_BASE + 900], [3650, 7900, LR + 50]], fl: 'C', tag: 'Extravasor (ladrão)', dn: 32 },
     { id: 'LIMPEZA', a: null, b: null, pts: [[3275, 8000, CX_BASE + 40], [3550, 8000, CX_BASE + 40], [3550, 8000, LR + 50]], fl: 'C', tag: 'Limpeza da caixa', dn: 32 },
@@ -9700,29 +9700,29 @@ kbd {
   const ES = [
     // 2º pavimento
     { id: 'E2V', dn: 100, s: 0.01, pts: pb(2575, 10050, L2, 0.01).v(L2 - 260).h(2000, 10280).get(), to: 'TQ-1', fx: ['2-VS'], fl: '2', kind: 'ramal' },
-    { id: 'E2L1', dn: 40, s: 0.02, pts: pb(1700, 9300, L2 + 450, 0.02).v(L2 - 60).h(2050, 9750).get(), to: 'CS-2L', fx: ['2-LAV'], fl: '2', kind: 'ramal' },
-    { id: 'E2L2', dn: 75, s: 0.02, pts: pb(2050, 9750, L2 - 170, 0.02).v(L2 - 240).h(2000, 10280).get(), to: 'TQ-1', from: 'CS-2L', fl: '2', kind: 'ramal' },
+    { id: 'E2L1', dn: 40, s: 0.02, pts: pb(1760, 9300, L2 + 450, 0.02).v(L2 - 200).h(2050, 9750).get(), to: 'CS-2L', fx: ['2-LAV'], fl: '2', kind: 'ramal' },
+    { id: 'E2L2', dn: 75, s: 0.02, pts: pb(2050, 9750, L2 - 250, 0.02).v(L2 - 300).h(2000, 10280).get(), to: 'TQ-1', from: 'CS-2L', fl: '2', kind: 'ramal' },
     { id: 'E2P', dn: 50, s: 0.02, pts: pb(1700, 5850, L2 + 450, 0.02).h(1380, 5850).h(1380, 6650).get(), to: 'TG-1', fx: ['2-PIA'], fl: '2', kind: 'ramal' },
     { id: 'E2T', dn: 75, s: 0.02, pts: pb(2700, 8560, L2 + 450, 0.02).v(L2 + 330).h(1950, 8560).get(), to: 'E2M', fx: ['2-TQ'], fl: '2', kind: 'ramal' },
     { id: 'E2M', dn: 75, s: 0.02, pts: pb(1950, 8560, L2 + 315, 0.02).h(1650, 8560).h(1420, 8565).get(), to: 'TS-1', fx: ['2-MLR'], fl: '2', kind: 'ramal' },
     // 1º pavimento
     { id: 'E1BV', dn: 100, s: 0.01, pts: pb(1950, 8980, L1, 0.01).v(L1 - 260).h(1950, 10150).h(2000, 10280).get(), to: 'TQ-1', fx: ['1-VS-B'], fl: '1', kind: 'ramal' },
-    { id: 'E1BL', dn: 40, s: 0.02, pts: pb(1700, 9670, L1 + 450, 0.02).v(L1 - 50).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-LAV-B'], fl: '1', kind: 'ramal' },
-    { id: 'E1BCh', dn: 40, s: 0.02, pts: pb(2325, 8125, L1 - 20, 0.02).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-CH-B'], fl: '1', kind: 'ramal' },
-    { id: 'E1BC', dn: 75, s: 0.02, pts: pb(2550, 9300, L1 - 120, 0.02).v(L1 - 230).h(2550, 10050).h(2060, 10280).get(), to: 'TQ-1', from: 'CS-1B', fl: '1', kind: 'ramal' },
+    { id: 'E1BL', dn: 40, s: 0.02, pts: pb(1760, 9670, L1 + 450, 0.02).v(L1 - 200).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-LAV-B'], fl: '1', kind: 'ramal' },
+    { id: 'E1BCh', dn: 40, s: 0.02, pts: pb(2325, 8125, L1 - 20, 0.02).v(L1 - 200).h(2550, 9300).get(), to: 'CS-1B', fx: ['1-CH-B'], fl: '1', kind: 'ramal' },
+    { id: 'E1BC', dn: 75, s: 0.02, pts: pb(2550, 9300, L1 - 250, 0.02).v(L1 - 300).h(2550, 10050).h(2060, 10280).get(), to: 'TQ-1', from: 'CS-1B', fl: '1', kind: 'ramal' },
     { id: 'E1SV', dn: 100, s: 0.01, pts: pb(1975, 6150, L1, 0.01).v(L1 - 260).h(1975, 7000).h(1745, 7225).get(), to: 'TQ-2', fx: ['1-VS-S'], fl: '1', kind: 'ramal' },
-    { id: 'E1SL', dn: 40, s: 0.02, pts: pb(1700, 5200, L1 + 450, 0.02).v(L1 - 50).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-LAV-S'], fl: '1', kind: 'ramal' },
-    { id: 'E1SCh', dn: 40, s: 0.02, pts: pb(2325, 7050, L1 - 20, 0.02).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-CH-S'], fl: '1', kind: 'ramal' },
-    { id: 'E1SC', dn: 75, s: 0.02, pts: pb(2250, 6500, L1 - 120, 0.02).v(L1 - 220).h(2250, 6900).h(1975, 6900).get(), to: 'E1SV', from: 'CS-1S', fl: '1', kind: 'ramal' },
+    { id: 'E1SL', dn: 40, s: 0.02, pts: pb(1760, 5200, L1 + 450, 0.02).v(L1 - 200).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-LAV-S'], fl: '1', kind: 'ramal' },
+    { id: 'E1SCh', dn: 40, s: 0.02, pts: pb(2325, 7050, L1 - 20, 0.02).v(L1 - 200).h(2250, 6500).get(), to: 'CS-1S', fx: ['1-CH-S'], fl: '1', kind: 'ramal' },
+    { id: 'E1SC', dn: 75, s: 0.02, pts: pb(2250, 6500, L1 - 250, 0.02).v(L1 - 280).h(2250, 7225).h(1745, 7225).get(), to: 'TQ-2', from: 'CS-1S', fl: '1', kind: 'ramal' },
     // térreo (ramais enterrados)
     { id: 'ETP', dn: 75, s: 0.02, pts: pb(1700, 5850, 450, 0.02).v(150).h(1380, 5850).h(1380, 6650).get(), to: 'TG-1', fx: ['T-PIA'], fl: 'T', kind: 'ramal' },
     { id: 'ETV1', dn: 100, s: 0.01, pts: pb(2500, 10050, 0, 0.01).v(-640).h(2500, 9850).h(650, 9850).h(650, 9650).get(), to: 'CI-3', fx: ['T-VS1'], fl: 'T', kind: 'ramal' },
-    { id: 'ETL1', dn: 40, s: 0.02, pts: pb(1700, 9150, 450, 0.02).v(-100).h(2050, 9600).get(), to: 'CS-T1', fx: ['T-LAV1'], fl: 'T', kind: 'ramal' },
+    { id: 'ETL1', dn: 40, s: 0.02, pts: pb(1760, 9150, 450, 0.02).v(-100).h(2050, 9600).get(), to: 'CS-T1', fx: ['T-LAV1'], fl: 'T', kind: 'ramal' },
     { id: 'ETC1', dn: 75, s: 0.02, pts: pb(2050, 9600, -150, 0.02).h(2050, 9790).pt(2050, 9850, -600).get(), to: 'ETV1', from: 'CS-T1', fl: 'T', kind: 'ramal' },
     { id: 'ETV2', dn: 100, s: 0.01, pts: pb(6200, 3300, 0, 0.01).v(-640).h(6200, 2450).h(850, 2450).get(), to: 'CI-1', fx: ['T-VS2'], fl: 'T', kind: 'ramal' },
-    { id: 'ETCh2', dn: 40, s: 0.02, pts: pb(6950, 3400, 0, 0.02).v(-100).h(6450, 3400).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-CH2'], fl: 'T', kind: 'ramal' },
-    { id: 'ETL2', dn: 40, s: 0.02, pts: pb(5280, 4230, 450, 0.02).v(-100).h(6450, 4230).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-LAV2'], fl: 'T', kind: 'ramal' },
-    { id: 'ETC2', dn: 75, s: 0.02, pts: pb(6450, 3900, -150, 0.02).h(6450, 3150).pt(6450, 3150, -560).pt(6200, 3000, -600).get(), to: 'ETV2', from: 'CS-T2', fl: 'T', kind: 'ramal' },
+    { id: 'ETCh2', dn: 40, s: 0.02, pts: pb(6950, 3400, 0, 0.02).v(-200).h(6450, 3400).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-CH2'], fl: 'T', kind: 'ramal' },
+    { id: 'ETL2', dn: 40, s: 0.02, pts: pb(5280, 4230, 450, 0.02).v(-200).h(6450, 4230).h(6450, 3900).get(), to: 'CS-T2', fx: ['T-LAV2'], fl: 'T', kind: 'ramal' },
+    { id: 'ETC2', dn: 75, s: 0.02, pts: pb(6450, 3900, -270, 0.02).h(6450, 3150).pt(6450, 3150, -560).pt(6200, 3000, -600).get(), to: 'ETV2', from: 'CS-T2', fl: 'T', kind: 'ramal' },
     // prumadas (tubos de queda) e prolongamentos (ventilação primária)
     { id: 'TQ-1', dn: 100, pts: [[2000, 10280, -800], [2000, 10280, L2 - 240]], to: 'BTQ1', fl: 'v', kind: 'tq', nome: 'Tubo de queda TQ-1 (shaft SH-1)' },
     { id: 'VP-1', dn: 100, pts: [[2000, 10280, L2 - 240], [2000, 10280, VT]], fl: 'v', kind: 've', sys: 'VE', nome: 'Ventilação primária do TQ-1' },
@@ -9751,11 +9751,11 @@ kbd {
   const ESBY = Object.fromEntries(ES.map((e) => [e.id, e]));
   // caixas: CS (sifonada), CI (inspeção), CGS (gordura simples)
   const BOX = [
-    { id: 'CS-2L', k: 'CS', fl: '2', x: 2050, y: 9750, z: L2 - 120, out: 'E2L2' },
-    { id: 'CS-1B', k: 'CS', fl: '1', x: 2550, y: 9300, z: L1 - 120, out: 'E1BC' },
-    { id: 'CS-1S', k: 'CS', fl: '1', x: 2250, y: 6500, z: L1 - 120, out: 'E1SC' },
+    { id: 'CS-2L', k: 'CS', fl: '2', x: 2050, y: 9750, z: L2 - 250, out: 'E2L2' },
+    { id: 'CS-1B', k: 'CS', fl: '1', x: 2550, y: 9300, z: L1 - 250, out: 'E1BC' },
+    { id: 'CS-1S', k: 'CS', fl: '1', x: 2250, y: 6500, z: L1 - 250, out: 'E1SC' },
     { id: 'CS-T1', k: 'CS', fl: 'T', x: 2050, y: 9600, z: -120, out: 'ETC1' },
-    { id: 'CS-T2', k: 'CS', fl: 'T', x: 6450, y: 3900, z: -120, out: 'ETC2' },
+    { id: 'CS-T2', k: 'CS', fl: 'T', x: 6450, y: 3900, z: -250, out: 'ETC2' },
     { id: 'CGS', k: 'CG', fl: 'T', x: 1000, y: 5800, z: -700, out: 'ECG' },
     { id: 'CI-1', k: 'CI', fl: 'T', x: 550, y: 2450, z: -820, out: 'CL-1' },
     { id: 'CI-2', k: 'CI', fl: 'T', x: 550, y: 7300, z: -917, out: 'CL-2' },
@@ -10066,7 +10066,7 @@ kbd {
         });
       }
     });
-    BOX.filter((b) => b.k === 'CS' && b.fl !== 'T').forEach((b) => out.push({ k: b.id, onde: b.fl === '1' ? 'Laje do 1º pavimento' : 'Laje do 2º pavimento', x: b.x, y: b.y, dn: 150, oque: b.id + ' (caixa sifonada no rebaixo)', sys: 'Esgoto', furo: '25×25 cm' }));
+    BOX.filter((b) => b.k === 'CS' && b.fl !== 'T').forEach((b) => out.push({ k: b.id, onde: b.fl === '1' ? 'Laje do 1º pavimento' : 'Laje do 2º pavimento', x: b.x, y: b.y, dn: 150, oque: b.id + ' (caixa sifonada com prolongamento, atravessa a laje)', sys: 'Esgoto', furo: '25×25 cm' }));
     return out.sort((a, b) => a.onde.localeCompare(b.onde) || a.x - b.x);
   }
 
