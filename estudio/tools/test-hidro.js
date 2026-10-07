@@ -2,6 +2,8 @@
 //   node tools/test-hidro.js
 global.window = global;
 require('../src/00-data.js');
+global.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
+require('../src/01-core.js');
 require('../src/17-hidro.js');
 const H = global.DD.hidro;
 let bad = 0;
@@ -45,6 +47,24 @@ const groups = doc.floors.map((f) => H.build3d(T, doc, f));
 check('3D: tubos em todos os pavimentos', groups.every((g) => g.children.length > 10), groups.map((g) => g.children.length).join('/'));
 check('3D: peças fora do clique e por cima das paredes', made.every((m) => m.userData.noPick && m.material.depthTest === false));
 
+// nenhum tubo cruza janela ou porta (nem desce colado ao batente)
+{
+  const doc = global.DD.data.initialState(), LV = { f0: 0, f1: 2880, f2: 5760 }, hits = new Set();
+  H.PIPES.forEach((p) => p.pts.slice(1).forEach((b, i) => {
+    const a = p.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 20));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
+      doc.openings.forEach((o) => {
+        const w = doc.walls.find((q) => q.id === o.wall);
+        if (!w) return;
+        const f = global.DD.geom.openingFrame(w, o), zr = z - LV[w.floor];
+        const al = (x - f.c.x) * f.d.x + (y - f.c.y) * f.d.y, ac = (x - f.c.x) * f.n.x + (y - f.c.y) * f.n.y;
+        if (Math.abs(ac) <= w.thick / 2 + 40 && Math.abs(al) <= o.width / 2 + 50 && zr > (o.sill || 0) - 50 && zr < (o.sill || 0) + o.height + 50) hits.add(p.id + '×' + o.id);
+      });
+    }
+  }));
+  check('nenhum tubo cruza janela ou porta', !hits.size, [...hits].join(','));
+}
 // compatibilização com a estrutura (só quando o projeto estrutural privado existe nesta máquina)
 {
   const fs = require('fs'), stf = require('path').join(__dirname, '..', 'private', 'estrutura.json');

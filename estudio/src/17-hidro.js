@@ -104,7 +104,7 @@
     { id: '1-chs', a: 'SW2', b: 'f1CHS', via: [[2325, 7530, L1 + 1200]], fl: '1', rp: true },
     { id: '1-sr', a: 'SW2', b: 'SR', via: [[2450, 7575, L1 + 1200]], fl: '1', rg: 'Registro da suíte (1º)' },
     { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L2 - 580], [2450, 7450, L2 - 580], [1700, 7450, L2 - 580]], fl: '1' },
-    { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1640, 5650, L2 - 580], [1640, 5650, L1 + 200]], fl: '1' },
+    { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1700, 5550, L2 - 580], [1640, 5550, L2 - 580], [1640, 5550, L1 + 200]], fl: '1' }, // desce a 15 cm do batente da janela J3 e passa por baixo dela
     { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L2 - 580], [1640, 5200, L2 - 580]], fl: '1' },
     { id: 'T-r', a: 'A1_0', b: 'R0', fl: 'T', rg: 'Registro do lavabo (térreo)' },
     { id: 'T-vs1', a: 'R0', b: 'fTVS1', via: [[2650, 10360, 1200]], fl: 'T' },
