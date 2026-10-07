@@ -10581,9 +10581,12 @@ kbd {
     ['T', '1', '2'].forEach((fl) => {
       const P = PONTOS.filter((p) => p.fl === fl);
       group('il' + fl, 'il', 'Iluminação — ' + FL_NAME[fl], P.filter((p) => p.k === 'il'), CAP.il);
-      group('tc' + fl, 'tug', 'Tomadas da cozinha/bancada — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && p.va >= 600 && !banho(p)), CAP.tugM);
-      group('tb' + fl, 'tug', 'Tomadas dos banheiros — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && banho(p)), CAP.tugM);
-      group('tg' + fl, 'tug', 'Tomadas de uso geral — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && !p.circ), CAP.tugS);
+      // nos quadros de andar os circuitos ficam em até 10 A (1.200 VA): os disjuntores dos quadros ficam pequenos e a
+      // seletividade com o padrão fecha
+      const capM = fl === 'T' ? CAP.tugM : 1200, capS = fl === 'T' ? CAP.tugS : 1200;
+      group('tc' + fl, 'tug', 'Tomadas da cozinha/bancada — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && p.va >= 600 && !banho(p)), capM);
+      group('tb' + fl, 'tug', 'Tomadas dos banheiros — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && banho(p)), capM);
+      group('tg' + fl, 'tug', 'Tomadas de uso geral — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && !p.circ), capS);
     });
     PONTOS.filter((p) => p.k === 'tue').forEach((p) => {
       const c = { n: 0, key: p.id, tipo: 'tue', desc: EQ_NAME[p.eq] + ' — ' + p.amb + ' (' + FL_NAME[p.fl] + ')', v: p.v || VFN, pts: [p.id], va: p.va, eq: p.eq };
@@ -10598,6 +10601,9 @@ kbd {
     const order = { il: 0, tug: 1, tue: 2 };
     const flr = (c) => ({ T: 0, 1: 1, 2: 2 })[PBY[c.pts[0]].fl];
     C.forEach((c) => (c.fl = PBY[c.pts[0]].fl));
+    // chuveiros (os maiores circuitos) saem direto do QDC: assim os quadros de andar ficam com circuitos pequenos e a
+    // seletividade circuito → quadro → padrão fecha com um padrão de 80 A
+    C.forEach((c) => (c.board = c.eq === 'chuveiro' ? 'T' : c.fl));
     C.sort((a, b) => order[a.tipo] - order[b.tipo] || flr(a) - flr(b) || (a.v - b.v) || a.key.localeCompare(b.key, 'pt', { numeric: true }));
     C.forEach((c, i) => (c.n = i + 1));
     return C;
@@ -10605,27 +10611,42 @@ kbd {
   const CIRC = buildCircuits();
 
   // ------------------------------------------------------------------ fases (127 V numa fase; 220 V entre duas)
+  const FATORES = {
+    il: { fu: 0.4, fs: 0.6, nome: 'Iluminação', obs: 'LED consome ~40 % da carga mínima da NBR; 60 % das luzes acesas' },
+    tug: { fu: 1, fs: 0.15, nome: 'Tomadas de uso geral (100 VA)', obs: 'carregadores, TV, notebook…: poucos ao mesmo tempo' },
+    tug600: { fu: 1, fs: 0.3, nome: 'Tomadas de bancada e banheiro (600 VA)', obs: 'liquidificador, cafeteira, secador: uso curto' },
+    ac: { fu: 0.8, fs: 0.75, nome: 'Ar-condicionado', obs: '3 dos 4 ligados; compressor não fica 100 % do tempo' },
+    microondas: { fu: 1, fs: 0.3, nome: 'Micro-ondas', obs: 'uso de poucos minutos' },
+    mlr: { fu: 0.6, fs: 0.5, nome: 'Máquina de lavar', obs: 'ciclo com aquecimento só parte do tempo' },
+    portao: { fu: 1, fs: 0.05, nome: 'Portão', obs: 'segundos por acionamento' },
+  };
+  /** Corrente realista do circuito (Fu × Fs), usada no equilíbrio das fases e na seletividade. */
+  const kReal = (c) => (c.eq === 'ac' ? FATORES.ac : c.tipo === 'tue' && c.eq !== 'chuveiro' ? FATORES[c.eq] : c.tipo === 'tug' ? (c.pts.some((id) => PBY[id].va >= 600) ? FATORES.tug600 : FATORES.tug) : FATORES.il);
   // Chuveiros primeiro, cada um num par de fases diferente (AB, BC, CA): dois ligados juntos nunca somam 2 × 34 A nas
   // mesmas duas fases. Os demais circuitos equilibram cada quadro partindo da carga dos chuveiros daquele quadro.
   CIRC.filter((c) => c.eq === 'chuveiro').forEach((c, i) => (c.fases = ['AB', 'BC', 'CA'][i % 3]));
   function balance(list) {
-    const load = { A: 0, B: 0, C: 0 };
-    list.filter((c) => c.eq === 'chuveiro').forEach((c) => c.fases.split('').forEach((f) => (load[f] += c.va / 2)));
-    list.filter((c) => c.eq !== 'chuveiro').sort((a, b) => b.va - a.va).forEach((c) => {
+    // equilibra a corrente realista (o que de fato circula); chuveiros, um de cada vez em pares diferentes, são simétricos
+    const real = { A: 0, B: 0, C: 0 };
+    const w = (c) => (c.va / c.v) * kReal(c).fu * kReal(c).fs;
+    list.filter((c) => c.eq !== 'chuveiro').sort((a, b) => w(b) - w(a)).forEach((c) => {
       if (c.v === VFF) {
-        const pair = [['A', 'B'], ['B', 'C'], ['C', 'A']].sort((p, q) => load[p[0]] + load[p[1]] - (load[q[0]] + load[q[1]]))[0];
+        const pair = [['A', 'B'], ['B', 'C'], ['C', 'A']].sort((p, q) => real[p[0]] + real[p[1]] - (real[q[0]] + real[q[1]]))[0];
         c.fases = pair.join('');
-        pair.forEach((f) => (load[f] += c.va / 2));
+        pair.forEach((f) => (real[f] += w(c)));
       } else {
-        const f = ['A', 'B', 'C'].sort((p, q) => load[p] - load[q])[0];
+        const f = ['A', 'B', 'C'].sort((p, q) => real[p] - real[q])[0];
         c.fases = f;
-        load[f] += c.va;
+        real[f] += w(c);
       }
     });
+    // carga nominal por fase (VA), para o quadro de cargas
+    const load = { A: 0, B: 0, C: 0 };
+    list.forEach((c) => c.fases.split('').forEach((f) => (load[f] += c.v === VFF ? c.va / 2 : c.va)));
     return load;
   }
   // equilíbrio em cada quadro (cada um é trifásico); o total da casa é a soma
-  const FASES_Q = Object.fromEntries(['T', '1', '2'].map((b) => [b, balance(CIRC.filter((c) => c.fl === b))]));
+  const FASES_Q = Object.fromEntries(['T', '1', '2'].map((b) => [b, balance(CIRC.filter((c) => c.board === b))]));
   const FASES = ['A', 'B', 'C'].reduce((o, f) => ((o[f] = FASES_Q.T[f] + FASES_Q[1][f] + FASES_Q[2][f]), o), {});
 
   // ------------------------------------------------------------------ caminhos (laje + descidas) e comprimentos
@@ -10676,7 +10697,6 @@ kbd {
   }
   const plen = (P) => P.slice(1).reduce((s2, q, i) => s2 + Math.abs(q[0] - P[i][0]) + Math.abs(q[1] - P[i][1]) + Math.abs(q[2] - P[i][2]), 0);
   function routeCircuit(c) {
-    c.board = c.fl;
     // pontos descobertos saem do circuito da laje e vão por baixo
     c.baixo = c.pts.filter((id) => !coberto(PBY[id]) && PBY[id].fl === c.board).map((id) => ({ id, fl: PBY[id].fl, path: baixo(PBY[id], c.board) }));
     const fora = new Set(c.baixo.map((b) => b.id));
@@ -10792,15 +10812,6 @@ kbd {
   //   Fu (fator de utilização) — fração da potência nominal que o aparelho usa quando está ligado;
   //   Fs (fator de simultaneidade) — fração dos pontos/aparelhos do grupo ligados ao mesmo tempo no pico.
   // Chuveiros são contados um a um: no pico, os dois que mais carregam a mesma fase.
-  const FATORES = {
-    il: { fu: 0.4, fs: 0.6, nome: 'Iluminação', obs: 'LED consome ~40 % da carga mínima da NBR; 60 % das luzes acesas' },
-    tug: { fu: 1, fs: 0.15, nome: 'Tomadas de uso geral (100 VA)', obs: 'carregadores, TV, notebook…: poucos ao mesmo tempo' },
-    tug600: { fu: 1, fs: 0.3, nome: 'Tomadas de bancada e banheiro (600 VA)', obs: 'liquidificador, cafeteira, secador: uso curto' },
-    ac: { fu: 0.8, fs: 0.75, nome: 'Ar-condicionado', obs: '3 dos 4 ligados; compressor não fica 100 % do tempo' },
-    microondas: { fu: 1, fs: 0.3, nome: 'Micro-ondas', obs: 'uso de poucos minutos' },
-    mlr: { fu: 0.6, fs: 0.5, nome: 'Máquina de lavar', obs: 'ciclo com aquecimento só parte do tempo' },
-    portao: { fu: 1, fs: 0.05, nome: 'Portão', obs: 'segundos por acionamento' },
-  };
   const CENARIOS = [
     // uso da casa: um chuveiro de cada vez (definido pelo proprietário)
     { id: 'verao', nome: 'Noite de verão: ar ligado, 1 chuveiro na posição verão', chuveiros: 1, fuCh: 0.55, ac: true, projeto: true },
@@ -10833,35 +10844,77 @@ kbd {
     return Object.assign({}, cn, pior);
   }
   const CENARIO = CENARIOS.map(cenario);
+  // ------------------------------------------------------------------ seletividade (circuito → quadro → padrão)
+  // Ordem de desarme garantida, do mais próximo do problema para o mais distante, pelas correntes convencionais da
+  // NBR NM 60898 (disjuntores DIN):
+  //   • sobrecarga: com o disjuntor de baixo em 1,45 × In (desarma com certeza em menos de 1 h) e o resto da casa no
+  //     uso real, o de cima continua abaixo de 1,13 × In (não desarma);
+  //   • curto-circuito (disparo magnético, curva C entre 5 e 10 × In): 10 × In de baixo ≤ 5 × In de cima.
+  // O geral do QDC é uma chave seccionadora (sem disparo): os níveis são circuito → disjuntor do quadro do andar
+  // (no QDC) → disjuntor do padrão. Circuitos do próprio QDC (térreo e chuveiros) têm o padrão logo acima.
+  const shs = CIRC.filter((c) => c.eq === 'chuveiro');
+  /** Maior corrente realista na fase f do conjunto `set`, sem `excl`, com no máximo um chuveiro ligado. */
+  function restoFase(set, excl, f) {
+    const ops = excl && excl.eq === 'chuveiro' ? [null] : [null].concat(shs.filter((x) => set.includes(x)));
+    return Math.max(...ops.map((on) => set.reduce((acc, c) => {
+      if (c === excl || !c.fases.includes(f)) return acc;
+      if (c.eq === 'chuveiro') return c === on ? acc + c.va / c.v : acc;
+      const k = kReal(c);
+      return acc + (c.va / c.v) * k.fu * k.fs;
+    }, 0)));
+  }
+  /** Menor In acima de um grupo de circuitos que garante a ordem de desarme na sobrecarga. */
+  const acimaDe = (lista, set) => Math.max(0, ...lista.flatMap((c) => c.fases.split('').map((f) => (restoFase(set, c, f) + 1.45 * c.disj) / 1.13)));
+  const SUB = {};
+  ['1', '2'].forEach((b) => {
+    const mine = CIRC.filter((c) => c.board === b);
+    const d = demandaDe(mine);
+    const L = polyLen(SUB_ROUTE[b]) + 1000;
+    const maxDown = Math.max(...mine.map((c) => c.disj));
+    const sobre = acimaDe(mine, mine);
+    const disj = DISJ.find((x) => x >= Math.max(d.I, sobre, 2 * maxDown));
+    let s2 = SECOES.find((x) => x >= 6 && IZ3[x] * FCA_SUB * FCT >= disj);
+    const dv = (sec) => (100 * Math.sqrt(3) * RHO * (L / 1000) * d.I) / (sec * VFF);
+    while (dv(s2) > 1 && s2 < 50) s2 = SECOES[SECOES.indexOf(s2) + 1];
+    SUB[b] = Object.assign(d, { board: BOARDS[b], L, disj, curva: 'C', minSobre: sobre, maxDown, secao: s2, iz: IZ3[s2] * FCA_SUB * FCT, dv: dv(s2), neutro: s2, pe: s2 <= 16 ? s2 : 16, ok: disj <= IZ3[s2] * FCA_SUB * FCT });
+  });
+  /** Disjuntor do padrão necessário para ficar acima de tudo (circuitos do QDC e disjuntores dos quadros de andar). */
+  function padraoMin(Iproj) {
+    const doQDC = CIRC.filter((c) => c.board === 'T');
+    const sobreQ = acimaDe(doQDC, CIRC);
+    const sobreSub = Math.max(...['1', '2'].flatMap((b) => ['A', 'B', 'C'].map((f) => (restoFase(CIRC.filter((c) => c.board !== b), null, f) + 1.45 * SUB[b].disj) / 1.13)));
+    const mag = 2 * Math.max(...doQDC.map((c) => c.disj), SUB[1].disj, SUB[2].disj);
+    return { sobreQ, sobreSub, mag, min: Math.max(Iproj, sobreQ, sobreSub, mag) };
+  }
   function demanda() {
     // corrente de projeto do ramal: a maior fase no cenário de projeto (pico típico) — não a média trifásica
     const d = demandaDe(CIRC), proj = CENARIO.filter((c) => c.projeto).sort((a, b) => b.max - a.max)[0], I = proj.max;
     d.cenarioProjeto = proj.id;
     d.Iconc = d.I;
     const L = polyLen(ALIM_ROUTE) + 1000; // percurso real + 1 m de sobra nas ligações
-    const disj = DISJ.find((d) => d >= I);
-    // seção definida (16 mm²): confere capacidade (Iz ≥ In do geral) e a queda de tensão entra no total de 5 %
+    // disjuntor do padrão: o maior entre a corrente de projeto e o necessário para a seletividade; o cabo do ramal tem
+    // de ser protegido por ele (Iz ≥ In), porque o geral do QDC é só uma chave
+    const pm = padraoMin(I);
+    const disj = DISJ.find((d2) => d2 >= pm.min);
     const s = SECOES.find((x) => x >= ALIM_SECAO && IZ3[x] * FCT >= disj), iz = IZ3[s] * FCT;
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
     // situações mais raras (2 ou 3 chuveiros no inverno): a corrente pode passar do In por alguns minutos; o disjuntor
     // curva C não desarma até 1,13 × In e só desarma em menos de 1 h acima de 1,45 × In (NBR NM 60898)
     const raros = CENARIO.filter((c) => !c.projeto || c === proj).map((c) => ({ id: c.id, nome: c.nome, max: c.max, xIn: c.max / disj }));
-    return Object.assign(d, { Iproj: I, L, disj, secao: s, iz, okIz: disj <= iz, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16, raros });
+    return Object.assign(d, { Iproj: I, L, disj, secao: s, iz, okIz: disj <= iz, padraoMin: pm, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16, raros });
   }
   const ALIM = demanda();
-  // alimentadores dos quadros de andar (QDC → QD-1 e QD-2): demanda do andar, disjuntor 3P no QDC, cabo pela capacidade
-  // (2 alimentadores juntos na prumada) e pela queda de tensão (≤ 1 %)
-  const SUB = {};
+  // verificação par a par (para o memorial e os testes)
+  const SELET = [];
+  CIRC.forEach((c) => {
+    const up = c.board === 'T' ? { nome: 'Padrão', In: ALIM.disj } : { nome: SUB[c.board].board.id, In: SUB[c.board].disj };
+    const set = c.board === 'T' ? CIRC : CIRC.filter((x) => x.board === c.board);
+    const sobre = Math.max(...c.fases.split('').map((f) => restoFase(set, c, f) + 1.45 * c.disj));
+    SELET.push({ de: 'C' + c.n, In: c.disj, para: up.nome, InUp: up.In, sobre, limite: 1.13 * up.In, okSobre: sobre <= 1.13 * up.In, okCurto: 10 * c.disj <= 5 * up.In });
+  });
   ['1', '2'].forEach((b) => {
-    const d = demandaDe(CIRC.filter((c) => c.board === b));
-    const L = polyLen(SUB_ROUTE[b]) + 1000;
-    // seletividade: um degrau acima do maior disjuntor do quadro do andar
-    const maxDown = Math.max(...CIRC.filter((c) => c.board === b).map((c) => c.disj));
-    const disj = DISJ.find((x) => x >= d.I && x > maxDown);
-    let s = SECOES.find((x) => x >= 6 && IZ3[x] * FCA_SUB * FCT >= disj);
-    const dv = (sec) => (100 * Math.sqrt(3) * RHO * (L / 1000) * d.I) / (sec * VFF);
-    while (dv(s) > 1 && s < 50) s = SECOES[SECOES.indexOf(s) + 1];
-    SUB[b] = Object.assign(d, { board: BOARDS[b], L, disj, secao: s, iz: IZ3[s] * FCA_SUB * FCT, dv: dv(s), neutro: s, pe: s <= 16 ? s : 16, ok: disj <= IZ3[s] * FCA_SUB * FCT });
+    const sobre = Math.max(...['A', 'B', 'C'].map((f) => restoFase(CIRC.filter((c) => c.board !== b), null, f) + 1.45 * SUB[b].disj));
+    SELET.push({ de: SUB[b].board.id, In: SUB[b].disj, para: 'Padrão', InUp: ALIM.disj, sobre, limite: 1.13 * ALIM.disj, okSobre: sobre <= 1.13 * ALIM.disj, okCurto: 10 * SUB[b].disj <= 5 * ALIM.disj });
   });
   // queda total (alimentador + alimentador do andar + circuito) ≤ 5 %: aumenta a seção do circuito se precisar
   CIRC.forEach((c) => {
@@ -10929,7 +10982,8 @@ kbd {
     const disj = {};
     CIRC.forEach((c) => { const k = (c.v === VFF ? '2P ' : '1P ') + c.disj + ' A'; disj[k] = (disj[k] || 0) + 1; });
     Object.keys(disj).sort().forEach((k) => it('Quadros', 'Disjuntor termomagnético DIN curva C ' + k, 'un', disj[k], 'circuitos terminais'));
-    it('Quadros', 'Disjuntor geral DIN curva C 3P ' + ALIM.disj + ' A', 'un', 1, 'no QDC (o do padrão é definido pela Enel)');
+    it('Quadros', 'Chave seccionadora 3P ' + ALIM.disj + ' A (geral do QDC, sem disparo)', 'un', 1, 'a proteção do ramal é o disjuntor do padrão (seletividade circuito → quadro → padrão)');
+    it('Quadros', 'Disjuntor do padrão 3P ' + ALIM.disj + ' A curva C (kit do padrão Enel)', 'un', 1, 'categoria a pedir à Enel; mínimo ' + ALIM.padraoMin.min.toFixed(1).replace('.', ',') + ' A para a seletividade');
     Object.values(SUB).forEach((d) => it('Quadros', 'Disjuntor DIN curva C 3P ' + d.disj + ' A — alimentador do ' + d.board.id, 'un', 1, 'no QDC'));
     Object.values(SUB).forEach((d) => it('Quadros', 'Interruptor geral (seccionador) 3P ' + [40, 63, 80, 100].find((x) => x >= d.disj) + ' A — ' + d.board.id, 'un', 1, 'chave geral do quadro do andar'));
     DRS.forEach((d) => it('Quadros', `Interruptor diferencial (DR) ${d.polos}P ${d.in} A 30 mA`, 'un', 1, BOARDS[d.board].id + ' · ' + d.id + ': ' + d.desc));
@@ -11176,7 +11230,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, FATORES, CENARIO, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

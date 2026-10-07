@@ -596,10 +596,10 @@ function unifilar(w, curto) {
   const ln = (a, b2, c, d, o) => L.push(`<line x1="${a}" y1="${b2}" x2="${c}" y2="${d}" stroke="${(o && o.stroke) || '#1f1d1a'}" stroke-width="${(o && o.w) || 1.2}"/>`);
   const box = (x, y, w2, h2, s2, o) => { L.push(`<rect x="${x}" y="${y}" width="${w2}" height="${h2}" fill="${(o && o.fill) || '#fff'}" stroke="#1f1d1a"/>`); t(x + w2 / 2, y + h2 / 2 + 3.5, s2, { anchor: 'middle', size: 9 }); };
   // entrada
-  box(x0 - 40, 10, 80, 28, 'Padrão Enel');
+  box(x0 - 40, 10, 80, 28, 'Padrão ' + ALIM.disj + ' A');
   t(x0 + 46, 28, '3F+N 127/220 V', { size: 9 });
   ln(x0, 38, x0, 62);
-  box(x0 - 45, 62, 90, 24, 'DG 3P ' + ALIM.disj + ' A');
+  box(x0 - 45, 62, 90, 24, 'Chave 3P ' + ALIM.disj + ' A');
   t(x0 + 52, 78, '#' + ALIM.secao + ' mm² · ' + fmtn(ALIM.L / 1000, 1) + ' m', { size: 9 });
   ln(x0, 86, x0, 100);
   box(x0 + 60, 90, 70, 20, 'DPS 4× 275 V');
@@ -654,7 +654,7 @@ function memorial() {
     <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
     <li><b>Quadros de distribuição — um trifásico por andar:</b>
       <ul>
-        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem o disjuntor geral, o DPS, os circuitos do térreo e os disjuntores dos alimentadores dos quadros de andar.</li>
+        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem a chave geral (seccionadora, sem disparo), o DPS, os circuitos do térreo e os disjuntores dos alimentadores dos quadros de andar.</li>
         <li><b>QD-1 (1º pavimento):</b> logo acima do QDC, na mesma parede (lado da circulação). O alimentador sobe direto pela parede.</li>
         <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até a laje do 2º e anda nela até a parede da escada, porque na prumada do QDC o 2º não tem parede.</li>
         <li>Cada circuito sai do quadro do seu andar: caminhos mais curtos, nenhum feixe de circuitos subindo pela parede e manutenção por andar. Cada quadro tem chave geral e acesso livre na frente (NBR 5410 6.5.4.7).</li>
@@ -707,11 +707,11 @@ function memorial() {
       ${table(['Grupo', 'Fu', 'Fs', 'Por quê'], Object.values(E.FATORES).map((f) => `<tr><td>${esc(f.nome)}</td><td class="n">${fmtn(f.fu, 2)}</td><td class="n">${fmtn(f.fs, 2)}</td><td>${esc(f.obs)}</td></tr>`).concat([`<tr><td>Chuveiros</td><td class="n">0,55 / 1</td><td class="n">1 de 3</td><td>posição verão / inverno; um banho de cada vez</td></tr>`]))}
       ${table(['Cenário', 'Fase A (A)', 'Fase B (A)', 'Fase C (A)', 'Maior / geral'], E.CENARIO.map((c) => `<tr${c.id === ALIM.cenarioProjeto ? ' class="group"' : ''}><td>${esc(c.nome)}${c.id === ALIM.cenarioProjeto ? ' — <b>maior corrente prevista (projeto)</b>' : c.projeto ? '' : ' — só verificação'}</td><td class="n">${fmtn(c.I.A, 1)}</td><td class="n">${fmtn(c.I.B, 1)}</td><td class="n">${fmtn(c.I.C, 1)}</td><td class="n">${fmtn(c.max / ALIM.disj, 2)} × In</td></tr>`))}
       <ul>
-        <li><b>Corrente de projeto do ramal:</b> ${fmtn(ALIM.Iproj, 1)} A, a maior fase entre os cenários previstos (um chuveiro de cada vez), com geral de <b>${ALIM.disj} A</b> e cabo de ${ALIM.secao} mm²${ALIM.secao > ALIM.Iproj / 3 ? '' : ''}. O cabo de 16 mm² (68 A) fica com folga.</li>
+        <li><b>Corrente de projeto do ramal:</b> ${fmtn(ALIM.Iproj, 1)} A, a maior fase entre os cenários previstos (um chuveiro de cada vez),. O disjuntor do padrão (${ALIM.disj} A) e o cabo do ramal (${ALIM.secao} mm²) saem da seletividade, item 5.</li>
         <li><b>Se um dia dois chuveiros forem ligados juntos</b> (fora do uso previsto): uma fase chega a ${fmtn(ALIM.raros.find((r) => r.id === 'dois').max, 0)} A (${fmtn(ALIM.raros.find((r) => r.id === 'dois').xIn, 2)} × In).
           <ul>
             <li>O disjuntor curva C não desarma até 1,13 × In e desarma em menos de 1 h acima de 1,45 × In.</li>
-            <li>${ALIM.raros.find((r) => r.id === 'dois').xIn > 1.45 ? 'Nesse caso o geral desarma em alguns minutos: ele protege o cabo, mas apaga a casa.' : 'Banhos curtos ao mesmo tempo não devem desarmar o geral.'}</li>
+            <li>${ALIM.raros.find((r) => r.id === 'dois').xIn > 1.45 ? 'Nesse caso o disjuntor do padrão desarma em alguns minutos: ele protege o cabo, mas apaga a casa.' : 'Banhos curtos ao mesmo tempo não devem desarmar o padrão.'}</li>
             <li>Se esse uso mudar, refazer o cálculo.</li>
           </ul></li>
         <li><b>Sem chuveiro</b> (ar, luzes e tomadas no pico de verão): ${fmtn(E.CENARIO.find((c) => c.id === 'semch').max, 0)} A por fase. Os chuveiros são o que define a entrada.</li>
@@ -722,8 +722,8 @@ function memorial() {
         <li>com caixa de passagem na base da subida. Em vala, cobrir com areia e pôr fita de aviso 10 cm acima;</li>
         <li>cruzamentos: passa <b>por cima</b> do alimentador de água (que está a −0,76 m) junto à parede do lavabo e por cima da saída do esgoto (que está a −0,8 m) perto do muro da frente. Cruzar sempre em ângulo reto;</li>
         <li>3 fases de ${ALIM.secao} mm², neutro de ${ALIM.neutro} mm² e PE de ${ALIM.pe} mm²;</li>
-        <li>disjuntor geral 3P de ${ALIM.disj} A no QDC;</li>
-        <li>capacidade do cabo de ${ALIM.secao} mm² (B1, 3 condutores carregados): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do geral — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
+        <li>protegido pelo <b>disjuntor do padrão, 3P ${ALIM.disj} A</b>; no QDC fica só a chave seccionadora 3P ${ALIM.disj} A;</li>
+        <li>capacidade do cabo de ${ALIM.secao} mm² (B1, 3 condutores carregados): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do padrão — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
         <li>queda de tensão no alimentador de ${fmtn(ALIM.dv, 2)} %; somada à do circuito mais longo, ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %) — <span class="${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'ok' : 'bad'}">${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'OK' : 'rever'}</span>.</li>
       </ul></li>
     <li><b>Alimentadores dos quadros de andar</b> (saem do QDC, cada um com disjuntor 3P um degrau acima do maior disjuntor do andar, para seletividade):
@@ -736,7 +736,7 @@ function memorial() {
         <li>a prumada deixa de levar todos os circuitos do 1º e do 2º juntos, e o agrupamento diminui;</li>
         <li>em compensação, entram 2 quadros, 2 chaves gerais, 2 disjuntores 3P e mais DRs (um grupo por andar).</li>
       </ul></li>
-    <li><b>Categoria do padrão de entrada:</b> definida pela Enel RJ a partir da carga instalada e da demanda (levar este memorial). O disjuntor do padrão e o ramal de ligação seguem a tabela da concessionária; o geral do QDC deve ser igual ou menor que o do padrão.</li>
+    <li><b>Categoria do padrão de entrada:</b> definida pela Enel RJ a partir da carga instalada e da demanda (levar este memorial). O disjuntor do padrão e o ramal de ligação seguem a tabela da concessionária; pedir à Enel a categoria com disjuntor de <b>${ALIM.disj} A</b> (mínimo ${fmtn(ALIM.padraoMin.min, 1)} A pela seletividade). Se a Enel só oferecer um valor maior, a seletividade continua valendo; o cabo do ramal precisa acompanhar (Iz ≥ In do padrão).</li>
   </ul>
   <h2>5. Proteções</h2>
   <h3>Dispositivos diferenciais residuais (DR 30 mA)</h3>
@@ -746,6 +746,27 @@ function memorial() {
     <li><b>DPS</b> classe II, 275 V / 20 kA, nas 3 fases e no neutro, ligados ao barramento de terra do QDC (NBR 5410 6.3.5). Os quadros de andar ficam a menos de 10 m do QDC, então não precisam de DPS próprio.</li>
     <li><b>Aterramento:</b> 3 hastes cobreadas de 2,40 m interligadas no padrão; resistência medida ≤ 10 Ω. Interligar a esse aterramento as massas metálicas, como a estrutura do portão e as tubulações metálicas, se houver (equipotencialização).</li>
     <li><b>Chuveiros:</b> usar modelos com resistência blindada; com resistência nua, o DR pode disparar.</li>
+  </ul>
+  <h3>Seletividade — ordem de desarme: circuito → quadro → padrão</h3>
+  <p>Num problema, desarma primeiro o disjuntor mais próximo dele; os de cima só desarmam se o problema for no trecho deles. Para garantir essa ordem com disjuntores DIN (NBR NM 60898):</p>
+  <ul>
+    <li><b>Sobrecarga:</b> com o disjuntor de baixo em 1,45 × In, que desarma com certeza em menos de 1 h, e o resto da casa no uso real, o de cima precisa continuar abaixo de 1,13 × In, que é onde ele não desarma.</li>
+    <li><b>Curto-circuito:</b> o disparo magnético da curva C acontece entre 5 e 10 × In. Por isso 10 × In do de baixo precisa ficar ≤ 5 × In do de cima, ou seja, o de cima tem de ter pelo menos o dobro.</li>
+    <li><b>Como fechar a cadeia:</b>
+      <ul>
+        <li>o geral do QDC é uma <b>chave seccionadora</b>, sem disparo: não entra mais um disjuntor entre os quadros e o padrão;</li>
+        <li>os <b>chuveiros saem direto do QDC</b>;</li>
+        <li>os quadros de andar têm só circuitos de até <b>10 A</b>;</li>
+        <li>assim os disjuntores dos quadros de andar ficam pequenos (QD-1 ${E.SUB[1].disj} A, QD-2 ${E.SUB[2].disj} A) e o padrão de <b>${ALIM.disj} A</b> fica acima de tudo.</li>
+      </ul></li>
+  </ul>
+  ${table(['Desarma primeiro', 'In', 'Depois', 'In', 'Sobrecarga: de cima vê (A)', 'Limite 1,13 × In (A)', 'Curto: 10 × In ≤ 5 × In', ''], E.SELET.map((x) => `<tr><td class="c">${x.de}</td><td class="n">${x.In}</td><td class="c">${x.para}</td><td class="n">${x.InUp}</td><td class="n">${fmtn(x.sobre, 1)}</td><td class="n">${fmtn(x.limite, 1)}</td><td class="n">${10 * x.In} ≤ ${5 * x.InUp}</td><td class="${x.okSobre && x.okCurto ? 'ok' : 'bad'}">${x.okSobre && x.okCurto ? 'OK' : 'rever'}</td></tr>`))}
+  <p>Em curtos muito fortes, perto do quadro, todos os disjuntores podem disparar ao mesmo tempo, porque o disparo é instantâneo. Para cobrir esse caso:</p>
+  <ul>
+    <li>usar <b>uma única marca</b> de disjuntores em todos os quadros, classe 3 de limitação;</li>
+    <li>pedir à Enel a corrente de curto no ponto de entrega;</li>
+    <li>conferir os pares na tabela de seletividade do fabricante;</li>
+    <li>escolher disjuntores com capacidade de interrupção ≥ essa corrente (4,5 ou 6 kA).</li>
   </ul>
   <h2>6. Diagrama unifilar</h2>
   ${unifilar(980)}
@@ -938,7 +959,7 @@ function pranchas() {
     <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadros de distribuição (QDC, QD-1, QD-2): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
     <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
     <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Quadro</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
-    <p class="sh-note">Geral: 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (${E.SUB[1].secao} mm², 3P ${E.SUB[1].disj} A) · QD-2 ${QT.MOD[2].tam} módulos (${E.SUB[2].secao} mm², 3P ${E.SUB[2].disj} A) · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
+    <p class="sh-note">Padrão 3P ${ALIM.disj} A · chave geral do QDC 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (${E.SUB[1].secao} mm², 3P ${E.SUB[1].disj} A) · QD-2 ${QT.MOD[2].tam} módulos (${E.SUB[2].secao} mm², 3P ${E.SUB[2].disj} A) · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
     <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
   </section>`);
   const aviso = nChanged
@@ -958,7 +979,7 @@ function side() {
     <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo. Eletrodutos na laje e descidas nas paredes; o alimentador chega enterrado do padrão ao QDC.' : 'Arraste para mover, roda ou pinça para zoom. Passe o mouse num ponto para ver o circuito. Ao lado de cada ponto: nº do circuito · VA.'}</p>
     <div class="kpis">
       <div class="kpi"><b>${CIRC.length}</b><span>circuitos em 3 quadros (um por andar)</span></div>
-      <div class="kpi"><b>${fmtn(ALIM.Iproj, 0)} A</b><span>pico típico na fase mais carregada (geral ${ALIM.disj} A)</span></div>
+      <div class="kpi"><b>${fmtn(ALIM.Iproj, 0)} A</b><span>pico típico na fase mais carregada (padrão ${ALIM.disj} A)</span></div>
       <div class="kpi"><b>${n('il')}</b><span>pontos de luz${fl === '3d' ? '' : ' neste pavimento'}</span></div>
       <div class="kpi"><b>${n('tug') + n('tue')}</b><span>tomadas e pontos de uso específico</span></div>
       <div class="kpi"><b class="${CIRC.every((c) => c.ok) ? 'ok' : 'bad'}">${CIRC.every((c) => c.ok) ? 'OK' : 'rever'}</b><span>disjuntor ≤ cabo e ΔV ≤ ${E.DV_MAX} %</span></div>
