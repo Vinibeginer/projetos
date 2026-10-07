@@ -10546,6 +10546,11 @@ kbd {
   // Capacidade de condução (A), cobre/PVC 70 °C, método B1 (eletroduto embutido em alvenaria) — Tabela 36
   const IZ2 = { 1.5: 17.5, 2.5: 24, 4: 32, 6: 41, 10: 57, 16: 76, 25: 101, 35: 125, 50: 151 }; // 2 condutores carregados
   const IZ3 = { 1.5: 15.5, 2.5: 21, 4: 28, 6: 36, 10: 50, 16: 68, 25: 89, 35: 110, 50: 134 };  // 3 condutores carregados
+  // Ramal principal: cabo 0,6/1 kV com isolação EPR/XLPE 90 °C (obrigatório no trecho enterrado — NBR 5410 6.2.11.6),
+  // 3 condutores carregados. Vale o trecho mais desfavorável: enterrado em eletroduto (método D, Tabela 37), com o
+  // fator do solo a 25 °C (Tabela 40: 0,96). Na laje (B1) a capacidade é maior.
+  const IZ_RAMAL_D = { 6: 46, 10: 61, 16: 79, 25: 101, 35: 122, 50: 144 };
+  const FCT_SOLO = 0.96;
   const SECOES = [1.5, 2.5, 4, 6, 10, 16, 25, 35, 50];
   const DISJ = [10, 16, 20, 25, 32, 40, 50, 63, 70, 80, 100];
   // Fatores de demanda usuais das concessionárias (iluminação + TUG em kW; TUE pelo número de aparelhos)
@@ -10897,7 +10902,7 @@ kbd {
     // de ser protegido por ele (Iz ≥ In), porque o geral do QDC é só uma chave
     const pm = padraoMin(I);
     const disj = DISJ.find((d2) => d2 >= pm.min);
-    const s = SECOES.find((x) => x >= ALIM_SECAO && IZ3[x] * FCT >= disj), iz = IZ3[s] * FCT;
+    const s = SECOES.find((x) => x >= ALIM_SECAO && (IZ_RAMAL_D[x] || 0) * FCT_SOLO >= disj), iz = IZ_RAMAL_D[s] * FCT_SOLO;
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * I) / (s * VFF);
     // situações mais raras (2 ou 3 chuveiros no inverno): a corrente pode passar do In por alguns minutos; o disjuntor
     // curva C não desarma até 1,13 × In e só desarma em menos de 1 h acima de 1,45 × In (NBR NM 60898)
@@ -10945,11 +10950,12 @@ kbd {
       addCabo(d.neutro, 'neutro', (d.L / 1000) * 1.1);
       addCabo(d.pe, 'terra', (d.L / 1000) * 1.1);
     });
-    addCabo(ALIM.secao, 'fase', 3 * (ALIM.L / 1000) * 1.1);
-    addCabo(ALIM.neutro, 'neutro', (ALIM.L / 1000) * 1.1);
-    addCabo(ALIM.pe, 'terra', (ALIM.L / 1000) * 1.1);
+    // ramal principal: cabo 0,6/1 kV EPR (item próprio, abaixo)
     const items = [];
     const it = (grupo, desc, un, q, obs) => items.push({ grupo, desc, un, q, obs: obs || '' });
+    const Lr = (ALIM.L / 1000) * 1.1;
+    it('Cabos', `Cabo 0,6/1 kV EPR/XLPE 90 °C ${ALIM.secao} mm² — ramal principal`, 'm', Math.ceil((4 * Lr) / 5) * 5, `3 fases + neutro (azul) de ${ALIM.secao} mm², ${Math.ceil(Lr)} m cada; obrigatório no trecho enterrado`);
+    it('Cabos', `Cabo 0,6/1 kV EPR/XLPE 90 °C ${ALIM.pe} mm² verde-amarelo — terra do ramal`, 'm', Math.ceil(Lr / 5) * 5, 'acompanha o ramal até o QDC');
     SECOES.filter((s) => cabos[s]).forEach((s) => {
       const c = cabos[s], tot = c.fase + c.neutro + c.terra + c.retorno;
       it('Cabos', `Cabo flexível 750 V ${String(s).replace('.', ',')} mm²`, 'm', Math.ceil(tot / 5) * 5, `fase ${Math.ceil(c.fase)} · neutro (azul) ${Math.ceil(c.neutro)} · terra (verde) ${Math.ceil(c.terra)}${c.retorno ? ' · retorno ' + Math.ceil(c.retorno) : ''} m; rolos de 100 m`);
@@ -11231,7 +11237,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();
