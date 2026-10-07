@@ -75,11 +75,34 @@ check('3D: peças fora do clique e por cima das paredes', made.every((m) => m.us
         const a = p.pts[i - 1], b = p.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 20));
         for (let k = 0; k <= n; k++) {
           const t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
-          if (pil.some((c) => x > c.x0 - 20 && x < c.x1 + 20 && y > c.y0 - 20 && y < c.y1 + 20 && z > -200 && z < c.topo)) { hits.push(p.id); break; }
+          if (pil.some((c) => x > c.x0 - 20 && x < c.x1 + 20 && y > c.y0 - 20 && y < c.y1 + 20 && z > -2000 && z < c.topo)) { hits.push(p.id); break; }
         }
       }
     });
     check('nenhum tubo atravessa pilar (projeto estrutural privado)', !hits.length, [...new Set(hits)].join(','));
+    // vigas e baldrames: só a travessia aprovada do lavatório da suíte do térreo (camisa a meia altura do baldrame)
+    const st = JSON.parse(fs.readFileSync(stf, 'utf8')), beamHits = new Set(), slabHits = new Set(), under = [];
+    const OK_FURO = ['ETL2@0'];
+    H.PIPES.forEach((p) => {
+      const r = p.dn / 2;
+      for (let i = 1; i < p.pts.length; i++) {
+        const a = p.pts[i - 1], b = p.pts[i], hor = Math.hypot(b[0] - a[0], b[1] - a[1]) >= 1;
+        if (hor) [H.L1, H.L2, H.LR].forEach((L) => { if (Math.max(a[2], b[2]) + r > L - 160 && Math.min(a[2], b[2]) - r < L + 40 && a[0] > 1500) slabHits.add(p.id + '@' + L); });
+        const n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 10));
+        for (let k = 0; k <= n; k++) {
+          const t = k / n, x = a[0] + (b[0] - a[0]) * t, y = a[1] + (b[1] - a[1]) * t, z = a[2] + (b[2] - a[2]) * t;
+          Object.entries(st.vigas).forEach(([lv, vs]) => vs.forEach((v) => {
+            if (x <= v.x0 - r || x >= v.x1 + r || y <= v.y0 - r || y >= v.y1 + r) return;
+            if (z + r > +lv - v.h && z - r < +lv) beamHits.add(p.id + '@' + lv);
+            else if (+lv === 0 && z < -v.h && z + r > -v.h - 50) under.push(p.id);
+          }));
+        }
+      }
+    });
+    const bad1 = [...beamHits].filter((k) => !OK_FURO.includes(k));
+    check('nenhum tubo atravessa viga ou baldrame fora da travessia aprovada', !bad1.length, bad1.join(','));
+    check('nenhum ramal corre deitado dentro da laje treliçada', !slabHits.size, [...slabHits].join(','));
+    check('tubos enterrados passam ≥ 5 cm abaixo dos baldrames', !under.length, [...new Set(under)].join(','));
   } else console.log('SKIP pilares: private/estrutura.json ausente');
 }
 console.log(bad ? 'test-hidro: ' + bad + ' falha(s)' : 'test-hidro: todos os testes ok');
