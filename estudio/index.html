@@ -10012,6 +10012,8 @@ kbd {
     add('Ventilação', 'Junção simples 45° esgoto DN100×50 (CV-1 no VP-1)', 'un', 1);
     const nCS = BOX.filter((b) => b.k === 'CS').length;
     add('Esgoto', 'Caixa sifonada 150×150×50 com grelha (saída DN75)', 'un', nCS);
+    add('Esgoto', 'Prolongamento para caixa sifonada 150 mm (caixas que atravessam a laje e a CS-T2)', 'un', BOX.filter((b) => b.k === 'CS' && (b.fl !== 'T' || b.z < -200)).length);
+    SLEEVES.forEach((c) => add('Fixação e insumos', 'Camisa (tubo luva) Ø' + c.d + ' mm — travessia de ' + c.onde, 'un', 1));
     add('Caixas enterradas', 'Caixa de inspeção 60×60 cm com tampa de concreto (alvenaria ou pré-moldada)', 'un', BOX.filter((b) => b.k === 'CI').length);
     add('Caixas enterradas', 'Caixa de gordura simples Ø40 cm, 31 L (NBR 8160) com tampa', 'un', 1);
     add('Caixas enterradas', 'Tampa reforçada para a CI-4 (passagem de veículos na rampa)', 'un', 1);
@@ -10070,10 +10072,44 @@ kbd {
     return out.sort((a, b) => a.onde.localeCompare(b.onde) || a.x - b.x);
   }
 
+  // geometria 3D compartilhada (estúdio e página): caixas e camisas
+  const FL_LEVEL = { T: 0, 1: L1, 2: L2 };
+  /** Caixa em 3D: a sifonada vai do fundo do corpo até a grelha no piso (com prolongamento quando atravessa a laje). */
+  function boxSolid(b) {
+    if (b.k === 'CS') return { x: b.x, y: b.y, s: 150, z0: b.z - 100, z1: FL_LEVEL[b.fl] || 0, round: false };
+    return { x: b.x, y: b.y, s: b.k === 'CI' ? 600 : 500, z0: b.z - 100, z1: ZG, round: b.k === 'CG' };
+  }
+  // camisa no baldrame (única travessia, a meia altura): ramal do lavatório da suíte do térreo na parede x = 5,475 m
+  const CAMISAS_BALDRAME = [{ edge: 'ETL2', x: 5475, len: 150, dn: 50 }];
+  /** Camisas (tubo luva) onde o tubo atravessa laje ou baldrame. → [{x,y,z0,z1,d,axis:'z'|'x', onde}] */
+  function sleeves() {
+    const out = [], inside = (x, y) => x > 1500 && x < 7500 && y > 2850 && y < 10500;
+    PIPES.forEach((p) => {
+      for (let i = 1; i < p.pts.length; i++) {
+        const a = p.pts[i - 1], b = p.pts[i];
+        if (Math.hypot(b[0] - a[0], b[1] - a[1]) >= 1) continue;
+        [L1, L2, LR].forEach((L) => {
+          if (Math.min(a[2], b[2]) < L - 80 && Math.max(a[2], b[2]) > L - 80 && inside(a[0], a[1]))
+            out.push({ x: a[0], y: a[1], z0: L - 170, z1: L + 10, d: p.dn + 50, axis: 'z', onde: 'laje', id: p.id });
+        });
+      }
+    });
+    CAMISAS_BALDRAME.forEach((c) => {
+      const p = PIPES.find((q) => q.id === c.edge);
+      if (!p) return;
+      for (let i = 1; i < p.pts.length; i++) {
+        const a = p.pts[i - 1], b = p.pts[i];
+        if ((a[0] - c.x) * (b[0] - c.x) > 0 || a[0] === b[0]) continue;
+        const t = (c.x - a[0]) / (b[0] - a[0]);
+        out.push({ x: c.x, y: a[1] + (b[1] - a[1]) * t, z: a[2] + (b[2] - a[2]) * t, len: c.len, d: c.dn + 10, axis: 'x', onde: 'baldrame', id: p.id });
+        break;
+      }
+    });
+    return out;
+  }
   const AF = solveAF();
   solveES();
   const VENT = ventDistances();
-  const QT = quantities(AF);
   const PASS = passagens();
 
   // prancha de cada trecho pela altura: ramais logo abaixo da laje (até 45 cm) pertencem ao pavimento de cima
@@ -10087,6 +10123,8 @@ kbd {
     return L;
   }
   const PIPES = pipeList();
+  const SLEEVES = sleeves();
+  const QT = quantities(AF);
 
   // ================================================================================================ camada do estúdio
   const SYS_COLOR = { AF: '#2f80d8', ES: '#9a5b2c', VE: '#2f9e5f', AL: '#7a4fc2' };
@@ -10314,12 +10352,22 @@ kbd {
     const inBand = (z) => z >= lo && z < hi;
     BOX.forEach((b) => {
       if (!inBand(b.z)) return;
-      const s = b.k === 'CS' ? 150 : b.k === 'CI' ? 600 : 500, top = b.k === 'CS' ? b.z + 120 : ZG, h = top - b.z + 100;
-      const mesh = b.k === 'CG'
-        ? new THREE.Mesh(new THREE.CylinderGeometry((s / 2) * MM, (s / 2) * MM, h * MM, 20), mat(SYS_COLOR.ES, 0.45))
-        : new THREE.Mesh(new THREE.BoxGeometry(s * MM, h * MM, s * MM), mat(SYS_COLOR.ES, 0.45));
-      mesh.position.set(b.x * MM, ((top + b.z - 100) / 2) * MM, b.y * MM);
+      const q = boxSolid(b), h = (q.z1 - q.z0) * MM;
+      const mesh = q.round
+        ? new THREE.Mesh(new THREE.CylinderGeometry((q.s / 2) * MM, (q.s / 2) * MM, h, 20), mat(SYS_COLOR.ES, 0.45))
+        : new THREE.Mesh(new THREE.BoxGeometry(q.s * MM, h, q.s * MM), mat(SYS_COLOR.ES, 0.45));
+      mesh.position.set(q.x * MM, ((q.z0 + q.z1) / 2) * MM, q.y * MM);
       put(mesh);
+    });
+    // camisas nas lajes e no baldrame
+    SLEEVES.forEach((c) => {
+      const zc = c.axis === 'z' ? (c.z0 + c.z1) / 2 : c.z;
+      if (!inBand(zc)) return;
+      const len = c.axis === 'z' ? c.z1 - c.z0 : c.len;
+      const m = new THREE.Mesh(new THREE.CylinderGeometry((c.d / 2) * MM, (c.d / 2) * MM, len * MM, 14), mat('#8a8f98', 0.55));
+      m.position.set(c.x * MM, zc * MM, c.y * MM);
+      if (c.axis === 'x') m.quaternion.setFromUnitVectors(up, new THREE.Vector3(1, 0, 0));
+      put(m);
     });
     FX.forEach((f) => {
       const n = AFN[f.af];
@@ -10341,7 +10389,7 @@ kbd {
     L1, L2, LR, ZG, VT, PLATAFORMA, CX_BASE, NA_MIN, PESSOAS, PER_CAPITA, TIPOS, FX, FXBY, AFN, AFE, ALN, ALE, pb, ES, ESBY,
     BOX, BOXBY, SHAFTS, DI, vmax, jFWH, dist3, polyLen, fmtm, fmtn, afPts, solveAF, solveES, LIM_VENT, projOn, lenFrom,
     lenUpTo, ventDistances, angleAt, quantities, passagens, AF, VENT, QT, PASS, floorOf, pipeList, PIPES,
-    SYS_COLOR, SYS_NAME, planKey, planSegments, columnTags, draw2dWorld, draw2dScreen, build3d,
+    SYS_COLOR, SYS_NAME, planKey, planSegments, columnTags, draw2dWorld, draw2dScreen, build3d, boxSolid, sleeves, SLEEVES,
   };
 })();
 

@@ -568,10 +568,18 @@ function init3D() {
   // caixas, reservatório e aparelhos
   const boxMat = new THREE.MeshStandardMaterial({ color: 0x8a6a4a });
   BOX.forEach((b) => {
-    const sz = b.k === 'CI' ? 600 : b.k === 'CG' ? 500 : 150;
-    const top = b.k === 'CS' ? b.z + 120 : ZG;
-    const m = b.k === 'CG' ? new THREE.Mesh(new THREE.CylinderGeometry(M(250), M(250), M(top - b.z + 100), 20), boxMat) : new THREE.Mesh(new THREE.BoxGeometry(M(sz), M(top - b.z + 100), M(sz)), boxMat);
-    m.position.set(M(b.x), M((top + b.z - 100) / 2), M(b.y)); groups.BOX.add(m);
+    const q = DD.hidro.boxSolid(b), h = M(q.z1 - q.z0);
+    const m = q.round ? new THREE.Mesh(new THREE.CylinderGeometry(M(q.s / 2), M(q.s / 2), h, 20), boxMat) : new THREE.Mesh(new THREE.BoxGeometry(M(q.s), h, M(q.s)), boxMat);
+    m.position.set(M(q.x), M((q.z0 + q.z1) / 2), M(q.y)); groups.BOX.add(m);
+  });
+  // camisas (tubo luva) nas lajes e no baldrame
+  const sleeveMat = new THREE.MeshStandardMaterial({ color: 0x8a8f98, transparent: true, opacity: 0.55 });
+  DD.hidro.SLEEVES.forEach((c) => {
+    const len = c.axis === 'z' ? c.z1 - c.z0 : c.len;
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(M(c.d / 2), M(c.d / 2), M(len), 16), sleeveMat);
+    m.position.set(M(c.x), M(c.axis === 'z' ? (c.z0 + c.z1) / 2 : c.z), M(c.y));
+    if (c.axis === 'x') m.rotation.z = Math.PI / 2;
+    groups.BOX.add(m);
   });
   const cx = new THREE.Mesh(new THREE.CylinderGeometry(0.775, 0.7, 1.05, 32), new THREE.MeshStandardMaterial({ color: 0x4a90d9, transparent: true, opacity: 0.85 }));
   cx.position.set(2.5, M(CX_BASE) + 0.525, 7.9); groups.AF.add(cx);
@@ -1007,7 +1015,7 @@ const h0 = (location.hash || '').slice(1);
 setTab(PRANCHAS.some((p) => p.id === h0) ? h0 : 'T');
 setSrcBadge();
 loadCloudPlan();
-window.__hs = { AF, ES, VENT, QT, PASS, FX, setTab, useDoc, loadCloudPlan, refDoc: REF_DOC, src: DOC_SRC }; // para conferência
+window.__hs = { AF, ES, VENT, QT, PASS, FX, setTab, useDoc, loadCloudPlan, refDoc: REF_DOC, src: DOC_SRC, get r3() { return R3; } }; // para conferência
 </script>
 </body>
 </html>
