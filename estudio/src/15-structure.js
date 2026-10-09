@@ -1,5 +1,6 @@
 // ===== 15-structure.js — projeto estrutural (pilares, vigas, sapatas) e compatibilização =====
 // Dados do projeto estrutural lidos das pranchas (formas nos níveis 0/2880/5760/8640, pilares, sapatas).
+// Revisão de obra (out/2026): a laje do 2º passa para o nível 6340 e a cobertura para 9220 (REVISOES).
 // Os dados NÃO ficam no repositório público (a prancha proíbe disponibilizá-los a terceiros): entram
 //   a) embutidos no build privado  → window.DD_STRUCT (python tools/build.py out.html --estrutura private/estrutura.json)
 //   b) importados pelo usuário      → arquivo .json guardado no navegador (DD.structure.importData)
@@ -22,10 +23,37 @@
   const num = (v) => typeof v === 'number' && isFinite(v);
   const rectOK = (r) => r && num(r.x0) && num(r.x1) && num(r.y0) && num(r.y1) && r.x1 > r.x0 && r.y1 > r.y0;
 
+  // Revisões de nível decididas na obra depois da rev. 00 das pranchas (só cotas; armaduras e posições iguais).
+  // Aplicadas na leitura, para os dados guardados (nuvem, arquivo) continuarem idênticos às pranchas originais.
+  const REVISOES = [
+    // out/2026: pé-direito do 1º — fundo da laje do 2º a 3,30 m do piso (no osso): nível 5,76 → 6,34 (+58 cm);
+    // tudo o que está desse nível para cima (vigas, topo dos pilares, cobertura) sobe junto
+    { desde: 5760, delta: 580, nota: 'Laje do 2º no nível 6,34 (pé-direito do 1º maior, +58 cm)' },
+  ];
+  /** Aplica as revisões de nível (uma vez: dados já revisados trazem a cota nova e não mudam). */
+  function revisar(raw) {
+    let out = raw;
+    REVISOES.forEach((rv) => {
+      const niveis = out.niveis || Object.keys(out.vigas || {}).map(Number);
+      if (niveis.indexOf(rv.desde) < 0) return;
+      const up = (z) => (num(z) && z >= rv.desde ? z + rv.delta : z);
+      const vigas = {};
+      Object.keys(out.vigas || {}).forEach((k) => (vigas[String(up(Number(k)))] = out.vigas[k]));
+      out = Object.assign({}, out, {
+        niveis: niveis.map(up),
+        vigas,
+        pilares: (out.pilares || []).map((c) => Object.assign({}, c, { topo: up(c.topo) })),
+        revisoes: (out.revisoes || []).concat(rv.nota),
+      });
+    });
+    return out;
+  }
+
   /** Valida o JSON do projeto estrutural. → { data, error } */
-  function validate(raw) {
-    if (!raw || typeof raw !== 'object') return { error: 'Arquivo vazio ou inválido.' };
-    if (raw.formato !== FORMAT) return { error: 'Formato não reconhecido (esperado "' + FORMAT + '").' };
+  function validate(input) {
+    if (!input || typeof input !== 'object') return { error: 'Arquivo vazio ou inválido.' };
+    if (input.formato !== FORMAT) return { error: 'Formato não reconhecido (esperado "' + FORMAT + '").' };
+    const raw = revisar(input);
     const cols = (raw.pilares || []).filter((c) => rectOK(c) && typeof c.n === 'string' && num(c.topo));
     const beams = {};
     Object.keys(raw.vigas || {}).forEach((k) => {
@@ -36,6 +64,7 @@
     return {
       data: {
         fonte: String(raw.fonte || ''),
+        revisoes: raw.revisoes || [],
         levels: (raw.niveis || Object.keys(beams).map(Number)).slice().sort((a, b) => a - b),
         slab: raw.laje && num(raw.laje.h) ? raw.laje.h : 160,
         slabType: (raw.laje && raw.laje.tipo) || '',
@@ -482,6 +511,8 @@
     FORMAT,
     load,
     validate,
+    revisar,
+    REVISOES,
     importData,
     clearImported,
     hasData: () => !!S.data,

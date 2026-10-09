@@ -7,9 +7,12 @@
 
   const FLOORS = [
     { id: 'f0', name: 'Térreo', short: 'T', level: 0, height: 2880, ceiling: 2780 },
-    { id: 'f1', name: '1º Pavimento', short: '1', level: 2880, height: 2880, ceiling: 2780 },
-    { id: 'f2', name: '2º Pavimento', short: '2', level: 5760, height: 2880, ceiling: 2780 },
+    // as built (out/2026): pé-direito do 1º maior — fundo da laje do 2º a 3,30 m do piso no osso, laje do 2º
+    // sobe do nível 5,76 para 6,34 (+58 cm); o 2º pavimento e a cobertura sobem junto (cobertura em 9,22)
+    { id: 'f1', name: '1º Pavimento', short: '1', level: 2880, height: 3460, ceiling: 3360 },
+    { id: 'f2', name: '2º Pavimento', short: '2', level: 6340, height: 2880, ceiling: 2780 },
   ];
+  const FLOOR_HEIGHT = Object.fromEntries(FLOORS.map((f) => [f.id, f.height]));
 
   // Door & window schedule (Quadro de esquadrias) — width x height x sill (mm)
   const SCHEDULE = {
@@ -35,9 +38,11 @@
 
   // Wall helpers. kind: structural | partition | muro | railing
   const KIND_HEIGHT = { structural: 2880, partition: 2880, muro: 1800, railing: 1000 };
+  // paredes de vedação e estruturais vão de piso a piso (pé-direito do pavimento)
+  const wallHeight = (floor, kind) => (kind === 'structural' || kind === 'partition' ? FLOOR_HEIGHT[floor] || KIND_HEIGHT[kind] : KIND_HEIGHT[kind]);
   // extra: optional overrides, e.g. { height } or { mureta } (solid base height of a railing, mm)
   function W(id, floor, x1, y1, x2, y2, kind, thick, extra) {
-    return Object.assign({ id, floor, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, thick: thick || 150, height: KIND_HEIGHT[kind], kind }, extra || {});
+    return Object.assign({ id, floor, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, thick: thick || 150, height: wallHeight(floor, kind), kind }, extra || {});
   }
   const H = (id, floor, y, x1, x2, kind, t, extra) => W(id, floor, x1, y, x2, y, kind, t, extra);
   const V = (id, floor, x, y1, y2, kind, t, extra) => W(id, floor, x, y1, x, y2, kind, t, extra);
@@ -199,9 +204,11 @@
   ];
 
   // U-shaped stair: 16 risers of 18 cm, treads of 27 cm, landing (step 8) at 1,44 m. `floor` = the floor it rises from.
+  // st1 (1º → 2º, 3,46 m): mesmo vão da laje, 19 espelhos de 18,2 cm — o patamar vira 4 degraus em leque
+  // (2 em cada quarto), porque o vão da laje do 2º é fixo (viga na borda da escada).
   const stairs = [
     { id: 'st0', floor: 'f0', x: 6150, y: 8750, length: 2700, width: 1600, tread: 270, lowerCount: 7, upperCount: 7 },
-    { id: 'st1', floor: 'f1', x: 6150, y: 8750, length: 2700, width: 1600, tread: 270, lowerCount: 7, upperCount: 7 },
+    { id: 'st1', floor: 'f1', x: 6150, y: 8750, length: 2700, width: 1600, tread: 270, lowerCount: 7, upperCount: 7, winders: 2 },
   ];
 
   // Ground-level site surfaces (decorative; drawn under the plan on the Térreo and as ground in 3D).
@@ -224,8 +231,8 @@
   // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
   // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
   const AS_BUILT = {
-    version: 4,
-    date: '2026-09-30',
+    version: 5,
+    date: '2026-10-09',
     changes: [
       { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
       { floor: 'f0', text: 'Porta do quarto (P1) saiu de baixo da escada: agora fica logo após o pilar P7, ao lado da porta da cozinha.' },
@@ -234,6 +241,8 @@
       { floor: 'f0', text: 'Cozinha: nova janela 1,20 × 1,20 depois do pilar P6 (uma antes e outra depois do pilar).' },
       { floor: 'f0', text: 'Parede entre a sala e a garagem: duas janelas verticais 0,50 × 1,20, uma em cada trecho entre os pilares; a mais perto da porta da sala fica 30 cm mais baixa (peitoril 0,80, a outra 1,10).' },
       { floor: 'f1', text: 'Quartos 1 e 2 (frente): cada porta balcão da sacada (P5, 1,60 m) virou uma porta de 0,80 × 2,10 e uma janela de 1,20 × 1,20 (peitoril 1,10).' },
+      { floor: 'f1', text: 'Pé-direito do 1º pavimento maior: fundo da laje do 2º a 3,30 m do piso (no osso). A laje do 2º sobe do nível 5,76 para 6,34 (+58 cm), e o 2º pavimento e a cobertura sobem junto.' },
+      { floor: 'f1', text: 'Escada do 1º para o 2º: 19 espelhos de 18,2 cm no mesmo vão da laje; o patamar virou 4 degraus em leque.' },
     ],
     // o que cada rodada troca (uma planta salva recebe só as rodadas que ainda não tem)
     rounds: [
@@ -247,6 +256,8 @@
       { version: 2, walls: [], openings: ['o0_j9_garagemA', 'o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
       { version: 3, walls: [], openings: ['o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
       { version: 4, walls: [], openings: ['o1_j8_q1', 'o1_p10_q1', 'o1_p10_q2', 'o1_j8_q2'], removedOpenings: ['o1_p5_q1', 'o1_p5_q2'], roomSeeds: [] },
+      // níveis: pisos e pé-direito dos pavimentos, altura das paredes de piso a piso e a escada do 1º
+      { version: 5, walls: [], openings: [], removedOpenings: [], roomSeeds: [], floors: true, stairs: ['st1'] },
     ],
   };
 
@@ -280,6 +291,19 @@
         doc.openings = doc.openings.filter((o) => r.removedOpenings.indexOf(o.id) < 0);
         put(doc.openings, fresh.openings.filter((o) => wallIds.has(o.wall)), r.openings);
         put(doc.roomSeeds, fresh.roomSeeds, r.roomSeeds);
+        if (r.stairs) put(doc.stairs, fresh.stairs, r.stairs);
+        if (r.floors) {
+          const old = new Map(doc.floors.map((f) => [f.id, f.height]));
+          doc.floors = doc.floors.map((f) => {
+            const n = fresh.floors.find((q) => q.id === f.id);
+            return n ? Object.assign({}, f, { level: n.level, height: n.height, ceiling: n.ceiling }) : f;
+          });
+          // paredes que iam de piso a piso continuam indo (as mais baixas, como peitoris e muretas, ficam)
+          doc.walls.forEach((w) => {
+            const f = doc.floors.find((q) => q.id === w.floor);
+            if (f && (w.kind === 'structural' || w.kind === 'partition') && w.height === old.get(w.floor)) w.height = f.height;
+          });
+        }
       });
     const moves = (DD.catalog && DD.catalog.AS_BUILT_MOVES) || [];
     const same = (it, row) => {
@@ -323,5 +347,5 @@
     };
   }
 
-  DD.data = { FLOORS, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
+  DD.data = { FLOORS, FLOOR_HEIGHT, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
 })();

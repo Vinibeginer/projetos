@@ -543,6 +543,8 @@
 
   /**
    * Stair geometry of a U-stair (as drawn on the approved plan: "Espelho=18cm", 16 risers for 2,88 m).
+   * With `winders` (n per quarter turn) the landing becomes 2n winder treads (`poly`, flight 2) fanning from the
+   * inner corner; risers = lower + upper + 2n + 1.
    * Lower flight = far row (y+w/2..y+w) rising along +x with `lowerCount` treads; the landing spans both rows at
    * the far end and is step lowerCount+1 (at 1,44 m); the upper flight = near row going back along −x with
    * `upperCount` treads; the next floor is the last riser. riser = floorHeight / (lowerCount + upperCount + 2).
@@ -551,26 +553,53 @@
   G.stairGeometry = (st, floorHeight) => {
     const T = st.tread, W = st.width, hw = W / 2;
     const lower = Math.max(1, Math.round(st.lowerCount) || 1), upper = Math.max(1, Math.round(st.upperCount) || 1);
-    const risers = lower + upper + 2;
+    // winders = degraus em leque por quarto de volta no lugar do patamar (0 = patamar plano, 1 degrau)
+    const wq = Math.max(0, Math.min(4, Math.round(st.winders) || 0));
+    const turnSteps = wq ? 2 * wq : 1;
+    const risers = lower + upper + turnSteps + 1;
     const r = floorHeight / risers;
     const landX = Math.min(st.x + Math.max(lower, upper) * T, st.x + st.length - T);
+    const end = st.x + st.length;
     const treads = [];
     for (let i = 0; i < lower; i++)
       treads.push({ n: i + 1, x0: st.x + i * T, y0: st.y + hw, x1: st.x + (i + 1) * T, y1: st.y + W, z: (i + 1) * r, flight: 0 });
     const landZ = (lower + 1) * r;
-    const landing = [{ x0: landX, y0: st.y, x1: st.x + st.length, y1: st.y + W, z: landZ }];
+    let landing = [{ x0: landX, y0: st.y, x1: end, y1: st.y + W, z: landZ }];
+    if (wq) {
+      // leque: raios a partir do canto interno (fim do corrimão central), de +y (chegada do 1º lance) a −y (saída)
+      landing = [];
+      const N = { x: landX, y: st.y + hw };
+      const hit = (deg) => {
+        const a = (deg * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+        let t = Infinity;
+        if (c > 1e-9) t = Math.min(t, (end - N.x) / c);
+        if (sn > 1e-9) t = Math.min(t, (st.y + W - N.y) / sn);
+        if (sn < -1e-9) t = Math.min(t, (st.y - N.y) / sn);
+        return { x: N.x + c * t, y: N.y + sn * t };
+      };
+      const corners = [{ x: end, y: st.y + W }, { x: end, y: st.y }].map((p) => Object.assign(p, { deg: (Math.atan2(p.y - N.y, p.x - N.x) * 180) / Math.PI }));
+      const step = 180 / turnSteps;
+      for (let k = 0; k < turnSteps; k++) {
+        const da = 90 - k * step, db = 90 - (k + 1) * step;
+        const poly = [{ x: N.x, y: N.y }, hit(da)].concat(corners.filter((p) => p.deg < da - 1e-6 && p.deg > db + 1e-6).map((p) => ({ x: p.x, y: p.y })), [hit(db)]);
+        const xs = poly.map((p) => p.x), ys = poly.map((p) => p.y);
+        treads.push({ n: lower + 1 + k, poly, x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), z: (lower + 1 + k) * r, flight: 2 });
+      }
+    }
     for (let j = 0; j < upper; j++) {
       const x1 = landX - j * T;
-      treads.push({ n: lower + 2 + j, x0: x1 - T, y0: st.y, x1, y1: st.y + hw, z: (lower + 2 + j) * r, flight: 1 });
+      treads.push({ n: lower + turnSteps + 1 + j, x0: x1 - T, y0: st.y, x1, y1: st.y + hw, z: (lower + turnSteps + 1 + j) * r, flight: 1 });
     }
-    const midX = (landX + st.x + st.length) / 2;
+    const midX = (landX + end) / 2;
     return {
       riser: r,
       risers,
       treads,
       landing,
-      landingLabel: { n: lower + 1, x0: landX, y0: st.y + hw, x1: landX + T, y1: st.y + W, z: landZ },
-      footprint: { x0: st.x, y0: st.y, x1: st.x + st.length, y1: st.y + W },
+      // a volta (patamar ou leque): zIn = primeiro degrau da volta, zOut = último (de onde sai o lance de cima)
+      turn: { x0: landX, x1: end, y0: st.y, y1: st.y + W, zIn: landZ, zOut: (lower + turnSteps) * r, winders: wq },
+      landingLabel: wq ? null : { n: lower + 1, x0: landX, y0: st.y + hw, x1: landX + T, y1: st.y + W, z: landZ },
+      footprint: { x0: st.x, y0: st.y, x1: end, y1: st.y + W },
       // walk line: up the lower flight, round the landing, back along the upper flight
       walkline: [
         { x: st.x + T * 0.3, y: st.y + hw * 1.5 },
@@ -580,6 +609,14 @@
       ],
     };
   };
+  /** Ponto (x, y) dentro de um degrau (retângulo ou polígono do leque). */
+  G.inTread = (t, x, y) => x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1 && (!t.poly || U.pointInPolygon({ x, y }, t.poly) || onPolyEdge(t.poly, x, y));
+  const onPolyEdge = (poly, x, y) =>
+    poly.some((a, i) => {
+      const b = poly[(i + 1) % poly.length], dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+      const t = L2 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L2)) : 0;
+      return Math.hypot(a.x + dx * t - x, a.y + dy * t - y) < 0.5;
+    });
   /** Height (mm above the stair's floor level) of the stair surface at (x,y), or null if outside. */
   G.stairHeightAt = (st, floorHeight, x, y) => {
     const g = G.stairGeometry(st, floorHeight);
@@ -587,7 +624,7 @@
     if (x < f.x0 || x > f.x1 || y < f.y0 || y > f.y1) return null;
     let z = null;
     g.treads.concat(g.landing).forEach((t) => {
-      if (x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1) z = Math.max(z == null ? -1 : z, t.z);
+      if (G.inTread(t, x, y)) z = Math.max(z == null ? -1 : z, t.z);
     });
     return z == null ? 0 : z;
   };
@@ -1235,7 +1272,10 @@
         if (!(num(st.length) && st.length > 0 && num(st.width) && st.width > 0 && num(st.tread) && st.tread > 50)) return null;
         const lower = int(st.lowerCount, 1, 30), upper = int(st.upperCount, 1, 30);
         if (lower == null || upper == null) return null;
-        return { id: st.id, floor: st.floor, x: st.x, y: st.y, length: st.length, width: st.width, tread: st.tread, lowerCount: lower, upperCount: upper };
+        const out = { id: st.id, floor: st.floor, x: st.x, y: st.y, length: st.length, width: st.width, tread: st.tread, lowerCount: lower, upperCount: upper };
+        const wq = int(st.winders, 1, 4);
+        if (wq) out.winders = wq;
+        return out;
       });
       const HEX = /^#[0-9a-fA-F]{6}$/;
       const furniture = keep(input.furniture, (f) => {

@@ -532,14 +532,14 @@
   P.stairSlabs = (st, g) => {
     const T = st.tread, hw = st.width / 2;
     const k = g.riser / T;
-    const land = g.landing[0];
-    const landX = land.x0, landZ = land.z;
+    // a volta (patamar plano ou leque): o lance de baixo chega em zIn, o de cima sai de zOut
+    const landX = g.turn.x0, zIn = g.turn.zIn, landZ = g.turn.zOut;
     const end = st.x + st.length;
     const thick = STAIR_SLAB_MM * Math.sqrt(1 + k * k);
     const lowerTop = (xx) => (xx - st.x) * k - STAIR_DROP;
     const upperTop = (xx) => (landX - xx) * k + landZ - STAIR_DROP;
     return [
-      { flight: 0, x0: st.x + STAIR_DROP / k, x1: Math.min(end, st.x + landZ / k), y0: st.y + hw, y1: st.y + st.width, top: lowerTop, thick },
+      { flight: 0, x0: st.x + STAIR_DROP / k, x1: Math.min(end, st.x + zIn / k), y0: st.y + hw, y1: st.y + st.width, top: lowerTop, thick },
       { flight: 1, x0: st.x, x1: landX, y0: st.y, y1: st.y + hw, top: upperTop, thick },
     ];
   };
@@ -550,7 +550,8 @@
     const g = DD.geom.stairGeometry(st, floorHeight);
     const out = [];
     g.treads.concat(g.landing).forEach((t) => {
-      if (x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1) out.push(t.z - STAIR_DROP);
+      // degraus do leque são maciços até a base da volta
+      if (DD.geom.inTread(t, x, y)) out.push((t.flight === 2 ? g.turn.zIn : t.z) - STAIR_DROP);
     });
     P.stairSlabs(st, g).forEach((s) => {
       if (x >= s.x0 && x <= s.x1 && y >= s.y0 && y <= s.y1) out.push(s.top(x) - s.thick);
@@ -887,6 +888,47 @@
       });
     });
     return quadsGeometry(byMat);
+  }
+  /**
+   * Vertical prisms from convex plan polygons (m: [[x, z]…]) between heights y0..y1 (m) — the winder treads.
+   * Faces are wound outward (normal checked per triangle). uv = plan metres on the caps, (along, y) on the sides.
+   */
+  function prismsGeometry(prisms) {
+    const T = S.THREE;
+    const pos = [], nor = [], uv = [];
+    const tri = (a, b, c, n, uva, uvb, uvc) => {
+      const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+      const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+      if (cx * n[0] + cy * n[1] + cz * n[2] < 0) { [b, c] = [c, b]; [uvb, uvc] = [uvc, uvb]; }
+      [a, b, c].forEach((p) => { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); });
+      uv.push(uva[0], uva[1], uvb[0], uvb[1], uvc[0], uvc[1]);
+    };
+    prisms.forEach((pr) => {
+      const P = pr.poly, n = P.length;
+      if (n < 3 || !(pr.y1 - pr.y0 > 1e-5)) return;
+      const cx = P.reduce((s, p) => s + p[0], 0) / n, cz = P.reduce((s, p) => s + p[1], 0) / n;
+      for (let i = 1; i < n - 1; i++) {
+        const a = P[0], b = P[i], c = P[i + 1];
+        tri([a[0], pr.y1, a[1]], [b[0], pr.y1, b[1]], [c[0], pr.y1, c[1]], [0, 1, 0], [a[0], -a[1]], [b[0], -b[1]], [c[0], -c[1]]);
+        tri([a[0], pr.y0, a[1]], [b[0], pr.y0, b[1]], [c[0], pr.y0, c[1]], [0, -1, 0], [a[0], a[1]], [b[0], b[1]], [c[0], c[1]]);
+      }
+      for (let i = 0; i < n; i++) {
+        const a = P[i], b = P[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (L < 1e-6) continue;
+        let nx = (b[1] - a[1]) / L, nz = -(b[0] - a[0]) / L;
+        if (((a[0] + b[0]) / 2 - cx) * nx + ((a[1] + b[1]) / 2 - cz) * nz < 0) { nx = -nx; nz = -nz; }
+        const q = [[a[0], pr.y0, a[1]], [b[0], pr.y0, b[1]], [b[0], pr.y1, b[1]], [a[0], pr.y1, a[1]]];
+        const u = [[0, pr.y0], [L, pr.y0], [L, pr.y1], [0, pr.y1]];
+        tri(q[0], q[1], q[2], [nx, 0, nz], u[0], u[1], u[2]);
+        tri(q[0], q[2], q[3], [nx, 0, nz], u[0], u[2], u[3]);
+      }
+    });
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+    geo.addGroup(0, pos.length / 3, 0);
+    return geo;
   }
   /** Upward-facing quads from plan rectangles (mm) at height y (m). uv = (X, −Z) metres. */
   function rectsTopGeometry(rects, y) {
@@ -1343,9 +1385,17 @@
   function buildStair(group, st, floor) {
     const g = DD.geom.stairGeometry(st, floor.height);
     const lvl = floor.level * MM;
-    const stones = [], bodies = [];
+    const stones = [], bodies = [], wStones = [], wBodies = [];
+    const turnBase = lvl + (g.turn.zIn - STAIR_DROP) * MM;
     g.treads.concat(g.landing).forEach((t) => {
       const top = lvl + t.z * MM;
+      if (t.poly) {
+        // degrau em leque: prisma maciço até a base da volta
+        const poly = t.poly.map((p) => [p.x * MM, p.y * MM]);
+        wStones.push({ poly, y0: top - TREAD_STONE, y1: top });
+        wBodies.push({ poly, y0: turnBase, y1: top - TREAD_STONE });
+        return;
+      }
       const x0 = t.x0 * MM, x1 = t.x1 * MM, z0 = t.y0 * MM, z1 = t.y1 * MM;
       stones.push({ x0, x1, y0: top - TREAD_STONE, y1: top, z0, z1 });
       bodies.push({ x0, x1, y0: top - TREAD_STONE - TREAD_BODY, y1: top - TREAD_STONE, z0, z1 });
@@ -1354,6 +1404,10 @@
     sg.name = 'stair:' + st.id;
     sg.add(mesh(boxesGeometry(stones), [MAT.stone()]));
     sg.add(mesh(boxesGeometry(bodies), [MAT.stairBody()]));
+    if (wStones.length) {
+      sg.add(mesh(prismsGeometry(wStones), [MAT.stone()]));
+      sg.add(mesh(prismsGeometry(wBodies), [MAT.stairBody()]));
+    }
     stairSlabs(st, g, lvl).forEach((s) => sg.add(s));
     stairRails(st, g, lvl).forEach((s) => sg.add(s));
     tagTree(sg, { occluder: true });
@@ -1380,29 +1434,34 @@
   }
   /**
    * Black metal handrails 0,90 m above the nosings on the open edges: outer edge of the lower flight and of the
-   * landing, inner edge of the upper flight. Works for any lowerCount/upperCount (landing = one full-width rect).
+   * landing (or the winders), inner edge of the upper flight. Works for any lowerCount/upperCount.
    */
   function stairRails(st, g, lvl) {
     const r = g.riser * MM, T = st.tread * MM, x = st.x * MM, y = st.y * MM, W = st.width * MM;
     const k = r / T, hRail = 0.9;
-    const land = g.landing[0];
-    const landX = land.x0 * MM, landZ = lvl + land.z * MM, endX = land.x1 * MM;
+    const landX = g.turn.x0 * MM, landZ = lvl + g.turn.zIn * MM, endX = g.turn.x1 * MM, outZ = lvl + g.turn.zOut * MM;
+    // altura do piso da volta na borda externa (patamar plano ou degraus do leque), m
+    const floorH = g.riser * g.risers;
+    const turnAt = (px) => lvl + (DD.geom.stairHeightAt(st, floorH, px / MM, st.y + st.width - 30) || g.turn.zIn) * MM;
     const lowerTop = (xx) => lvl + (xx - x) * k + r; // nosing line of the lower flight
-    const upperTop = (xx) => landZ + r + (landX - xx) * k; // nosing line of the upper flight
+    const upperTop = (xx) => outZ + r + (landX - xx) * k; // nosing line of the upper flight
     const zo0 = y + W - 0.05, zo1 = y + W - 0.01; // outer edge (far row)
     const zi0 = y + W / 2 - 0.02, zi1 = y + W / 2 + 0.02; // inner edge (between the rows)
     const out = [
       inclinedBox(x, lowerTop(x) + hRail, landX, lowerTop(landX) + hRail, zo0, zo1, 0.04, MAT.metal()),
       inclinedBox(landX, upperTop(landX) + hRail, x, upperTop(x) + hRail, zi0, zi1, 0.04, MAT.metal()),
     ];
-    const posts = [{ x0: landX, x1: endX - 0.02, y0: landZ + hRail - 0.04, y1: landZ + hRail, z0: zo0, z1: zo1 }]; // landing rail
+    const posts = [];
+    if (g.turn.winders) out.push(inclinedBox(landX, turnAt(landX + 0.05) + hRail, endX - 0.02, turnAt(endX - 0.05) + hRail, zo0, zo1, 0.04, MAT.metal()));
+    else posts.push({ x0: landX, x1: endX - 0.02, y0: landZ + hRail - 0.04, y1: landZ + hRail, z0: zo0, z1: zo1 }); // landing rail
     const nLow = g.treads.filter((t) => t.flight === 0).length, nUp = g.treads.filter((t) => t.flight === 1).length;
     for (let i = 0; i <= nLow; i += 2) {
       const px = Math.min(x + i * T + T * 0.5, landX - 0.03);
       posts.push({ x0: px - 0.012, x1: px + 0.012, y0: lowerTop(px) - r, y1: lowerTop(px) + hRail, z0: y + W - 0.042, z1: y + W - 0.018 });
     }
     for (let px = landX + 0.25; px < endX - 0.05; px += 0.27) {
-      posts.push({ x0: px - 0.012, x1: px + 0.012, y0: landZ, y1: landZ + hRail, z0: y + W - 0.042, z1: y + W - 0.018 });
+      const pz = turnAt(px);
+      posts.push({ x0: px - 0.012, x1: px + 0.012, y0: pz, y1: pz + hRail, z0: y + W - 0.042, z1: y + W - 0.018 });
     }
     for (let j = 0; j <= nUp; j += 2) {
       const px = Math.max(landX - j * T - T * 0.5, x + 0.03);
@@ -3298,6 +3357,15 @@
     transitionTo2D,
     exportPNG,
     recenter,
+    /** Conferência visual (capturas): câmera orbital em `pos`, olhando para `target` (metros, y = altura). */
+    _look: (pos, target) => {
+      if (!S.ready || !S.orbit) return false;
+      S.camera.position.set(pos[0], pos[1], pos[2]);
+      S.orbit.target.set(target[0], target[1], target[2]);
+      S.orbit.update();
+      requestRender();
+      return true;
+    },
     /** Pure helpers (no three.js / DOM) — exposed for Node tests. */
     _pure: P,
     _stats: stats,

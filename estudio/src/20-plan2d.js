@@ -1284,10 +1284,15 @@
     const st = entry.st, g = stairGeo(st, entry.h), fp = g.footprint;
     ctx.fillStyle = COL.stairFill;
     ctx.fillRect(fp.x0, fp.y0, fp.x1 - fp.x0, fp.y1 - fp.y0);
-    const breakN = entry.mode === 'up' ? st.lowerCount + Math.ceil(st.upperCount / 2) : Infinity;
+    const breakN = entry.mode === 'up' ? stairBreakN(g, st) : Infinity;
     const solid = new Path2D(), dashed = new Path2D();
     g.landing.forEach((l) => solid.rect(l.x0, l.y0, l.x1 - l.x0, l.y1 - l.y0));
-    g.treads.forEach((t) => (t.n > breakN ? dashed : solid).rect(t.x0, t.y0, t.x1 - t.x0, t.y1 - t.y0));
+    g.treads.forEach((t) => {
+      const path = t.n > breakN ? dashed : solid;
+      if (!t.poly) return path.rect(t.x0, t.y0, t.x1 - t.x0, t.y1 - t.y0);
+      t.poly.forEach((p, i) => (i ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y)));
+      path.closePath();
+    });
     ctx.strokeStyle = COL.ink;
     ctx.lineWidth = 0.8 * px;
     ctx.stroke(solid);
@@ -1301,6 +1306,11 @@
     if (entry.mode === 'up') drawStairBreak(rc, st, g, breakN);
     drawWalkline(rc, g, entry.mode);
   }
+  /** Degrau onde a planta corta a escada que sobe: no meio do lance de cima (patamar ou leque antes dele). */
+  const stairBreakN = (g, st) => {
+    const firstUp = Math.min(...g.treads.filter((t) => t.flight === 1).map((t) => t.n));
+    return firstUp + Math.ceil(st.upperCount / 2) - 2;
+  };
   function drawStairBreak(rc, st, g, breakN) {
     const t = g.treads.find((tr) => tr.n === breakN);
     if (!t) return;
@@ -1653,9 +1663,14 @@
         ctx.fillStyle = COL.muted;
         const cells = g.landingLabel ? g.treads.concat([Object.assign({ flight: 0 }, g.landingLabel)]) : g.treads;
         cells.forEach((t) => {
-          // near the outer stringer so the number never sits on the walk line (row centre)
-          const y = t.flight === 0 ? t.y1 - (t.y1 - t.y0) * 0.24 : t.y0 + (t.y1 - t.y0) * 0.24;
-          const c = w2s(v, { x: (t.x0 + t.x1) / 2, y });
+          // near the outer stringer so the number never sits on the walk line (row centre); leque: perto da borda
+          let at;
+          if (t.poly) {
+            const n = t.poly.length, cx = t.poly.reduce((a, p) => a + p.x, 0) / n, cy = t.poly.reduce((a, p) => a + p.y, 0) / n;
+            const o = t.poly[0];
+            at = { x: o.x + (cx - o.x) * 1.15, y: o.y + (cy - o.y) * 1.15 };
+          } else at = { x: (t.x0 + t.x1) / 2, y: t.flight === 0 ? t.y1 - (t.y1 - t.y0) * 0.24 : t.y0 + (t.y1 - t.y0) * 0.24 };
+          const c = w2s(v, at);
           ctx.fillText(String(t.n), c.x, c.y);
         });
       }

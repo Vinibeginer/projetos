@@ -4,6 +4,7 @@ global.window = global;
 require('../src/00-data.js');
 global.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 require('../src/01-core.js');
+require('../src/15-structure.js');
 require('../src/17-hidro.js');
 const H = global.DD.hidro;
 let bad = 0;
@@ -20,7 +21,7 @@ check('coletor com 53 UHC', H.ESBY['CL-4'].uhc === 53);
 check('passagens em laje calculadas', H.PASS.length > 0 && H.PASS.every((p) => /^Laje/.test(p.onde)));
 
 // ---------- camada do estúdio
-const floors = H.L1 === 2880 && global.DD.data.FLOORS;
+const floors = H.L1 === 2880 && H.L2 === global.DD.data.FLOORS[2].level && global.DD.data.FLOORS;
 check('níveis iguais aos do estúdio', floors.map((f) => f.level).join() === [0, H.L1, H.L2].join());
 check('prancha de cada pavimento pelo nível', floors.map((f) => H.planKey(f)).join() === 'T,1,2');
 ['T', '1', '2'].forEach((k) => {
@@ -52,7 +53,7 @@ check('3D: camisas desenhadas', made.filter((m) => m.material.color === '#8a8f98
 
 // nenhum tubo cruza janela ou porta (nem desce colado ao batente)
 {
-  const doc = global.DD.data.initialState(), LV = { f0: 0, f1: 2880, f2: 5760 }, hits = new Set();
+  const doc = global.DD.data.initialState(), LV = Object.fromEntries(global.DD.data.FLOORS.map((f) => [f.id, f.level])), hits = new Set();
   H.PIPES.forEach((p) => p.pts.slice(1).forEach((b, i) => {
     const a = p.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 20));
     for (let k = 0; k <= n; k++) {
@@ -72,7 +73,7 @@ check('3D: camisas desenhadas', made.filter((m) => m.material.color === '#8a8f98
 {
   const fs = require('fs'), stf = require('path').join(__dirname, '..', 'private', 'estrutura.json');
   if (fs.existsSync(stf)) {
-    const pil = JSON.parse(fs.readFileSync(stf, 'utf8')).pilares, hits = [];
+    const pil = global.DD.structure.revisar(JSON.parse(fs.readFileSync(stf, 'utf8'))).pilares, hits = [];
     H.PIPES.forEach((p) => {
       for (let i = 1; i < p.pts.length; i++) {
         const a = p.pts[i - 1], b = p.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 20));
@@ -84,7 +85,7 @@ check('3D: camisas desenhadas', made.filter((m) => m.material.color === '#8a8f98
     });
     check('nenhum tubo atravessa pilar (projeto estrutural privado)', !hits.length, [...new Set(hits)].join(','));
     // vigas e baldrames: só a travessia aprovada do lavatório da suíte do térreo (camisa a meia altura do baldrame)
-    const st = JSON.parse(fs.readFileSync(stf, 'utf8')), beamHits = new Set(), slabHits = new Set(), under = [];
+    const st = global.DD.structure.revisar(JSON.parse(fs.readFileSync(stf, 'utf8'))), beamHits = new Set(), slabHits = new Set(), under = [];
     const OK_FURO = ['ETL2@0'];
     H.PIPES.forEach((p) => {
       const r = p.dn / 2;
