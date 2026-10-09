@@ -100,7 +100,7 @@ test('house box: 2º Pav includes the terrace railing, excludes the lot muros; a
   ok(b0.minY > 2000 && b0.maxY < 17000, 'Térreo: no ground muros');
   near(b0.z1, 2880, 1e-6, 'Térreo height');
   const all = P.houseBox(doc, 'f0', true);
-  near(all.z1, 5760 + 2880 + 120 + 1000, 1e-6, 'roof slab + 1,00 m platibanda');
+  near(all.z1, 6340 + 2880 + 120 + 1000, 1e-6, 'roof slab + 1,00 m platibanda'); // laje do 2º em 6,34 (pé-direito do 1º maior)
 });
 test('easeInOutCubic endpoints and symmetry', () => {
   near(P.easeInOutCubic(0), 0);
@@ -237,7 +237,7 @@ test('walls stop the walker', () => {
 
 // ------------------------------------------------------------------ spawn
 test('spawn points per floor are collision free and face the requested direction', () => {
-  [['f0', 0, 0], ['f1', 2880, Math.PI / 2], ['f2', 5760, 0]].forEach(([fid, level, yaw]) => {
+  [['f0', 0, 0], ['f1', 2880, Math.PI / 2], ['f2', 6340, 0]].forEach(([fid, level, yaw]) => {
     const sp = P.spawnFor(doc, fid, colliders);
     near(sp.feet, level, 1e-9, fid + ' level');
     near(sp.yaw, yaw, 1e-9, fid + ' yaw');
@@ -277,6 +277,27 @@ test('stair slabs: lower slab ends under the landing, upper slab starts at the l
     const s = t.flight === 0 ? lo : up;
     const back = t.flight === 0 ? t.x1 : t.x0;
     near(s.top(back), t.z - 150, 1e-6, 'slab under the back edge of tread ' + t.n);
+  });
+});
+test('st1 (1º → 2º, pé-direito 3,46 m): 19 espelhos, leque de 4 degraus, lajes ligadas à volta', () => {
+  const st = doc.stairs.find((x) => x.id === 'st1'), f1 = doc.floors.find((f) => f.id === 'f1');
+  near(f1.height, 3460, 1e-6, 'pé-direito do 1º (piso a piso)');
+  const g = DD.geom.stairGeometry(st, f1.height);
+  ok(g.risers === 19 && g.riser > 180 && g.riser < 183, 'espelho ' + g.riser.toFixed(1));
+  const fan = g.treads.filter((t) => t.flight === 2);
+  ok(fan.length === 4 && fan.every((t) => t.poly && t.poly.length >= 3) && !g.landing.length, 'leque no lugar do patamar');
+  const [lo, up] = P.stairSlabs(st, g);
+  near(lo.top(lo.x1), g.turn.zIn - 150, 1e-6, 'laje de baixo chega na base do leque');
+  near(up.top(up.x1), g.turn.zOut - 150, 1e-6, 'laje de cima sai do último degrau do leque');
+  // subindo pela linha de passo, cada degrau sobe no máximo um espelho
+  let prev = 0;
+  g.walkline.slice(0, -1).forEach((a, i) => {
+    const b = g.walkline[i + 1];
+    for (let t = 0; t <= 1; t += 0.01) {
+      const z = DD.geom.stairHeightAt(st, f1.height, a.x + (b.x - a.x) * t, a.y + (b.y - a.y) * t);
+      ok(z - prev <= g.riser + 1e-6 && z >= prev - 1e-6, 'degrau contínuo em ' + Math.round(z));
+      prev = Math.max(prev, z);
+    }
   });
 });
 test('walker never stands with the head inside the stair: underside ≥ feet + 1,80 m wherever it can walk', () => {

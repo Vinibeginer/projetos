@@ -14,7 +14,10 @@
   //  Normas de referência: ABNT NBR 5626:2020 (água fria), NBR 8160:1999 (esgoto e ventilação),
   //  NBR 7229/13969 (só se não houver rede coletora). Pesos relativos: NBR 5626:1998 (método usual).
   // =====================================================================================================
-  const L1 = 2880, L2 = 5760, LR = 8640; // pisos do 1º, 2º e laje de cobertura
+  // pisos do 1º e do 2º e laje de cobertura — os mesmos da planta (00-data.js). As built out/2026: pé-direito do 1º
+  // maior, laje do 2º no nível 6,34 e cobertura em 9,22
+  const FLS = (DD.data && DD.data.FLOORS) || [{ level: 0 }, { level: 2880 }, { level: 6340, height: 2880 }];
+  const L1 = FLS[1].level, L2 = FLS[2].level, LR = FLS[2].level + FLS[2].height;
   const ZG = -360;                       // calçada externa
   const VT = LR + 300;                   // topo dos terminais de ventilação (30 cm acima da cobertura não utilizável)
   const PLATAFORMA = 1000;               // altura da plataforma da caixa d'água sobre a laje
@@ -68,7 +71,7 @@
     f2VS: [2725, 10360, L2 + 200], f2LAV: [1640, 9300, L2 + 600], f2MLR: [1800, 8610, L2 + 1100], f2TQ: [2700, 8610, L2 + 1100],
     R1: [1900, 10360, L1 + 1200], K1: [1720, 10360, L1 + 1200], B1L: [1640, 9670, L1 + 1200], B1V: [1640, 9130, L1 + 1200], SW2: [2325, 7575, L1 + 1200],
     f1LAVB: [1640, 9670, L1 + 600], f1VSB: [1640, 9130, L1 + 200], f1CHB: [2325, 7620, L1 + 2100], f1CHS: [2325, 7530, L1 + 2100],
-    SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L2 - 580], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
+    SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L1 + 2300], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
     R0: [1900, 10360, 1200], f0VS: [2650, 10360, 200], fTLAV1: [1640, 9150, 600],
     // AF-2 — shaft externo SH-2 (pias do térreo e do 2º)
     A2T: [1300, 6850, LR + 100], A2_2: [1300, 6850, L2 + 600], G2: [1300, 6500, L2 + 600], f2PIA: [1650, 5850, L2 + 600],
@@ -103,9 +106,9 @@
     { id: '1-chb', a: 'SW2', b: 'f1CHB', via: [[2325, 7620, L1 + 1200]], fl: '1', rp: true },
     { id: '1-chs', a: 'SW2', b: 'f1CHS', via: [[2325, 7530, L1 + 1200]], fl: '1', rp: true },
     { id: '1-sr', a: 'SW2', b: 'SR', via: [[2450, 7575, L1 + 1200]], fl: '1', rg: 'Registro da suíte (1º)' },
-    { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L2 - 580], [2450, 7450, L2 - 580], [1700, 7450, L2 - 580]], fl: '1' },
-    { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1700, 5550, L2 - 580], [1640, 5550, L2 - 580], [1640, 5550, L1 + 200]], fl: '1' }, // desce a 15 cm do batente da janela J3 e passa por baixo dela
-    { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L2 - 580], [1640, 5200, L2 - 580]], fl: '1' },
+    { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L1 + 2300], [2450, 7450, L1 + 2300], [1700, 7450, L1 + 2300]], fl: '1' },
+    { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1700, 5550, L1 + 2300], [1640, 5550, L1 + 2300], [1640, 5550, L1 + 200]], fl: '1' }, // desce a 15 cm do batente da janela J3 e passa por baixo dela
+    { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L1 + 2300], [1640, 5200, L1 + 2300]], fl: '1' },
     { id: 'T-r', a: 'A1_0', b: 'R0', fl: 'T', rg: 'Registro do lavabo (térreo)' },
     { id: 'T-vs1', a: 'R0', b: 'fTVS1', via: [[2650, 10360, 1200]], fl: 'T' },
     { id: 'T-lav1', a: 'R0', b: 'fTLAV1', via: [[1720, 10360, 1200], [1720, 9980, 1200], [1640, 9980, 1200], [1640, 9150, 1200]], fl: 'T' }, // contorna o pilar do canto pela boneca

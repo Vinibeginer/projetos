@@ -22,7 +22,8 @@ source of truth and are already tested (`node tools/test-core.js`: all 18 plan r
 ## 1. Units, coordinates, conventions
 - World units: **millimetres**. Origin = back-left corner of the 9 000 × 20 000 mm lot. **+x → right, +y → down**
   (towards the street). This is exactly the orientation of the PDF drawing (top = back of lot).
-- Floors: `doc.floors = [{id:'f0',name:'Térreo',level:0,height:2880,ceiling:2780}, {id:'f1',…level:2880}, {id:'f2',…level:5760}]`.
+- Floors: `doc.floors = [{id:'f0',name:'Térreo',level:0,height:2880,ceiling:2780}, {id:'f1',…level:2880,height:3460,ceiling:3360}, {id:'f2',…level:6340,height:2880}]` (as built out/2026: pé-direito do 1º maior; structural/partition walls go floor to floor).
+- Stairs: `{id, floor, x, y, length, width, tread, lowerCount, upperCount, winders?}` — `winders` = winder treads per quarter turn in place of the landing (st1: 2 → 19 risers of 18,2 cm).
   `level` = finished-floor elevation (mm); `height` = floor-to-floor; `ceiling` = clear ceiling height (slab 100 mm).
 - **Rotation** `rot` (degrees) is clockwise on screen (because +y is down). Helpers: `DD.util.localToWorld(cx,cy,rot,lx,ly)`
   / `worldToLocal`.
@@ -228,7 +229,7 @@ user through *Mais opções › Importar projeto* (a JSON with `formato: "estrut
 `localStorage['dd.decor.casa.estrutura.v1']`). Without data the studio keeps the inferred structure.
 ```js
 // JSON (mm, same axes as the doc; levels = floor.level of the architecture, 0 = ground floor finish)
-{ formato:'estrutura-casa/1', fonte, niveis:[0,2880,5760,8640], laje:{tipo,h},
+{ formato:'estrutura-casa/1', fonte, niveis:[0,2880,5760,8640] /* rev. 00; REVISOES shifts ≥5760 by +580 on read */, laje:{tipo,h},
   pilares:[{n,x0,x1,y0,y1,topo,secao}], vigas:{ '<level>':[{x0,x1,y0,y1,h}] },
   sapatas:[{n,x0,x1,y0,y1}], vigasEquilibrio:[{n,x0,x1,y0,y1,h}] }
 DD.structure = {

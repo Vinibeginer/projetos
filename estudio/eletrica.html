@@ -198,8 +198,8 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 //  Pontos, circuitos e cálculos: src/18-eletrica.js (o mesmo módulo desenha a camada "Elétrica" no estúdio).
 // =====================================================================================================
 const E = DD.eletrica;
-const { PONTOS, PBY, CIRC, FASES, DRS, ALIM, QT, COLOR, LEVEL, TETO, QDC_XY, QDT_XY, RISER, ALIM_ROUTE, TEL_ROUTE, TEL, fmtm, fmtn } = E;
-const L1 = 2880, L2 = 5760, LR = 8640;
+const { PONTOS, PBY, CIRC, FASES, DRS, ALIM, QT, COLOR, LEVEL, TETO, TT, QDC_XY, QDT_XY, RISER, ALIM_ROUTE, TEL_ROUTE, TEL, fmtm, fmtn } = E;
+const L1 = LEVEL[1], L2 = LEVEL[2], LR = LEVEL[2] + DD.data.FLOORS[2].height; // pisos e cobertura (laje do 2º em 6,34 desde out/2026)
 const REF_DOC = window.DD && DD.data ? DD.data.initialState() : null;
 let doc = REF_DOC;
 const DOC_SRC = { kind: 'ref', at: null };
@@ -490,27 +490,27 @@ function buildNet3D(groups) {
     g.add(cyl);
   };
   ['T', '1', '2'].forEach((fl) => {
-    const lv = LEVEL[fl], zc = lv + TETO;
+    const lv = LEVEL[fl], zc = lv + TT[fl];
     E.conduits(fl).forEach(({ c, a, b }) => {
       const g = groups[c.tipo], m = mat(COLOR[c.tipo]);
       tube(g, [a.x, a.y, zc], [b.x, a.y, zc], 0.014, m);
       tube(g, [b.x, a.y, zc], [b.x, b.y, zc], 0.014, m);
-      if (!b.root && b.z < TETO) tube(g, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.012, m);
+      if (!b.root && b.z < TT[fl]) tube(g, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.012, m);
     });
   });
   ['T', '1', '2'].forEach((fl) => {
-    const lv = LEVEL[fl], zc = lv + TETO, m = mat(COLOR.tel);
+    const lv = LEVEL[fl], zc = lv + TT[fl], m = mat(COLOR.tel);
     E.telConduits(fl).forEach(({ a, b }) => {
       tube(groups.tel, [a.x, a.y, zc], [b.x, a.y, zc], 0.012, m);
       tube(groups.tel, [b.x, a.y, zc], [b.x, b.y, zc], 0.012, m);
-      if (!b.root && b.z < TETO) tube(groups.tel, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.011, m);
+      if (!b.root && b.z < TT[fl]) tube(groups.tel, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.011, m);
     });
   });
   CIRC.forEach((c) => c.baixo.forEach((b) => { const lv = LEVEL[b.fl]; b.path.slice(1).forEach((q, i) => tube(groups[c.tipo], [b.path[i][0], b.path[i][1], lv + b.path[i][2]], [q[0], q[1], lv + q[2]], 0.014, mat(COLOR[c.tipo]))); }));
   // cada quadro sobe até a laje do seu andar; alimentadores QDC → QD-1 e QDC → QD-2; QDT até a laje do 2º
-  ['T', '1', '2'].forEach((fl) => { const B = E.BOARDS[fl]; tube(groups.qdc, [B.x, B.y, LEVEL[fl] + 1500], [B.x, B.y, LEVEL[fl] + TETO], 0.02, mat('#555555')); });
+  ['T', '1', '2'].forEach((fl) => { const B = E.BOARDS[fl]; tube(groups.qdc, [B.x, B.y, LEVEL[fl] + 1500], [B.x, B.y, LEVEL[fl] + TT[fl]], 0.02, mat('#555555')); });
   Object.values(E.SUB_ROUTE).forEach((Rt) => Rt.slice(1).forEach((q, i) => tube(groups.qdc, Rt[i], q, 0.025, mat('#2b2b2b'))));
-  tube(groups.tel, [QDT_XY.x, QDT_XY.y, 1700], [QDT_XY.x, QDT_XY.y, L2 + TETO], 0.018, mat(COLOR.tel));
+  tube(groups.tel, [QDT_XY.x, QDT_XY.y, 1700], [QDT_XY.x, QDT_XY.y, L2 + TT[2]], 0.018, mat(COLOR.tel));
   ALIM_ROUTE.slice(1).forEach((q, i) => tube(groups.qdc, ALIM_ROUTE[i], q, 0.025, mat('#2b2b2b')));
   TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
   PONTOS.forEach((p) => {
@@ -893,7 +893,7 @@ function sheetPoints(sh) {
     p, x: p.x, y: p.y, kind: tipoOf(p),
     item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no teto') : p.k === 'tel' ? TEL_LABEL[p.tel] : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
     circ: p.circ ? 'C' + p.circ.n : p.k === 'qdc' ? 'QDC' : p.k === 'tel' ? 'rede' : '—',
-    alt: (p.k === 'il' && p.tipo === 'teto') || p.tel === 'ap' || p.tel === 'roteador' || p.z >= TETO ? 'teto' : fmtm(p.z) + ' m',
+    alt: (p.k === 'il' && p.tipo === 'teto') || p.tel === 'ap' || p.tel === 'roteador' || p.z >= TT[p.fl] ? 'teto' : fmtm(p.z) + ' m',
   }));
 }
 function renderSheetImage(sh, pts) {

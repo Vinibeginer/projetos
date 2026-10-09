@@ -2678,9 +2678,12 @@ kbd {
 
   const FLOORS = [
     { id: 'f0', name: 'Térreo', short: 'T', level: 0, height: 2880, ceiling: 2780 },
-    { id: 'f1', name: '1º Pavimento', short: '1', level: 2880, height: 2880, ceiling: 2780 },
-    { id: 'f2', name: '2º Pavimento', short: '2', level: 5760, height: 2880, ceiling: 2780 },
+    // as built (out/2026): pé-direito do 1º maior — fundo da laje do 2º a 3,30 m do piso no osso, laje do 2º
+    // sobe do nível 5,76 para 6,34 (+58 cm); o 2º pavimento e a cobertura sobem junto (cobertura em 9,22)
+    { id: 'f1', name: '1º Pavimento', short: '1', level: 2880, height: 3460, ceiling: 3360 },
+    { id: 'f2', name: '2º Pavimento', short: '2', level: 6340, height: 2880, ceiling: 2780 },
   ];
+  const FLOOR_HEIGHT = Object.fromEntries(FLOORS.map((f) => [f.id, f.height]));
 
   // Door & window schedule (Quadro de esquadrias) — width x height x sill (mm)
   const SCHEDULE = {
@@ -2706,9 +2709,11 @@ kbd {
 
   // Wall helpers. kind: structural | partition | muro | railing
   const KIND_HEIGHT = { structural: 2880, partition: 2880, muro: 1800, railing: 1000 };
+  // paredes de vedação e estruturais vão de piso a piso (pé-direito do pavimento)
+  const wallHeight = (floor, kind) => (kind === 'structural' || kind === 'partition' ? FLOOR_HEIGHT[floor] || KIND_HEIGHT[kind] : KIND_HEIGHT[kind]);
   // extra: optional overrides, e.g. { height } or { mureta } (solid base height of a railing, mm)
   function W(id, floor, x1, y1, x2, y2, kind, thick, extra) {
-    return Object.assign({ id, floor, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, thick: thick || 150, height: KIND_HEIGHT[kind], kind }, extra || {});
+    return Object.assign({ id, floor, a: { x: x1, y: y1 }, b: { x: x2, y: y2 }, thick: thick || 150, height: wallHeight(floor, kind), kind }, extra || {});
   }
   const H = (id, floor, y, x1, x2, kind, t, extra) => W(id, floor, x1, y, x2, y, kind, t, extra);
   const V = (id, floor, x, y1, y2, kind, t, extra) => W(id, floor, x, y1, x, y2, kind, t, extra);
@@ -2870,9 +2875,11 @@ kbd {
   ];
 
   // U-shaped stair: 16 risers of 18 cm, treads of 27 cm, landing (step 8) at 1,44 m. `floor` = the floor it rises from.
+  // st1 (1º → 2º, 3,46 m): mesmo vão da laje, 19 espelhos de 18,2 cm — o patamar vira 4 degraus em leque
+  // (2 em cada quarto), porque o vão da laje do 2º é fixo (viga na borda da escada).
   const stairs = [
     { id: 'st0', floor: 'f0', x: 6150, y: 8750, length: 2700, width: 1600, tread: 270, lowerCount: 7, upperCount: 7 },
-    { id: 'st1', floor: 'f1', x: 6150, y: 8750, length: 2700, width: 1600, tread: 270, lowerCount: 7, upperCount: 7 },
+    { id: 'st1', floor: 'f1', x: 6150, y: 8750, length: 2700, width: 1600, tread: 270, lowerCount: 7, upperCount: 7, winders: 2 },
   ];
 
   // Ground-level site surfaces (decorative; drawn under the plan on the Térreo and as ground in 3D).
@@ -2895,8 +2902,8 @@ kbd {
   // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
   // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
   const AS_BUILT = {
-    version: 4,
-    date: '2026-09-30',
+    version: 5,
+    date: '2026-10-09',
     changes: [
       { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
       { floor: 'f0', text: 'Porta do quarto (P1) saiu de baixo da escada: agora fica logo após o pilar P7, ao lado da porta da cozinha.' },
@@ -2905,6 +2912,8 @@ kbd {
       { floor: 'f0', text: 'Cozinha: nova janela 1,20 × 1,20 depois do pilar P6 (uma antes e outra depois do pilar).' },
       { floor: 'f0', text: 'Parede entre a sala e a garagem: duas janelas verticais 0,50 × 1,20, uma em cada trecho entre os pilares; a mais perto da porta da sala fica 30 cm mais baixa (peitoril 0,80, a outra 1,10).' },
       { floor: 'f1', text: 'Quartos 1 e 2 (frente): cada porta balcão da sacada (P5, 1,60 m) virou uma porta de 0,80 × 2,10 e uma janela de 1,20 × 1,20 (peitoril 1,10).' },
+      { floor: 'f1', text: 'Pé-direito do 1º pavimento maior: fundo da laje do 2º a 3,30 m do piso (no osso). A laje do 2º sobe do nível 5,76 para 6,34 (+58 cm), e o 2º pavimento e a cobertura sobem junto.' },
+      { floor: 'f1', text: 'Escada do 1º para o 2º: 19 espelhos de 18,2 cm no mesmo vão da laje; o patamar virou 4 degraus em leque.' },
     ],
     // o que cada rodada troca (uma planta salva recebe só as rodadas que ainda não tem)
     rounds: [
@@ -2918,6 +2927,8 @@ kbd {
       { version: 2, walls: [], openings: ['o0_j9_garagemA', 'o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
       { version: 3, walls: [], openings: ['o0_j9_garagemB'], removedOpenings: [], roomSeeds: [] },
       { version: 4, walls: [], openings: ['o1_j8_q1', 'o1_p10_q1', 'o1_p10_q2', 'o1_j8_q2'], removedOpenings: ['o1_p5_q1', 'o1_p5_q2'], roomSeeds: [] },
+      // níveis: pisos e pé-direito dos pavimentos, altura das paredes de piso a piso e a escada do 1º
+      { version: 5, walls: [], openings: [], removedOpenings: [], roomSeeds: [], floors: true, stairs: ['st1'] },
     ],
   };
 
@@ -2951,6 +2962,19 @@ kbd {
         doc.openings = doc.openings.filter((o) => r.removedOpenings.indexOf(o.id) < 0);
         put(doc.openings, fresh.openings.filter((o) => wallIds.has(o.wall)), r.openings);
         put(doc.roomSeeds, fresh.roomSeeds, r.roomSeeds);
+        if (r.stairs) put(doc.stairs, fresh.stairs, r.stairs);
+        if (r.floors) {
+          const old = new Map(doc.floors.map((f) => [f.id, f.height]));
+          doc.floors = doc.floors.map((f) => {
+            const n = fresh.floors.find((q) => q.id === f.id);
+            return n ? Object.assign({}, f, { level: n.level, height: n.height, ceiling: n.ceiling }) : f;
+          });
+          // paredes que iam de piso a piso continuam indo (as mais baixas, como peitoris e muretas, ficam)
+          doc.walls.forEach((w) => {
+            const f = doc.floors.find((q) => q.id === w.floor);
+            if (f && (w.kind === 'structural' || w.kind === 'partition') && w.height === old.get(w.floor)) w.height = f.height;
+          });
+        }
       });
     const moves = (DD.catalog && DD.catalog.AS_BUILT_MOVES) || [];
     const same = (it, row) => {
@@ -2994,7 +3018,7 @@ kbd {
     };
   }
 
-  DD.data = { FLOORS, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
+  DD.data = { FLOORS, FLOOR_HEIGHT, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
 })();
 
 // ---- 01-core.js ----
@@ -3543,6 +3567,8 @@ kbd {
 
   /**
    * Stair geometry of a U-stair (as drawn on the approved plan: "Espelho=18cm", 16 risers for 2,88 m).
+   * With `winders` (n per quarter turn) the landing becomes 2n winder treads (`poly`, flight 2) fanning from the
+   * inner corner; risers = lower + upper + 2n + 1.
    * Lower flight = far row (y+w/2..y+w) rising along +x with `lowerCount` treads; the landing spans both rows at
    * the far end and is step lowerCount+1 (at 1,44 m); the upper flight = near row going back along −x with
    * `upperCount` treads; the next floor is the last riser. riser = floorHeight / (lowerCount + upperCount + 2).
@@ -3551,26 +3577,53 @@ kbd {
   G.stairGeometry = (st, floorHeight) => {
     const T = st.tread, W = st.width, hw = W / 2;
     const lower = Math.max(1, Math.round(st.lowerCount) || 1), upper = Math.max(1, Math.round(st.upperCount) || 1);
-    const risers = lower + upper + 2;
+    // winders = degraus em leque por quarto de volta no lugar do patamar (0 = patamar plano, 1 degrau)
+    const wq = Math.max(0, Math.min(4, Math.round(st.winders) || 0));
+    const turnSteps = wq ? 2 * wq : 1;
+    const risers = lower + upper + turnSteps + 1;
     const r = floorHeight / risers;
     const landX = Math.min(st.x + Math.max(lower, upper) * T, st.x + st.length - T);
+    const end = st.x + st.length;
     const treads = [];
     for (let i = 0; i < lower; i++)
       treads.push({ n: i + 1, x0: st.x + i * T, y0: st.y + hw, x1: st.x + (i + 1) * T, y1: st.y + W, z: (i + 1) * r, flight: 0 });
     const landZ = (lower + 1) * r;
-    const landing = [{ x0: landX, y0: st.y, x1: st.x + st.length, y1: st.y + W, z: landZ }];
+    let landing = [{ x0: landX, y0: st.y, x1: end, y1: st.y + W, z: landZ }];
+    if (wq) {
+      // leque: raios a partir do canto interno (fim do corrimão central), de +y (chegada do 1º lance) a −y (saída)
+      landing = [];
+      const N = { x: landX, y: st.y + hw };
+      const hit = (deg) => {
+        const a = (deg * Math.PI) / 180, c = Math.cos(a), sn = Math.sin(a);
+        let t = Infinity;
+        if (c > 1e-9) t = Math.min(t, (end - N.x) / c);
+        if (sn > 1e-9) t = Math.min(t, (st.y + W - N.y) / sn);
+        if (sn < -1e-9) t = Math.min(t, (st.y - N.y) / sn);
+        return { x: N.x + c * t, y: N.y + sn * t };
+      };
+      const corners = [{ x: end, y: st.y + W }, { x: end, y: st.y }].map((p) => Object.assign(p, { deg: (Math.atan2(p.y - N.y, p.x - N.x) * 180) / Math.PI }));
+      const step = 180 / turnSteps;
+      for (let k = 0; k < turnSteps; k++) {
+        const da = 90 - k * step, db = 90 - (k + 1) * step;
+        const poly = [{ x: N.x, y: N.y }, hit(da)].concat(corners.filter((p) => p.deg < da - 1e-6 && p.deg > db + 1e-6).map((p) => ({ x: p.x, y: p.y })), [hit(db)]);
+        const xs = poly.map((p) => p.x), ys = poly.map((p) => p.y);
+        treads.push({ n: lower + 1 + k, poly, x0: Math.min(...xs), y0: Math.min(...ys), x1: Math.max(...xs), y1: Math.max(...ys), z: (lower + 1 + k) * r, flight: 2 });
+      }
+    }
     for (let j = 0; j < upper; j++) {
       const x1 = landX - j * T;
-      treads.push({ n: lower + 2 + j, x0: x1 - T, y0: st.y, x1, y1: st.y + hw, z: (lower + 2 + j) * r, flight: 1 });
+      treads.push({ n: lower + turnSteps + 1 + j, x0: x1 - T, y0: st.y, x1, y1: st.y + hw, z: (lower + turnSteps + 1 + j) * r, flight: 1 });
     }
-    const midX = (landX + st.x + st.length) / 2;
+    const midX = (landX + end) / 2;
     return {
       riser: r,
       risers,
       treads,
       landing,
-      landingLabel: { n: lower + 1, x0: landX, y0: st.y + hw, x1: landX + T, y1: st.y + W, z: landZ },
-      footprint: { x0: st.x, y0: st.y, x1: st.x + st.length, y1: st.y + W },
+      // a volta (patamar ou leque): zIn = primeiro degrau da volta, zOut = último (de onde sai o lance de cima)
+      turn: { x0: landX, x1: end, y0: st.y, y1: st.y + W, zIn: landZ, zOut: (lower + turnSteps) * r, winders: wq },
+      landingLabel: wq ? null : { n: lower + 1, x0: landX, y0: st.y + hw, x1: landX + T, y1: st.y + W, z: landZ },
+      footprint: { x0: st.x, y0: st.y, x1: end, y1: st.y + W },
       // walk line: up the lower flight, round the landing, back along the upper flight
       walkline: [
         { x: st.x + T * 0.3, y: st.y + hw * 1.5 },
@@ -3580,6 +3633,14 @@ kbd {
       ],
     };
   };
+  /** Ponto (x, y) dentro de um degrau (retângulo ou polígono do leque). */
+  G.inTread = (t, x, y) => x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1 && (!t.poly || U.pointInPolygon({ x, y }, t.poly) || onPolyEdge(t.poly, x, y));
+  const onPolyEdge = (poly, x, y) =>
+    poly.some((a, i) => {
+      const b = poly[(i + 1) % poly.length], dx = b.x - a.x, dy = b.y - a.y, L2 = dx * dx + dy * dy;
+      const t = L2 ? Math.max(0, Math.min(1, ((x - a.x) * dx + (y - a.y) * dy) / L2)) : 0;
+      return Math.hypot(a.x + dx * t - x, a.y + dy * t - y) < 0.5;
+    });
   /** Height (mm above the stair's floor level) of the stair surface at (x,y), or null if outside. */
   G.stairHeightAt = (st, floorHeight, x, y) => {
     const g = G.stairGeometry(st, floorHeight);
@@ -3587,7 +3648,7 @@ kbd {
     if (x < f.x0 || x > f.x1 || y < f.y0 || y > f.y1) return null;
     let z = null;
     g.treads.concat(g.landing).forEach((t) => {
-      if (x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1) z = Math.max(z == null ? -1 : z, t.z);
+      if (G.inTread(t, x, y)) z = Math.max(z == null ? -1 : z, t.z);
     });
     return z == null ? 0 : z;
   };
@@ -4235,7 +4296,10 @@ kbd {
         if (!(num(st.length) && st.length > 0 && num(st.width) && st.width > 0 && num(st.tread) && st.tread > 50)) return null;
         const lower = int(st.lowerCount, 1, 30), upper = int(st.upperCount, 1, 30);
         if (lower == null || upper == null) return null;
-        return { id: st.id, floor: st.floor, x: st.x, y: st.y, length: st.length, width: st.width, tread: st.tread, lowerCount: lower, upperCount: upper };
+        const out = { id: st.id, floor: st.floor, x: st.x, y: st.y, length: st.length, width: st.width, tread: st.tread, lowerCount: lower, upperCount: upper };
+        const wq = int(st.winders, 1, 4);
+        if (wq) out.winders = wq;
+        return out;
       });
       const HEX = /^#[0-9a-fA-F]{6}$/;
       const furniture = keep(input.furniture, (f) => {
@@ -8756,6 +8820,7 @@ kbd {
 // ---- 15-structure.js ----
 // ===== 15-structure.js — projeto estrutural (pilares, vigas, sapatas) e compatibilização =====
 // Dados do projeto estrutural lidos das pranchas (formas nos níveis 0/2880/5760/8640, pilares, sapatas).
+// Revisão de obra (out/2026): a laje do 2º passa para o nível 6340 e a cobertura para 9220 (REVISOES).
 // Os dados NÃO ficam no repositório público (a prancha proíbe disponibilizá-los a terceiros): entram
 //   a) embutidos no build privado  → window.DD_STRUCT (python tools/build.py out.html --estrutura private/estrutura.json)
 //   b) importados pelo usuário      → arquivo .json guardado no navegador (DD.structure.importData)
@@ -8778,10 +8843,37 @@ kbd {
   const num = (v) => typeof v === 'number' && isFinite(v);
   const rectOK = (r) => r && num(r.x0) && num(r.x1) && num(r.y0) && num(r.y1) && r.x1 > r.x0 && r.y1 > r.y0;
 
+  // Revisões de nível decididas na obra depois da rev. 00 das pranchas (só cotas; armaduras e posições iguais).
+  // Aplicadas na leitura, para os dados guardados (nuvem, arquivo) continuarem idênticos às pranchas originais.
+  const REVISOES = [
+    // out/2026: pé-direito do 1º — fundo da laje do 2º a 3,30 m do piso (no osso): nível 5,76 → 6,34 (+58 cm);
+    // tudo o que está desse nível para cima (vigas, topo dos pilares, cobertura) sobe junto
+    { desde: 5760, delta: 580, nota: 'Laje do 2º no nível 6,34 (pé-direito do 1º maior, +58 cm)' },
+  ];
+  /** Aplica as revisões de nível (uma vez: dados já revisados trazem a cota nova e não mudam). */
+  function revisar(raw) {
+    let out = raw;
+    REVISOES.forEach((rv) => {
+      const niveis = out.niveis || Object.keys(out.vigas || {}).map(Number);
+      if (niveis.indexOf(rv.desde) < 0) return;
+      const up = (z) => (num(z) && z >= rv.desde ? z + rv.delta : z);
+      const vigas = {};
+      Object.keys(out.vigas || {}).forEach((k) => (vigas[String(up(Number(k)))] = out.vigas[k]));
+      out = Object.assign({}, out, {
+        niveis: niveis.map(up),
+        vigas,
+        pilares: (out.pilares || []).map((c) => Object.assign({}, c, { topo: up(c.topo) })),
+        revisoes: (out.revisoes || []).concat(rv.nota),
+      });
+    });
+    return out;
+  }
+
   /** Valida o JSON do projeto estrutural. → { data, error } */
-  function validate(raw) {
-    if (!raw || typeof raw !== 'object') return { error: 'Arquivo vazio ou inválido.' };
-    if (raw.formato !== FORMAT) return { error: 'Formato não reconhecido (esperado "' + FORMAT + '").' };
+  function validate(input) {
+    if (!input || typeof input !== 'object') return { error: 'Arquivo vazio ou inválido.' };
+    if (input.formato !== FORMAT) return { error: 'Formato não reconhecido (esperado "' + FORMAT + '").' };
+    const raw = revisar(input);
     const cols = (raw.pilares || []).filter((c) => rectOK(c) && typeof c.n === 'string' && num(c.topo));
     const beams = {};
     Object.keys(raw.vigas || {}).forEach((k) => {
@@ -8792,6 +8884,7 @@ kbd {
     return {
       data: {
         fonte: String(raw.fonte || ''),
+        revisoes: raw.revisoes || [],
         levels: (raw.niveis || Object.keys(beams).map(Number)).slice().sort((a, b) => a - b),
         slab: raw.laje && num(raw.laje.h) ? raw.laje.h : 160,
         slabType: (raw.laje && raw.laje.tipo) || '',
@@ -9238,6 +9331,8 @@ kbd {
     FORMAT,
     load,
     validate,
+    revisar,
+    REVISOES,
     importData,
     clearImported,
     hasData: () => !!S.data,
@@ -9561,7 +9656,10 @@ kbd {
   //  Normas de referência: ABNT NBR 5626:2020 (água fria), NBR 8160:1999 (esgoto e ventilação),
   //  NBR 7229/13969 (só se não houver rede coletora). Pesos relativos: NBR 5626:1998 (método usual).
   // =====================================================================================================
-  const L1 = 2880, L2 = 5760, LR = 8640; // pisos do 1º, 2º e laje de cobertura
+  // pisos do 1º e do 2º e laje de cobertura — os mesmos da planta (00-data.js). As built out/2026: pé-direito do 1º
+  // maior, laje do 2º no nível 6,34 e cobertura em 9,22
+  const FLS = (DD.data && DD.data.FLOORS) || [{ level: 0 }, { level: 2880 }, { level: 6340, height: 2880 }];
+  const L1 = FLS[1].level, L2 = FLS[2].level, LR = FLS[2].level + FLS[2].height;
   const ZG = -360;                       // calçada externa
   const VT = LR + 300;                   // topo dos terminais de ventilação (30 cm acima da cobertura não utilizável)
   const PLATAFORMA = 1000;               // altura da plataforma da caixa d'água sobre a laje
@@ -9615,7 +9713,7 @@ kbd {
     f2VS: [2725, 10360, L2 + 200], f2LAV: [1640, 9300, L2 + 600], f2MLR: [1800, 8610, L2 + 1100], f2TQ: [2700, 8610, L2 + 1100],
     R1: [1900, 10360, L1 + 1200], K1: [1720, 10360, L1 + 1200], B1L: [1640, 9670, L1 + 1200], B1V: [1640, 9130, L1 + 1200], SW2: [2325, 7575, L1 + 1200],
     f1LAVB: [1640, 9670, L1 + 600], f1VSB: [1640, 9130, L1 + 200], f1CHB: [2325, 7620, L1 + 2100], f1CHS: [2325, 7530, L1 + 2100],
-    SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L2 - 580], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
+    SR: [2450, 7575, L1 + 1800], SUc: [1700, 5650, L1 + 2300], f1VSS: [1640, 6000, L1 + 200], f1LAVS: [1640, 5200, L1 + 600],
     R0: [1900, 10360, 1200], f0VS: [2650, 10360, 200], fTLAV1: [1640, 9150, 600],
     // AF-2 — shaft externo SH-2 (pias do térreo e do 2º)
     A2T: [1300, 6850, LR + 100], A2_2: [1300, 6850, L2 + 600], G2: [1300, 6500, L2 + 600], f2PIA: [1650, 5850, L2 + 600],
@@ -9650,9 +9748,9 @@ kbd {
     { id: '1-chb', a: 'SW2', b: 'f1CHB', via: [[2325, 7620, L1 + 1200]], fl: '1', rp: true },
     { id: '1-chs', a: 'SW2', b: 'f1CHS', via: [[2325, 7530, L1 + 1200]], fl: '1', rp: true },
     { id: '1-sr', a: 'SW2', b: 'SR', via: [[2450, 7575, L1 + 1200]], fl: '1', rg: 'Registro da suíte (1º)' },
-    { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L2 - 580], [2450, 7450, L2 - 580], [1700, 7450, L2 - 580]], fl: '1' },
-    { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1700, 5550, L2 - 580], [1640, 5550, L2 - 580], [1640, 5550, L1 + 200]], fl: '1' }, // desce a 15 cm do batente da janela J3 e passa por baixo dela
-    { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L2 - 580], [1640, 5200, L2 - 580]], fl: '1' },
+    { id: '1-su', a: 'SR', b: 'SUc', via: [[2450, 7575, L1 + 2300], [2450, 7450, L1 + 2300], [1700, 7450, L1 + 2300]], fl: '1' },
+    { id: '1-vss', a: 'SUc', b: 'f1VSS', via: [[1700, 5550, L1 + 2300], [1640, 5550, L1 + 2300], [1640, 5550, L1 + 200]], fl: '1' }, // desce a 15 cm do batente da janela J3 e passa por baixo dela
+    { id: '1-lavs', a: 'SUc', b: 'f1LAVS', via: [[1700, 5200, L1 + 2300], [1640, 5200, L1 + 2300]], fl: '1' },
     { id: 'T-r', a: 'A1_0', b: 'R0', fl: 'T', rg: 'Registro do lavabo (térreo)' },
     { id: 'T-vs1', a: 'R0', b: 'fTVS1', via: [[2650, 10360, 1200]], fl: 'T' },
     { id: 'T-lav1', a: 'R0', b: 'fTLAV1', via: [[1720, 10360, 1200], [1720, 9980, 1200], [1640, 9980, 1200], [1640, 9150, 1200]], fl: 'T' }, // contorna o pilar do canto pela boneca
@@ -10405,8 +10503,12 @@ kbd {
   const DD = (window.DD = window.DD || {});
 
   // ================================================================================================ dados
-  const LEVEL = { T: 0, 1: 2880, 2: 5760 };
-  const TETO = 2780;            // face inferior da laje (os eletrodutos correm na laje e descem nas paredes)
+  // níveis e forro de cada pavimento, os mesmos da planta (00-data.js). As built out/2026: pé-direito do 1º maior
+  // (laje do 2º no nível 6,34) — o forro do 1º fica a 3,36 m do piso
+  const FLS = (DD.data && DD.data.FLOORS) || [{ level: 0, ceiling: 2780 }, { level: 2880, ceiling: 3360 }, { level: 6340, ceiling: 2780 }];
+  const LEVEL = { T: FLS[0].level, 1: FLS[1].level, 2: FLS[2].level };
+  const TT = { T: FLS[0].ceiling, 1: FLS[1].ceiling, 2: FLS[2].ceiling }; // forro de cada pavimento (acima do piso)
+  const TETO = TT.T;            // face inferior da laje (os eletrodutos correm na laje e descem nas paredes)
   const VFN = 127, VFF = 220;   // Enel RJ (Campos dos Goytacazes): 127/220 V
   const RHO = 0.0225;           // Ω·mm²/m — cobre a 70 °C (queda de tensão em operação)
   const DV_MAX = 4, DV_TOTAL = 5; // % — circuitos terminais; total do padrão ao ponto (NBR 5410 6.2.7)
@@ -10424,8 +10526,8 @@ kbd {
   const RISER = { T: BOARDS.T, 1: BOARDS[1], 2: BOARDS[2] };
   // alimentadores dos quadros de andar, a partir do QDC (saem pelo topo do QDC, z = 1,85 m)
   const SUB_ROUTE = {
-    1: [[5925, 8750, 1850], [5925, 8750, 2880 + 1150]], // sobe na mesma parede direto para o QD-1
-    2: [[5925, 8750, 1850], [5925, 8750, 5760 - 100], [7100, 8750, 5760 - 100], [7100, 8675, 5760 - 100], [7100, 8675, 5760 + 1150]], // na laje do 2º até a parede da escada
+    1: [[5925, 8750, 1850], [5925, 8750, LEVEL[1] + 1150]], // sobe na mesma parede direto para o QD-1
+    2: [[5925, 8750, 1850], [5925, 8750, LEVEL[2] - 100], [7100, 8750, LEVEL[2] - 100], [7100, 8675, LEVEL[2] - 100], [7100, 8675, LEVEL[2] + 1150]], // na laje do 2º até a parede da escada
   };
   const FCA_SUB = 0.8;
   // Área coberta por laje em cada pavimento (os eletrodutos correm na laje do teto). Pontos fora dela — motor do
@@ -10480,49 +10582,49 @@ kbd {
     {id: "T-S7", fl: "T", k: "int", amb: "Garagem", x: 3050, y: 10500, z: 1100, liga: ["T-IL8","T-IL9"], desc: "Interruptor simples — Garagem"},
     {id: "T-T17", fl: "T", k: "tug", amb: "Garagem", x: 4150, y: 11350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
     {id: "T-T18", fl: "T", k: "tug", amb: "Garagem", x: 150, y: 14550, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
-    {id: "1-IL1", fl: "1", k: "il", tipo: "teto", amb: "Closet", x: 2900, y: 3800, z: 2780, va: 100, desc: "Ponto de luz no teto — Closet"},
+    {id: "1-IL1", fl: "1", k: "il", tipo: "teto", amb: "Closet", x: 2900, y: 3800, z: 3360, va: 100, desc: "Ponto de luz no teto — Closet"},
     {id: "1-S1", fl: "1", k: "int", amb: "Closet", x: 3050, y: 4600, z: 1100, liga: ["1-IL1"], desc: "Interruptor simples — Closet"},
     {id: "1-T1", fl: "1", k: "tug", amb: "Closet", x: 3700, y: 3000, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
     {id: "1-T2", fl: "1", k: "tug", amb: "Closet", x: 2100, y: 4600, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
-    {id: "1-IL2", fl: "1", k: "il", tipo: "teto", amb: "Closet", x: 5825, y: 3800, z: 2780, va: 100, desc: "Ponto de luz no teto — Closet"},
+    {id: "1-IL2", fl: "1", k: "il", tipo: "teto", amb: "Closet", x: 5825, y: 3800, z: 3360, va: 100, desc: "Ponto de luz no teto — Closet"},
     {id: "1-S2", fl: "1", k: "int", amb: "Closet", x: 5325, y: 4600, z: 1100, liga: ["1-IL2"], desc: "Interruptor simples — Closet"},
     {id: "1-T3", fl: "1", k: "tug", amb: "Closet", x: 6625, y: 3000, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
     {id: "1-T4", fl: "1", k: "tug", amb: "Closet", x: 4300, y: 4275, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
-    {id: "1-IL3", fl: "1", k: "il", tipo: "teto", amb: "Quarto Master", x: 4284, y: 6675, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto Master"},
-    {id: "1-IL4", fl: "1", k: "il", tipo: "teto", amb: "Quarto Master", x: 6216, y: 6675, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto Master"},
+    {id: "1-IL3", fl: "1", k: "il", tipo: "teto", amb: "Quarto Master", x: 4284, y: 6675, z: 3360, va: 110, desc: "Ponto de luz no teto — Quarto Master"},
+    {id: "1-IL4", fl: "1", k: "il", tipo: "teto", amb: "Quarto Master", x: 6216, y: 6675, z: 3360, va: 110, desc: "Ponto de luz no teto — Quarto Master"},
     {id: "1-S3", fl: "1", k: "int", amb: "Quarto Master", x: 5450, y: 4750, z: 1100, liga: ["1-IL3","1-IL4"], desc: "Interruptor simples — Quarto Master"},
     {id: "1-T5", fl: "1", k: "tug", amb: "Quarto Master", x: 6213, y: 4750, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-T6", fl: "1", k: "tug", amb: "Quarto Master", x: 7350, y: 7038, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-T7", fl: "1", k: "tug", amb: "Quarto Master", x: 5338, y: 8600, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-T8", fl: "1", k: "tug", amb: "Quarto Master", x: 3150, y: 6763, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto Master"},
     {id: "1-AC1", fl: "1", k: "tue", eq: "ac", amb: "Quarto Master", x: 7350, y: 7750, z: 2200, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto Master — parede lateral, depois da janela"},
-    {id: "1-IL5", fl: "1", k: "il", tipo: "teto", amb: "Suíte", x: 2325, y: 6125, z: 2780, va: 100, desc: "Ponto de luz no teto — Suíte"},
+    {id: "1-IL5", fl: "1", k: "il", tipo: "teto", amb: "Suíte", x: 2325, y: 6125, z: 3360, va: 100, desc: "Ponto de luz no teto — Suíte"},
     {id: "1-S4", fl: "1", k: "int", amb: "Suíte", x: 3000, y: 5775, z: 1100, liga: ["1-IL5"], desc: "Interruptor simples — Suíte"},
     {id: "1-T9", fl: "1", k: "tug", amb: "Suíte", x: 1650, y: 4750, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Suíte"},
-    {id: "1-IL6", fl: "1", k: "il", tipo: "teto", amb: "Banhº", x: 2325, y: 9000, z: 2780, va: 100, desc: "Ponto de luz no teto — Banhº"},
+    {id: "1-IL6", fl: "1", k: "il", tipo: "teto", amb: "Banhº", x: 2325, y: 9000, z: 3360, va: 100, desc: "Ponto de luz no teto — Banhº"},
     {id: "1-S5", fl: "1", k: "int", amb: "Banhº", x: 3000, y: 9325, z: 1100, liga: ["1-IL6"], desc: "Interruptor simples — Banhº"},
     {id: "1-T10", fl: "1", k: "tug", amb: "Banhº", x: 1650, y: 9820, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Banhº"},
-    {id: "1-IL7", fl: "1", k: "il", tipo: "teto", amb: "Circulação", x: 6000, y: 9550, z: 2780, va: 100, desc: "Ponto de luz no teto — Circulação"},
+    {id: "1-IL7", fl: "1", k: "il", tipo: "teto", amb: "Circulação", x: 6000, y: 9550, z: 3360, va: 100, desc: "Ponto de luz no teto — Circulação"},
     {id: "1-S6", fl: "1", k: "int", amb: "Circulação", x: 3150, y: 9325, z: 1100, liga: ["1-IL7"], desc: "Interruptor simples — Circulação"},
     {id: "1-T11", fl: "1", k: "tug", amb: "Circulação", x: 4600, y: 8750, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
     {id: "1-T12", fl: "1", k: "tug", amb: "Circulação", x: 5500, y: 10350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
-    {id: "1-IL8", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 11805, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
-    {id: "1-IL9", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 13545, z: 2780, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
+    {id: "1-IL8", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 11805, z: 3360, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
+    {id: "1-IL9", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 13545, z: 3360, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
     {id: "1-S7", fl: "1", k: "int", amb: "Quarto 1", x: 3700, y: 14850, z: 1100, liga: ["1-IL8","1-IL9"], desc: "Interruptor simples — Quarto 1"},
     {id: "1-T13", fl: "1", k: "tug", amb: "Quarto 1", x: 2238, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-T14", fl: "1", k: "tug", amb: "Quarto 1", x: 4150, y: 12663, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-T15", fl: "1", k: "tug", amb: "Quarto 1", x: 2463, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-T16", fl: "1", k: "tug", amb: "Quarto 1", x: 150, y: 12588, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-AC2", fl: "1", k: "tue", eq: "ac", amb: "Quarto 1", x: 1700, y: 14850, z: 2450, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto 1 — acima da janela (fachada)"},
-    {id: "1-IL10", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 5529, y: 12675, z: 2780, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
-    {id: "1-IL11", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 7622, y: 12675, z: 2780, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
+    {id: "1-IL10", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 5529, y: 12675, z: 3360, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
+    {id: "1-IL11", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 7622, y: 12675, z: 3360, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
     {id: "1-S8", fl: "1", k: "int", amb: "Quarto 2", x: 7400, y: 14850, z: 1100, liga: ["1-IL10","1-IL11"], desc: "Interruptor simples — Quarto 2"},
     {id: "1-T17", fl: "1", k: "tug", amb: "Quarto 2", x: 6525, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-T18", fl: "1", k: "tug", amb: "Quarto 2", x: 8850, y: 12625, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-T19", fl: "1", k: "tug", amb: "Quarto 2", x: 7625, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-T20", fl: "1", k: "tug", amb: "Quarto 2", x: 4300, y: 11675, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-AC3", fl: "1", k: "tue", eq: "ac", amb: "Quarto 2", x: 8000, y: 14850, z: 2200, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto 2 — fachada, à direita da janela"},
-    {id: "1-IL12", fl: "1", k: "il", tipo: "teto", amb: "Varanda", x: 4500, y: 15525, z: 2780, va: 100, desc: "Ponto de luz no teto — Varanda"},
+    {id: "1-IL12", fl: "1", k: "il", tipo: "teto", amb: "Varanda", x: 4500, y: 15525, z: 3360, va: 100, desc: "Ponto de luz no teto — Varanda"},
     {id: "1-S9", fl: "1", k: "int", amb: "Varanda", x: 3700, y: 15000, z: 1100, liga: ["1-IL12"], desc: "Interruptor simples — Varanda"},
     {id: "1-T21", fl: "1", k: "tug", amb: "Varanda", x: 4725, y: 15000, z: 300, va: 100, molhada: true, externa: true, desc: "TUG — Varanda"},
     {id: "1-T22", fl: "1", k: "tug", amb: "Varanda", x: 150, y: 15825, z: 300, va: 100, molhada: true, externa: true, desc: "TUG — Varanda"},
@@ -10566,7 +10668,7 @@ kbd {
     {id: "T-IL-ESC", fl: "T", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (térreo → 1º)"},
     {id: "T-S3a", fl: "T", k: "int3", amb: "Escada", x: 5560, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — pé da escada (térreo)"},
     {id: "1-S3b", fl: "1", k: "int3", amb: "Circulação", x: 5560, y: 8750, z: 1100, liga: ["T-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (1º)"},
-    {id: "1-IL-ESC", fl: "1", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2400, va: 100, desc: "Arandela da escada (1º → 2º)"},
+    {id: "1-IL-ESC", fl: "1", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2900, va: 100, desc: "Arandela da escada (1º → 2º)"},
     {id: "1-S3a", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 10350, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — pé da escada (1º)"},
     {id: "2-S3b", fl: "2", k: "int3", amb: "Varanda coberta", x: 6300, y: 8600, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (2º)"},
     {id: "T-TV1", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 12500, z: 300, va: 100, desc: "TUG da TV (1/3) — parede da TV, atrás do rack"},
@@ -10583,7 +10685,7 @@ kbd {
     {id: "1-RJ1", fl: "1", k: "tel", tel: "rj", amb: "Quarto Master", x: 3150, y: 7063, z: 300, desc: "Ponto de rede RJ45 — Quarto Master"},
     {id: "1-RJ2", fl: "1", k: "tel", tel: "rj", amb: "Quarto 1", x: 4150, y: 13163, z: 300, desc: "Ponto de rede RJ45 — Quarto 1"},
     {id: "1-RJ3", fl: "1", k: "tel", tel: "rj", amb: "Quarto 2", x: 4300, y: 11975, z: 300, desc: "Ponto de rede RJ45 — Quarto 2"},
-    {id: "1-AP1", fl: "1", k: "tel", tel: "ap", amb: "Circulação", x: 4700, y: 9550, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Circulação do 1º"},
+    {id: "1-AP1", fl: "1", k: "tel", tel: "ap", amb: "Circulação", x: 4700, y: 9550, z: 3360, desc: "Ponto de Wi-Fi no teto (access point) — Circulação do 1º"},
     {id: "2-RJ1", fl: "2", k: "tel", tel: "rj", amb: "Varanda coberta", x: 7350, y: 7800, z: 300, desc: "Ponto de rede RJ45 (TV) — Varanda coberta"},
     {id: "2-AP1", fl: "2", k: "tel", tel: "ap", amb: "Varanda coberta", x: 5250, y: 6700, z: 2780, desc: "Ponto de Wi-Fi no teto (access point) — Varanda coberta"},
   ];
@@ -10709,7 +10811,7 @@ kbd {
   /** Árvore (Prim, distância ortogonal) ligando a prumada do quadro aos pontos do circuito naquele pavimento. */
   function tree(fl, ids, riser) {
     const r = (riser || RISER)[fl];
-    const root = { id: 'R' + fl, x: r.x, y: r.y, z: TETO, fl, root: true };
+    const root = { id: 'R' + fl, x: r.x, y: r.y, z: TT[fl], fl, root: true };
     const nodes = [root].concat(ids.map((id) => PBY[id]));
     const inT = new Set([0]), edges = [], dist = nodes.map((n) => man(n, root)), par = nodes.map(() => 0);
     while (inT.size < nodes.length) {
@@ -10722,7 +10824,7 @@ kbd {
     return { root, edges };
   }
   /** Do quadro do circuito (centro a 1,50 m) até a laje do pavimento `fl` (o mesmo, ou outro no caso da escada). */
-  const rise = (fl, board) => LEVEL[fl] + TETO - (LEVEL[board || fl] + 1500) + man(BOARDS[board || fl], BOARDS[fl]);
+  const rise = (fl, board) => LEVEL[fl] + TT[fl] - (LEVEL[board || fl] + 1500) + man(BOARDS[board || fl], BOARDS[fl]);
   /** Comprimentos de um circuito saindo do quadro `board` (eletroduto e caminho até o ponto mais distante). */
   function lengths(c, board) {
     const byFl = {};
@@ -10738,9 +10840,9 @@ kbd {
       const t = tree(fl, byFl[fl], fl === board ? { [fl]: BOARDS[board] } : board === 'T' && fl !== 'T' ? { [fl]: fl === '2' ? { x: 6400, y: 8750 } : QDC_XY } : RISER);
       const depth = new Map([[t.root, 0]]);
       t.edges.forEach((e) => depth.set(e.b, depth.get(e.a) + e.L));
-      const up = board === 'T' && fl !== 'T' ? LEVEL[fl] + TETO - 1500 + (fl === '2' ? 475 : 0) : rise(fl, board);
-      conduite += t.edges.reduce((a, e) => a + e.L, 0) + byFl[fl].reduce((a, id) => a + Math.max(0, TETO - PBY[id].z), 0) + up;
-      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, up + depth.get(PBY[id]) + Math.max(0, TETO - PBY[id].z))));
+      const up = board === 'T' && fl !== 'T' ? LEVEL[fl] + TT[fl] - 1500 + (fl === '2' ? 475 : 0) : rise(fl, board);
+      conduite += t.edges.reduce((a, e) => a + e.L, 0) + byFl[fl].reduce((a, id) => a + Math.max(0, TT[PBY[id].fl] - PBY[id].z), 0) + up;
+      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, up + depth.get(PBY[id]) + Math.max(0, TT[PBY[id].fl] - PBY[id].z))));
     });
     return { conduite, Lmax };
   }
@@ -10762,19 +10864,19 @@ kbd {
       const t = tree(fl, byFl[fl]);
       c.trees[fl] = t;
       horiz += t.edges.reduce((s, e) => s + e.L, 0);
-      drops += byFl[fl].reduce((s, id) => s + Math.max(0, TETO - PBY[id].z), 0);
+      drops += byFl[fl].reduce((s, id) => s + Math.max(0, TT[PBY[id].fl] - PBY[id].z), 0);
       risers += rise(fl, c.board);
       // caminho até o ponto mais distante (para a queda de tensão)
       const depth = new Map([[t.root, 0]]);
       t.edges.forEach((e) => depth.set(e.b, depth.get(e.a) + e.L));
-      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, rise(fl, c.board) + depth.get(PBY[id]) + Math.max(0, TETO - PBY[id].z))));
+      byFl[fl].forEach((id) => (Lmax = Math.max(Lmax, rise(fl, c.board) + depth.get(PBY[id]) + Math.max(0, TT[PBY[id].fl] - PBY[id].z))));
     });
     c.baixo.forEach((b) => ((horiz += plen(b.path)), (Lmax = Math.max(Lmax, plen(b.path)))));
     c.conduite = horiz + drops + risers; // mm de eletroduto do circuito
     c.Lmax = Lmax;
     c.enterrado = c.baixo.filter((b) => b.fl === 'T').reduce((s2, b) => s2 + plen(b.path.slice(1, -1)), 0);
     c.cond = c.tipo === 'il' ? 3 : 3; // F + N (ou F + F) + PE; retornos contados à parte
-    c.retorno = c.tipo === 'il' ? c.pts.filter((id) => /int/.test(PBY[id].k)).reduce((s, id) => s + (TETO - PBY[id].z), 0) * 1 : 0;
+    c.retorno = c.tipo === 'il' ? c.pts.filter((id) => /int/.test(PBY[id].k)).reduce((s, id) => s + (TT[PBY[id].fl] - PBY[id].z), 0) * 1 : 0;
     c.unico = lengths(c, 'T'); // o mesmo circuito saindo de um quadro só, no térreo (para comparar)
   }
   CIRC.forEach(routeCircuit);
@@ -10793,10 +10895,10 @@ kbd {
       ids.forEach((id) => {
         const p = PBY[id];
         // cada ponto tem seu cabo do QDT: prumada + caminho na laje + descida + 3 m de folga (patch no QDT)
-        cabos.push({ id, L: LEVEL[fl] + TETO - 1500 + depth.get(p) + Math.max(0, TETO - p.z) + 3000 });
+        cabos.push({ id, L: LEVEL[fl] + TT[fl] - 1500 + depth.get(p) + Math.max(0, TT[p.fl] - p.z) + 3000 });
       });
     });
-    const conduite = Object.keys(trees).reduce((s, fl) => s + trees[fl].edges.reduce((a, e) => a + e.L, 0) + pts.filter((p) => p.fl === fl).reduce((a, p) => a + Math.max(0, TETO - p.z), 0) + (fl === 'T' ? TETO - 1500 : LEVEL[fl] + TETO - 1500), 0);
+    const conduite = Object.keys(trees).reduce((s, fl) => s + trees[fl].edges.reduce((a, e) => a + e.L, 0) + pts.filter((p) => p.fl === fl).reduce((a, p) => a + Math.max(0, TT[p.fl] - p.z), 0) + (LEVEL[fl] + TT[fl] - 1500), 0);
     return { pts, trees, cabos, conduite, entrada: polyLen(TEL_ROUTE) };
   }
   const TEL = telNet();
@@ -11253,12 +11355,12 @@ kbd {
       cyl.quaternion.setFromUnitVectors(up, B.clone().sub(A).normalize());
       put(cyl);
     };
-    const zc = lv + TETO;
+    const zc = lv + TT[fl];
     conduitsOf(fl).forEach(({ c, a, b }) => {
       const m = mat(COLOR[c.tipo], 0.85), r = 0.012;
       tube([a.x, a.y, zc], [b.x, a.y, zc], r, m);
       tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
-      if (!b.root && b.z < TETO) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
+      if (!b.root && b.z < TT[fl]) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
     CIRC.forEach((c) => c.baixo.filter((b) => b.fl === fl).forEach((b) => b.path.slice(1).forEach((q, i) => tube([b.path[i][0], b.path[i][1], lv + b.path[i][2]], [q[0], q[1], lv + q[2]], 0.014, mat(COLOR[c.tipo], 0.9)))));
     // subida do quadro do andar até a laje, alimentadores dos quadros de andar e prumada do QDT (rede)
@@ -11270,7 +11372,7 @@ kbd {
       const m = mat(COLOR.tel, 0.85), r = 0.011;
       tube([a.x, a.y, zc], [b.x, a.y, zc], r, m);
       tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
-      if (!b.root && b.z < TETO) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
+      if (!b.root && b.z < TT[fl]) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
     if (fl === 'T')
       [[ALIM_ROUTE, COLOR.alim, 0.022], [TEL_ROUTE, COLOR.tel, 0.016]].forEach(([Rt, col, r]) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, r, mat(col, 0.9))));
@@ -11285,7 +11387,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, TT, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();
@@ -12577,10 +12679,15 @@ kbd {
     const st = entry.st, g = stairGeo(st, entry.h), fp = g.footprint;
     ctx.fillStyle = COL.stairFill;
     ctx.fillRect(fp.x0, fp.y0, fp.x1 - fp.x0, fp.y1 - fp.y0);
-    const breakN = entry.mode === 'up' ? st.lowerCount + Math.ceil(st.upperCount / 2) : Infinity;
+    const breakN = entry.mode === 'up' ? stairBreakN(g, st) : Infinity;
     const solid = new Path2D(), dashed = new Path2D();
     g.landing.forEach((l) => solid.rect(l.x0, l.y0, l.x1 - l.x0, l.y1 - l.y0));
-    g.treads.forEach((t) => (t.n > breakN ? dashed : solid).rect(t.x0, t.y0, t.x1 - t.x0, t.y1 - t.y0));
+    g.treads.forEach((t) => {
+      const path = t.n > breakN ? dashed : solid;
+      if (!t.poly) return path.rect(t.x0, t.y0, t.x1 - t.x0, t.y1 - t.y0);
+      t.poly.forEach((p, i) => (i ? path.lineTo(p.x, p.y) : path.moveTo(p.x, p.y)));
+      path.closePath();
+    });
     ctx.strokeStyle = COL.ink;
     ctx.lineWidth = 0.8 * px;
     ctx.stroke(solid);
@@ -12594,6 +12701,11 @@ kbd {
     if (entry.mode === 'up') drawStairBreak(rc, st, g, breakN);
     drawWalkline(rc, g, entry.mode);
   }
+  /** Degrau onde a planta corta a escada que sobe: no meio do lance de cima (patamar ou leque antes dele). */
+  const stairBreakN = (g, st) => {
+    const firstUp = Math.min(...g.treads.filter((t) => t.flight === 1).map((t) => t.n));
+    return firstUp + Math.ceil(st.upperCount / 2) - 2;
+  };
   function drawStairBreak(rc, st, g, breakN) {
     const t = g.treads.find((tr) => tr.n === breakN);
     if (!t) return;
@@ -12946,9 +13058,14 @@ kbd {
         ctx.fillStyle = COL.muted;
         const cells = g.landingLabel ? g.treads.concat([Object.assign({ flight: 0 }, g.landingLabel)]) : g.treads;
         cells.forEach((t) => {
-          // near the outer stringer so the number never sits on the walk line (row centre)
-          const y = t.flight === 0 ? t.y1 - (t.y1 - t.y0) * 0.24 : t.y0 + (t.y1 - t.y0) * 0.24;
-          const c = w2s(v, { x: (t.x0 + t.x1) / 2, y });
+          // near the outer stringer so the number never sits on the walk line (row centre); leque: perto da borda
+          let at;
+          if (t.poly) {
+            const n = t.poly.length, cx = t.poly.reduce((a, p) => a + p.x, 0) / n, cy = t.poly.reduce((a, p) => a + p.y, 0) / n;
+            const o = t.poly[0];
+            at = { x: o.x + (cx - o.x) * 1.15, y: o.y + (cy - o.y) * 1.15 };
+          } else at = { x: (t.x0 + t.x1) / 2, y: t.flight === 0 ? t.y1 - (t.y1 - t.y0) * 0.24 : t.y0 + (t.y1 - t.y0) * 0.24 };
+          const c = w2s(v, at);
           ctx.fillText(String(t.n), c.x, c.y);
         });
       }
@@ -15666,14 +15783,14 @@ kbd {
   P.stairSlabs = (st, g) => {
     const T = st.tread, hw = st.width / 2;
     const k = g.riser / T;
-    const land = g.landing[0];
-    const landX = land.x0, landZ = land.z;
+    // a volta (patamar plano ou leque): o lance de baixo chega em zIn, o de cima sai de zOut
+    const landX = g.turn.x0, zIn = g.turn.zIn, landZ = g.turn.zOut;
     const end = st.x + st.length;
     const thick = STAIR_SLAB_MM * Math.sqrt(1 + k * k);
     const lowerTop = (xx) => (xx - st.x) * k - STAIR_DROP;
     const upperTop = (xx) => (landX - xx) * k + landZ - STAIR_DROP;
     return [
-      { flight: 0, x0: st.x + STAIR_DROP / k, x1: Math.min(end, st.x + landZ / k), y0: st.y + hw, y1: st.y + st.width, top: lowerTop, thick },
+      { flight: 0, x0: st.x + STAIR_DROP / k, x1: Math.min(end, st.x + zIn / k), y0: st.y + hw, y1: st.y + st.width, top: lowerTop, thick },
       { flight: 1, x0: st.x, x1: landX, y0: st.y, y1: st.y + hw, top: upperTop, thick },
     ];
   };
@@ -15684,7 +15801,8 @@ kbd {
     const g = DD.geom.stairGeometry(st, floorHeight);
     const out = [];
     g.treads.concat(g.landing).forEach((t) => {
-      if (x >= t.x0 && x <= t.x1 && y >= t.y0 && y <= t.y1) out.push(t.z - STAIR_DROP);
+      // degraus do leque são maciços até a base da volta
+      if (DD.geom.inTread(t, x, y)) out.push((t.flight === 2 ? g.turn.zIn : t.z) - STAIR_DROP);
     });
     P.stairSlabs(st, g).forEach((s) => {
       if (x >= s.x0 && x <= s.x1 && y >= s.y0 && y <= s.y1) out.push(s.top(x) - s.thick);
@@ -16021,6 +16139,47 @@ kbd {
       });
     });
     return quadsGeometry(byMat);
+  }
+  /**
+   * Vertical prisms from convex plan polygons (m: [[x, z]…]) between heights y0..y1 (m) — the winder treads.
+   * Faces are wound outward (normal checked per triangle). uv = plan metres on the caps, (along, y) on the sides.
+   */
+  function prismsGeometry(prisms) {
+    const T = S.THREE;
+    const pos = [], nor = [], uv = [];
+    const tri = (a, b, c, n, uva, uvb, uvc) => {
+      const ux = b[0] - a[0], uy = b[1] - a[1], uz = b[2] - a[2], vx = c[0] - a[0], vy = c[1] - a[1], vz = c[2] - a[2];
+      const cx = uy * vz - uz * vy, cy = uz * vx - ux * vz, cz = ux * vy - uy * vx;
+      if (cx * n[0] + cy * n[1] + cz * n[2] < 0) { [b, c] = [c, b]; [uvb, uvc] = [uvc, uvb]; }
+      [a, b, c].forEach((p) => { pos.push(p[0], p[1], p[2]); nor.push(n[0], n[1], n[2]); });
+      uv.push(uva[0], uva[1], uvb[0], uvb[1], uvc[0], uvc[1]);
+    };
+    prisms.forEach((pr) => {
+      const P = pr.poly, n = P.length;
+      if (n < 3 || !(pr.y1 - pr.y0 > 1e-5)) return;
+      const cx = P.reduce((s, p) => s + p[0], 0) / n, cz = P.reduce((s, p) => s + p[1], 0) / n;
+      for (let i = 1; i < n - 1; i++) {
+        const a = P[0], b = P[i], c = P[i + 1];
+        tri([a[0], pr.y1, a[1]], [b[0], pr.y1, b[1]], [c[0], pr.y1, c[1]], [0, 1, 0], [a[0], -a[1]], [b[0], -b[1]], [c[0], -c[1]]);
+        tri([a[0], pr.y0, a[1]], [b[0], pr.y0, b[1]], [c[0], pr.y0, c[1]], [0, -1, 0], [a[0], a[1]], [b[0], b[1]], [c[0], c[1]]);
+      }
+      for (let i = 0; i < n; i++) {
+        const a = P[i], b = P[(i + 1) % n], L = Math.hypot(b[0] - a[0], b[1] - a[1]);
+        if (L < 1e-6) continue;
+        let nx = (b[1] - a[1]) / L, nz = -(b[0] - a[0]) / L;
+        if (((a[0] + b[0]) / 2 - cx) * nx + ((a[1] + b[1]) / 2 - cz) * nz < 0) { nx = -nx; nz = -nz; }
+        const q = [[a[0], pr.y0, a[1]], [b[0], pr.y0, b[1]], [b[0], pr.y1, b[1]], [a[0], pr.y1, a[1]]];
+        const u = [[0, pr.y0], [L, pr.y0], [L, pr.y1], [0, pr.y1]];
+        tri(q[0], q[1], q[2], [nx, 0, nz], u[0], u[1], u[2]);
+        tri(q[0], q[2], q[3], [nx, 0, nz], u[0], u[2], u[3]);
+      }
+    });
+    const geo = new T.BufferGeometry();
+    geo.setAttribute('position', new T.Float32BufferAttribute(pos, 3));
+    geo.setAttribute('normal', new T.Float32BufferAttribute(nor, 3));
+    geo.setAttribute('uv', new T.Float32BufferAttribute(uv, 2));
+    geo.addGroup(0, pos.length / 3, 0);
+    return geo;
   }
   /** Upward-facing quads from plan rectangles (mm) at height y (m). uv = (X, −Z) metres. */
   function rectsTopGeometry(rects, y) {
@@ -16477,9 +16636,17 @@ kbd {
   function buildStair(group, st, floor) {
     const g = DD.geom.stairGeometry(st, floor.height);
     const lvl = floor.level * MM;
-    const stones = [], bodies = [];
+    const stones = [], bodies = [], wStones = [], wBodies = [];
+    const turnBase = lvl + (g.turn.zIn - STAIR_DROP) * MM;
     g.treads.concat(g.landing).forEach((t) => {
       const top = lvl + t.z * MM;
+      if (t.poly) {
+        // degrau em leque: prisma maciço até a base da volta
+        const poly = t.poly.map((p) => [p.x * MM, p.y * MM]);
+        wStones.push({ poly, y0: top - TREAD_STONE, y1: top });
+        wBodies.push({ poly, y0: turnBase, y1: top - TREAD_STONE });
+        return;
+      }
       const x0 = t.x0 * MM, x1 = t.x1 * MM, z0 = t.y0 * MM, z1 = t.y1 * MM;
       stones.push({ x0, x1, y0: top - TREAD_STONE, y1: top, z0, z1 });
       bodies.push({ x0, x1, y0: top - TREAD_STONE - TREAD_BODY, y1: top - TREAD_STONE, z0, z1 });
@@ -16488,6 +16655,10 @@ kbd {
     sg.name = 'stair:' + st.id;
     sg.add(mesh(boxesGeometry(stones), [MAT.stone()]));
     sg.add(mesh(boxesGeometry(bodies), [MAT.stairBody()]));
+    if (wStones.length) {
+      sg.add(mesh(prismsGeometry(wStones), [MAT.stone()]));
+      sg.add(mesh(prismsGeometry(wBodies), [MAT.stairBody()]));
+    }
     stairSlabs(st, g, lvl).forEach((s) => sg.add(s));
     stairRails(st, g, lvl).forEach((s) => sg.add(s));
     tagTree(sg, { occluder: true });
@@ -16514,29 +16685,34 @@ kbd {
   }
   /**
    * Black metal handrails 0,90 m above the nosings on the open edges: outer edge of the lower flight and of the
-   * landing, inner edge of the upper flight. Works for any lowerCount/upperCount (landing = one full-width rect).
+   * landing (or the winders), inner edge of the upper flight. Works for any lowerCount/upperCount.
    */
   function stairRails(st, g, lvl) {
     const r = g.riser * MM, T = st.tread * MM, x = st.x * MM, y = st.y * MM, W = st.width * MM;
     const k = r / T, hRail = 0.9;
-    const land = g.landing[0];
-    const landX = land.x0 * MM, landZ = lvl + land.z * MM, endX = land.x1 * MM;
+    const landX = g.turn.x0 * MM, landZ = lvl + g.turn.zIn * MM, endX = g.turn.x1 * MM, outZ = lvl + g.turn.zOut * MM;
+    // altura do piso da volta na borda externa (patamar plano ou degraus do leque), m
+    const floorH = g.riser * g.risers;
+    const turnAt = (px) => lvl + (DD.geom.stairHeightAt(st, floorH, px / MM, st.y + st.width - 30) || g.turn.zIn) * MM;
     const lowerTop = (xx) => lvl + (xx - x) * k + r; // nosing line of the lower flight
-    const upperTop = (xx) => landZ + r + (landX - xx) * k; // nosing line of the upper flight
+    const upperTop = (xx) => outZ + r + (landX - xx) * k; // nosing line of the upper flight
     const zo0 = y + W - 0.05, zo1 = y + W - 0.01; // outer edge (far row)
     const zi0 = y + W / 2 - 0.02, zi1 = y + W / 2 + 0.02; // inner edge (between the rows)
     const out = [
       inclinedBox(x, lowerTop(x) + hRail, landX, lowerTop(landX) + hRail, zo0, zo1, 0.04, MAT.metal()),
       inclinedBox(landX, upperTop(landX) + hRail, x, upperTop(x) + hRail, zi0, zi1, 0.04, MAT.metal()),
     ];
-    const posts = [{ x0: landX, x1: endX - 0.02, y0: landZ + hRail - 0.04, y1: landZ + hRail, z0: zo0, z1: zo1 }]; // landing rail
+    const posts = [];
+    if (g.turn.winders) out.push(inclinedBox(landX, turnAt(landX + 0.05) + hRail, endX - 0.02, turnAt(endX - 0.05) + hRail, zo0, zo1, 0.04, MAT.metal()));
+    else posts.push({ x0: landX, x1: endX - 0.02, y0: landZ + hRail - 0.04, y1: landZ + hRail, z0: zo0, z1: zo1 }); // landing rail
     const nLow = g.treads.filter((t) => t.flight === 0).length, nUp = g.treads.filter((t) => t.flight === 1).length;
     for (let i = 0; i <= nLow; i += 2) {
       const px = Math.min(x + i * T + T * 0.5, landX - 0.03);
       posts.push({ x0: px - 0.012, x1: px + 0.012, y0: lowerTop(px) - r, y1: lowerTop(px) + hRail, z0: y + W - 0.042, z1: y + W - 0.018 });
     }
     for (let px = landX + 0.25; px < endX - 0.05; px += 0.27) {
-      posts.push({ x0: px - 0.012, x1: px + 0.012, y0: landZ, y1: landZ + hRail, z0: y + W - 0.042, z1: y + W - 0.018 });
+      const pz = turnAt(px);
+      posts.push({ x0: px - 0.012, x1: px + 0.012, y0: pz, y1: pz + hRail, z0: y + W - 0.042, z1: y + W - 0.018 });
     }
     for (let j = 0; j <= nUp; j += 2) {
       const px = Math.max(landX - j * T - T * 0.5, x + 0.03);
@@ -18432,6 +18608,15 @@ kbd {
     transitionTo2D,
     exportPNG,
     recenter,
+    /** Conferência visual (capturas): câmera orbital em `pos`, olhando para `target` (metros, y = altura). */
+    _look: (pos, target) => {
+      if (!S.ready || !S.orbit) return false;
+      S.camera.position.set(pos[0], pos[1], pos[2]);
+      S.orbit.target.set(target[0], target[1], target[2]);
+      S.orbit.update();
+      requestRender();
+      return true;
+    },
     /** Pure helpers (no three.js / DOM) — exposed for Node tests. */
     _pure: P,
     _stats: stats,

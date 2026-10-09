@@ -80,5 +80,20 @@ const sill = (id) => m3.doc.openings.find((o) => o.id === id).sill;
 check('rodada 3: J9 perto da porta da sala com peitoril 0,80, a outra 1,10', m3.changed && sill('o0_j9_garagemB') === 800 && sill('o0_j9_garagemA') === 1100);
 check('rodada 4: quartos da frente sem P5, com porta 0,80 e janela 1,20', !doc.openings.some((o) => o.code === 'P5') &&
   doc.openings.filter((o) => /^o1_(j8|p10)_q/.test(o.id)).map((o) => o.code + o.width).sort().join() === 'J81200,J81200,P10800,P10800');
+// rodada 5: pé-direito do 1º maior — laje do 2º sobe para 6,34, paredes do 1º de piso a piso, escada com leque
+const v4 = DD.persist.validate(JSON.parse(JSON.stringify(fresh)));
+v4.meta.asBuilt = 4;
+Object.assign(v4.floors.find((f) => f.id === 'f1'), { height: 2880, ceiling: 2780 });
+v4.floors.find((f) => f.id === 'f2').level = 5760;
+v4.walls.filter((w) => w.floor === 'f1' && (w.kind === 'structural' || w.kind === 'partition')).forEach((w) => (w.height = 2880));
+v4.walls.find((w) => w.id === 'w1_quartosDiv').height = 1100; // meia parede que o usuário fez: fica
+delete v4.stairs.find((s) => s.id === 'st1').winders;
+const m5 = DD.data.migrateAsBuilt(v4).doc;
+const fl = (id) => m5.floors.find((f) => f.id === id);
+check('rodada 5: 2º pavimento no nível 6,34 e 1º com 3,46 m de piso a piso', fl('f2').level === 6340 && fl('f1').height === 3460 && fl('f1').ceiling === 3360);
+check('rodada 5: paredes do 1º vão de piso a piso', m5.walls.filter((w) => w.floor === 'f1' && w.kind === 'structural').every((w) => w.height === 3460));
+check('rodada 5: parede baixa do usuário fica como está', m5.walls.find((w) => w.id === 'w1_quartosDiv').height === 1100);
+check('rodada 5: escada do 1º com degraus em leque', m5.stairs.find((s) => s.id === 'st1').winders === 2 && !m5.stairs.find((s) => s.id === 'st0').winders);
+check('rodada 5: térreo e paredes do 2º sem mudança', fl('f0').height === 2880 && m5.walls.filter((w) => w.floor === 'f2' && w.kind === 'structural').every((w) => w.height === 2880));
 console.log(fails ? `test-asbuilt: ${fails} falha(s)` : 'test-asbuilt: todos os testes ok');
 process.exitCode = fails ? 1 : 0;

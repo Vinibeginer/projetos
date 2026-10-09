@@ -4,6 +4,7 @@ global.window = global;
 global.localStorage = { getItem: () => null, setItem() {}, removeItem() {} };
 require('../src/00-data.js');
 require('../src/01-core.js');
+require('../src/15-structure.js');
 require('../src/17-hidro.js');
 require('../src/18-eletrica.js');
 const E = global.DD.eletrica;
@@ -70,14 +71,14 @@ check('motor do portão enterrado a −0,40 m até o muro', E.PBY['T-PT1'].circ.
   check('nenhuma descida de eletroduto passa por janela ou porta', !vao.length, vao.map((p) => p.id).join(','));
   const fs = require('fs'), stf = require('path').join(__dirname, '..', 'private', 'estrutura.json');
   if (fs.existsSync(stf)) {
-    const pil = JSON.parse(fs.readFileSync(stf, 'utf8')).pilares, LV = { T: 0, 1: 2880, 2: 5760 };
+    const pil = global.DD.structure.revisar(JSON.parse(fs.readFileSync(stf, 'utf8'))).pilares, LV = E.LEVEL;
     const emPilar = P.filter((p) => !/qdc|medidor/.test(p.k) && p.z < E.TETO).filter((p) => pil.some((c) => c.topo > LV[p.fl] + 100 && p.x > c.x0 - 50 && p.x < c.x1 + 50 && p.y > c.y0 - 50 && p.y < c.y1 + 50));
     check('nenhum ponto sobre pilar (projeto estrutural privado)', !emPilar.length, emPilar.length + ' em pilar');
   } else console.log('SKIP pilares: private/estrutura.json ausente');
 }
 // caixas elétricas fora da trajetória dos tubos do hidrossanitário (15 cm)
 {
-  const HH = global.DD.hidro, LV = { T: 0, 1: 2880, 2: 5760 };
+  const HH = global.DD.hidro, LV = E.LEVEL;
   const perto = P.filter((p) => p.z < E.TETO && !/medidor/.test(p.k)).filter((p) => HH.PIPES.some((pp) => pp.pts.slice(1).some((b, i) => {
     const a = pp.pts[i], n = Math.max(2, Math.ceil(Math.hypot(b[0] - a[0], b[1] - a[1], b[2] - a[2]) / 25));
     for (let k = 0; k <= n; k++) {

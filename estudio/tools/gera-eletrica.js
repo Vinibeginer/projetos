@@ -15,7 +15,8 @@ require('../src/01-core.js');
 require('../src/17-hidro.js');
 const DD = global.DD, doc = DD.data.initialState(), H = DD.hidro;
 const FL = { f0: 'T', f1: '1', f2: '2' };
-const TETO = 2780; // forro / face inferior da laje (pé-direito do estúdio)
+// forro / face inferior da laje de cada pavimento (00-data.js; o 1º tem pé-direito maior desde out/2026)
+const FLS = DD.data.FLOORS, TT = { T: FLS[0].ceiling, 1: FLS[1].ceiling, 2: FLS[2].ceiling }, TETO = TT.T;
 
 // ------------------------------------------------------------------ geometria
 const wallsOf = (fid) => doc.walls.filter((w) => w.floor === fid && w.kind !== 'railing');
@@ -175,7 +176,7 @@ roomList.forEach((r) => {
     grid.forEach(([u, v]) => {
       let p = { x: Math.round(b.minX + wx * u), y: Math.round(b.minY + wy * v) };
       if (!inside(r, p) || nearStair(r.fid, p)) p = { x: Math.round(r.labelX), y: Math.round(r.labelY) - (nl === 1 ? 0 : 0) };
-      if (!luzes.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 500)) luzes.push(Object.assign(p, { z: TETO, tipo: 'teto' }));
+      if (!luzes.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 500)) luzes.push(Object.assign(p, { z: TT[fl], tipo: 'teto' }));
     });
   }
   const vaEach = Math.max(100, Math.ceil(va / luzes.length / 10) * 10);
@@ -265,7 +266,7 @@ const EXTRA = [
   { id: 'T-IL-ESC', fl: 'T', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (térreo → 1º)' },
   { id: 'T-S3a', fl: 'T', k: 'int3', amb: 'Escada', x: 5560, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (térreo)' },
   { id: '1-S3b', fl: '1', k: 'int3', amb: 'Circulação', x: 5560, y: 8750, z: 1100, liga: ['T-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (1º)' },
-  { id: '1-IL-ESC', fl: '1', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2400, va: 100, desc: 'Arandela da escada (1º → 2º)' },
+  { id: '1-IL-ESC', fl: '1', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2900, va: 100, desc: 'Arandela da escada (1º → 2º)' },
   { id: '1-S3a', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 10350, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (1º)' },
   { id: '2-S3b', fl: '2', k: 'int3', amb: 'Varanda coberta', x: 6300, y: 8600, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (2º)' },
   // parede da TV (sala/garagem, entre as janelas, atrás do rack): 3 tomadas a 0,30 m
@@ -292,9 +293,9 @@ const TEL = [
   { id: '1-RJ1', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto Master', x: 3150, y: 7063, z: 300, desc: 'Ponto de rede RJ45 — Quarto Master' },
   { id: '1-RJ2', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 1', x: 4150, y: 13063, z: 300, desc: 'Ponto de rede RJ45 — Quarto 1' },
   { id: '1-RJ3', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 2', x: 4300, y: 11975, z: 300, desc: 'Ponto de rede RJ45 — Quarto 2' },
-  { id: '1-AP1', fl: '1', k: 'tel', tel: 'ap', amb: 'Circulação', x: 4700, y: 9550, z: TETO, desc: 'Ponto de Wi-Fi no teto (access point) — Circulação do 1º' },
+  { id: '1-AP1', fl: '1', k: 'tel', tel: 'ap', amb: 'Circulação', x: 4700, y: 9550, z: TT[1], desc: 'Ponto de Wi-Fi no teto (access point) — Circulação do 1º' },
   { id: '2-RJ1', fl: '2', k: 'tel', tel: 'rj', amb: 'Varanda coberta', x: 7350, y: 7800, z: 300, desc: 'Ponto de rede RJ45 (TV) — Varanda coberta' },
-  { id: '2-AP1', fl: '2', k: 'tel', tel: 'ap', amb: 'Varanda coberta', x: 5250, y: 6700, z: TETO, desc: 'Ponto de Wi-Fi no teto (access point) — Varanda coberta' },
+  { id: '2-AP1', fl: '2', k: 'tel', tel: 'ap', amb: 'Varanda coberta', x: 5250, y: 6700, z: TT[2], desc: 'Ponto de Wi-Fi no teto (access point) — Varanda coberta' },
 ];
 TEL.forEach(add);
 
@@ -323,9 +324,10 @@ pts.filter((p) => p.k === 'int' || p.k === 'int3').forEach((p, i, all) => {
 // Os pilares vêm do projeto estrutural, que é privado (private/estrutura.json, fora do repositório): sem ele, só os
 // vãos são conferidos.
 const STF = path.join(__dirname, '..', 'private', 'estrutura.json');
-const PILARES = fs.existsSync(STF) ? JSON.parse(fs.readFileSync(STF, 'utf8')).pilares : null;
+require('../src/15-structure.js'); // revisões de nível da obra (laje do 2º em 6,34)
+const PILARES = fs.existsSync(STF) ? DD.structure.revisar(JSON.parse(fs.readFileSync(STF, 'utf8'))).pilares : null;
 if (!PILARES) console.warn('aviso: private/estrutura.json ausente — pontos não conferidos contra os pilares');
-const LVL = { T: 0, 1: 2880, 2: 5760 }, FID = { T: 'f0', 1: 'f1', 2: 'f2' };
+const LVL = { T: FLS[0].level, 1: FLS[1].level, 2: FLS[2].level }, FID = { T: 'f0', 1: 'f1', 2: 'f2' };
 const desceDoTeto = (p) => !(p.fl === 'T' && p.id === 'T-PT1') && !/^2-IL[78]$/.test(p.id); // os de baixo vêm do piso
 function wallOf(p) {
   let best = null;
@@ -362,14 +364,14 @@ function conflito(p, q) {
 }
 const relocados = [];
 pts.forEach((p) => {
-  if (/qdc|medidor/.test(p.k) || p.z >= TETO || (p.k === 'tel' && p.tel !== 'rj')) return;
+  if (/qdc|medidor/.test(p.k) || p.z >= TT[p.fl] || (p.k === 'tel' && p.tel !== 'rj')) return;
   if (!conflito(p, p)) return;
   const w = wallOf(p);
   if (!w) return;
   const L = Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y), d = { x: (w.b.x - w.a.x) / L, y: (w.b.y - w.a.y) / L }, n = { x: -d.y, y: d.x };
   const side = Math.sign((p.x - w.a.x) * n.x + (p.y - w.a.y) * n.y) || 1;
   const room = roomList.find((r) => r.fl === p.fl && r.name === p.amb && inside(r, { x: p.x + n.x * side * 120, y: p.y + n.y * side * 120 }));
-  const outros = pts.filter((o) => o !== p && o.fl === p.fl && o.z < TETO && !(p.caixa && (o.id === p.caixa || o.caixa === p.caixa)) && o.caixa !== p.id);
+  const outros = pts.filter((o) => o !== p && o.fl === p.fl && o.z < TT[o.fl] && !(p.caixa && (o.id === p.caixa || o.caixa === p.caixa)) && o.caixa !== p.id);
   for (let k = 1; k <= 60; k++) {
     for (const sg of [1, -1]) {
       const q = { x: Math.round(p.x + d.x * sg * k * 50), y: Math.round(p.y + d.y * sg * k * 50) };
@@ -387,7 +389,7 @@ pts.forEach((p) => {
   // interruptores na mesma caixa acompanham
   pts.filter((o) => o.caixa === p.id).forEach((o) => ((o.x = p.x), (o.y = p.y)));
 });
-const restam = pts.filter((p) => !/qdc|medidor/.test(p.k) && p.z < TETO && !(p.k === 'tel' && p.tel !== 'rj') && conflito(p, p));
+const restam = pts.filter((p) => !/qdc|medidor/.test(p.k) && p.z < TT[p.fl] && !(p.k === 'tel' && p.tel !== 'rj') && conflito(p, p));
 if (restam.length) console.warn('ATENÇÃO — pontos ainda em conflito: ' + restam.map((p) => p.id + ' (' + conflito(p, p) + ')').join(', '));
 console.log('compatibilização: ' + relocados.length + ' pontos deslocados ao longo da parede');
 
