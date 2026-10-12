@@ -269,10 +269,14 @@ const EXTRA = [
   { id: '1-IL-ESC', fl: '1', k: 'il', tipo: 'arandela', amb: 'Escada', x: 8850, y: 9550, z: 2900, va: 100, desc: 'Arandela da escada (1º → 2º)' },
   { id: '1-S3a', fl: '1', k: 'int3', amb: 'Circulação', x: 5900, y: 10350, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — pé da escada (1º)' },
   { id: '2-S3b', fl: '2', k: 'int3', amb: 'Varanda coberta', x: 6300, y: 8600, z: 1100, liga: ['1-IL-ESC'], desc: 'Interruptor paralelo — chegada da escada (2º)' },
-  // parede da TV (sala/garagem, entre as janelas, atrás do rack): 3 tomadas a 0,30 m
-  { id: 'T-TV1', fl: 'T', k: 'tug', amb: 'Sala', x: 4300, y: 12500, z: 300, va: 100, desc: 'TUG da TV (1/3) — parede da TV, atrás do rack' },
-  { id: 'T-TV2', fl: 'T', k: 'tug', amb: 'Sala', x: 4300, y: 12700, z: 300, va: 100, desc: 'TUG da TV (2/3) — parede da TV, atrás do rack' },
-  { id: 'T-TV3', fl: 'T', k: 'tug', amb: 'Sala', x: 4300, y: 12900, z: 300, va: 100, desc: 'TUG da TV (3/3) — parede da TV, atrás do rack' },
+  // parede da TV = parede de divisa da direita da sala (no layout da obra o painel/rack fica nela, de frente para o
+  // sofá): 3 tomadas a 1,80 m do piso, atrás da TV, para a TV e os aparelhos (soundbar, TV box, console)
+  { id: 'T-TV1', fl: 'T', k: 'tug', amb: 'Sala', x: 8850, y: 12427, z: 1800, va: 100, desc: 'TUG da TV (1/3) a 1,80 m — parede da TV (divisa direita), atrás do painel' },
+  { id: 'T-TV2', fl: 'T', k: 'tug', amb: 'Sala', x: 8850, y: 12627, z: 1800, va: 100, desc: 'TUG da TV (2/3) a 1,80 m — parede da TV (divisa direita), atrás do painel' },
+  { id: 'T-TV3', fl: 'T', k: 'tug', amb: 'Sala', x: 8850, y: 12827, z: 1800, va: 100, desc: 'TUG da TV (3/3) a 1,80 m — parede da TV (divisa direita), atrás do painel' },
+  // ar-condicionado da sala (29,6 m² → 18.000 BTU/h): evaporadora na parede da direita, junto à fachada; a tubulação
+  // atravessa a parede da frente para a condensadora na fachada (não invade o vizinho)
+  { id: 'T-AC2', fl: 'T', k: 'tue', eq: 'ac', amb: 'Sala', x: 8850, y: 14350, z: 2200, va: 2000, v: 220, desc: 'Ar-condicionado split 18.000 BTU/h (2.000 VA, 220 V) — Sala — parede da direita, junto à fachada; condensadora na fachada da frente' },
   // tomada no teto para o roteador
   { id: 'T-T-RT', fl: 'T', k: 'tug', amb: 'Sala', x: 4600, y: 14550, z: TETO, va: 100, desc: 'Tomada no teto para o roteador Wi-Fi (junto ao ponto de rede)' },
   // tomada do roteador/ONT, ao lado do quadro de telecom (QDT)
@@ -286,7 +290,7 @@ const TEL = [
   { id: 'CXT', fl: 'T', k: 'tel', tel: 'entrada', amb: 'Muro esquerdo (frente)', x: 150, y: 19300, z: 1500, desc: 'Caixa de entrada da fibra (operadora) — muro esquerdo, ao lado do padrão' },
   { id: 'CPT', fl: 'T', k: 'tel', tel: 'passagem', amb: 'Garagem', x: 2600, y: 10500, z: 300, desc: 'Caixa de passagem 4×4 da fibra — parede do lavabo, lado da garagem' },
   { id: 'QDT', fl: 'T', k: 'tel', tel: 'qdt', amb: 'Sala (sob a escada)', x: 6650, y: 8750, z: 1500, desc: 'Quadro de telecom (QDT) 40×40 — ONT da fibra, roteador e distribuição Cat6' },
-  { id: 'T-RJ1', fl: 'T', k: 'tel', tel: 'rj', amb: 'Sala', x: 4300, y: 13100, z: 300, desc: 'Ponto de rede RJ45 (TV) — Sala, ao lado das tomadas da TV' },
+  { id: 'T-RJ1', fl: 'T', k: 'tel', tel: 'rj', amb: 'Sala', x: 8850, y: 13027, z: 1800, desc: 'Ponto de rede RJ45 (TV) a 1,80 m — Sala, ao lado das tomadas da TV' },
   { id: 'T-RJ2', fl: 'T', k: 'tel', tel: 'rj', amb: 'Quarto', x: 4300, y: 6450, z: 300, desc: 'Ponto de rede RJ45 — Quarto' },
   // roteador no teto da sala, depois da 2ª janela da parede sala/garagem (lado da rua), a 30 cm da parede
   { id: 'T-RT1', fl: 'T', k: 'tel', tel: 'roteador', amb: 'Sala', x: 4600, y: 14550, z: TETO, desc: 'Ponto no teto para o roteador Wi-Fi (Cat6 do QDT + tomada no teto) — Sala, depois da 2ª janela da parede da garagem' },

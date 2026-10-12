@@ -438,7 +438,7 @@ function hoverAt(px, py) {
   const p = best.p, c = p.circ;
   tip.hidden = false;
   if (p.k === 'tel') { tip.hidden = false; tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m · eletroduto de rede exclusivo`; tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px'; tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px'; return; }
-  tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m${p.va ? ' · ' + p.va + ' VA' : ''}` + (c ? `\ncircuito ${c.n} (${E.BOARDS[c.board].id}): ${c.desc}\n${c.v} V · ${c.secao} mm² · disjuntor ${c.disj} A · ${c.dr || ''}` : '');
+  tip.textContent = `${p.id} · ${p.desc}\naltura ${fmtm(p.z)} m${p.va ? ' · ' + p.va + ' VA' : ''}` + (c ? `\ncircuito ${c.n} (${E.BOARDS[c.board].id}): ${c.desc}\n${c.v} V · ${c.secao} mm² · disjuntor ${c.curva}${c.disj} · ${c.dr || ''}` : '');
   tip.style.left = Math.min(px + 14, plan.clientWidth - 290) + 'px';
   tip.style.top = Math.min(py + 14, plan.clientHeight - 100) + 'px';
 }
@@ -632,7 +632,7 @@ function unifilar(w, curto) {
     if (r.kind !== 'c') return;
     const c = r.c, y = yOf(i), o = off[r.b];
     ln(xdr + 20 + o, y, xc + o, y);
-    box(xc + o, y - 8, 46, 16, (c.v === 220 ? '2P ' : '1P ') + c.disj + 'A');
+    box(xc + o, y - 8, 46, 16, (c.v === 220 ? '2P ' : '1P ') + c.curva + c.disj);
     ln(xc + o + 46, y, xc + o + 70, y);
     t(xc + o + 76, y + 3.5, curto ? `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA` : `C${c.n} · ${String(c.secao).replace('.', ',')} mm² · ${c.fases} · ${c.va} VA — ${c.desc}`, { size: 9.5, fill: COLOR[c.tipo] === '#d39b00' ? '#8a6400' : COLOR[c.tipo] });
   });
@@ -674,7 +674,7 @@ function memorial() {
     <li><b>Aparelhos de uso específico adotados:</b>
       <ul>
         <li>3 chuveiros de 6.500 W / 220 V (folga sobre os de 7.500 W; não instalar chuveiro mais potente sem refazer o circuito), nos mesmos pontos do projeto hidrossanitário;</li>
-        <li>4 ar-condicionados split de 12.000 BTU/h (1.500 VA / 220 V);</li>
+        <li>5 ar-condicionados split em 220 V, cada um com tomada alta e circuito próprio saindo do QDC: 12.000 BTU/h (1.500 VA) no quarto do térreo e nos 3 quartos do 1º, e 18.000 BTU/h (2.000 VA) na sala;</li>
         <li>micro-ondas de 1.500 VA na cozinha;</li>
         <li>máquina de lavar de 1.200 VA no 2º;</li>
         <li>motor do portão, ½ cv.</li>
@@ -751,16 +751,16 @@ function memorial() {
   <p>Num problema, desarma primeiro o disjuntor mais próximo dele; os de cima só desarmam se o problema for no trecho deles. Para garantir essa ordem com disjuntores DIN (NBR NM 60898):</p>
   <ul>
     <li><b>Sobrecarga:</b> com o disjuntor de baixo em 1,45 × In, que desarma com certeza em menos de 1 h, e o resto da casa no uso real, o de cima precisa continuar abaixo de 1,13 × In, que é onde ele não desarma.</li>
-    <li><b>Curto-circuito:</b> o disparo magnético da curva C acontece entre 5 e 10 × In. Por isso 10 × In do de baixo precisa ficar ≤ 5 × In do de cima, ou seja, o de cima tem de ter pelo menos o dobro.</li>
+    <li><b>Curto-circuito:</b> o disparo magnético acontece entre 3 e 5 × In na curva B e entre 5 e 10 × In na curva C. O disparo garantido do de baixo (5 × In na B, 10 × In na C) precisa ficar ≤ 5 × In do de cima (curva C). Com curva C embaixo, o de cima tem de ter pelo menos o dobro; com curva B embaixo, basta ser igual ou maior.</li>
     <li><b>Como fechar a cadeia:</b>
       <ul>
         <li>o geral do QDC é uma <b>chave seccionadora</b>, sem disparo: não entra mais um disjuntor entre os quadros e o padrão;</li>
-        <li>os <b>chuveiros saem direto do QDC</b>;</li>
-        <li>os quadros de andar têm só circuitos de até <b>10 A</b>;</li>
+        <li>os <b>chuveiros e os ar-condicionados saem direto do QDC</b> (curva C);</li>
+        <li>os quadros de andar têm só iluminação e tomadas, em circuitos de até <b>10 A curva B</b>;</li>
         <li>assim os disjuntores dos quadros de andar ficam pequenos (QD-1 ${E.SUB[1].disj} A, QD-2 ${E.SUB[2].disj} A) e o padrão de <b>${ALIM.disj} A</b> fica acima de tudo.</li>
       </ul></li>
   </ul>
-  ${table(['Desarma primeiro', 'In', 'Depois', 'In', 'Sobrecarga: de cima vê (A)', 'Limite 1,13 × In (A)', 'Curto: 10 × In ≤ 5 × In', ''], E.SELET.map((x) => `<tr><td class="c">${x.de}</td><td class="n">${x.In}</td><td class="c">${x.para}</td><td class="n">${x.InUp}</td><td class="n">${fmtn(x.sobre, 1)}</td><td class="n">${fmtn(x.limite, 1)}</td><td class="n">${10 * x.In} ≤ ${5 * x.InUp}</td><td class="${x.okSobre && x.okCurto ? 'ok' : 'bad'}">${x.okSobre && x.okCurto ? 'OK' : 'rever'}</td></tr>`))}
+  ${table(['Desarma primeiro', 'In', 'Depois', 'In', 'Sobrecarga: de cima vê (A)', 'Limite 1,13 × In (A)', 'Curto: disparo de baixo ≤ 5 × In de cima', ''], E.SELET.map((x) => `<tr><td class="c">${x.de}</td><td class="n">${x.In}</td><td class="c">${x.para}</td><td class="n">${x.InUp}</td><td class="n">${fmtn(x.sobre, 1)}</td><td class="n">${fmtn(x.limite, 1)}</td><td class="n">${x.mag} ≤ ${5 * x.InUp}</td><td class="${x.okSobre && x.okCurto ? 'ok' : 'bad'}">${x.okSobre && x.okCurto ? 'OK' : 'rever'}</td></tr>`))}
   <p>Em curtos muito fortes, perto do quadro, todos os disjuntores podem disparar ao mesmo tempo, porque o disparo é instantâneo. Para cobrir esse caso:</p>
   <ul>
     <li>usar <b>uma única marca</b> de disjuntores em todos os quadros, classe 3 de limitação;</li>
@@ -792,9 +792,10 @@ function memorial() {
         <li>tomadas baixas a 0,30 m;</li>
         <li>tomadas de bancada, de banheiro e da máquina a 1,10 m;</li>
         <li>micro-ondas a 1,60 m;</li>
-        <li>tomadas de ar-condicionado e chuveiros a 2,20 m (o ar do quarto 1 a 2,45 m, acima da janela);</li>
+        <li>parede da TV (divisa da direita da sala): 3 tomadas e o ponto de rede a 1,80 m, atrás do painel;</li>
+        <li>tomadas altas de ar-condicionado (uma em cada quarto e uma na sala) e chuveiros a 2,20 m (o ar do quarto 1 a 2,45 m, acima da janela);</li>
         <li>interruptores a 1,10 m;</li>
-        <li>arandelas a 2,20 m (2,40 m na escada);</li>
+        <li>arandelas a 2,20 m (2,40 m na escada do térreo, 2,90 m na escada do 1º);</li>
         <li>QDC com o centro a 1,50 m.</li>
       </ul>
       Todas as alturas são contadas do piso acabado até o centro da caixa.</li>
@@ -954,7 +955,7 @@ function pranchas() {
       <footer class="sh-foot">${SYMB}<br>Medidas em metros, do <b>centro da caixa</b> até a <b>face da alvenaria</b> mais próxima (sem reboco), na direção indicada (esquerda/direita = olhando a planta com o fundo para cima; fundo = lado do quintal; frente = lado da rua). Alturas do <b>piso acabado</b> ao centro da caixa. Circuitos e disjuntores: ver o quadro de cargas (prancha ${total}).</footer>
     </section>`;
   });
-  const cRows = CIRC.map((c) => `<tr><td class="c">C${c.n}</td><td class="c">${E.BOARDS[c.board].id}</td><td>${esc(c.desc)}</td><td class="c">${c.v} V · ${c.fases}</td><td class="n">${c.va}</td><td class="c">${String(c.secao).replace('.', ',')} mm²</td><td class="c">${c.v === 220 ? '2P' : '1P'} ${c.disj} A</td><td class="c">${c.dr || ''}</td></tr>`);
+  const cRows = CIRC.map((c) => `<tr><td class="c">C${c.n}</td><td class="c">${E.BOARDS[c.board].id}</td><td>${esc(c.desc)}</td><td class="c">${c.v} V · ${c.fases}</td><td class="n">${c.va}</td><td class="c">${String(c.secao).replace('.', ',')} mm²</td><td class="c">${c.v === 220 ? '2P' : '1P'} ${c.curva}${c.disj}</td><td class="c">${c.dr || ''}</td></tr>`);
   pages.push(`<section class="sheet">
     <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadros de distribuição (QDC, QD-1, QD-2): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
     <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
