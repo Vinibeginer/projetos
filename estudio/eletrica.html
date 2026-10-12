@@ -614,10 +614,10 @@ function unifilar(w, curto) {
     const i0 = rows.findIndex((r) => r.kind === 'sub' && r.b === b), i1 = rows.map((r, i) => (r.b === b ? i : -1)).filter((i) => i >= 0).pop();
     const y = yOf(i0), d = E.SUB[b];
     ln(x0, y, x0 + 12, y);
-    box(x0 + 12, y - 9, 50, 18, '3P ' + d.disj + 'A');
+    box(x0 + 12, y - 9, 50, 18, 'chave ' + d.chave + 'A');
     ln(x0 + 62, y, x0 + 76, y);
     ln(x0 + 76, y, x0 + 76, yOf(i1) + 1, { w: 3 });
-    t(x0 + 84, y + 3.5, `${d.board.id} · #${d.secao} mm² · ${fmtn(d.L / 1000, 1)} m · chave 3P · ${fmtn(d.D, 1)} kW`, { size: 9.5, bold: true });
+    t(x0 + 84, y + 3.5, `${d.board.id} · #${d.secao} mm² · ${fmtn(d.L / 1000, 1)} m · protegido pelo padrão ${ALIM.disj} A · chave 3P no quadro · ${fmtn(d.D, 1)} kW`, { size: 9.5, bold: true });
   });
   const busX = (b) => (b === 'T' ? x0 : x0 + 76);
   DRS.forEach((d) => {
@@ -674,7 +674,7 @@ function memorial() {
     <li><b>Aparelhos de uso específico adotados:</b>
       <ul>
         <li>3 chuveiros de 6.500 W / 220 V (folga sobre os de 7.500 W; não instalar chuveiro mais potente sem refazer o circuito), nos mesmos pontos do projeto hidrossanitário;</li>
-        <li>5 ar-condicionados split em 220 V, cada um com tomada alta e circuito próprio saindo do QDC: 12.000 BTU/h (1.500 VA) no quarto do térreo e nos 3 quartos do 1º, e 18.000 BTU/h (2.000 VA) na sala;</li>
+        <li>5 ar-condicionados split em 220 V, cada um com tomada alta: 12.000 BTU/h (1.500 VA) no quarto do térreo e nos 3 quartos do 1º, e 18.000 BTU/h (2.000 VA) na sala. Cada aparelho tem menos de 10 A, então dois podem dividir um circuito de 16 A (NBR 5410 9.5.3.1); os circuitos saem do quadro do andar;</li>
         <li>micro-ondas de 1.500 VA na cozinha;</li>
         <li>máquina de lavar de 1.200 VA no 2º;</li>
         <li>motor do portão, ½ cv.</li>
@@ -726,38 +726,38 @@ function memorial() {
         <li>capacidade do cabo 0,6/1 kV EPR de ${ALIM.secao} mm², enterrado (método D, 3 condutores carregados, × ${fmtn(E.FCT_SOLO, 2)} pelo solo a 25 °C): ${fmtn(ALIM.iz, 0)} A ≥ ${ALIM.disj} A do padrão — <span class="${ALIM.okIz ? 'ok' : 'bad'}">${ALIM.okIz ? 'OK' : 'insuficiente'}</span>;</li>
         <li>queda de tensão no alimentador de ${fmtn(ALIM.dv, 2)} %; somada à do circuito mais longo, ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %) — <span class="${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'ok' : 'bad'}">${CIRC.every((c) => c.dvTot <= E.DV_TOTAL) ? 'OK' : 'rever'}</span>.</li>
       </ul></li>
-    <li><b>Alimentadores dos quadros de andar</b> (saem do QDC, cada um com disjuntor 3P um degrau acima do maior disjuntor do andar, para seletividade):
-      <ul>${['1', '2'].map((b) => { const d = E.SUB[b]; return `<li><b>${d.board.id}:</b> demanda ${fmtn(d.D, 1)} kW (${fmtn(d.I, 1)} A) · 3 fases + N + PE de <b>${d.secao} mm²</b> · ${fmtn(d.L / 1000, 1)} m · disjuntor 3P <b>${d.disj} A</b> no QDC · capacidade ${fmtn(d.iz, 0)} A (2 alimentadores juntos, FCA 0,8) · queda ${fmtn(d.dv, 2)} % — <span class="${d.ok ? 'ok' : 'bad'}">${d.ok ? 'OK' : 'rever'}</span></li>`; }).join('')}</ul></li>
+    <li><b>Alimentadores dos quadros de andar</b> (saem do barramento do QDC, logo depois da chave geral, <b>sem disjuntor no QDC</b>: quem protege o cabo é o disjuntor do padrão, por isso o cabo tem capacidade maior que ${ALIM.disj} A; no quadro do andar fica uma chave geral 3P):
+      <ul>${['1', '2'].map((b) => { const d = E.SUB[b]; return `<li><b>${d.board.id}:</b> demanda ${fmtn(d.D, 1)} kW (${fmtn(d.I, 1)} A) · 3 fases + N de <b>${d.secao} mm²</b> + PE de ${d.pe} mm² · ${fmtn(d.L / 1000, 1)} m · protegido pelo padrão de ${ALIM.disj} A · capacidade ${fmtn(d.iz, 0)} A (2 alimentadores juntos, FCA 0,8) · chave geral 3P ${d.chave} A no ${d.board.id} · queda ${fmtn(d.dv, 2)} % — <span class="${d.ok ? 'ok' : 'bad'}">${d.ok ? 'OK' : 'rever'}</span></li>`; }).join('')}</ul></li>
     <li><b>Quedas de tensão somadas</b> (alimentador + alimentador do andar + circuito): a maior é ${fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2)} % (limite ${E.DV_TOTAL} %).</li>
     <li><b>Quadros por andar × um quadro só:</b>
       <ul>
         <li>cabos dos circuitos: <b>${fmtn(E.COMPARA.cabosQuadros, 0)} m</b> com quadros por andar, já com ${fmtn(E.COMPARA.subCabo, 0)} m dos alimentadores dos andares, contra ${fmtn(E.COMPARA.cabosUnico, 0)} m com um quadro só (−${fmtn(E.COMPARA.cabosUnico - E.COMPARA.cabosQuadros, 0)} m);</li>
         <li>eletrodutos: ${fmtn(E.COMPARA.dutoQuadros, 0)} m contra ${fmtn(E.COMPARA.dutoUnico, 0)} m;</li>
         <li>a prumada deixa de levar todos os circuitos do 1º e do 2º juntos, e o agrupamento diminui;</li>
-        <li>em compensação, entram 2 quadros, 2 chaves gerais, 2 disjuntores 3P e mais DRs (um grupo por andar).</li>
+        <li>em compensação, entram 2 quadros, 2 chaves gerais e os DRs de cada andar.</li>
       </ul></li>
     <li><b>Categoria do padrão de entrada:</b> definida pela Enel RJ a partir da carga instalada e da demanda (levar este memorial). O disjuntor do padrão e o ramal de ligação seguem a tabela da concessionária; pedir à Enel a categoria com disjuntor de <b>${ALIM.disj} A</b> (mínimo ${fmtn(ALIM.padraoMin.min, 1)} A pela seletividade). Se a Enel só oferecer um valor maior, a seletividade continua valendo; o cabo do ramal precisa acompanhar (Iz ≥ In do padrão).</li>
   </ul>
   <h2>5. Proteções</h2>
   <h3>Dispositivos diferenciais residuais (DR 30 mA)</h3>
-  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR. Em cada quadro os circuitos ficam divididos em grupos (iluminação, tomadas e demais aparelhos), para um disparo não apagar o andar todo, e cada chuveiro tem DR próprio.</p>
+  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR. No QDC, que cabe num quadro de 24 módulos, um DR protege todos os circuitos do térreo. No 1º os chuveiros ficam num DR e o resto em outro, para um disparo no chuveiro não apagar o andar. O In de cada DR cobre a maior corrente numa fase com um chuveiro de cada vez.</p>
   ${table(['DR', 'Quadro', 'Polos', 'In', 'IΔn', 'Grupo', 'Circuitos'], drRows)}
   <ul>
     <li><b>DPS</b> classe II, 275 V / 20 kA, nas 3 fases e no neutro, ligados ao barramento de terra do QDC (NBR 5410 6.3.5). Os quadros de andar ficam a menos de 10 m do QDC, então não precisam de DPS próprio.</li>
     <li><b>Aterramento:</b> 3 hastes cobreadas de 2,40 m interligadas no padrão; resistência medida ≤ 10 Ω. Interligar a esse aterramento as massas metálicas, como a estrutura do portão e as tubulações metálicas, se houver (equipotencialização).</li>
     <li><b>Chuveiros:</b> usar modelos com resistência blindada; com resistência nua, o DR pode disparar.</li>
   </ul>
-  <h3>Seletividade — ordem de desarme: circuito → quadro → padrão</h3>
+  <h3>Seletividade — ordem de desarme: circuito → padrão</h3>
   <p>Num problema, desarma primeiro o disjuntor mais próximo dele; os de cima só desarmam se o problema for no trecho deles. Para garantir essa ordem com disjuntores DIN (NBR NM 60898):</p>
   <ul>
     <li><b>Sobrecarga:</b> com o disjuntor de baixo em 1,45 × In, que desarma com certeza em menos de 1 h, e o resto da casa no uso real, o de cima precisa continuar abaixo de 1,13 × In, que é onde ele não desarma.</li>
     <li><b>Curto-circuito:</b> o disparo magnético acontece entre 3 e 5 × In na curva B e entre 5 e 10 × In na curva C. O disparo garantido do de baixo (5 × In na B, 10 × In na C) precisa ficar ≤ 5 × In do de cima (curva C). Com curva C embaixo, o de cima tem de ter pelo menos o dobro; com curva B embaixo, basta ser igual ou maior.</li>
     <li><b>Como fechar a cadeia:</b>
       <ul>
-        <li>o geral do QDC é uma <b>chave seccionadora</b>, sem disparo: não entra mais um disjuntor entre os quadros e o padrão;</li>
-        <li>os <b>chuveiros e os ar-condicionados saem direto do QDC</b> (curva C);</li>
-        <li>os quadros de andar têm só iluminação e tomadas, em circuitos de até <b>10 A curva B</b>;</li>
-        <li>assim os disjuntores dos quadros de andar ficam pequenos (QD-1 ${E.SUB[1].disj} A, QD-2 ${E.SUB[2].disj} A) e o padrão de <b>${ALIM.disj} A</b> fica acima de tudo.</li>
+        <li>o geral do QDC e os gerais dos quadros de andar são <b>chaves seccionadoras</b>, sem disparo;</li>
+        <li>os alimentadores dos andares não têm disjuntor no QDC: são protegidos pelo disjuntor do padrão. Assim <b>todo circuito fica logo abaixo do padrão</b>, e só existem dois degraus: o disjuntor do circuito e o do padrão;</li>
+        <li>iluminação e tomadas em <b>curva B</b> e aparelhos (chuveiro, ar, micro-ondas, máquina) em curva C;</li>
+        <li>circuitos de tomadas de uso geral dos andares em 10 A, que dão folga à sobrecarga no pico com chuveiro; o padrão de <b>${ALIM.disj} A</b> fica acima de tudo (mínimo ${fmtn(ALIM.padraoMin.min, 1)} A).</li>
       </ul></li>
   </ul>
   ${table(['Desarma primeiro', 'In', 'Depois', 'In', 'Sobrecarga: de cima vê (A)', 'Limite 1,13 × In (A)', 'Curto: disparo de baixo ≤ 5 × In de cima', ''], E.SELET.map((x) => `<tr><td class="c">${x.de}</td><td class="n">${x.In}</td><td class="c">${x.para}</td><td class="n">${x.InUp}</td><td class="n">${fmtn(x.sobre, 1)}</td><td class="n">${fmtn(x.limite, 1)}</td><td class="n">${x.mag} ≤ ${5 * x.InUp}</td><td class="${x.okSobre && x.okCurto ? 'ok' : 'bad'}">${x.okSobre && x.okCurto ? 'OK' : 'rever'}</td></tr>`))}
@@ -960,7 +960,7 @@ function pranchas() {
     <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadros de distribuição (QDC, QD-1, QD-2): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
     <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
     <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Quadro</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
-    <p class="sh-note">Padrão 3P ${ALIM.disj} A · chave geral do QDC 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (${E.SUB[1].secao} mm², 3P ${E.SUB[1].disj} A) · QD-2 ${QT.MOD[2].tam} módulos (${E.SUB[2].secao} mm², 3P ${E.SUB[2].disj} A) · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
+    <p class="sh-note">Padrão 3P ${ALIM.disj} A · chave geral do QDC 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (alimentador ${E.SUB[1].secao} mm²) · QD-2 ${QT.MOD[2].tam} módulos (alimentador ${E.SUB[2].secao} mm²) · alimentadores dos andares protegidos pelo padrão · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
     <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
   </section>`);
   const aviso = nChanged
