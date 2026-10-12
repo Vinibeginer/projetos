@@ -56,6 +56,69 @@ check('parede da TV (divisa da direita da sala) com 3 tomadas e RJ45 a 1,80 m', 
 check('tomada alta de ar-condicionado em cada quarto e na sala, em circuito de ar-condicionado (220 V)', ['Quarto', 'Quarto Master', 'Quarto 1', 'Quarto 2', 'Sala'].every((amb) => E.PONTOS.some((p) => p.eq === 'ac' && p.amb === amb && p.z >= 2200 && p.circ.eq === 'ac' && p.circ.v === 220 && !p.circ.atras)));
 check('quadro de 24 módulos comprado pela obra usado onde cabe (com a reserva da NBR 5410); os demais com módulos para todos os circuitos do andar + reserva', (() => { const M = E.QT.MOD, b = E.COMPRADO.board; return M[b].comprado && M[b].tam === 24 && M[b].mod + M[b].res <= 24 && ['T', '1', '2'].every((k) => M[k].mod + M[k].res <= M[k].tam && M[k].circ === E.CIRC.filter((c) => c.fl === k).length); })(), ['T', '1', '2'].map((k) => E.BOARDS[k].id + ' ' + E.QT.MOD[k].mod + '+' + E.QT.MOD[k].res + '/' + E.QT.MOD[k].tam).join(' · '));
 check('montagem sugerida: cada quadro cabe nas suas fileiras de 12 módulos, com todos os circuitos, DRs e reservas', ['T', '1', '2'].every((b) => { const M = E.QT.MOD[b], F = M.fileiras, it = F.flat(); return F.length <= M.tam / 12 && F.every((f) => f.reduce((s2, x) => s2 + x.mod, 0) <= 12) && E.CIRC.filter((c) => c.board === b).every((c) => it.some((x) => x.txt === 'C' + c.n)) && it.filter((x) => x.t === 'res').length === M.res && it.reduce((s2, x) => s2 + x.mod, 0) === M.mod + M.res; }));
+// NBR 5410 9.5.2: quantidade mínima de tomadas e carga mínima de iluminação em cada cômodo
+{
+  const doc = global.DD.data.initialState(), FLID = { f0: 'T', f1: '1', f2: '2' }, falta = [];
+  doc.floors.forEach((f) => global.DD.rooms.compute(doc, f.id).filter((r) => !r.open).forEach((r) => {
+    const fl = FLID[f.id], A = r.area, Pm = r.perimeter / 1000, n = r.name;
+    const doCom = (p) => p.fl === fl && p.amb.replace(/\s*\(.*\)\s*$/, '') === n;
+    const tug = P.filter((p) => doCom(p) && p.k === 'tug').length, il = P.filter((p) => doCom(p) && p.k === 'il').reduce((s2, p) => s2 + p.va, 0);
+    const min = /^(Lav\.|Banh|Suíte$)/.test(n) && A < 5 ? 1 // banheiro: junto ao lavatório
+      : /Cozinha|Serviço|Varanda coberta/.test(n) ? Math.ceil(Pm / 3.5) // cozinha, área de serviço e análogos (varanda gourmet)
+      : /Varanda/.test(n) ? 1
+      : /Sala|Quarto/.test(n) ? Math.ceil(Pm / 5)
+      : A <= 6 ? 1 : Math.ceil(Pm / 5); // demais cômodos
+    const ilMin = 100 + 60 * Math.max(0, Math.floor((A - 6) / 4));
+    if (tug < min || il < ilMin) falta.push(`${fl} ${n}: TUG ${tug}/${min}, luz ${il}/${ilMin} VA`);
+  }));
+  check('NBR 5410 9.5.2: tomadas mínimas por cômodo (perímetro) e carga mínima de iluminação (área)', !falta.length, falta.join(' · '));
+}
+// NBR 5410 6.2.11.1.6: entre caixas, até 15 m (internas) ou 30 m (externas), menos 3 m por curva de 90°, e no máximo
+// 3 curvas; rede: no máximo 2 curvas. Cada percurso é cortado nas caixas de passagem do projeto e conferido trecho a trecho.
+{
+  const fora = [];
+  /** Corta o percurso P nas caixas (pontos sobre ele, até 16 cm de folga) e devolve os trechos entre caixas. */
+  const cortar = (P, boxes) => {
+    const pts = P.map((q) => q.slice(0, 3)), cortes = [];
+    boxes.forEach((b) => {
+      const q = [b.x, b.y, b.z + E.LEVEL[b.fl] - (P.lv || 0)];
+      let best = null;
+      for (let i = 1; i < pts.length; i++) {
+        const a = pts[i - 1], c = pts[i], d = [0, 1, 2].map((k) => c[k] - a[k]), L2 = d.reduce((s2, v) => s2 + v * v, 0) || 1;
+        const t = Math.max(0, Math.min(1, [0, 1, 2].reduce((s2, k) => s2 + (q[k] - a[k]) * d[k], 0) / L2));
+        const pr = [0, 1, 2].map((k) => a[k] + d[k] * t), dd = Math.hypot(...[0, 1, 2].map((k) => pr[k] - q[k]));
+        if (!best || dd < best.dd) best = { dd, i, t, pr };
+      }
+      if (best && best.dd <= 160) cortes.push(best);
+    });
+    cortes.sort((u, v) => u.i - v.i || u.t - v.t);
+    const runs = [];
+    let cur = [pts[0]], k = 0;
+    for (let i = 1; i < pts.length; i++) {
+      while (k < cortes.length && cortes[k].i === i) { cur.push(cortes[k].pr); runs.push(cur); cur = [cortes[k].pr]; k++; }
+      cur.push(pts[i]);
+    }
+    runs.push(cur);
+    return runs;
+  };
+  const conf = (nome, P, boxes, ext, maxC) => cortar(P, boxes).forEach((R, i) => {
+    const x = typeof ext === 'function' ? ext(R) : ext;
+    if (!E.cabe(R, x, maxC)) fora.push(`${nome} trecho ${i + 1}: ${(E.len3(R) / 1000).toFixed(1)} m, ${E.curvasDe(R)} curvas`);
+  });
+  E.CIRC.forEach((c) => {
+    Object.entries(c.trees).forEach(([fl, t]) => t.edges.forEach((e) => { const P = E.trechoArv(e, fl); P.lv = E.LEVEL[fl]; conf('C' + c.n + ' ' + e.a.id + '→' + e.b.id, P, e.caixas, false); }));
+    c.baixo.forEach((b) => { const P = b.path.slice(); P.lv = E.LEVEL[b.fl]; conf('C' + c.n + ' (por baixo)', P, b.caixas, (R) => E.externo(R, b.fl)); });
+  });
+  conf('ramal', E.ALIM_ROUTE, E.ALIM_CAIXAS, (R) => E.externo(R, 'T'));
+  Object.entries(E.SUB_ROUTE).forEach(([b, R]) => conf('alimentador QD-' + b, R, E.CAIXAS.filter((x) => x.uso === 'alimentador' && x.quem.includes('alimentador do QD-' + b)), false));
+  conf('fibra', E.TEL_ROUTE, E.CAIXAS.filter((x) => x.uso === 'rede' && x.quem.includes('fibra')).concat([Object.assign({ fl: 'T' }, E.PBY.CPT)]), (R) => E.externo(R, 'T'), 2);
+  Object.entries(E.TEL.trees).forEach(([fl, t]) => t.edges.forEach((e) => { const P = E.trechoArv(e, fl); P.lv = E.LEVEL[fl]; conf('rede ' + e.b.id, P, e.caixas, false, 2); }));
+  check('NBR 5410 6.2.11.1.6: trechos entre caixas ≤ 15 m (30 m externos) − 3 m por curva, ≤ 3 curvas (rede ≤ 2), com as caixas de passagem do projeto', !fora.length, fora.slice(0, 8).join(' · ') || E.CAIXAS.length + ' caixas de passagem');
+  check('caixas de passagem: nenhuma enterrada dentro de casa (tampa no piso da sala/garagem)', E.CAIXAS.every((b) => b.onde !== 'enterrada' || !E.coberto(b)), E.CAIXAS.filter((b) => b.onde === 'enterrada' && E.coberto(b)).map((b) => b.id).join(','));
+}
+check('NBR 5410 6.2.11.1.6: taxa de ocupação dos eletrodutos (≤ 40 % com 3 ou mais condutores) em todos os casos do projeto', E.OCUPACAO.filter((o) => !o.comparar).every((o) => o.ok), E.OCUPACAO.map((o) => o.dn + ':' + Math.round(o.taxa * 100) + '%').join(' '));
+check('tomada nunca menor que o disjuntor do circuito (20 A nos circuitos de 16 A)', E.QT.items.some((i) => /Tomada 2P\+T 20 A/.test(i.desc) && i.q >= E.PONTOS.filter((p) => p.k === 'tug' && !p.externa && p.circ && p.circ.disj > 10).length));
+check('quadros com etiqueta de advertência e identificação dos circuitos; DPS ligado com ≥ 4 mm²', ['Etiqueta de advertência', 'Identificação dos circuitos', '4 mm² .* ligação dos DPS'].every((r) => E.QT.items.some((i) => new RegExp(r).test(i.desc))));
 check('dois DRs por quadro de andar e no QDC: iluminação e tomadas separadas dos chuveiros e aparelhos', ['T', '1'].every((b) => { const D = E.DRS.filter((d) => d.board === b); return D.length === 2 && D.every((d) => { const L = d.circ.map((n) => E.CIRC.find((c) => c.n === n)); return L.every((c) => c.tipo === 'tue' && c.eq !== 'mlr') || L.every((c) => c.tipo !== 'tue' || c.eq === 'mlr'); }); }));
 check('iluminação e tomadas dos andares atrás do disjuntor do andar (até 10 A, curva B); chuveiros e ar ligados antes dele', E.CIRC.filter((c) => c.board !== 'T' && c.fl === c.board && (c.tipo === 'il' || c.tipo === 'tug')).every((c) => c.atras && c.disj <= 10 && c.curva === 'B') && E.CIRC.filter((c) => c.eq === 'chuveiro' || c.eq === 'ac').every((c) => !c.atras));
 {
@@ -102,6 +165,16 @@ check('motor do portão enterrado a −0,40 m até o muro', E.PBY['T-PT1'].circ.
     return false;
   })));
   check('nenhuma caixa elétrica na trajetória de tubo do hidrossanitário', !perto.length, perto.map((p) => p.id).join(','));
+  // caixas de passagem (laje, parede, enterradas) também fora dos tubos (20 cm)
+  const pertoCx = E.CAIXAS.filter((b) => HH.PIPES.some((pp) => pp.pts.slice(1).some((q, i) => {
+    const a = pp.pts[i], n = Math.max(2, Math.ceil(Math.hypot(q[0] - a[0], q[1] - a[1], q[2] - a[2]) / 25));
+    for (let k = 0; k <= n; k++) {
+      const t = k / n, x = a[0] + (q[0] - a[0]) * t, y = a[1] + (q[1] - a[1]) * t, z = a[2] + (q[2] - a[2]) * t;
+      if (Math.abs(z - LV[b.fl] - b.z) < 150 && Math.hypot(x - b.x, y - b.y) < 200) return true;
+    }
+    return false;
+  })));
+  check('nenhuma caixa de passagem na trajetória de tubo do hidrossanitário', !pertoCx.length, pertoCx.map((b) => b.id).join(','));
 }
 console.log(bad ? 'test-eletrica: ' + bad + ' falha(s)' : 'test-eletrica: todos os testes ok');
 process.exit(bad ? 1 : 0);

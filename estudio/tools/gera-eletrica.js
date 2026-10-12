@@ -3,8 +3,10 @@
 //   node tools/gera-eletrica.js
 // Regras (NBR 5410:2004, 9.5.2):
 //   iluminação — ao menos 1 ponto no teto por cômodo; carga: 100 VA nos primeiros 6 m² + 60 VA a cada 4 m² inteiros;
-//   TUG — banheiro: 1 junto ao lavatório (600 VA); cozinha/serviço: 1 a cada 3,5 m de perímetro (3 primeiras 600 VA,
-//         demais 100 VA); varanda, garagem, circulação, cômodos ≤ 2,25 m²: ao menos 1; demais: 1 a cada 5 m de perímetro;
+//   TUG (9.5.2.2) — banheiro: 1 junto ao lavatório (600 VA); cozinha, área de serviço e locais análogos (a varanda
+//         coberta, com bancada gourmet e a máquina de lavar): 1 a cada 3,5 m de perímetro (3 primeiras 600 VA, demais
+//         100 VA); varandas: ao menos 1; salas e dormitórios: 1 a cada 5 m de perímetro; demais cômodos (garagem,
+//         circulação, closet, despensa): 1 até 6 m², acima disso 1 a cada 5 m de perímetro;
 //   TUE — aparelhos com mais de 10 A ou fixos (chuveiros, ar-condicionado, micro-ondas, máquina de lavar, portão).
 // Ajustes manuais (posições escolhidas no projeto) ficam em FIXOS e EXTRA, abaixo.
 const fs = require('fs'), path = require('path');
@@ -95,6 +97,16 @@ function spread(room, n, opts) {
   }
   return out;
 }
+/** Como spread, mas garante os n pontos (mínimo da NBR 5410): o que faltar é procurado de novo com folga menor. */
+function spreadMin(room, n, opts) {
+  const out = spread(room, n, opts);
+  for (let k = 0; k < 4 && out.length < n; k++) {
+    const o = Object.assign({}, opts, { avoid: (opts.avoid || []).concat(out), gap: 600, phase: ((k + 1) * 700) });
+    out.push(...spread(room, n - out.length, o));
+  }
+  if (out.length < n && !opts.quiet) console.warn('ATENÇÃO — ' + room.name + ': ' + out.length + ' de ' + n + ' tomadas');
+  return out;
+}
 /** Ponto da parede do cômodo mais próximo de (x, y), deslocado `shift` mm ao longo da parede, longe de `away`. */
 function wallPointNear(room, x, y, shift, away, minAway) {
   const E = edges(room);
@@ -145,7 +157,8 @@ const KIND = (r) => {
   if (/Varanda coberta/.test(n)) return 'gourmet';
   if (/Desp/.test(n)) return 'pequeno';
   if (/Varanda descoberta/.test(n)) return 'terraco';
-  if (/Varanda|Garagem|Circula/.test(n)) return 'passagem';
+  if (/Varanda/.test(n)) return 'varanda';
+  if (/Garagem|Circula/.test(n)) return 'demais';
   return 'seco';
 };
 const ilumVA = (a) => 100 + 60 * Math.max(0, Math.floor((a - 6) / 4));
@@ -196,7 +209,7 @@ roomList.forEach((r) => {
     const p = lav ? wallPointNear(r, lav.x, lav.y, 450, away, 600) : spread(r, 1)[0];
     if (p) add({ id: nextId(fl, 'T'), fl, k: 'tug', amb, x: p.x, y: p.y, z: 1100, va: 600, molhada: true, desc: 'TUG junto ao lavatório (≥ 0,60 m do box) — ' + amb });
   } else if (r.kind === 'cozinha' || r.kind === 'gourmet') {
-    const n = r.kind === 'cozinha' ? Math.ceil(P / 3.5) : Math.ceil(P / 5);
+    const n = Math.ceil(P / 3.5); // a varanda gourmet (bancada com pia e a máquina de lavar) é local análogo à cozinha
     const pia = H.FX.find((x) => x.fl === fl && x.t === 'pia' && inside(r, { x: x.x, y: x.y }));
     const near = [];
     if (pia) {
@@ -206,13 +219,21 @@ roomList.forEach((r) => {
       });
     }
     near.slice(0, 3).forEach((p) => add({ id: nextId(fl, 'T'), fl, k: 'tug', amb, x: p.x, y: p.y, z: 1100, va: 600, molhada: true, desc: 'TUG da bancada (600 VA) — ' + amb }));
-    spread(r, Math.max(0, n - near.slice(0, 3).length), { avoid: near.concat(used), gap: 900 }).forEach((p) =>
-      add({ id: nextId(fl, 'T'), fl, k: 'tug', amb, x: p.x, y: p.y, z: 300, va: 100, molhada: true, desc: 'TUG — ' + amb })
+    const resto = spreadMin(r, Math.max(0, n - near.slice(0, 3).length), { avoid: near.concat(used), gap: 900, quiet: true });
+    // o que não coube no perímetro livre vai na parede da bancada, a 1,10 m, mais longe da pia
+    for (const sh of [2300, 3000, 3700]) {
+      if (near.slice(0, 3).length + resto.length >= n || !pia) break;
+      const p = wallPointNear(r, pia.x, pia.y, sh, near.concat(used, resto), 600);
+      if (p) resto.push(Object.assign(p, { bancada: true }));
+    }
+    if (near.slice(0, 3).length + resto.length < n) console.warn('ATENÇÃO — ' + amb + ': ' + (near.slice(0, 3).length + resto.length) + ' de ' + n + ' tomadas');
+    resto.forEach((p) =>
+      add({ id: nextId(fl, 'T'), fl, k: 'tug', amb, x: p.x, y: p.y, z: p.bancada ? 1100 : 300, va: 100, molhada: true, desc: 'TUG' + (p.bancada ? ' da bancada' : '') + ' — ' + amb })
     );
   } else {
-    const n = r.kind === 'pequeno' ? 1 : r.kind === 'passagem' || r.kind === 'terraco' ? Math.max(1, Math.ceil(P / 10)) : Math.ceil(P / 5);
-    spread(r, n, { avoid: used, gap: 900, allowStair: false }).forEach((p) =>
-      add({ id: nextId(fl, 'T'), fl, k: 'tug', amb, x: p.x, y: p.y, z: r.kind === 'terraco' ? 600 : 300, va: 100, molhada: r.kind === 'terraco' || r.kind === 'passagem', externa: r.kind === 'terraco' || r.outdoor, desc: 'TUG' + (r.kind === 'terraco' ? ' externa (IP44)' : '') + ' — ' + amb })
+    const n = r.kind === 'pequeno' ? 1 : r.kind === 'varanda' || r.kind === 'terraco' ? Math.max(1, Math.ceil(P / 10)) : r.kind === 'demais' && r.area <= 6 ? 1 : Math.ceil(P / 5);
+    (r.kind === 'varanda' || r.kind === 'terraco' ? spread : spreadMin)(r, n, { avoid: used, gap: 900, allowStair: false }).forEach((p) =>
+      add({ id: nextId(fl, 'T'), fl, k: 'tug', amb, x: p.x, y: p.y, z: r.kind === 'terraco' ? 600 : 300, va: 100, molhada: r.kind === 'terraco' || r.kind === 'varanda' || r.kind === 'demais', externa: r.kind === 'terraco' || r.outdoor, desc: 'TUG' + (r.kind === 'terraco' ? ' externa (IP44)' : '') + ' — ' + amb })
     );
   }
   // ---- ar-condicionado nos quartos

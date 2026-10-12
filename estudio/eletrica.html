@@ -352,15 +352,15 @@ function paintFloor(fl, w, h, print, k) {
   // rede de dados (Cat6) na laje, traço-ponto
   if (S.layers.tel) {
     ctx.strokeStyle = COLOR.tel; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.4; ctx.setLineDash([8, 3, 2, 3]);
-    E.telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke(); });
+    E.telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke(); });
     ctx.setLineDash([]); ctx.globalAlpha = 1;
   }
-  // eletrodutos (laje): em L, tracejados, cor do tipo de circuito
+  // eletrodutos (laje): em linha reta entre as caixas, tracejados, cor do tipo de circuito
   E.conduits(fl).forEach(({ c, a, b }) => {
     if (!S.layers[c.tipo]) return;
     const hl = S.hover && PBY[S.hover] && PBY[S.hover].circ === c;
     ctx.strokeStyle = COLOR[c.tipo]; ctx.globalAlpha = hl ? 1 : 0.7; ctx.lineWidth = hl ? 2.6 : 1.3; ctx.setLineDash([6, 3]);
-    ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke();
   });
   ctx.setLineDash([]); ctx.globalAlpha = 1;
   // símbolos (desenhados no espaço do mundo, em mm)
@@ -368,10 +368,13 @@ function paintFloor(fl, w, h, print, k) {
   ctx.save();
   ctx.transform(S.view.s, 0, 0, S.view.s, S.view.ox, S.view.oy);
   const sz = Math.max(70, 4.6 / S.view.s), lw = 1.3 / S.view.s;
+  // caixas de passagem (NBR 5410 6.2.11.1.6), com o número
+  E.caixasDe(fl).filter((b) => b.uso !== 'rede' || S.layers.tel).forEach((b) => E.simboloCaixa(ctx, b, sz * 0.75, lw));
   PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => E.symbol(ctx, p, p.id === S.hover ? sz * 1.4 : sz, lw));
   ctx.restore();
   ctx.setTransform(base);
   if (S.layers.TXT) {
+    E.caixasDe(fl).filter((b) => b.uso !== 'rede' || S.layers.tel).forEach((b) => label(b.id, b.x + 330, b.y - 220, E.COR_CAIXA[b.uso], true));
     PONTOS.filter((p) => p.fl === fl && visible(p)).forEach((p) => {
       if (p.k === 'qdc') return label(p.id === 'QDC' ? 'QDC' : p.id === 'QD1' ? 'QD-1' : 'QD-2', p.x, p.y + (p.y > 8700 ? 330 : -330), '#2b2b2b');
       if (p.k === 'medidor') return label('Padrão Enel', p.x + 700, p.y - 300, '#2b2b2b', true);
@@ -496,16 +499,14 @@ function buildNet3D(groups) {
     const lv = LEVEL[fl], zc = lv + TT[fl];
     E.conduits(fl).forEach(({ c, a, b }) => {
       const g = groups[c.tipo], m = mat(COLOR[c.tipo]);
-      tube(g, [a.x, a.y, zc], [b.x, a.y, zc], 0.014, m);
-      tube(g, [b.x, a.y, zc], [b.x, b.y, zc], 0.014, m);
+      tube(g, [a.x, a.y, zc], [b.x, b.y, zc], 0.014, m);
       if (!b.root && b.z < TT[fl]) tube(g, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.012, m);
     });
   });
   ['T', '1', '2'].forEach((fl) => {
     const lv = LEVEL[fl], zc = lv + TT[fl], m = mat(COLOR.tel);
     E.telConduits(fl).forEach(({ a, b }) => {
-      tube(groups.tel, [a.x, a.y, zc], [b.x, a.y, zc], 0.012, m);
-      tube(groups.tel, [b.x, a.y, zc], [b.x, b.y, zc], 0.012, m);
+      tube(groups.tel, [a.x, a.y, zc], [b.x, b.y, zc], 0.012, m);
       if (!b.root && b.z < TT[fl]) tube(groups.tel, [b.x, b.y, zc], [b.x, b.y, lv + b.z], 0.011, m);
     });
   });
@@ -516,6 +517,12 @@ function buildNet3D(groups) {
   tube(groups.tel, [QDT_XY.x, QDT_XY.y, 1700], [QDT_XY.x, QDT_XY.y, L2 + TT[2]], 0.018, mat(COLOR.tel));
   ALIM_ROUTE.slice(1).forEach((q, i) => tube(groups.qdc, ALIM_ROUTE[i], q, 0.025, mat('#2b2b2b')));
   TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
+  // caixas de passagem: mesma geometria do estúdio (E.caixa3d)
+  ['T', '1', '2'].forEach((fl) => E.caixasDe(fl).forEach((b) => {
+    const d = E.caixa3d(b), m = new THREE.Mesh(new THREE.BoxGeometry(d.size[0], d.size[1], d.size[2]), mat(E.COR_CAIXA[b.uso]));
+    m.position.set(M(d.pos[0]), M(d.pos[1]), M(d.pos[2]));
+    (b.uso === 'rede' ? groups.tel : groups.qdc).add(m);
+  }));
   PONTOS.forEach((p) => {
     const t = tipoOf(p), g = groups[t] || groups.qdc;
     // quadros com o tamanho do quadro de cada andar (módulos DIN), o mesmo do 3D do estúdio
@@ -692,7 +699,7 @@ function memorial() {
         <li><b>Divisão dos circuitos:</b> iluminação separada das tomadas, <b>um circuito de iluminação a cada dois cômodos</b> (as luzes externas juntas) e <b>um circuito de tomadas por cômodo</b> (a cozinha e a bancada da varanda gourmet em circuitos exclusivos, NBR 5410 9.5.3.2). Chuveiros, micro-ondas e máquina com circuito próprio; ar-condicionados aos pares. Um disparo apaga só o cômodo (ou o par de cômodos) com problema.</li>
       </ul></li>
 
-    <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos correm nas lajes e descem pelas paredes até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: até 3 circuitos por eletroduto (FCA = ${fmtn(E.FCA, 2)}); os chuveiros vão em eletroduto exclusivo (FCA = 1).</li>
+    <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos corrugados correm nas lajes <b>em linha reta entre as caixas</b> e descem pelas paredes, sempre na vertical, até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: <b>no máximo 3 circuitos por eletroduto</b> (FCA = ${fmtn(E.FCA, 2)}), em DN 25 (¾") na laje e nas subidas e DN 20 (½") nas descidas (um circuito); os chuveiros vão em eletroduto exclusivo (FCA = 1). Ocupação e caixas de passagem: item 9.</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
     <li><b>Ramal principal (alimentador):</b> <b>${ALIM.secao} mm² em cabo 0,6/1 kV com isolação EPR/XLPE (90 °C)</b>. Esse tipo de cabo é obrigatório no trecho enterrado (o cabo comum de 750 V não pode ser enterrado) e conduz mais corrente que o de PVC. A capacidade vale no trecho mais desfavorável, o enterrado (método D, solo a 25 °C), e cobre o disjuntor do padrão.</li>
     <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
@@ -847,10 +854,61 @@ function memorial() {
         <li><b>descidas que passam por viga:</b> deixar espera (tubo-camisa de PVC) na forma <b>antes de concretar</b>, conferida com o calculista;</li>
         <li><b>nunca rasgar ou furar pilar ou viga</b> depois de pronto: se um ponto precisar mudar de lugar na obra, mover ao longo da alvenaria.</li>
       </ul></li>
-    <li><b>Lajes:</b> os eletrodutos e as caixas octogonais dos pontos de luz são colocados <b>antes da concretagem</b> de cada laje, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
+    <li><b>Lajes:</b> os eletrodutos, as caixas octogonais dos pontos de luz e as <b>caixas de passagem</b> (item 9) são colocados <b>antes da concretagem</b> de cada laje, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
     <li><b>Hidráulica:</b> não passar eletroduto no mesmo rasgo de tubo de água, e manter 20 cm dos shafts (SH-1, SH-2, SH-3) e das prumadas de esgoto.</li>
     <li><b>Teste final:</b> continuidade do PE em todas as tomadas, isolamento (≥ 1 MΩ a 500 V), teste do botão dos DR e polaridade das tomadas (fase à direita, olhando de frente, no padrão NBR 14136).</li>
-  </ul>`;
+  </ul>
+  <h2>9. Conformidade com a NBR 5410</h2>
+  <h3>Eletrodutos: taxa de ocupação (6.2.11.1.6)</h3>
+  <p>A soma das seções dos cabos (pelo diâmetro externo) não pode passar de 53 % da área interna do eletroduto com 1 condutor, 31 % com 2 e 40 % com 3 ou mais. Diâmetros típicos de catálogo (cabo flexível 750 V; eletroduto corrugado).</p>
+  ${table(['Caso', 'Eletroduto', 'Condutores', 'Ocupação', 'Limite', ''], E.OCUPACAO.map((o) => `<tr><td>${esc(o.caso)}</td><td class="c">DN ${o.dn}</td><td class="n">${o.n}</td><td class="n">${fmtn(o.taxa * 100, 0)} %</td><td class="n">${fmtn(o.lim * 100, 0)} %</td><td class="${o.ok ? 'ok' : 'bad'}">${o.comparar ? (o.ok ? 'cabe' : 'não cabe — por isso DN 25 na laje') : o.ok ? 'OK' : 'rever'}</td></tr>`))}
+  <h3>Caixas de passagem (6.2.11.1.6)</h3>
+  <p>Entre duas caixas (ou entre o quadro e uma caixa), um trecho contínuo de eletroduto tem no máximo <b>15 m</b> dentro da edificação e <b>30 m</b> em área externa, <b>menos 3 m para cada curva de 90°</b>, e no máximo <b>3 curvas</b>. A rede (Cat6 e fibra) fica com no máximo 2 curvas. Cada percurso do projeto foi conferido trecho a trecho; onde passaria do limite entra uma caixa de passagem, marcada nas plantas com ⊠ e o número:</p>
+  ${table(['Caixa', 'Pavimento', 'Onde', 'Local', 'Serve a'], E.CAIXAS.map((b) => `<tr><td class="c">${b.id}</td><td class="c">${{ T: 'Térreo', 1: '1º pav.', 2: '2º pav.' }[b.fl]}</td><td>${{ laje: 'laje — tampa cega no teto', parede: b.z >= E.TT[b.fl] - 10 ? 'parede, logo abaixo da laje' : 'parede, a ' + fmtm(b.z) + ' m do piso', enterrada: b.fl === 'T' ? 'enterrada (−0,40 m), tampa no piso' : 'no contrapiso, tampa no piso' }[b.onde]}</td><td>${esc(ambDe(b))}</td><td>${esc(b.quem.join(', '))}</td></tr>`))}
+  <p>A laje do térreo já foi concretada: se os eletrodutos do teto do térreo já estão nela, conferir na obra se as caixas ${E.CAIXAS.filter((b) => b.fl === 'T' && b.onde === 'laje').map((b) => b.id).join(', ') || '—'} foram deixadas. Se a laje foi concretada sem elas, não abrir a laje: o trecho já embutido fica fora deste item e deve ser avaliado com o responsável técnico (enfiação com arame-guia e lubrificante próprio, ou novo trajeto pela parede com caixa).</p>
+  <h3>Lista de conferência</h3>
+  ${table(['Item da norma', 'Exigência', 'No projeto', ''], conformidade().map(([i, r, p2, ok]) => `<tr><td class="c">${i}</td><td>${r}</td><td>${p2}</td><td class="${ok ? 'ok' : 'bad'}">${ok ? 'OK' : 'rever'}</td></tr>`))}
+  <p class="callout">Os números de item seguem a NBR 5410:2004. Conferir a redação final com a norma em mãos e com o responsável técnico (ART).</p>`;
+}
+/** Cômodo (planta de referência) que contém o ponto, ou área externa. */
+function ambDe(b) {
+  const fid = { T: 'f0', 1: 'f1', 2: 'f2' }[b.fl];
+  const em = (x, y) => roomsOf(fid).find((r) => DD.util.pointInPolygon({ x, y }, r.outer));
+  const r = em(b.x, b.y);
+  if (r) return r.name;
+  if (b.onde === 'enterrada') return 'área externa (frente)';
+  // sobre a parede: o cômodo de um dos lados
+  const lado = [[300, 0], [-300, 0], [0, 300], [0, -300]].map(([dx, dy]) => em(b.x + dx, b.y + dy)).find(Boolean);
+  return lado ? (b.onde === 'laje' ? 'laje, sobre a parede — ' : 'parede — ') + lado.name : 'junto à parede';
+}
+/** Itens da NBR 5410 conferidos no projeto: [item, exigência, como está, ok]. */
+function conformidade() {
+  const doc = REF_DOC || DD.data.initialState(), fl2fid = { T: 'f0', 1: 'f1', 2: 'f2' };
+  const tugFalta = [], ilFalta = [];
+  ['T', '1', '2'].forEach((fl) => roomsOf(fl2fid[fl]).forEach((r) => {
+    const n = r.name, Pm = r.perimeter / 1000, A = r.area, doC = (p) => p.fl === fl && p.amb.replace(/\s*\(.*\)\s*$/, '') === n;
+    const min = /^(Lav\.|Banh|Suíte$)/.test(n) && A < 5 ? 1 : /Cozinha|Serviço|Varanda coberta/.test(n) ? Math.ceil(Pm / 3.5) : /Varanda/.test(n) ? 1 : /Sala|Quarto/.test(n) ? Math.ceil(Pm / 5) : A <= 6 ? 1 : Math.ceil(Pm / 5);
+    if (PONTOS.filter((p) => doC(p) && p.k === 'tug').length < min) tugFalta.push(n);
+    if (PONTOS.filter((p) => doC(p) && p.k === 'il').reduce((s2, p) => s2 + p.va, 0) < 100 + 60 * Math.max(0, Math.floor((A - 6) / 4))) ilFalta.push(n);
+  }));
+  const N = (v) => String(v).replace('.', ',');
+  return [
+    ['4.2.5', 'Circuitos de iluminação separados dos de tomadas', CIRC.filter((c) => c.tipo === 'il').length + ' circuitos de iluminação, ' + CIRC.filter((c) => c.tipo === 'tug').length + ' de tomadas', CIRC.every((c) => c.tipo !== 'il' || c.pts.every((id) => /il|int/.test(PBY[id].k)))],
+    ['5.1.3.2.2', 'DR ≤ 30 mA em banheiros, cozinha, serviço, áreas externas, garagem e tomadas que alimentem equipamentos fora de casa', 'todos os ' + CIRC.length + ' circuitos com DR de 30 mA (' + DRS.length + ' DRs)', CIRC.every((c) => !!c.dr)],
+    ['5.3.4', 'Proteção contra sobrecarga: I<sub>b</sub> ≤ I<sub>n</sub> ≤ I<sub>z</sub>', 'conferido circuito a circuito (item 3)', CIRC.every((c) => c.ib <= c.disj && c.disj <= c.iz)],
+    ['6.2.6.1', 'Seção mínima: 1,5 mm² em iluminação, 2,5 mm² em tomadas e força', 'menor seção de iluminação ' + N(Math.min(...CIRC.filter((c) => c.tipo === 'il').map((c) => c.secao))) + ' mm²; de tomadas ' + N(Math.min(...CIRC.filter((c) => c.tipo !== 'il').map((c) => c.secao))) + ' mm²', CIRC.every((c) => c.secao >= (c.tipo === 'il' ? 1.5 : 2.5))],
+    ['Tabela 58', 'Condutor de proteção (PE) com a seção da fase até 16 mm² e 16 mm² até 35 mm²', 'PE em todos os circuitos; ramal PE ' + ALIM.pe + ' mm²; alimentadores PE ' + E.SUB[1].pe + ' mm²', CIRC.every((c) => c.pe >= Math.min(c.secao, 16))],
+    ['6.2.7', 'Queda de tensão: até 4 % no circuito terminal e 5 % do ponto de entrega ao ponto mais distante', 'máx. ' + fmtn(Math.max(...CIRC.map((c) => c.dv)), 2) + ' % no circuito e ' + fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2) + ' % no total', CIRC.every((c) => c.dv <= E.DV_MAX && c.dvTot <= E.DV_TOTAL)],
+    ['6.2.11.1.6', 'Eletrodutos: ocupação ≤ 40 % (3 ou mais condutores); trechos entre caixas ≤ 15 m (30 m externos) − 3 m por curva, ≤ 3 curvas', 'DN 25 na laje, DN 20 nas descidas; ' + E.CAIXAS.length + ' caixas de passagem', E.OCUPACAO.filter((o) => !o.comparar).every((o) => o.ok)],
+    ['Tabela 42', 'Fator de agrupamento conforme o número de circuitos no eletroduto', 'no máximo 3 circuitos por eletroduto: FCA ' + fmtn(E.FCA, 2), true],
+    ['6.3.5', 'DPS na entrada da instalação; condutores de ligação ≥ 4 mm²', '4 DPS classe II 275 V 20 kA no QDC, ligação ≥ 4 mm²', true],
+    ['6.5.4 / Tabela 59', 'Espaço de reserva no quadro (Tabela 59) e advertência da norma na porta de cada quadro', ['T', '1', '2'].map((b) => E.BOARDS[b].id + ' ' + QT.MOD[b].res + ' de reserva').join(' · ') + ' · etiqueta de advertência e identificação dos circuitos', ['T', '1', '2'].every((b) => QT.MOD[b].mod + QT.MOD[b].res <= QT.MOD[b].tam)],
+    ['9.1', 'Banheiros: nenhuma tomada nos volumes 0, 1 e 2; tomada do lavatório a 0,60 m ou mais do box; chuveiro com DR', 'tomadas dos lavatórios fora do volume do box; chuveiros com DR', true],
+    ['9.5.2.1', 'Iluminação: ao menos um ponto no teto por cômodo, com interruptor; 100 VA nos primeiros 6 m² + 60 VA a cada 4 m² inteiros', ilFalta.length ? 'abaixo do mínimo: ' + ilFalta.join(', ') : 'todos os cômodos no mínimo ou acima', !ilFalta.length],
+    ['9.5.2.2', 'Tomadas: banheiro 1 junto ao lavatório; cozinha, serviço e análogos 1 a cada 3,5 m de perímetro; salas e dormitórios 1 a cada 5 m; varandas 1; demais cômodos 1 até 6 m² e 1 a cada 5 m acima; 600 VA nas 3 primeiras de áreas molhadas', tugFalta.length ? 'abaixo do mínimo: ' + tugFalta.join(', ') : 'todos os cômodos no mínimo ou acima (item 2)', !tugFalta.length],
+    ['9.5.3.1', 'Equipamento com mais de 10 A em circuito próprio', 'chuveiros, micro-ondas e máquina com circuito próprio; ar-condicionados (menos de 10 A cada) até 2 por circuito', CIRC.filter((c) => c.pts.some((id) => PBY[id].k === 'tue' && PBY[id].va / (PBY[id].v || 127) > 10)).every((c) => c.pts.filter((id) => PBY[id].va).length === 1)],
+    ['9.5.3.2', 'Tomadas de cozinha, copa, área de serviço e análogos em circuitos só delas', 'circuito exclusivo da cozinha e da varanda gourmet', CIRC.filter((c) => c.tipo === 'tug' && c.pts.some((id) => /Cozinha|Varanda coberta/.test(PBY[id].amb))).every((c) => c.pts.filter((id) => PBY[id].k === 'tug').every((id) => PBY[id].amb === PBY[c.pts[0]].amb))],
+  ];
 }
 function materiais() {
   const iRows = [];
@@ -972,7 +1030,7 @@ function renderSheetImage(sh, pts) {
     return url;
   }
 }
-const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no teto · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · <b style="color:${COLOR.tel}">◆</b> RJ45 · <b style="color:${COLOR.tel}">◉</b> Wi-Fi · tracejado = eletroduto na laje · traço-ponto azul = rede</span>`;
+const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no teto · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · <b style="color:${COLOR.tel}">◆</b> RJ45 · <b style="color:${COLOR.tel}">◉</b> Wi-Fi · <b>⊠</b> caixa de passagem (tracejada: enterrada / no piso) · tracejado = eletroduto na laje, em linha reta entre as caixas · traço-ponto azul = rede</span>`;
 function pranchas() {
   const hoje = new Date().toLocaleDateString('pt-BR');
   let nChanged = 0;
