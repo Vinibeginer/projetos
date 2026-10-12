@@ -603,7 +603,7 @@ function unifilar(w, curto) {
   box(x0 - 40, 10, 80, 28, 'Padrão ' + ALIM.disj + ' A');
   t(x0 + 46, 28, '3F+N 127/220 V', { size: 9 });
   ln(x0, 38, x0, 62);
-  box(x0 - 45, 62, 90, 24, 'Chave 3P ' + ALIM.disj + ' A');
+  box(x0 - 45, 62, 90, 24, 'Secc. 3P ' + ALIM.disj + ' A');
   t(x0 + 52, 78, '#' + ALIM.secao + ' mm² · ' + fmtn(ALIM.L / 1000, 1) + ' m', { size: 9 });
   ln(x0, 86, x0, 100);
   box(x0 + 60, 90, 70, 20, 'DPS 4× 275 V');
@@ -618,11 +618,11 @@ function unifilar(w, curto) {
     const i0 = rows.findIndex((r) => r.kind === 'sub' && r.b === b), i1 = rows.map((r, i) => (r.b === b ? i : -1)).filter((i) => i >= 0).pop();
     const y = yOf(i0), d = E.SUB[b];
     ln(x0, y, x0 + 12, y);
-    if (d.chave) box(x0 + 12, y - 9, 50, 18, 'chave ' + d.chave + 'A');
+    if (d.chave) box(x0 + 12, y - 9, 50, 18, 'secc ' + d.chave + 'A');
     else ln(x0 + 12, y, x0 + 62, y);
     ln(x0 + 62, y, x0 + 76, y);
     ln(x0 + 76, y, x0 + 76, yOf(i1) + 1, { w: 3 });
-    t(x0 + 84, y + 3.5, `${d.board.id} · #${d.secao} mm² · ${fmtn(d.L / 1000, 1)} m · protegido pelo padrão ${ALIM.disj} A · ${fmtn(d.D, 1)} kW`, { size: 9.5, bold: true });
+    t(x0 + 84, y + 3.5, `${d.board.id} · secc. sem disparo · #${d.secao} mm² · ${fmtn(d.L / 1000, 1)} m · protegido pelo padrão ${ALIM.disj} A · ${fmtn(d.D, 1)} kW`, { size: 9.5, bold: true });
   });
   const busX = (b) => (b === 'T' ? x0 : x0 + 76);
   DRS.forEach((d) => {
@@ -685,7 +685,7 @@ function memorial() {
     <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
     <li><b>Quadros de distribuição — um trifásico por andar:</b>
       <ul>
-        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem a chave geral (seccionadora, sem disparo), o DPS, os DRs e <b>todos os ${QT.MOD.T.circ} circuitos do térreo</b>: quadro de <b>${QT.MOD.T.tam} módulos</b> (${QT.MOD.T.mod} ocupados + ${QT.MOD.T.res} de reserva, ~${fmtm(QT.MOD.T.dim[0])} × ${fmtm(QT.MOD.T.dim[1])} m). Os alimentadores dos andares saem do barramento dele, <b>cada um por uma chave seccionadora 3P ${E.SUB[1].chave} A no próprio QDC</b>: desliga-se o 1º ou o 2º andar inteiro (quadro e cabo) pelo térreo, sem desligar o padrão nem o resto da casa. A proteção desses cabos é o disjuntor do padrão.</li>
+        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem a chave geral (seccionadora, sem disparo), o DPS, os DRs e <b>todos os ${QT.MOD.T.circ} circuitos do térreo</b>: quadro de <b>${QT.MOD.T.tam} módulos</b> (${QT.MOD.T.mod} ocupados + ${QT.MOD.T.res} de reserva, ~${fmtm(QT.MOD.T.dim[0])} × ${fmtm(QT.MOD.T.dim[1])} m). Os alimentadores dos andares saem do barramento dele, <b>cada um por uma chave seccionadora 3P ${E.SUB[1].chave} A no próprio QDC</b> (só liga e desliga, não desarma: não é disjuntor; os ${E.SUB[1].chave} A são só a corrente que ela aguenta, acima dos ${ALIM.disj} A do padrão, para nunca ser o ponto fraco): desliga-se o 1º ou o 2º andar inteiro (quadro e cabo) pelo térreo, sem desligar o padrão nem o resto da casa. A proteção desses cabos é o disjuntor do padrão.</li>
         <li><b>QD-1 (1º pavimento):</b> logo acima do QDC, na mesma parede (lado da circulação). O alimentador sobe direto pela parede. Quadro de <b>${QT.MOD[1].tam} módulos</b> com os ${QT.MOD[1].circ} circuitos do 1º (${QT.MOD[1].mod} ocupados + ${QT.MOD[1].res} de reserva, ~${fmtm(QT.MOD[1].dim[0])} × ${fmtm(QT.MOD[1].dim[1])} m).</li>
         <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até a laje do 2º e anda nela até a parede da escada, porque na prumada do QDC o 2º não tem parede. ${QT.MOD[2].comprado ? 'Usa o quadro de ' + QT.MOD[2].tam + ' módulos já comprado pela obra' : 'Quadro de ' + QT.MOD[2].tam + ' módulos'} (${QT.MOD[2].circ} circuitos, ${QT.MOD[2].mod} módulos ocupados + ${QT.MOD[2].res} de reserva); o comprado não comporta o térreo nem o 1º, que passam de 30 módulos.</li>
         <li><b>Cada circuito sai do quadro do seu andar</b> — nenhum circuito de um pavimento fica no quadro de outro: para mexer num andar, desliga-se só o quadro dele. Caminhos mais curtos e nenhum feixe de circuitos subindo pela parede. No próprio quadro do andar, o andar se desliga pelo disjuntor geral (iluminação e tomadas) e pelo DR dos chuveiros e do ar. Cada quadro com acesso livre na frente (NBR 5410 6.5.4.7).</li>
@@ -999,8 +999,8 @@ function pranchas() {
     <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Quadro</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
     <p class="sh-note"><b>Montagem sugerida (vista frontal):</b></p>
     <div class="sh-frente">${['T', '1', '2'].map((b) => frente(b, 300)).join('')}</div>
-    <p class="sh-note">Padrão 3P ${ALIM.disj} A · chave geral do QDC 3P ${ALIM.disj} A · chaves dos andares no QDC 3P ${E.SUB[1].chave} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (alimentador ${E.SUB[1].secao} mm², geral 3P C${E.SUB[1].disj}) · QD-2 ${QT.MOD[2].tam} módulos (alimentador ${E.SUB[2].secao} mm², geral 3P C${E.SUB[2].disj}) · alimentadores dos andares protegidos pelo padrão · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
-    <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
+    <p class="sh-note">Disjuntor do padrão 3P ${ALIM.disj} A · seccionadoras sem disparo no QDC: geral 3P ${ALIM.disj} A e dos andares 3P ${E.SUB[1].chave} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (alimentador ${E.SUB[1].secao} mm², geral 3P C${E.SUB[1].disj}) · QD-2 ${QT.MOD[2].tam} módulos (alimentador ${E.SUB[2].secao} mm², geral 3P C${E.SUB[2].disj}) · alimentadores dos andares protegidos pelo padrão · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
+    <footer class="sh-foot"><b>Secc.</b> = chave seccionadora: só liga e desliga, não desarma (não é disjuntor). Os disjuntores são o do padrão (${ALIM.disj} A), os gerais dos andares (C${E.SUB[1].disj}) e os dos circuitos. Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
   </section>`);
   const aviso = nChanged
     ? `<p class="callout warn"><b>${nChanged} ${nChanged === 1 ? 'ponto tem' : 'pontos têm'} parede diferente</b> da planta usada no projeto elétrico (a planta da nuvem foi alterada perto deles). As medidas já usam as paredes atuais; confira esses pontos (⚠) antes de executar.</p>`
