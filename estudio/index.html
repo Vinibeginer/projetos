@@ -10713,12 +10713,15 @@ kbd {
   // ================================================================================================ circuitos
   // Separação (NBR 5410 9.5.3): iluminação e tomadas em circuitos distintos; TUE com corrente > 10 A ou fixo em
   // circuito próprio; tomadas de cozinha/serviço e de banheiros separadas das demais; cada circuito com folga.
-  // VA por circuito: iluminação e tomadas até 16 A em 127 V (2.000 VA, cabo de 2,5 mm²) no térreo, onde o QDC tem de
-  // caber num quadro de 24 módulos; nos andares as tomadas de uso geral ficam em 10 A (1.270 VA), que dá folga à
+  // VA por circuito: iluminação e tomadas até 16 A em 127 V (2.000 VA, cabo de 2,5 mm²) no térreo, ligadas direto
+  // abaixo do padrão; nos andares as tomadas de uso geral ficam em 10 A (1.270 VA), que dá folga à
   // seletividade com o padrão de 70 A; ar-condicionados em 220 V agrupados até 16 A (3.520 VA) — cada aparelho tem
   // menos de 10 A, então pode dividir o circuito (NBR 5410 9.5.3.1)
   const CAP = { il: 2000, tug: 2000, tg: 1270, ac: 3520 };
-  const QDC_MODULOS = 24; // quadro do térreo comprado pela obra (20 a 25 disjuntores)
+  // quadro de 24 módulos (20 a 25 disjuntores) já comprado pela obra. Com cada circuito no quadro do seu andar, o térreo
+  // e o 1º passam de 30 módulos (com a reserva da NBR 5410, Tabela 59); ele fica no 2º, com folga, e o térreo e o 1º
+  // recebem quadros dimensionados pela quantidade de circuitos
+  const COMPRADO = { board: '2', modulos: 24 };
   // nos andares, iluminação e tomadas ficam atrás do disjuntor geral do quadro do andar: circuitos de até 10 A (1.270 VA)
   const capFl = (fl, cap) => (fl === 'T' ? cap : Math.min(cap, CAP.tg));
   const FL_NAME = { T: 'térreo', 1: '1º pav.', 2: '2º pav.' };
@@ -10786,24 +10789,13 @@ kbd {
     const order = { il: 0, tug: 1, tue: 2 };
     const flr = (c) => ({ T: 0, 1: 1, 2: 2 })[PBY[c.pts[0]].fl];
     C.forEach((c) => (c.fl = PBY[c.pts[0]].fl));
-    // cada circuito sai do quadro do seu andar (o QDC do térreo cabe num quadro de 24 módulos). Ordem de desarme:
+    // cada circuito sai do quadro do seu andar (manutenção por andar: nenhum circuito de um pavimento no quadro de outro).
+    // Ordem de desarme:
     // circuito → disjuntor geral do quadro do andar → padrão. O disjuntor geral de cada andar fica no próprio quadro do
     // andar e protege iluminação e tomadas (circuitos de até 10 A, curva B); chuveiros e ar-condicionados (grandes
     // demais para caberem abaixo de um disjuntor de andar seletivo com o padrão de 70 A) ligam no mesmo quadro, antes
     // desse disjuntor. O alimentador de cada andar é protegido pelo disjuntor do padrão (cabo com Iz ≥ In do padrão).
     C.forEach((c) => (c.board = c.fl));
-    // o QDC do térreo tem de caber no quadro de 24 módulos comprado (com a reserva da NBR 5410, Tabela 59): o que não
-    // couber sai do QD-1, que fica logo acima dele na mesma parede — primeiro a iluminação do térreo (corre na laje do
-    // térreo, logo abaixo do QD-1), depois o ar-condicionado, depois as tomadas externas
-    const modQDC = () => {
-      const L = C.filter((c) => c.board === 'T'), N = L.length;
-      return L.reduce((s2, c) => s2 + (c.v === VFF ? 2 : 1), 0) + 4 + 3 + 4 + (N <= 6 ? 2 : N <= 12 ? 3 : N <= 30 ? 4 : Math.ceil(0.15 * N));
-    };
-    const fila = C.filter((c) => c.fl === 'T' && c.tipo === 'il')
-      .concat(C.filter((c) => c.fl === 'T' && c.eq === 'ac'))
-      .concat(C.filter((c) => c.fl === 'T' && c.tipo === 'tug' && /Quintal/.test(c.desc)))
-      .concat(C.filter((c) => c.fl === 'T' && c.tipo === 'tug' && !/Quintal|Cozinha/.test(c.desc)).sort((a, b) => a.va - b.va));
-    while (modQDC() > QDC_MODULOS && fila.length) fila.shift().board = '1';
     C.forEach((c) => (c.curva = c.tipo === 'tue' ? 'C' : 'B'));
     const brd = { T: 0, 1: 1, 2: 2 };
     C.sort((a, b) => brd[a.board] - brd[b.board] || flr(a) - flr(b) || order[a.tipo] - order[b.tipo] || (a.v - b.v) || a.key.localeCompare(b.key, 'pt', { numeric: true }));
@@ -10851,8 +10843,7 @@ kbd {
   // quadro é a soma dos seus circuitos
   // primeiro a iluminação e as tomadas de cada andar (atrás do disjuntor do andar) equilibradas entre si — o disjuntor do
   // andar fica pequeno —, depois os circuitos ligados direto, sobre a soma
-  // (circuitos do térreo que saem do QD-1 ficam antes do disjuntor do andar: o disjuntor do 1º não comporta o térreo)
-  const atrasDe = (c) => c.board !== 'T' && c.fl === c.board && (c.tipo !== 'tue' || c.eq === 'mlr');
+  const atrasDe = (c) => c.board !== 'T' && (c.tipo !== 'tue' || c.eq === 'mlr');
   const realTot = { A: 0, B: 0, C: 0 };
   ['1', '2'].forEach((b) => { const r = balance(CIRC.filter((c) => c.board === b && atrasDe(c))); ['A', 'B', 'C'].forEach((f) => (realTot[f] += r[f])); });
   balance(CIRC.filter((c) => !atrasDe(c)), realTot);
@@ -10982,16 +10973,17 @@ kbd {
 
   // ------------------------------------------------------------------ proteção diferencial (DR 30 mA) e DPS
   // NBR 5410 5.1.3.2.2: DR ≤ 30 mA em banheiros, cozinhas, áreas de serviço, áreas externas e tomadas que possam
-  // alimentar equipamentos externos. Aqui: DR em todos os circuitos. No QDC (quadro de 24 módulos) um DR para todos os
-  // circuitos do térreo; nos quadros de andar os chuveiros ficam num DR e o resto em outro.
+  // alimentar equipamentos externos. Aqui: DR em todos os circuitos, dois por quadro — iluminação e tomadas num,
+  // chuveiros, micro-ondas e ar-condicionado no outro —, para um disparo no chuveiro não apagar as luzes.
   // In do DR: maior corrente numa fase com um chuveiro de cada vez (uso da casa) e os demais circuitos na nominal.
   const DRS = [];
   ['T', '1', '2'].forEach((b) => {
     const mine = CIRC.filter((c) => c.board === b);
-    // QDC: um DR para todos; andares: um DR na entrada (chuveiros e ar) e outro depois do disjuntor geral do andar
+    // QDC: iluminação e tomadas num DR, aparelhos (chuveiro, micro-ondas, ar) no outro, todos direto abaixo do padrão;
+    // andares: um DR na entrada (chuveiros e ar) e outro depois do disjuntor geral do andar (iluminação e tomadas)
     const grupos = b === 'T'
-      ? [['Todos os circuitos do quadro', () => true, 'geral']]
-      : [['Chuveiros e ar-condicionado (entrada do quadro)', (c) => !c.atras && c.fl === b, 'direto'], ['Circuitos do térreo que saem deste quadro', (c) => c.fl !== b, 'direto'], ['Iluminação e tomadas (depois do disjuntor do andar)', (c) => c.atras, 'quadro']];
+      ? [['Iluminação e tomadas', (c) => c.tipo !== 'tue', 'geral'], ['Chuveiro, micro-ondas e ar-condicionado', (c) => c.tipo === 'tue', 'geral']]
+      : [['Chuveiros e ar-condicionado (entrada do quadro)', (c) => !c.atras, 'direto'], ['Iluminação e tomadas (depois do disjuntor do andar)', (c) => c.atras, 'quadro']];
     grupos.forEach(([desc, f, secao]) => {
       const L = mine.filter(f);
       if (!L.length) return;
@@ -11206,7 +11198,7 @@ kbd {
     // quadros
     const disj = {};
     CIRC.forEach((c) => { const k = 'curva ' + c.curva + ' ' + (c.v === VFF ? '2P ' : '1P ') + c.disj + ' A'; disj[k] = (disj[k] || 0) + 1; });
-    Object.keys(disj).sort().forEach((k) => it('Quadros', 'Disjuntor termomagnético DIN ' + k, 'un', disj[k], /curva B/.test(k) ? 'circuitos dos quadros de andar (QD-1, QD-2)' : 'circuitos que saem do QDC'));
+    Object.keys(disj).sort().forEach((k) => it('Quadros', 'Disjuntor termomagnético DIN ' + k, 'un', disj[k], /curva B/.test(k) ? 'iluminação, tomadas e máquina de lavar' : 'chuveiros, ar-condicionado e micro-ondas'));
     it('Quadros', 'Chave seccionadora 3P ' + ALIM.disj + ' A (geral do QDC, sem disparo)', 'un', 1, 'a proteção do ramal é o disjuntor do padrão (seletividade circuito → quadro → padrão)');
     it('Quadros', 'Disjuntor do padrão 3P ' + ALIM.disj + ' A curva C (kit do padrão Enel)', 'un', 1, 'categoria a pedir à Enel; mínimo ' + ALIM.padraoMin.min.toFixed(1).replace('.', ',') + ' A para a seletividade');
     Object.values(SUB).forEach((d) => it('Quadros', 'Disjuntor DIN curva C 3P ' + d.disj + ' A — geral do ' + d.board.id + ' (no próprio quadro)', 'un', 1, 'protege a iluminação e as tomadas do andar; desarma depois do circuito e antes do padrão'));
@@ -11219,9 +11211,10 @@ kbd {
       // ocupado: disjuntores dos circuitos + DRs + (QDC) chave geral 3P e 4 DPS / (andar) disjuntor geral 3P e chave de entrada
       const mod = mine.reduce((s, c) => s + (c.v === VFF ? 2 : 1), 0) + DRS.filter((d) => d.board === b).reduce((s, d) => s + d.polos, 0) + (b === 'T' ? 3 + 4 : 3 + (SUB[b].chave ? 3 : 0));
       const N = mine.length, res = N <= 6 ? 2 : N <= 12 ? 3 : N <= 30 ? 4 : Math.ceil(0.15 * N); // reserva, NBR 5410 Tabela 59
-      const tam = [12, 18, 24, 36, 48, 56, 72].find((m) => m >= mod + res) || 72;
-      MOD[b] = { mod, res, tam, circ: N };
-      it('Quadros', `Quadro de distribuição de embutir ${tam} módulos DIN, barramentos trifásico, neutro e terra — ${BOARDS[b].id}`, 'un', 1, `${N} circuitos · ${mod} módulos ocupados + ${res} de reserva (NBR 5410 6.5.4.7)`);
+      const comprado = b === COMPRADO.board && mod + res <= COMPRADO.modulos;
+      const tam = comprado ? COMPRADO.modulos : [12, 18, 24, 36, 48, 56, 72].find((m) => m >= mod + res) || 72;
+      MOD[b] = { mod, res, tam, circ: N, comprado, dim: dimQuadro(tam) };
+      it('Quadros', `Quadro de distribuição de embutir ${tam} módulos DIN, barramentos trifásico, neutro e terra — ${BOARDS[b].id}${comprado ? ' (já comprado pela obra)' : ''}`, 'un', 1, `${comprado ? 'não comprar: ' : ''}${N} circuitos · ${mod} módulos ocupados + ${res} de reserva (NBR 5410 6.5.4.7) · ~${fmtm(MOD[b].dim[0], 2)} × ${fmtm(MOD[b].dim[1], 2)} m`);
     });
     // rede (fibra + Cat6)
     const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap' || p.tel === 'roteador').length;
@@ -11238,6 +11231,10 @@ kbd {
     it('Aterramento', 'Caixa de inspeção do aterramento 30×30', 'un', 1, '');
     it('Acessórios', 'Fita isolante, terminais, abraçadeiras, buchas e arruelas', 'vb', 1, '');
     return { cabos, items, MOD, modulos: MOD.T.mod, qdc: MOD.T.tam };
+  }
+  /** Dimensões aproximadas (mm, largura × altura) de um quadro de embutir: fileiras de 12 módulos DIN. */
+  function dimQuadro(tam) {
+    return [360, 140 + 130 * Math.ceil(tam / 12)];
   }
   const QT = quantities();
   // comparação com um quadro só no térreo (mesmas seções): metros de cabo e de eletroduto dos circuitos
@@ -11449,7 +11446,8 @@ kbd {
       [[ALIM_ROUTE, COLOR.alim, 0.022], [TEL_ROUTE, COLOR.tel, 0.016]].forEach(([Rt, col, r]) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, r, mat(col, 0.9))));
     ptsOf(fl).forEach((p) => {
       const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
-      const sz = p.k === 'qdc' ? (p.id === 'QDC' ? [0.5, 0.7, 0.12] : [0.4, 0.5, 0.12]) : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' || p.tel === 'roteador' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
+      const dq = p.k === 'qdc' && QT.MOD[p.fl].dim;
+      const sz = p.k === 'qdc' ? [dq[0] * MM, dq[1] * MM, 0.12] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' || p.tel === 'roteador' ? [0.12, 0.05, 0.12] : [0.07, 0.1, 0.07];
       const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(col, 1));
       m.position.set(p.x * MM, (lv + p.z) * MM, p.y * MM);
       put(m);
@@ -11458,7 +11456,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP, COMPRADO,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

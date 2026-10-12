@@ -515,7 +515,8 @@ function buildNet3D(groups) {
   TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
   PONTOS.forEach((p) => {
     const t = tipoOf(p), g = groups[t] || groups.qdc;
-    const sz = p.k === 'qdc' ? [0.5, 0.7, 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' || p.tel === 'roteador' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
+    // quadros com o tamanho do quadro de cada andar (módulos DIN), o mesmo do 3D do estúdio
+    const sz = p.k === 'qdc' ? [M(QT.MOD[p.fl].dim[0]), M(QT.MOD[p.fl].dim[1]), 0.12] : p.k === 'medidor' ? [0.4, 0.5, 0.2] : p.tel === 'qdt' ? [0.4, 0.4, 0.12] : p.k === 'il' || p.tel === 'ap' || p.tel === 'roteador' ? [0.14, 0.05, 0.14] : [0.08, 0.11, 0.08];
     const m = new THREE.Mesh(new THREE.BoxGeometry(sz[0], sz[1], sz[2]), mat(KCOL[p.k] || '#333'));
     m.position.set(M(p.x), M(LEVEL[p.fl] + p.z), M(p.y));
     g.add(m);
@@ -579,8 +580,8 @@ function previsao() {
   return rows;
 }
 function unifilar(w, curto) {
-  // diagrama unifilar simplificado (SVG): entrada → DG → DPS → barramento do QDC → DR → circuitos do térreo;
-  // do mesmo barramento saem os disjuntores dos alimentadores do QD-1 e do QD-2, cada um com seu barramento
+  // diagrama unifilar simplificado (SVG): entrada → chave geral → DPS → barramento do QDC → DRs → circuitos do térreo;
+  // do mesmo barramento saem os alimentadores do QD-1 e do QD-2, cada um com seu barramento
   const rowH = 20, top = 120, W = w || 900;
   const x0 = 60, off = { T: 0, 1: 34, 2: 34 };
   const xb = (curto ? 196 : 250), xdr = (curto ? 270 : 330), xc = (curto ? 318 : 430);
@@ -657,10 +658,10 @@ function memorial() {
     <li><b>Esquema de aterramento:</b> TN-S a partir do quadro (condutor de proteção PE separado do neutro em todos os circuitos), com equipotencialização principal no padrão.</li>
     <li><b>Quadros de distribuição — um trifásico por andar:</b>
       <ul>
-        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem a chave geral (seccionadora, sem disparo), o DPS, o DR e os circuitos do térreo que cabem no quadro de ${QT.MOD.T.tam} módulos comprado pela obra (${QT.MOD.T.mod} ocupados + ${QT.MOD.T.res} de reserva). Os alimentadores dos andares saem do barramento dele, protegidos pelo disjuntor do padrão.</li>
-        <li><b>QD-1 (1º pavimento):</b> logo acima do QDC, na mesma parede (lado da circulação). O alimentador sobe direto pela parede. Também alimenta o que do térreo não coube no QDC (${CIRC.filter((c) => c.fl === 'T' && c.board === '1').map((c) => 'C' + c.n).join(', ') || '—'}: iluminação do térreo, ar-condicionado e tomada do quintal), descendo pela mesma parede até a laje do térreo, antes do disjuntor do andar e com DR próprio.</li>
-        <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até a laje do 2º e anda nela até a parede da escada, porque na prumada do QDC o 2º não tem parede.</li>
-        <li>Cada circuito sai do quadro do seu andar: caminhos mais curtos, nenhum feixe de circuitos subindo pela parede e manutenção por andar. Cada quadro tem chave geral e acesso livre na frente (NBR 5410 6.5.4.7).</li>
+        <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem a chave geral (seccionadora, sem disparo), o DPS, os DRs e <b>todos os ${QT.MOD.T.circ} circuitos do térreo</b>: quadro de <b>${QT.MOD.T.tam} módulos</b> (${QT.MOD.T.mod} ocupados + ${QT.MOD.T.res} de reserva, ~${fmtm(QT.MOD.T.dim[0])} × ${fmtm(QT.MOD.T.dim[1])} m). Os alimentadores dos andares saem do barramento dele, protegidos pelo disjuntor do padrão.</li>
+        <li><b>QD-1 (1º pavimento):</b> logo acima do QDC, na mesma parede (lado da circulação). O alimentador sobe direto pela parede. Quadro de <b>${QT.MOD[1].tam} módulos</b> com os ${QT.MOD[1].circ} circuitos do 1º (${QT.MOD[1].mod} ocupados + ${QT.MOD[1].res} de reserva, ~${fmtm(QT.MOD[1].dim[0])} × ${fmtm(QT.MOD[1].dim[1])} m).</li>
+        <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até a laje do 2º e anda nela até a parede da escada, porque na prumada do QDC o 2º não tem parede. ${QT.MOD[2].comprado ? 'Usa o quadro de ' + QT.MOD[2].tam + ' módulos já comprado pela obra' : 'Quadro de ' + QT.MOD[2].tam + ' módulos'} (${QT.MOD[2].circ} circuitos, ${QT.MOD[2].mod} módulos ocupados + ${QT.MOD[2].res} de reserva); o comprado não comporta o térreo nem o 1º, que passam de 30 módulos.</li>
+        <li><b>Cada circuito sai do quadro do seu andar</b> — nenhum circuito de um pavimento fica no quadro de outro: para mexer num andar, desliga-se só o quadro dele. Caminhos mais curtos e nenhum feixe de circuitos subindo pela parede. Cada quadro tem chave geral e acesso livre na frente (NBR 5410 6.5.4.7).</li>
         <li><b>Divisão dos circuitos:</b> iluminação separada das tomadas, <b>um circuito de iluminação a cada dois cômodos</b> (as luzes externas juntas) e <b>um circuito de tomadas por cômodo</b> (a cozinha e a bancada da varanda gourmet em circuitos exclusivos, NBR 5410 9.5.3.2). Chuveiros, micro-ondas e máquina com circuito próprio; ar-condicionados aos pares. Um disparo apaga só o cômodo (ou o par de cômodos) com problema.</li>
       </ul></li>
 
@@ -744,7 +745,7 @@ function memorial() {
   </ul>
   <h2>5. Proteções</h2>
   <h3>Dispositivos diferenciais residuais (DR 30 mA)</h3>
-  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR. No QDC, que cabe num quadro de 24 módulos, um DR protege todos os circuitos do térreo. Nos andares, um DR fica na entrada (chuveiros e ar-condicionado) e outro depois do disjuntor geral do andar (iluminação e tomadas), para um disparo no chuveiro não apagar o andar. O In de cada DR cobre a maior corrente numa fase com um chuveiro de cada vez.</p>
+  <p>A NBR 5410 (5.1.3.2.2) exige DR ≤ 30 mA nos circuitos de banheiros, cozinha, área de serviço, áreas externas e tomadas que possam alimentar equipamentos fora de casa. Aqui todos os circuitos têm DR, dois em cada quadro, para um disparo no chuveiro não apagar o andar. No QDC, um DR protege a iluminação e as tomadas e outro o chuveiro, o micro-ondas e o ar-condicionado. Nos andares, um DR fica na entrada (chuveiros e ar-condicionado) e outro depois do disjuntor geral do andar (iluminação e tomadas). O In de cada DR cobre a maior corrente numa fase com um chuveiro de cada vez.</p>
   ${table(['DR', 'Quadro', 'Polos', 'In', 'IΔn', 'Grupo', 'Circuitos'], drRows)}
   <ul>
     <li><b>DPS</b> classe II, 275 V / 20 kA, nas 3 fases e no neutro, ligados ao barramento de terra do QDC (NBR 5410 6.3.5). Os quadros de andar ficam a menos de 10 m do QDC, então não precisam de DPS próprio.</li>
@@ -760,7 +761,7 @@ function memorial() {
       <ul>
         <li><b>iluminação e tomadas dos andares</b>: circuito de até 10 A curva B → <b>disjuntor geral do andar</b> (QD-1 C${E.SUB[1].disj}, QD-2 C${E.SUB[2].disj}, no próprio quadro) → <b>padrão ${ALIM.disj} A</b>. São os três degraus;</li>
         <li><b>chuveiros e ar-condicionados dos andares</b> ligam na entrada do quadro do andar, antes do disjuntor geral, e ficam logo abaixo do padrão: um disjuntor de andar grande o bastante para um chuveiro (≥ 50 A) não teria como desarmar antes do padrão de ${ALIM.disj} A — numa sobrecarga dele, o padrão desarmaria junto;</li>
-        <li><b>circuitos do térreo</b> saem do QDC, que é o quadro de entrada, logo abaixo do padrão;</li>
+        <li><b>circuitos do térreo</b>, todos, saem do QDC, que é o quadro de entrada, logo abaixo do padrão; nenhum circuito do térreo passa pelos quadros dos andares;</li>
         <li>o geral do QDC e a chave de entrada do QD-1 são <b>chaves seccionadoras</b>, sem disparo; os alimentadores dos andares são protegidos pelo padrão;</li>
         <li>iluminação e tomadas em <b>curva B</b> e aparelhos (chuveiro, ar, micro-ondas) em curva C; o padrão de <b>${ALIM.disj} A</b> fica acima de tudo (mínimo ${fmtn(ALIM.padraoMin.min, 1)} A).</li>
       </ul></li>
