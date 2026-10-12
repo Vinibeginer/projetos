@@ -86,8 +86,10 @@
     {id: "T-IL8", fl: "T", k: "il", tipo: "teto", amb: "Garagem", x: 2150, y: 11850, z: 2780, va: 140, desc: "Ponto de luz no teto — Garagem"},
     {id: "T-IL9", fl: "T", k: "il", tipo: "teto", amb: "Garagem", x: 2150, y: 13650, z: 2780, va: 140, desc: "Ponto de luz no teto — Garagem"},
     {id: "T-S7", fl: "T", k: "int", amb: "Garagem", x: 3050, y: 10500, z: 1100, liga: ["T-IL8","T-IL9"], desc: "Interruptor simples — Garagem"},
-    {id: "T-T17", fl: "T", k: "tug", amb: "Garagem", x: 4150, y: 11350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
-    {id: "T-T18", fl: "T", k: "tug", amb: "Garagem", x: 150, y: 14550, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
+    {id: "T-T17", fl: "T", k: "tug", amb: "Garagem", x: 2125, y: 10500, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
+    {id: "T-T18", fl: "T", k: "tug", amb: "Garagem", x: 4150, y: 12675, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
+    {id: "T-T19", fl: "T", k: "tug", amb: "Garagem", x: 150, y: 14525, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
+    {id: "T-T20", fl: "T", k: "tug", amb: "Garagem", x: 150, y: 12625, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Garagem"},
     {id: "1-IL1", fl: "1", k: "il", tipo: "teto", amb: "Closet", x: 2900, y: 3800, z: 3360, va: 100, desc: "Ponto de luz no teto — Closet"},
     {id: "1-S1", fl: "1", k: "int", amb: "Closet", x: 3050, y: 4600, z: 1100, liga: ["1-IL1"], desc: "Interruptor simples — Closet"},
     {id: "1-T1", fl: "1", k: "tug", amb: "Closet", x: 3700, y: 3000, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Closet"},
@@ -112,28 +114,29 @@
     {id: "1-T10", fl: "1", k: "tug", amb: "Banhº", x: 1650, y: 9820, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Banhº"},
     {id: "1-IL7", fl: "1", k: "il", tipo: "teto", amb: "Circulação", x: 6000, y: 9550, z: 3360, va: 100, desc: "Ponto de luz no teto — Circulação"},
     {id: "1-S6", fl: "1", k: "int", amb: "Circulação", x: 3150, y: 9325, z: 1100, liga: ["1-IL7"], desc: "Interruptor simples — Circulação"},
-    {id: "1-T11", fl: "1", k: "tug", amb: "Circulação", x: 4600, y: 8750, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
-    {id: "1-T12", fl: "1", k: "tug", amb: "Circulação", x: 5500, y: 10350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
+    {id: "1-T11", fl: "1", k: "tug", amb: "Circulação", x: 4583, y: 8750, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
+    {id: "1-T12", fl: "1", k: "tug", amb: "Circulação", x: 6000, y: 10350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
+    {id: "1-T13", fl: "1", k: "tug", amb: "Circulação", x: 5400, y: 10350, z: 300, va: 100, molhada: true, externa: false, desc: "TUG — Circulação"},
     {id: "1-IL8", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 11805, z: 3360, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
     {id: "1-IL9", fl: "1", k: "il", tipo: "teto", amb: "Quarto 1", x: 2150, y: 13545, z: 3360, va: 110, desc: "Ponto de luz no teto — Quarto 1"},
     {id: "1-S7", fl: "1", k: "int", amb: "Quarto 1", x: 3700, y: 14850, z: 1100, liga: ["1-IL8","1-IL9"], desc: "Interruptor simples — Quarto 1"},
-    {id: "1-T13", fl: "1", k: "tug", amb: "Quarto 1", x: 2238, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
-    {id: "1-T14", fl: "1", k: "tug", amb: "Quarto 1", x: 4150, y: 12663, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
-    {id: "1-T15", fl: "1", k: "tug", amb: "Quarto 1", x: 2463, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
-    {id: "1-T16", fl: "1", k: "tug", amb: "Quarto 1", x: 150, y: 12588, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
+    {id: "1-T14", fl: "1", k: "tug", amb: "Quarto 1", x: 2238, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
+    {id: "1-T15", fl: "1", k: "tug", amb: "Quarto 1", x: 4150, y: 12663, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
+    {id: "1-T16", fl: "1", k: "tug", amb: "Quarto 1", x: 2463, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
+    {id: "1-T17", fl: "1", k: "tug", amb: "Quarto 1", x: 150, y: 12588, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 1"},
     {id: "1-AC2", fl: "1", k: "tue", eq: "ac", amb: "Quarto 1", x: 1700, y: 14850, z: 2450, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto 1 — acima da janela (fachada)"},
     {id: "1-IL10", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 5529, y: 12675, z: 3360, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
     {id: "1-IL11", fl: "1", k: "il", tipo: "teto", amb: "Quarto 2", x: 7622, y: 12675, z: 3360, va: 140, desc: "Ponto de luz no teto — Quarto 2"},
     {id: "1-S8", fl: "1", k: "int", amb: "Quarto 2", x: 7400, y: 14850, z: 1100, liga: ["1-IL10","1-IL11"], desc: "Interruptor simples — Quarto 2"},
-    {id: "1-T17", fl: "1", k: "tug", amb: "Quarto 2", x: 6525, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
-    {id: "1-T18", fl: "1", k: "tug", amb: "Quarto 2", x: 8850, y: 12625, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
-    {id: "1-T19", fl: "1", k: "tug", amb: "Quarto 2", x: 7625, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
-    {id: "1-T20", fl: "1", k: "tug", amb: "Quarto 2", x: 4300, y: 11675, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
+    {id: "1-T18", fl: "1", k: "tug", amb: "Quarto 2", x: 6975, y: 10500, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
+    {id: "1-T19", fl: "1", k: "tug", amb: "Quarto 2", x: 8850, y: 12625, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
+    {id: "1-T20", fl: "1", k: "tug", amb: "Quarto 2", x: 7625, y: 14850, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
+    {id: "1-T21", fl: "1", k: "tug", amb: "Quarto 2", x: 4300, y: 11675, z: 300, va: 100, molhada: false, externa: false, desc: "TUG — Quarto 2"},
     {id: "1-AC3", fl: "1", k: "tue", eq: "ac", amb: "Quarto 2", x: 8000, y: 14850, z: 2200, va: 1500, v: 220, desc: "Ar-condicionado split 12.000 BTU/h (1.500 VA, 220 V) — Quarto 2 — fachada, à direita da janela"},
     {id: "1-IL12", fl: "1", k: "il", tipo: "teto", amb: "Varanda", x: 4500, y: 15525, z: 3360, va: 100, desc: "Ponto de luz no teto — Varanda"},
     {id: "1-S9", fl: "1", k: "int", amb: "Varanda", x: 3700, y: 15000, z: 1100, liga: ["1-IL12"], desc: "Interruptor simples — Varanda"},
-    {id: "1-T21", fl: "1", k: "tug", amb: "Varanda", x: 4725, y: 15000, z: 300, va: 100, molhada: true, externa: true, desc: "TUG — Varanda"},
-    {id: "1-T22", fl: "1", k: "tug", amb: "Varanda", x: 150, y: 15825, z: 300, va: 100, molhada: true, externa: true, desc: "TUG — Varanda"},
+    {id: "1-T22", fl: "1", k: "tug", amb: "Varanda", x: 4725, y: 15000, z: 300, va: 100, molhada: true, externa: true, desc: "TUG — Varanda"},
+    {id: "1-T23", fl: "1", k: "tug", amb: "Varanda", x: 150, y: 15825, z: 300, va: 100, molhada: true, externa: true, desc: "TUG — Varanda"},
     {id: "2-IL1", fl: "2", k: "il", tipo: "teto", amb: "Varanda coberta", x: 3450, y: 4838, z: 2780, va: 150, desc: "Ponto de luz no teto — Varanda coberta"},
     {id: "2-IL2", fl: "2", k: "il", tipo: "teto", amb: "Varanda coberta", x: 7050, y: 4838, z: 2780, va: 150, desc: "Ponto de luz no teto — Varanda coberta"},
     {id: "2-IL3", fl: "2", k: "il", tipo: "teto", amb: "Varanda coberta", x: 3450, y: 8513, z: 2780, va: 150, desc: "Ponto de luz no teto — Varanda coberta"},
@@ -142,18 +145,21 @@
     {id: "2-T1", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 6200, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
     {id: "2-T2", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 6500, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
     {id: "2-T3", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 3800, z: 1100, va: 600, molhada: true, desc: "TUG da bancada (600 VA) — Varanda coberta"},
-    {id: "2-T4", fl: "2", k: "tug", amb: "Varanda coberta", x: 5958, y: 3000, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
-    {id: "2-T5", fl: "2", k: "tug", amb: "Varanda coberta", x: 6478, y: 8600, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
-    {id: "2-T6", fl: "2", k: "tug", amb: "Varanda coberta", x: 3150, y: 10023, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
-    {id: "2-T7", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 7458, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T4", fl: "2", k: "tug", amb: "Varanda coberta", x: 3961, y: 3000, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T5", fl: "2", k: "tug", amb: "Varanda coberta", x: 7350, y: 4434, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T6", fl: "2", k: "tug", amb: "Varanda coberta", x: 6493, y: 8600, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T7", fl: "2", k: "tug", amb: "Varanda coberta", x: 3150, y: 10007, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T8", fl: "2", k: "tug", amb: "Varanda coberta", x: 3000, y: 8166, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T9", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 3361, z: 300, va: 100, molhada: true, desc: "TUG — Varanda coberta"},
+    {id: "2-T10", fl: "2", k: "tug", amb: "Varanda coberta", x: 1650, y: 8150, z: 1100, va: 100, molhada: true, desc: "TUG da bancada — Varanda coberta"},
     {id: "2-IL5", fl: "2", k: "il", tipo: "teto", amb: "Lav.", x: 2325, y: 9550, z: 2780, va: 100, desc: "Ponto de luz no teto — Lav."},
     {id: "2-S2", fl: "2", k: "int", amb: "Lav.", x: 3000, y: 9700, z: 1100, liga: ["2-IL5"], desc: "Interruptor simples — Lav."},
-    {id: "2-T8", fl: "2", k: "tug", amb: "Lav.", x: 1650, y: 8850, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Lav."},
+    {id: "2-T11", fl: "2", k: "tug", amb: "Lav.", x: 1650, y: 8850, z: 1100, va: 600, molhada: true, desc: "TUG junto ao lavatório (≥ 0,60 m do box) — Lav."},
     {id: "2-IL6", fl: "2", k: "il", tipo: "arandela", amb: "Varanda descoberta", x: 5550, y: 10500, z: 2200, va: 180, desc: "Arandela — Varanda descoberta"},
     {id: "2-IL7", fl: "2", k: "il", tipo: "arandela", amb: "Varanda descoberta", x: 8850, y: 14550, z: 2200, va: 180, desc: "Arandela — Varanda descoberta"},
     {id: "2-IL8", fl: "2", k: "il", tipo: "arandela", amb: "Varanda descoberta", x: 150, y: 14550, z: 2200, va: 180, desc: "Arandela — Varanda descoberta"},
     {id: "2-S3", fl: "2", k: "int", amb: "Varanda descoberta", x: 5450, y: 10500, z: 1100, liga: ["2-IL6","2-IL7","2-IL8"], desc: "Interruptor simples — Varanda descoberta"},
-    {id: "2-T9", fl: "2", k: "tug", amb: "Varanda descoberta", x: 6450, y: 10500, z: 600, va: 100, molhada: true, externa: true, desc: "TUG externa (IP44) — Varanda descoberta"},
+    {id: "2-T12", fl: "2", k: "tug", amb: "Varanda descoberta", x: 6450, y: 10500, z: 600, va: 100, molhada: true, externa: true, desc: "TUG externa (IP44) — Varanda descoberta"},
     {id: "T-CH1", fl: "T", k: "tue", eq: "chuveiro", amb: "Suíte", x: 6950, y: 2990, z: 2200, va: 6500, v: 220, desc: "Chuveiro elétrico 6.500 W (220 V) — ponto T-CH2"},
     {id: "1-CH1", fl: "1", k: "tue", eq: "chuveiro", amb: "Suíte", x: 2125, y: 7530, z: 2200, va: 6500, v: 220, desc: "Chuveiro elétrico 6.500 W (220 V) — ponto 1-CH-S"},
     {id: "1-CH2", fl: "1", k: "tue", eq: "chuveiro", amb: "Banhº", x: 2625, y: 7620, z: 2200, va: 6500, v: 220, desc: "Chuveiro elétrico 6.500 W (220 V) — ponto 1-CH-B"},
@@ -244,17 +250,24 @@
     /** Divide os pontos (na ordem dos cômodos) em k circuitos de carga parecida, cada um até `cap`. */
     const group = (key, tipo, desc, list, cap, extra) => {
       if (!list.length) return;
-      const tot = list.reduce((s, p) => s + (p.va || 0), 0), k = Math.ceil(tot / cap), alvo = tot / k;
-      let c = null, i = 0;
-      list.forEach((p) => {
-        if (!c || (c.va + (p.va || 0) > cap) || (c.va >= alvo * 0.95 && i < k)) {
-          c = Object.assign({ n: 0, key: key + i, tipo, desc, v: VFN, pts: [], va: 0 }, extra || {});
-          C.push(c);
-          i++;
-        }
-        c.pts.push(p.id);
-        c.va += p.va || 0;
-        p.circ = c;
+      const tot = list.reduce((s, p) => s + (p.va || 0), 0);
+      // k circuitos de carga parecida (alvo = total ÷ k); se a divisão gulosa precisar de mais, tenta com k + 1
+      const dividir = (k) => {
+        const alvo = tot / k, G = [];
+        let g = null;
+        list.forEach((p) => {
+          if (!g || g.va + (p.va || 0) > cap || (g.va >= alvo * 0.95 && G.length < k)) G.push((g = { va: 0, pts: [] }));
+          g.pts.push(p);
+          g.va += p.va || 0;
+        });
+        return G;
+      };
+      let k = Math.ceil(tot / cap), G = dividir(k);
+      while (G.length > k) G = dividir(++k);
+      G.forEach((g, i) => {
+        const c = Object.assign({ n: 0, key: key + i, tipo, desc, v: VFN, pts: g.pts.map((p) => p.id), va: g.va }, extra || {});
+        g.pts.forEach((p) => (p.circ = c));
+        C.push(c);
       });
     };
     // iluminação: um circuito a cada dois cômodos (externas juntas); tomadas: um circuito por cômodo (a cozinha e a
@@ -366,19 +379,21 @@
 
   // ------------------------------------------------------------------ caminhos (laje + descidas) e comprimentos
   const man = (a, b) => Math.abs(a.x - b.x) + Math.abs(a.y - b.y);
+  // na laje o eletroduto corrugado vai em linha reta entre as caixas (sem a curva do "L"); nas paredes, só na vertical
+  const hyp = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
   const polyLen = (P) => P.slice(1).reduce((s, q, i) => s + Math.hypot(q[0] - P[i][0], q[1] - P[i][1], q[2] - P[i][2]), 0);
-  /** Árvore (Prim, distância ortogonal) ligando a prumada do quadro aos pontos do circuito naquele pavimento. */
+  /** Árvore (Prim, em linha reta na laje) ligando a prumada do quadro aos pontos do circuito naquele pavimento. */
   function tree(fl, ids, riser) {
     const r = (riser || RISER)[fl];
     const root = { id: 'R' + fl, x: r.x, y: r.y, z: TT[fl], fl, root: true };
     const nodes = [root].concat(ids.map((id) => PBY[id]));
-    const inT = new Set([0]), edges = [], dist = nodes.map((n) => man(n, root)), par = nodes.map(() => 0);
+    const inT = new Set([0]), edges = [], dist = nodes.map((n) => hyp(n, root)), par = nodes.map(() => 0);
     while (inT.size < nodes.length) {
       let bi = -1;
       nodes.forEach((n, i) => { if (!inT.has(i) && (bi < 0 || dist[i] < dist[bi])) bi = i; });
       inT.add(bi);
-      edges.push({ a: nodes[par[bi]], b: nodes[bi], L: man(nodes[par[bi]], nodes[bi]) });
-      nodes.forEach((n, i) => { if (!inT.has(i)) { const d = man(n, nodes[bi]); if (d < dist[i]) (dist[i] = d), (par[i] = bi); } });
+      edges.push({ a: nodes[par[bi]], b: nodes[bi], L: hyp(nodes[par[bi]], nodes[bi]) });
+      nodes.forEach((n, i) => { if (!inT.has(i)) { const d = hyp(n, nodes[bi]); if (d < dist[i]) (dist[i] = d), (par[i] = bi); } });
     }
     return { root, edges };
   }
@@ -432,6 +447,7 @@
     });
     c.baixo.forEach((b) => ((horiz += plen(b.path)), (Lmax = Math.max(Lmax, plen(b.path)))));
     c.conduite = horiz + drops + risers; // mm de eletroduto do circuito
+    Object.assign(c, { horiz, drops, risers });
     c.Lmax = Lmax;
     c.enterrado = c.baixo.filter((b) => b.fl === 'T').reduce((s2, b) => s2 + plen(b.path.slice(1, -1)), 0);
     c.cond = c.tipo === 'il' ? 3 : 3; // F + N (ou F + F) + PE; retornos contados à parte
@@ -461,6 +477,140 @@
     return { pts, trees, cabos, conduite, entrada: polyLen(TEL_ROUTE) };
   }
   const TEL = telNet();
+
+  // ------------------------------------------------------------------ caixas de passagem (NBR 5410 6.2.11.1.6)
+  // Entre duas caixas (ou entre o quadro e uma caixa), um trecho contínuo de eletroduto tem no máximo 15 m em linhas
+  // internas e 30 m em externas, menos 3 m para cada curva de 90°, e no máximo 3 curvas (270°). A rede segue o limite
+  // mais apertado do cabeamento estruturado: no máximo 2 curvas. Onde o trecho passa disso entra uma caixa de passagem:
+  // na laje (tampa cega no teto), enterrada (tampa no piso) ou na parede.
+  const LIM_INT = 15000, LIM_EXT = 30000, LIM_CURVA = 3000;
+  const len3 = (P) => P.slice(1).reduce((s2, q, i) => s2 + Math.hypot(q[0] - P[i][0], q[1] - P[i][1], q[2] - P[i][2]), 0);
+  const limpa = (P) => P.filter((q, i) => i === 0 || Math.hypot(q[0] - P[i - 1][0], q[1] - P[i - 1][1], q[2] - P[i - 1][2]) > 1);
+  function curvasDe(P) {
+    let n = 0;
+    for (let i = 1; i < P.length - 1; i++) {
+      const u = [0, 1, 2].map((k) => P[i][k] - P[i - 1][k]), v = [0, 1, 2].map((k) => P[i + 1][k] - P[i][k]);
+      const cr = Math.hypot(u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]);
+      if (cr > 1e-6 * Math.hypot(...u) * Math.hypot(...v)) n++;
+    }
+    return n;
+  }
+  /** O trecho entre caixas cumpre o limite? ext: linha externa (30 m); maxC: curvas permitidas. */
+  const cabe = (P, ext, maxC) => { const c = curvasDe(P); return c <= (maxC || 3) && len3(P) <= (ext ? LIM_EXT : LIM_INT) - LIM_CURVA * c; };
+  /**
+   * Caixas de passagem num percurso ortogonal (alimentadores, entradas, circuitos por baixo do piso). Candidatas: os
+   * vértices, o meio de cada trecho e, nos trechos enterrados, o ponto logo fora da casa (30 cm além da fachada) — uma
+   * caixa enterrada dentro de casa (tampa no piso da sala ou da garagem) só entra se não houver outra saída.
+   */
+  function caixasPercurso(P, ext, maxC, fl, prof, pesoLaje) {
+    P = limpa(P);
+    // ext: limite de linha externa (30 m) — fixo, ou decidido trecho a trecho (enterrado/fora da casa)
+    const ex = (R) => (typeof ext === 'function' ? ext(R) : ext);
+    if (cabe(P, ex(P), maxC)) return [];
+    const cands = [];
+    for (let i = 1; i < P.length; i++) {
+      const a = P[i - 1], b = P[i];
+      // vértice acima do piso junto a uma prumada: a caixa fica na parede, logo abaixo da laje
+      if (i < P.length - 1) cands.push({ i, q: b.concat(b[2] >= 0 && (Math.abs(a[2] - b[2]) > 1 || Math.abs(P[i + 1][2] - b[2]) > 1) ? ['parede'] : []), vert: true });
+      cands.push({ i, q: [0, 1, 2].map((k) => (a[k] + b[k]) / 2) });
+      // prumada que sai de baixo do piso: caixa na parede a 0,30 m do piso
+      if (a[0] === b[0] && a[1] === b[1] && Math.min(a[2], b[2]) < 0 && Math.max(a[2], b[2]) > 300) cands.push({ i, q: [a[0], a[1], 300, 'parede'] });
+      if (fl && a[2] < 0 && b[2] < 0) (COBERTO[fl] || []).forEach((r) => [[0, r[0] - 300], [0, r[2] + 300], [1, r[1] - 300], [1, r[3] + 300]].forEach(([k, v]) => {
+        const lo = Math.min(a[k], b[k]), hi = Math.max(a[k], b[k]);
+        if (a[k] !== b[k] && v > lo + 1 && v < hi - 1) { const u = (v - a[k]) / (b[k] - a[k]); cands.push({ i, q: [0, 1, 2].map((kk) => a[kk] + (b[kk] - a[kk]) * u) }); }
+      }));
+    }
+    // caixa enterrada dentro de casa (tampa no piso da sala ou da garagem) conta como 3 caixas: só entra sem outra saída
+    // pesoLaje: para cabos grossos (ramal, alimentadores), caixa no meio da laje pesa mais que na parede (sobre viga)
+    const peso = (q) => (fl && q[2] < 0 && coberto({ fl, x: q[0], y: q[1] }) ? 3 : pesoLaje && q[2] >= 0 && q[3] !== 'parede' ? pesoLaje : 1);
+    const custo = (L) => L.reduce((s2, q) => s2 + peso(q), 0);
+    const d = prof || 0;
+    let best = null;
+    cands.forEach((c) => {
+      const q0 = c.q.slice(0, 3);
+      const A = P.slice(0, c.i).concat([q0]), B = [q0].concat(P.slice(c.vert ? c.i + 1 : c.i));
+      const okA = cabe(limpa(A), ex(A), maxC), okB = cabe(limpa(B), ex(B), maxC);
+      if (d >= 3 && !(okA && okB)) return;
+      const r = (okA ? [] : caixasPercurso(A, ext, maxC, fl, d + 1, pesoLaje)).concat([c.q], okB ? [] : caixasPercurso(B, ext, maxC, fl, d + 1, pesoLaje));
+      if (r.includes(null)) return;
+      const v = custo(r) * 1e6 + Math.max(len3(A) + LIM_CURVA * curvasDe(limpa(A)), len3(B) + LIM_CURVA * curvasDe(limpa(B)));
+      if (!best || v < best.v) best = { v, r };
+    });
+    return best ? best.r : [null];
+  }
+  /** Percurso de um trecho da árvore: sobe da caixa de origem até a laje, segue reto na laje e desce à caixa de destino. */
+  const trechoArv = (e, fl) => limpa([[e.a.x, e.a.y, e.a.root ? 1500 : e.a.z], [e.a.x, e.a.y, TT[fl]], [e.b.x, e.b.y, TT[fl]], [e.b.x, e.b.y, e.b.z]]);
+  /** Caixas na laje ao longo do trecho reto, o mínimo que faça cada parte caber (subida e descida contam 1 curva cada). */
+  function caixasLaje(e, fl, maxC) {
+    const P = trechoArv(e, fl);
+    if (cabe(P, false, maxC)) return [];
+    const up = e.a.root ? TT[fl] - 1500 : TT[fl] - e.a.z, dn = TT[fl] - e.b.z, h = hyp(e.a, e.b);
+    const c1 = LIM_INT - (up > 0 ? LIM_CURVA + up : 0), cL = LIM_INT - (dn > 0 ? LIM_CURVA + dn : 0);
+    let k = 1;
+    while (c1 + cL + LIM_INT * (k - 1) < h && k < 10) k++;
+    const caps = [c1].concat(Array(k - 1).fill(LIM_INT), [cL]), tot = caps.reduce((a, b) => a + b, 0);
+    const out = [];
+    let acc = 0;
+    for (let i = 0; i < k; i++) {
+      acc += (caps[i] * h) / tot;
+      const u = acc / h;
+      out.push([e.a.x + (e.b.x - e.a.x) * u, e.a.y + (e.b.y - e.a.y) * u, TT[fl]]);
+    }
+    return out;
+  }
+  // taxa de ocupação dos eletrodutos (NBR 5410 6.2.11.1.6): ≤ 53 % com 1 condutor, 31 % com 2 e 40 % com 3 ou mais.
+  // Diâmetros típicos de catálogo: externo do cabo flexível 750 V e interno do eletroduto corrugado (mm).
+  const OD = { 1.5: 3.0, 2.5: 3.6, 4: 4.2, 6: 4.9, 10: 6.4, 16: 7.6, 25: 9.6 }, OD_EPR16 = 10.5;
+  const DI = { 20: 15.0, 25: 19.0, 32: 24.5, 50: 40.5 };
+  const OCUPACAO = [
+    { caso: 'Laje e subidas: 3 circuitos de tomadas (F + N + PE de 2,5 mm² cada)', dn: 25, cabos: [[9, OD[2.5]]] },
+    { caso: 'Laje: 3 circuitos de iluminação (F + N + PE de 1,5 mm²) + 2 retornos', dn: 25, cabos: [[11, OD[1.5]]] },
+    { caso: 'Descida até a caixa de parede: um circuito de 2,5 mm² (F + N + PE)', dn: 20, cabos: [[3, OD[2.5]]] },
+    { caso: 'Descida de interruptor paralelo: fase + 2 retornos + PE de 1,5 mm²', dn: 20, cabos: [[4, OD[1.5]]] },
+    { caso: 'Chuveiro: F + F + PE de 6 mm² (exclusivo)', dn: 25, cabos: [[3, OD[6]]] },
+    { caso: 'Alimentador de andar: 3 F + N de 25 mm² + PE de 16 mm²', dn: 50, cabos: [[4, OD[25]], [1, OD[16]]] },
+    { caso: 'Ramal: 3 F + N + PE de 16 mm², 0,6/1 kV EPR (PEAD Ø 50)', dn: 50, cabos: [[5, OD_EPR16]] },
+    { caso: '(para comparar) 3 circuitos de tomadas num DN 20', dn: 20, cabos: [[9, OD[2.5]]], comparar: true },
+  ].map((o) => {
+    const n = o.cabos.reduce((s2, [k]) => s2 + k, 0), area = o.cabos.reduce((s2, [k, d]) => s2 + (k * Math.PI * d * d) / 4, 0);
+    const taxa = area / ((Math.PI * DI[o.dn] * DI[o.dn]) / 4), lim = n === 1 ? 0.53 : n === 2 ? 0.31 : 0.4;
+    return Object.assign(o, { n, taxa, lim, ok: taxa <= lim });
+  });
+  const CAIXAS = [];
+  /** Registra uma caixa (posições iguais no mesmo pavimento viram uma caixa só, que serve a vários eletrodutos). */
+  function caixa(fl, q, uso, quem) {
+    const x = Math.round(q[0] / 10) * 10, y = Math.round(q[1] / 10) * 10, z = Math.round(q[2] / 10) * 10;
+    let cx = CAIXAS.find((b) => b.fl === fl && b.uso === uso && Math.hypot(b.x - x, b.y - y) < 150 && Math.abs(b.z - z) < 150);
+    if (!cx) {
+      const onde = z < 0 ? 'enterrada' : q[3] === 'parede' || z < TT[fl] - 10 ? 'parede' : 'laje';
+      cx = { id: (uso === 'rede' ? 'CPR' : uso === 'alimentador' ? 'CPA' : 'CP') + '-' + fl + '-' + (CAIXAS.filter((b) => b.fl === fl && b.uso === uso).length + 1), fl, x, y, z, uso, onde, quem: [] };
+      CAIXAS.push(cx);
+    }
+    if (!cx.quem.includes(quem)) cx.quem.push(quem);
+    return cx;
+  }
+  /** Linha externa: todo o trecho enterrado (z < 0) ou fora da área coberta. */
+  const externo = (P, fl) => P.every((q) => q[2] < 0 || !coberto({ fl, x: q[0], y: q[1] }));
+  CIRC.forEach((c) => {
+    Object.entries(c.trees).forEach(([fl, t]) => t.edges.forEach((e) => (e.caixas = caixasLaje(e, fl).map((q) => caixa(fl, q, 'energia', 'C' + c.n)))));
+    c.baixo.forEach((b) => (b.caixas = caixasPercurso(b.path, (R) => externo(R, b.fl), 3, b.fl).map((q) => caixa(b.fl, q, 'energia', 'C' + c.n))));
+  });
+  // ramal: caixa de passagem fixa na parede acima do QDC, junto à laje (de onde ele desce para o quadro); o resto do
+  // percurso recebe as caixas que faltarem (enterradas no trecho do piso)
+  const ALIM_CAIXAS = (() => {
+    const i = ALIM_ROUTE.findIndex((q) => q[0] === QDC_XY.x && q[1] === QDC_XY.y && q[2] === TETO);
+    const R1 = ALIM_ROUTE.slice(0, i + 1), R2 = ALIM_ROUTE.slice(i);
+    const ext = (R) => externo(R, 'T');
+    return caixasPercurso(R1, ext, 3, 'T', 0, 2).concat([R1[R1.length - 1].concat('parede')], caixasPercurso(R2, ext, 3, 'T', 0, 2)).map((q) => caixa('T', q, 'alimentador', 'ramal'));
+  })();
+  Object.entries(SUB_ROUTE).forEach(([b, R]) => caixasPercurso(R, false, 3, null, 0, 2).forEach((q) => { const fl = q[2] >= LEVEL[1] ? '1' : 'T'; caixa(fl, [q[0], q[1], q[2] - LEVEL[fl]].concat(q.slice(3)), 'alimentador', 'alimentador do QD-' + b); }));
+  // entrada da fibra: a caixa de passagem da parede do lavabo (CPT) já divide o percurso
+  {
+    const iC = TEL_ROUTE.findIndex((q) => q[0] === PBY.CPT.x && q[1] === PBY.CPT.y && q[2] === PBY.CPT.z);
+    const partes = iC > 0 ? [TEL_ROUTE.slice(0, iC + 1), TEL_ROUTE.slice(iC)] : [TEL_ROUTE];
+    partes.forEach((R) => caixasPercurso(R, (R2) => externo(R2, 'T'), 2, 'T').forEach((q) => caixa('T', q, 'rede', 'fibra')));
+  }
+  Object.entries(TEL.trees).forEach(([fl, t]) => t.edges.forEach((e) => (e.caixas = caixasLaje(e, fl, 2).map((q) => caixa(fl, q, 'rede', e.b.id)))));
 
   // ------------------------------------------------------------------ dimensionamento
   function size(c) {
@@ -692,11 +842,14 @@
       const c = cabos[s], tot = c.fase + c.neutro + c.terra + c.retorno;
       it('Cabos', `Cabo flexível 750 V ${String(s).replace('.', ',')} mm²`, 'm', Math.ceil(tot / 5) * 5, `fase ${Math.ceil(c.fase)} · neutro (azul) ${Math.ceil(c.neutro)} · terra (verde) ${Math.ceil(c.terra)}${c.retorno ? ' · retorno ' + Math.ceil(c.retorno) : ''} m; rolos de 100 m`);
     });
-    // eletrodutos: um por circuito nas descidas, compartilhados na laje (estimado: 75 % do somatório)
-    const conduit = (f) => CIRC.filter(f).reduce((s, c) => s + c.conduite, 0) / 1000;
-    const e20 = conduit((c) => c.secao <= 2.5) * 0.75, e25 = conduit((c) => c.secao > 2.5) * 0.9;
-    it('Eletrodutos', 'Eletroduto corrugado (conduíte) Ø 20 mm (¾")', 'm', Math.ceil(e20 / 5) * 5, 'laje e descidas — iluminação e tomadas');
-    it('Eletrodutos', 'Eletroduto corrugado reforçado Ø 25 mm (1")', 'm', Math.ceil(e25 / 5) * 5, 'chuveiros e circuitos de 4 mm² ou mais (um por circuito)');
+    // eletrodutos (taxa de ocupação ≤ 40 %, no máximo 3 circuitos por eletroduto — ver OCUPACAO): na laje e nas
+    // subidas, iluminação e tomadas dividem eletrodutos DN 25 (estimado: 75 % do somatório); nas descidas, um circuito
+    // por eletroduto DN 20; chuveiros em DN 25 exclusivo
+    const soma = (f, k) => CIRC.filter(f).reduce((s2, c) => s2 + (k ? c[k] : c.conduite), 0) / 1000;
+    const leve = (c) => c.secao <= 2.5;
+    const e25 = (soma(leve, 'horiz') + soma(leve, 'risers')) * 0.75 + soma((c) => !leve(c)) * 0.9, e20 = soma(leve, 'drops');
+    it('Eletrodutos', 'Eletroduto corrugado (conduíte) DN 25 (¾")', 'm', Math.ceil(e25 / 5) * 5, 'laje e subidas dos quadros (até 3 circuitos por eletroduto) e chuveiros (um por circuito)');
+    it('Eletrodutos', 'Eletroduto corrugado (conduíte) DN 20 (½")', 'm', Math.ceil(e20 / 5) * 5, 'descidas da laje até as caixas de parede (um circuito por eletroduto)');
     it('Eletrodutos', 'Eletroduto corrugado reforçado Ø 50 mm — alimentadores dos quadros de andar', 'm', Math.ceil(Object.values(SUB).reduce((s, d) => s + d.L, 0) / 1000 + 1), 'QDC → QD-1 (na parede) e QDC → QD-2 (parede + laje do 2º)');
     const ent = CIRC.reduce((s2, c) => s2 + (c.enterrado || 0), 0);
     if (ent) it('Eletrodutos', 'Eletroduto PEAD corrugado Ø 32 mm (enterrado) — circuitos externos', 'm', Math.ceil(ent / 1000 + 2), 'motor do portão: do QDC por baixo do piso até o muro da frente, a −0,40 m, com fita de aviso');
@@ -705,9 +858,21 @@
     it('Caixas', 'Caixa octogonal 4×4" de laje (fundo móvel)', 'un', n('il', (p) => p.tipo === 'teto'), 'pontos de luz no teto');
     const caixas2 = new Set(PONTOS.filter((p) => /int|tug|tue/.test(p.k) && p.eq !== 'chuveiro').map((p) => p.caixa || p.id)).size + n('il', (p) => p.tipo === 'arandela');
     it('Caixas', 'Caixa 4×2" para parede', 'un', caixas2, 'tomadas, interruptores, arandelas e ar-condicionado');
-    it('Caixas', 'Caixa 4×4" para parede', 'un', n('tue', (p) => p.eq === 'chuveiro') + 3, 'chuveiros (conector) e passagens das prumadas');
-    it('Dispositivos', 'Tomada 2P+T 10 A (NBR 14136) com placa', 'un', n('tug', (p) => p.va < 600) + n('tug', (p) => p.va >= 600 && p.amb && /Lav|Banh|Suíte/.test(p.amb)), 'uso geral e banheiros');
-    it('Dispositivos', 'Tomada 2P+T 20 A (NBR 14136) com placa', 'un', n('tug', (p) => p.va >= 600 && !/Lav|Banh|Suíte/.test(p.amb)) + n('tue', (p) => p.eq !== 'chuveiro' && p.eq !== 'portao'), 'bancadas, ar-condicionado, micro-ondas e máquina');
+    it('Caixas', 'Caixa 4×4" para parede', 'un', n('tue', (p) => p.eq === 'chuveiro'), 'chuveiros (conector)');
+    // caixas de passagem (NBR 5410 6.2.11.1.6), identificadas nas plantas (CP-…, CPA-…, CPR-…)
+    const nCx = (f) => CAIXAS.filter(f).length, ids = (f) => CAIXAS.filter(f).map((b) => b.id).join(', ');
+    const cxs = [
+      ['Caixa de passagem octogonal 4×4" de laje com tampa cega', (b) => b.uso === 'energia' && b.onde === 'laje', 'no teto, onde o trecho de eletroduto passaria de 15 m − 3 m por curva'],
+      ['Caixa de passagem 4×4" de parede com tampa cega', (b) => b.uso === 'energia' && b.onde === 'parede', ''],
+      ['Caixa de passagem de embutir 20×20 cm com tampa — ramal e alimentador', (b) => b.uso === 'alimentador' && b.onde !== 'enterrada', 'cabos de 16 e 25 mm²: caixa maior que a 4×4 para o raio de curvatura'],
+      ['Caixa de passagem enterrada 30×30 cm com tampa de concreto e fundo de brita', (b) => b.uso !== 'rede' && b.onde === 'enterrada' && b.fl === 'T', 'fora da casa, no trecho enterrado'],
+      ['Caixa de passagem de piso 4×4" com tampa (contrapiso da varanda descoberta)', (b) => b.uso !== 'rede' && b.onde === 'enterrada' && b.fl !== 'T', 'arandelas da varanda descoberta, no contrapiso'],
+    ];
+    cxs.forEach(([d, f, o]) => nCx(f) && it('Caixas', d, 'un', nCx(f), (o ? o + ' · ' : '') + ids(f)));
+    // tomadas: 20 A nos circuitos de disjuntor acima de 10 A e nas de 600 VA fora dos banheiros; 10 A nas demais
+    const t20 = (p) => (p.circ && p.circ.disj > 10) || (p.va >= 600 && !/Lav|Banh|Suíte/.test(p.amb));
+    it('Dispositivos', 'Tomada 2P+T 10 A (NBR 14136) com placa', 'un', n('tug', (p) => !p.externa && !t20(p)), 'uso geral e banheiros (circuitos de 10 A)');
+    it('Dispositivos', 'Tomada 2P+T 20 A (NBR 14136) com placa', 'un', n('tug', (p) => !p.externa && t20(p)) + n('tue', (p) => p.eq !== 'chuveiro' && p.eq !== 'portao'), 'circuitos de 16 A (cozinha), bancadas, ar-condicionado, micro-ondas e máquina: a tomada nunca pode ser menor que o disjuntor');
     it('Dispositivos', 'Tomada externa 2P+T 10 A com tampa (IP44)', 'un', n('tug', (p) => !!p.externa), 'quintal, varandas');
     const ints = PONTOS.filter((p) => p.k === 'int' || p.k === 'int3');
     const boxes = {};
@@ -727,6 +892,9 @@
     Object.values(SUB).forEach((d) => it('Quadros', 'Chave seccionadora 3P ' + d.chave + ' A (sem disparo, não é disjuntor) — no QDC, saída para o ' + d.board.id, 'un', 1, 'desliga pelo térreo o andar inteiro (quadro e cabo), sem desligar o padrão nem o resto da casa; ' + d.chave + ' A é só o que ela aguenta (acima dos ' + ALIM.disj + ' A do padrão, que protege o cabo)'));
     DRS.forEach((d) => it('Quadros', `Interruptor diferencial (DR) ${d.polos}P ${d.in} A 30 mA`, 'un', 1, BOARDS[d.board].id + ' · ' + d.id + ': ' + d.desc));
     it('Quadros', 'DPS classe II 275 V 20 kA', 'un', 4, '3 fases + neutro, no QDC (NBR 5410 6.3.5); os quadros de andar ficam a menos de 10 m');
+    it('Quadros', 'Cabo flexível 750 V 4 mm² verde-amarelo e preto — ligação dos DPS', 'm', 5, 'condutores de ligação dos DPS com no mínimo 4 mm², o mais curtos possível (de preferência até 0,5 m no total)');
+    it('Quadros', 'Etiqueta de advertência da NBR 5410 para quadros (troca de disjuntor e DR)', 'un', 3, 'uma na porta de cada quadro (QDC, QD-1, QD-2): exigida pela norma em quadros residenciais');
+    it('Quadros', 'Identificação dos circuitos (etiqueta em cada disjuntor e DR + quadro de cargas na porta)', 'cj', 3, 'numeração igual à do projeto (C1…C' + CIRC.length + ', DR-1…)');
     const MOD = {};
     ['T', '1', '2'].forEach((b) => {
       const mine = CIRC.filter((c) => c.board === b);
@@ -741,9 +909,11 @@
     // rede (fibra + Cat6)
     const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap' || p.tel === 'roteador').length;
     it('Rede e fibra', 'Eletroduto PEAD corrugado Ø 32 mm (enterrado) — entrada da fibra', 'm', Math.ceil(TEL.entrada / 1000 + 2), 'da caixa de entrada no muro até a parede do lavabo, 20 cm ao lado do alimentador');
-    it('Rede e fibra', 'Eletroduto corrugado Ø 25 mm (1") — rede, exclusivo', 'm', Math.ceil(((TEL.conduite + 8000) / 1000) * 1.1 / 5) * 5, 'laje, prumadas e descidas — nunca junto com cabos de energia');
+    it('Rede e fibra', 'Eletroduto corrugado DN 25 (¾") — rede, exclusivo', 'm', Math.ceil(((TEL.conduite + 8000) / 1000) * 1.1 / 5) * 5, 'laje, prumadas e descidas — nunca junto com cabos de energia');
     it('Rede e fibra', 'Arame-guia galvanizado (ou fita-guia) em todos os eletrodutos de rede', 'm', Math.ceil((TEL.entrada + TEL.conduite) / 1000 * 1.2), 'deixar dentro de cada eletroduto, amarrado nas caixas');
     it('Rede e fibra', 'Quadro de telecom (QDT) de embutir 40×40×12 cm com tampa', 'un', 1, 'sob a escada, ao lado do QDC — ONT, roteador e patch panel');
+    const cpr = CAIXAS.filter((b) => b.uso === 'rede');
+    if (cpr.length) it('Rede e fibra', 'Caixa de passagem de rede (laje: octogonal 4×4" com tampa cega; enterrada: 20×20 com tampa)', 'un', cpr.length, 'no máximo 2 curvas entre caixas · ' + cpr.map((b) => b.id + ' (' + b.onde + ')').join(', '));
     it('Rede e fibra', 'Caixa de entrada de telecom 20×20 (muro) e caixa de passagem 4×4', 'un', 2, 'entrada no muro esquerdo e passagem na parede do lavabo (lado da garagem)');
     it('Rede e fibra', 'Cabo U/UTP Cat6 (por metro ou caixa de 305 m)', 'm', Math.ceil((TEL.cabos.reduce((s, c) => s + c.L, 0) / 1000) / 5) * 5, nRJ + ' pontos RJ45 + ' + nAP + ' pontos de Wi-Fi, um cabo por ponto, do QDT');
     it('Rede e fibra', 'Tomada RJ45 Cat6 com placa 4×2', 'un', nRJ, 'ao lado de uma tomada de energia');
@@ -829,6 +999,37 @@
   const telConduits = (fl) => (TEL.trees[fl] ? TEL.trees[fl].edges.map((e) => ({ a: e.a, b: e.b })) : []);
   /** Trechos (x, y) de um percurso 3D que ficam no pavimento: térreo leva o enterrado e a laje do térreo. */
   const routeXY = (R, fl) => (fl === 'T' ? R.slice(1).map((q, i) => [R[i], q]).filter(([a, b]) => Math.hypot(b[0] - a[0], b[1] - a[1]) > 1) : []);
+  const caixasDe = (fl) => CAIXAS.filter((b) => b.fl === fl);
+  /**
+   * Caixa de passagem no 3D (estúdio e página do projeto): centro (mm, z absoluto) e tamanho (m). Laje: octogonal 4×4"
+   * rente ao teto; parede: 4×4" (alimentador: 20×20 cm); enterrada: 30×30 cm com tampa no piso.
+   */
+  function caixa3d(b) {
+    const lv = LEVEL[b.fl];
+    if (b.onde === 'enterrada') return { pos: [b.x, lv + Math.max(b.z, -300) + 50, b.y], size: b.fl === 'T' ? [0.3, 0.3, 0.3] : [0.12, 0.08, 0.12] };
+    if (b.onde === 'laje') return { pos: [b.x, lv + b.z - 30, b.y], size: b.uso === 'alimentador' ? [0.2, 0.08, 0.2] : [0.12, 0.06, 0.12] };
+    const s2 = b.uso === 'alimentador' ? 0.2 : 0.12, z = b.z >= TT[b.fl] - 10 ? b.z - 150 : b.z;
+    return { pos: [b.x, lv + z, b.y], size: [s2, s2, 0.09] };
+  }
+  const COR_CAIXA = { energia: '#555555', alimentador: '#2b2b2b', rede: '#0e7490' };
+  /** Caixa de passagem na planta: quadrado com um X (tracejado se enterrada / no piso). */
+  function simboloCaixa(ctx, b, s, lw) {
+    ctx.save();
+    ctx.strokeStyle = COR_CAIXA[b.uso];
+    ctx.fillStyle = '#ffffff';
+    ctx.lineWidth = lw;
+    ctx.setLineDash(b.onde === 'enterrada' ? [s * 0.25, s * 0.18] : []);
+    ctx.beginPath();
+    ctx.rect(b.x - s, b.y - s, 2 * s, 2 * s);
+    ctx.fill();
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.moveTo(b.x - s, b.y - s); ctx.lineTo(b.x + s, b.y + s);
+    ctx.moveTo(b.x + s, b.y - s); ctx.lineTo(b.x - s, b.y + s);
+    ctx.stroke();
+    ctx.restore();
+  }
   /** Símbolo de um ponto na planta, em mm (contexto do mundo); s = tamanho base em mm. */
   function symbol(ctx, p, s, lw) {
     const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
@@ -893,7 +1094,6 @@
       ctx.lineWidth = 1.4 * px;
       ctx.beginPath();
       ctx.moveTo(a.x, a.y);
-      ctx.lineTo(b.x, a.y);
       ctx.lineTo(b.x, b.y);
       ctx.stroke();
     });
@@ -913,7 +1113,7 @@
     ctx.globalAlpha = 0.8;
     ctx.lineWidth = 1.4 * px;
     ctx.strokeStyle = COLOR.tel;
-    telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
+    telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); });
     [[ALIM_ROUTE, COLOR.alim, 2.4], [TEL_ROUTE, COLOR.tel, 1.8]].forEach(([R, col, w]) => {
       ctx.strokeStyle = col;
       ctx.lineWidth = w * px;
@@ -921,6 +1121,7 @@
     });
     ctx.setLineDash([]);
     ctx.globalAlpha = 1;
+    caixasDe(fl).forEach((cx) => simboloCaixa(ctx, cx, 90, 1.2 * px));
     const s = Math.max(70, 4.2 * px);
     ptsOf(fl).forEach((p) => symbol(ctx, p, s, 1.3 * px));
   }
@@ -984,8 +1185,7 @@
     const zc = lv + TT[fl];
     conduitsOf(fl).forEach(({ c, a, b }) => {
       const m = mat(COLOR[c.tipo], 0.85), r = 0.012;
-      tube([a.x, a.y, zc], [b.x, a.y, zc], r, m);
-      tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
+      tube([a.x, a.y, zc], [b.x, b.y, zc], r, m);
       if (!b.root && b.z < TT[fl]) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
     CIRC.forEach((c) => c.baixo.filter((b) => b.fl === fl).forEach((b) => b.path.slice(1).forEach((q, i) => tube([b.path[i][0], b.path[i][1], lv + b.path[i][2]], [q[0], q[1], lv + q[2]], 0.014, mat(COLOR[c.tipo], 0.9)))));
@@ -996,12 +1196,16 @@
     tube([QDT_XY.x, QDT_XY.y, fl === 'T' ? 1700 : lv - 160], [QDT_XY.x, QDT_XY.y, zc], 0.016, mat(COLOR.tel, 0.9));
     telConduits(fl).forEach(({ a, b }) => {
       const m = mat(COLOR.tel, 0.85), r = 0.011;
-      tube([a.x, a.y, zc], [b.x, a.y, zc], r, m);
-      tube([b.x, a.y, zc], [b.x, b.y, zc], r, m);
+      tube([a.x, a.y, zc], [b.x, b.y, zc], r, m);
       if (!b.root && b.z < TT[fl]) tube([b.x, b.y, zc], [b.x, b.y, lv + b.z], r, m);
     });
     if (fl === 'T')
       [[ALIM_ROUTE, COLOR.alim, 0.022], [TEL_ROUTE, COLOR.tel, 0.016]].forEach(([Rt, col, r]) => Rt.slice(1).forEach((q, i) => tube(Rt[i], q, r, mat(col, 0.9))));
+    caixasDe(fl).forEach((b) => {
+      const d = caixa3d(b), m = new THREE.Mesh(new THREE.BoxGeometry(d.size[0], d.size[1], d.size[2]), mat(COR_CAIXA[b.uso], 0.95));
+      m.position.set(d.pos[0] * MM, d.pos[1] * MM, d.pos[2] * MM);
+      put(m);
+    });
     ptsOf(fl).forEach((p) => {
       const col = p.k === 'tel' ? COLOR.tel : p.k === 'tue' ? COLOR.tue : p.k === 'tug' ? COLOR.tug : p.k === 'qdc' || p.k === 'medidor' ? COLOR.qdc : COLOR.il;
       const dq = p.k === 'qdc' && QT.MOD[p.fl].dim;
@@ -1014,7 +1218,7 @@
   }
 
   DD.eletrica = {
-    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP, COMPRADO, DISJ_ANDAR, RAZAO_SOBRE,
-    COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
+    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP, COMPRADO, DISJ_ANDAR, RAZAO_SOBRE, CAIXAS, ALIM_CAIXAS, OCUPACAO, LIM_INT, LIM_EXT, LIM_CURVA, trechoArv, curvasDe, len3, cabe, externo,
+    COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, caixasDe, caixa3d, simboloCaixa, COR_CAIXA, draw2dWorld, draw2dScreen, build3d,
   };
 })();
