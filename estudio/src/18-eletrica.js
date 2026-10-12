@@ -724,7 +724,7 @@
     it('Quadros', 'Chave seccionadora 3P ' + ALIM.disj + ' A (geral do QDC, sem disparo)', 'un', 1, 'a proteção do ramal é o disjuntor do padrão (seletividade circuito → quadro → padrão)');
     it('Quadros', 'Disjuntor do padrão 3P ' + ALIM.disj + ' A curva C (kit do padrão Enel)', 'un', 1, 'categoria a pedir à Enel; mínimo ' + ALIM.padraoMin.min.toFixed(1).replace('.', ',') + ' A para a seletividade');
     Object.values(SUB).forEach((d) => it('Quadros', 'Disjuntor DIN curva C 3P ' + d.disj + ' A — geral do ' + d.board.id + ' (no próprio quadro)', 'un', 1, 'protege a iluminação e as tomadas do andar; desarma depois do circuito e antes do padrão'));
-    Object.values(SUB).forEach((d) => it('Quadros', 'Chave seccionadora 3P ' + d.chave + ' A — no QDC, saída para o ' + d.board.id, 'un', 1, 'desliga pelo térreo o andar inteiro (quadro e cabo), sem desligar o padrão nem o resto da casa; sem disparo: o alimentador é protegido pelo padrão'));
+    Object.values(SUB).forEach((d) => it('Quadros', 'Chave seccionadora 3P ' + d.chave + ' A (sem disparo, não é disjuntor) — no QDC, saída para o ' + d.board.id, 'un', 1, 'desliga pelo térreo o andar inteiro (quadro e cabo), sem desligar o padrão nem o resto da casa; ' + d.chave + ' A é só o que ela aguenta (acima dos ' + ALIM.disj + ' A do padrão, que protege o cabo)'));
     DRS.forEach((d) => it('Quadros', `Interruptor diferencial (DR) ${d.polos}P ${d.in} A 30 mA`, 'un', 1, BOARDS[d.board].id + ' · ' + d.id + ': ' + d.desc));
     it('Quadros', 'DPS classe II 275 V 20 kA', 'un', 4, '3 fases + neutro, no QDC (NBR 5410 6.3.5); os quadros de andar ficam a menos de 10 m');
     const MOD = {};
@@ -761,8 +761,8 @@
    */
   function fileiras(b, res, tam) {
     const ent = b === 'T'
-      ? [{ t: 'chave', mod: 3, txt: 'Chave geral', sub: '3P ' + ALIM.disj + ' A' }]
-        .concat(Object.values(SUB).map((d) => ({ t: 'chave', mod: 3, txt: 'Chave ' + d.board.id, sub: '3P ' + d.chave + ' A' })))
+      ? [{ t: 'chave', mod: 3, txt: 'Secc. geral', sub: ALIM.disj + ' A s/ disparo' }]
+        .concat(Object.values(SUB).map((d) => ({ t: 'chave', mod: 3, txt: 'Secc. ' + d.board.id, sub: d.chave + ' A s/ disparo' })))
         .concat([{ t: 'dps', mod: 4, txt: 'DPS × 4', sub: '275 V 20 kA' }])
       : [];
     const drs = DRS.filter((d) => d.board === b);
