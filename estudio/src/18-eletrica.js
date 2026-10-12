@@ -228,6 +228,13 @@
   // e o 1º passam de 30 módulos (com a reserva da NBR 5410, Tabela 59); ele fica no 2º, com folga, e o térreo e o 1º
   // recebem quadros dimensionados pela quantidade de circuitos
   const COMPRADO = { board: '2', modulos: 24 };
+  // disjuntor geral de cada quadro de andar: mínimo de 25 A (decisão da obra, out/2026), com folga para o uso do andar
+  // (secadores, ferro e aquecedor ao mesmo tempo)
+  const DISJ_ANDAR = 25;
+  // Sobrecarga entre o disjuntor do andar e o padrão: regra prática dos fabricantes — as curvas térmicas não se cruzam
+  // quando o de cima tem pelo menos 1,6 × o In do de baixo. A conta rígida (1,45 × In do andar + o resto da casa no pico
+  // ≤ 1,13 × In do padrão) fica no memorial como o caso raro em que os dois podem desarmar juntos.
+  const RAZAO_SOBRE = 1.6;
   // nos andares, iluminação e tomadas ficam atrás do disjuntor geral do quadro do andar: circuitos de até 10 A (1.270 VA)
   const capFl = (fl, cap) => (fl === 'T' ? cap : Math.min(cap, CAP.tg));
   const FL_NAME = { T: 'térreo', 1: '1º pav.', 2: '2º pav.' };
@@ -348,7 +355,7 @@
   // equilíbrio da casa toda (todos os circuitos ficam logo abaixo do padrão; cada quadro é trifásico); a carga de cada
   // quadro é a soma dos seus circuitos
   // primeiro a iluminação e as tomadas de cada andar (atrás do disjuntor do andar) equilibradas entre si — o disjuntor do
-  // andar fica pequeno —, depois os circuitos ligados direto, sobre a soma
+  // andar fica com carga parecida nas 3 fases —, depois os circuitos ligados direto, sobre a soma
   const atrasDe = (c) => c.board !== 'T' && (c.tipo !== 'tue' || c.eq === 'mlr');
   const realTot = { A: 0, B: 0, C: 0 };
   ['1', '2'].forEach((b) => { const r = balance(CIRC.filter((c) => c.board === b && atrasDe(c))); ['A', 'B', 'C'].forEach((f) => (realTot[f] += r[f])); });
@@ -499,7 +506,7 @@
         return ch + on.filter((c) => c.eq !== 'chuveiro').reduce((s2, c) => s2 + c.va / c.v, 0);
       });
       const fases = new Set(L.map((c) => c.fases).join('').split('')).size;
-      DRS.push({ id: 'DR-' + (DRS.length + 1), board: b, secao, polos: fases > 2 ? 4 : fases === 2 && L.some((c) => c.v === VFN) ? 4 : 2, desc, circ: L.map((c) => c.n), ia: Math.max(...ia), in: [25, 40, 63, 80, 100].find((x) => x >= Math.max(...ia)) || 100 });
+      DRS.push({ id: 'DR-' + (DRS.length + 1), board: b, secao, polos: fases > 2 ? 4 : fases === 2 && L.some((c) => c.v === VFN) ? 4 : 2, desc, circ: L.map((c) => c.n), ia: Math.max(...ia), in: [25, 40, 63, 80, 100].find((x) => x >= Math.max(...ia, secao === 'quadro' ? DISJ_ANDAR : 0)) || 100 });
     });
   });
   CIRC.forEach((c) => (c.dr = (DRS.find((d) => d.circ.includes(c.n)) || {}).id));
@@ -586,16 +593,18 @@
     const d = demandaDe(grp);
     const magDown = Math.max(...grp.map((c) => MAG[c.curva] * c.disj)); // disparo magnético garantido do maior de baixo
     const sobre = acimaDe(grp, grp);
-    const disj = DISJ.find((x) => x >= Math.max(d.I, sobre, magDown / 5));
+    const disj = DISJ.find((x) => x >= Math.max(DISJ_ANDAR, d.I, sobre, magDown / 5));
     SUB[b] = { board: BOARDS[b], disj, curva: 'C', minSobre: sobre, Iq: d.I, grupo: grp.map((c) => c.n), direto: CIRC.filter((c) => c.board === b && !c.atras).map((c) => c.n) };
   });
   /** Disjuntor do padrão necessário para ficar acima dos circuitos ligados direto e dos disjuntores dos andares. */
   function padraoMin(Iproj) {
     const diretos = CIRC.filter((c) => !c.atras);
     const sobreQ = acimaDe(diretos, CIRC);
-    const sobreSub = Math.max(...['1', '2'].flatMap((b) => ['A', 'B', 'C'].map((f) => (restoFase(CIRC.filter((c) => !(c.board === b && c.atras)), null, f) + 1.45 * SUB[b].disj) / 1.13)));
+    // andares: regra da razão (≥ 1,6 × o In do andar); a conta rígida com a casa no pico só é informada (picoSub)
+    const sobreSub = RAZAO_SOBRE * Math.max(SUB[1].disj, SUB[2].disj);
+    const picoSub = Math.max(...['1', '2'].flatMap((b) => ['A', 'B', 'C'].map((f) => (restoFase(CIRC.filter((c) => !(c.board === b && c.atras)), null, f) + 1.45 * SUB[b].disj) / 1.13)));
     const mag = Math.max(...diretos.map((c) => MAG[c.curva] * c.disj), 10 * SUB[1].disj, 10 * SUB[2].disj) / 5;
-    return { sobreQ, sobreSub, mag, min: Math.max(Iproj, sobreQ, sobreSub, mag) };
+    return { sobreQ, sobreSub, picoSub, mag, min: Math.max(Iproj, sobreQ, sobreSub, mag) };
   }
   function demanda() {
     // corrente de projeto do ramal: a maior fase no cenário de projeto (pico típico) — não a média trifásica
@@ -635,8 +644,14 @@
     SELET.push({ de: 'C' + c.n, In: c.disj, curva: c.curva, mag: MAG[c.curva] * c.disj, para: up.nome, InUp: up.In, sobre, limite: 1.13 * up.In, okSobre: sobre <= 1.13 * up.In, okCurto: MAG[c.curva] * c.disj <= 5 * up.In });
   });
   ['1', '2'].forEach((b) => {
-    const sobre = Math.max(...['A', 'B', 'C'].map((f) => restoFase(CIRC.filter((c) => !(c.board === b && c.atras)), null, f) + 1.45 * SUB[b].disj));
-    SELET.push({ de: SUB[b].board.id, In: SUB[b].disj, curva: 'C', mag: 10 * SUB[b].disj, para: 'Padrão', InUp: ALIM.disj, sobre, limite: 1.13 * ALIM.disj, okSobre: sobre <= 1.13 * ALIM.disj, okCurto: 10 * SUB[b].disj <= 5 * ALIM.disj });
+    // resto da casa no pico, na fase mais carregada (um chuveiro, ar ligado, cozinha), sem a iluminação e as tomadas do andar
+    const resto = Math.max(...['A', 'B', 'C'].map((f) => restoFase(CIRC.filter((c) => !(c.board === b && c.atras)), null, f)));
+    const razao = ALIM.disj / SUB[b].disj, grp = CIRC.filter((c) => c.board === b && c.atras);
+    // iluminação e tomadas do andar na fase mais carregada: uso real e todos os pontos na potência nominal
+    const porFase = (w) => Math.max(...['A', 'B', 'C'].map((f) => grp.filter((c) => c.fases.includes(f)).reduce((s2, c) => s2 + w(c), 0)));
+    SELET.push({ de: SUB[b].board.id, In: SUB[b].disj, curva: 'C', mag: 10 * SUB[b].disj, para: 'Padrão', InUp: ALIM.disj, razao, resto, sobre: resto + 1.45 * SUB[b].disj, limite: 1.13 * ALIM.disj,
+      // acima desta corrente no andar (numa fase), com a casa no pico, o padrão sai da faixa em que nunca desarma
+      picoLim: 1.13 * ALIM.disj - resto, uso: porFase(ibReal), nominal: porFase((c) => c.va / c.v), okSobre: razao >= RAZAO_SOBRE, okCurto: 10 * SUB[b].disj <= 5 * ALIM.disj });
   });
   // queda total (alimentador + alimentador do andar + circuito) ≤ 5 %: aumenta a seção do circuito se precisar
   CIRC.forEach((c) => {
@@ -719,8 +734,8 @@
       const N = mine.length, res = N <= 6 ? 2 : N <= 12 ? 3 : N <= 30 ? 4 : Math.ceil(0.15 * N); // reserva, NBR 5410 Tabela 59
       const comprado = b === COMPRADO.board && mod + res <= COMPRADO.modulos;
       const tam = comprado ? COMPRADO.modulos : [12, 18, 24, 36, 48, 56, 72].find((m) => m >= mod + res) || 72;
-      MOD[b] = { mod, res, tam, circ: N, comprado, dim: dimQuadro(tam) };
-      it('Quadros', `Quadro de distribuição de embutir ${tam} módulos DIN, barramentos trifásico, neutro e terra — ${BOARDS[b].id}${comprado ? ' (já comprado pela obra)' : ''}`, 'un', 1, `${comprado ? 'não comprar: ' : ''}${N} circuitos · ${mod} módulos ocupados + ${res} de reserva (NBR 5410 6.5.4.7) · ~${fmtm(MOD[b].dim[0], 2)} × ${fmtm(MOD[b].dim[1], 2)} m`);
+      MOD[b] = { mod, res, tam, circ: N, comprado, dim: dimQuadro(tam), fileiras: fileiras(b, res, tam) };
+      it('Quadros', `Quadro de distribuição de embutir ${tam} módulos DIN (${tam / 12} fileiras de 12), com porta, barramentos trifásico (≥ 100 A), neutro e terra — ${BOARDS[b].id}${comprado ? ' (já comprado pela obra)' : ''}`, 'un', 1, `${comprado ? 'não comprar: ' : ''}${b === 'T' ? 'barramento com bornes para os 2 alimentadores de 25 mm² (QD-1 e QD-2) ou repartidor tetrapolar 125 A · ' : ''}${N} circuitos · ${mod} módulos ocupados + ${res} de reserva (NBR 5410 6.5.4.7) · ~${fmtm(MOD[b].dim[0], 2)} × ${fmtm(MOD[b].dim[1], 2)} m`);
     });
     // rede (fibra + Cat6)
     const nRJ = PONTOS.filter((p) => p.tel === 'rj').length, nAP = PONTOS.filter((p) => p.tel === 'ap' || p.tel === 'roteador').length;
@@ -737,6 +752,40 @@
     it('Aterramento', 'Caixa de inspeção do aterramento 30×30', 'un', 1, '');
     it('Acessórios', 'Fita isolante, terminais, abraçadeiras, buchas e arruelas', 'vb', 1, '');
     return { cabos, items, MOD, modulos: MOD.T.mod, qdc: MOD.T.tam };
+  }
+  /**
+   * Montagem sugerida do quadro em fileiras de 12 módulos DIN: entrada (chave geral, DPS), depois cada DR com os seus
+   * circuitos e as reservas (a maior parte junto da iluminação e das tomadas). Cada DR começa numa fileira nova; se
+   * assim não couber no quadro, segue na fileira em que está, desde que caibam o DR e o primeiro circuito.
+   */
+  function fileiras(b, res, tam) {
+    const ent = b === 'T'
+      ? [{ t: 'chave', mod: 3, txt: 'Chave geral', sub: '3P ' + ALIM.disj + ' A' }, { t: 'dps', mod: 4, txt: 'DPS × 4', sub: '275 V 20 kA' }]
+      : SUB[b].chave ? [{ t: 'chave', mod: 3, txt: 'Chave', sub: '3P ' + SUB[b].chave + ' A' }] : [];
+    const drs = DRS.filter((d) => d.board === b);
+    const blocos = drs.map((d) => {
+      const L = d.secao === 'quadro' ? [{ t: 'geral', mod: 3, txt: 'Geral', sub: '3P C' + SUB[b].disj }] : [];
+      L.push({ t: 'dr', mod: d.polos, txt: d.id, sub: d.polos + 'P ' + d.in + ' A' });
+      d.circ.forEach((n) => { const c = CIRC.find((x) => x.n === n); L.push({ t: c.tipo, mod: c.v === VFF ? 2 : 1, txt: 'C' + n, sub: c.curva + c.disj }); });
+      const luz = d.circ.some((n) => CIRC.find((x) => x.n === n).tipo !== 'tue');
+      const r = drs.length === 1 ? res : luz ? res - (drs.length - 1) : 1;
+      for (let i = 0; i < r; i++) L.push({ t: 'res', mod: 1, txt: 'res.' });
+      return L;
+    });
+    const montar = (novaFileira) => {
+      const F = [[]];
+      const livre = () => 12 - F[F.length - 1].reduce((s2, x) => s2 + x.mod, 0);
+      const put = (x) => { if (livre() < x.mod) F.push([]); F[F.length - 1].push(x); };
+      ent.forEach(put);
+      blocos.forEach((L) => {
+        const cab = L.slice(0, L[0].t === 'geral' ? 3 : 2).reduce((s2, x) => s2 + x.mod, 0);
+        if (F[F.length - 1].length && (novaFileira || livre() < cab)) F.push([]);
+        L.forEach(put);
+      });
+      return F.filter((f) => f.length);
+    };
+    const F = montar(true);
+    return F.length <= tam / 12 ? F : montar(false);
   }
   /** Dimensões aproximadas (mm, largura × altura) de um quadro de embutir: fileiras de 12 módulos DIN. */
   function dimQuadro(tam) {
@@ -962,7 +1011,7 @@
   }
 
   DD.eletrica = {
-    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP, COMPRADO,
+    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP, COMPRADO, DISJ_ANDAR, RAZAO_SOBRE,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

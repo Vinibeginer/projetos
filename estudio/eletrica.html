@@ -152,6 +152,9 @@ td.num span { display: inline-grid; place-items: center; min-width: 17px; height
 .sh-uni { overflow: hidden; }
 .sh-uni svg { width: 100%; height: auto; }
 .sh-note { font-size: 9.5px; margin: 6px 0 0; }
+.sh-frente { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-top: 3px; align-items: start; }
+.sh-frente svg { width: 100%; height: auto; }
+.frentes { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; margin: 8px 0 16px; align-items: start; }
 table.pts.fix { table-layout: fixed; }
 table.pts.fix td { overflow-wrap: anywhere; }
 </style>
@@ -642,6 +645,30 @@ function unifilar(w, curto) {
   });
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W}px;background:#fff" xmlns="http://www.w3.org/2000/svg">${L.join('')}</svg>`;
 }
+/** Vista frontal de um quadro (montagem sugerida, QT.MOD[b].fileiras do 18-eletrica.js): fileiras de 12 módulos DIN. */
+function frente(b, W) {
+  const M = QT.MOD[b], n = M.tam / 12, x0 = 8, mw = (W - 2 * x0) / 12, rh = 38, top = 34, H = top + n * rh + 8;
+  const fill = { chave: '#d9d6cf', dps: '#d9d6cf', geral: '#b9b3a8', dr: '#cfe3ee', il: '#fbefc4', tug: '#f9d9cc', tue: '#f2d0e0', res: '#ffffff' };
+  const L = [];
+  const t = (x, y, s2, o) => L.push(`<text x="${x}" y="${y}" font-size="${(o && o.size) || 8}" font-family="JetBrains Mono, monospace" text-anchor="${(o && o.anchor) || 'middle'}" fill="#1f1d1a" ${o && o.bold ? 'font-weight="700"' : ''}>${esc(s2)}</text>`);
+  t(2, 11, `${E.BOARDS[b].id} — ${M.tam} módulos${M.comprado ? ' (já comprado)' : ''}`, { anchor: 'start', size: 10, bold: true });
+  t(2, 23, `${n} fileiras de 12 · ~${fmtm(M.dim[0])} × ${fmtm(M.dim[1])} m · ${M.mod} ocupados + ${M.res} reserva`, { anchor: 'start', size: 7.5 });
+  L.push(`<rect x="1" y="${top - 4}" width="${W - 2}" height="${n * rh + 6}" rx="4" fill="#f6f4ef" stroke="#1f1d1a"/>`);
+  for (let r = 0; r < n; r++) {
+    const y = top + r * rh;
+    L.push(`<line x1="${x0}" y1="${y + rh / 2}" x2="${W - x0}" y2="${y + rh / 2}" stroke="#bbb" stroke-width="3"/>`);
+    let x = x0;
+    (M.fileiras[r] || []).forEach((it) => {
+      const w2 = it.mod * mw;
+      L.push(`<rect x="${x + 0.6}" y="${y + 2}" width="${w2 - 1.2}" height="${rh - 6}" fill="${fill[it.t] || '#fff'}" stroke="#1f1d1a" stroke-width="0.8" ${it.t === 'res' ? 'stroke-dasharray="2 2"' : ''}/>`);
+      t(x + w2 / 2, y + 15, it.txt, { size: it.mod > 1 ? 7.5 : 7 });
+      if (it.sub) t(x + w2 / 2, y + 26, it.sub, { size: 6.5 });
+      x += w2;
+    });
+    if (x < W - x0 - 1) t((x + W - x0) / 2, y + rh / 2 + 3, 'livre', { size: 6.5 });
+  }
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:${W * 1.6}px;background:#fff" xmlns="http://www.w3.org/2000/svg">${L.join('')}</svg>`;
+}
 function cargasRows() {
   return CIRC.map((c) => `<tr><td class="c">${c.n}</td><td class="c">${E.BOARDS[c.board].id}</td><td>${esc(c.desc)}</td><td class="n">${c.pts.filter((id) => !/int/.test(PBY[id].k)).length}</td><td class="n">${c.v}</td><td class="c">${c.fases}</td><td class="n">${c.va}</td><td class="n">${fmtn(c.ib, 1)}</td><td class="n">${fmtn(c.fca, 2)}</td><td class="n">${String(c.secao).replace('.', ',')}</td><td class="n">${fmtn(c.iz, 1)}</td><td class="n">${c.disj}</td><td class="c">${c.dr || '—'}</td><td class="n">${fmtn(c.Lmax / 1000, 1)}</td><td class="n">${fmtn(c.dv, 2)}</td><td class="n">${fmtn(c.dvTot, 2)}</td><td class="${c.ok ? 'ok' : 'bad'}">${c.ok ? 'OK' : 'rever'}</td></tr>`);
 }
@@ -760,13 +787,14 @@ function memorial() {
     <li><b>Como fechar a cadeia:</b>
       <ul>
         <li><b>iluminação e tomadas dos andares</b>: circuito de até 10 A curva B → <b>disjuntor geral do andar</b> (QD-1 C${E.SUB[1].disj}, QD-2 C${E.SUB[2].disj}, no próprio quadro) → <b>padrão ${ALIM.disj} A</b>. São os três degraus;</li>
+        <li><b>disjuntor do andar → padrão:</b> ${(() => { const q = E.SELET.filter((x) => x.razao), r = q[0]; return `o disjuntor do andar é de <b>${E.SUB[1].disj} A</b>, para dar folga ao uso do andar. Na sobrecarga vale a regra prática dos fabricantes: o de cima com pelo menos 1,6 × o In do de baixo (${ALIM.disj}/${r.In} = ${fmtn(r.razao, 1)}), e as curvas térmicas não se cruzam. No curto, ${r.mag} A ≤ ${5 * ALIM.disj} A. <b>Caso raro:</b> o padrão vê a soma da casa toda. Com o resto da casa no pico, na mesma fase (um chuveiro, ar-condicionado e cozinha: ~${fmtn(Math.max(...q.map((x) => x.resto)), 0)} A), se a iluminação e as tomadas de um andar passarem de ~${fmtn(Math.min(...q.map((x) => x.picoLim)), 0)} A numa fase, o padrão sai da faixa em que nunca desarma (1,13 × ${ALIM.disj} = ${fmtn(r.limite, 0)} A) e pode desarmar junto com o do andar. Para comparar: o uso real do andar é ~${fmtn(Math.max(...q.map((x) => x.uso)), 0)} A por fase, e todos os pontos do andar na potência nominal somam ~${fmtn(Math.max(...q.map((x) => x.nominal)), 0)} A.`; })()}</li>
         <li><b>chuveiros e ar-condicionados dos andares</b> ligam na entrada do quadro do andar, antes do disjuntor geral, e ficam logo abaixo do padrão: um disjuntor de andar grande o bastante para um chuveiro (≥ 50 A) não teria como desarmar antes do padrão de ${ALIM.disj} A — numa sobrecarga dele, o padrão desarmaria junto;</li>
         <li><b>circuitos do térreo</b>, todos, saem do QDC, que é o quadro de entrada, logo abaixo do padrão; nenhum circuito do térreo passa pelos quadros dos andares;</li>
         <li>o geral do QDC e a chave de entrada do QD-1 são <b>chaves seccionadoras</b>, sem disparo; os alimentadores dos andares são protegidos pelo padrão;</li>
         <li>iluminação e tomadas em <b>curva B</b> e aparelhos (chuveiro, ar, micro-ondas) em curva C; o padrão de <b>${ALIM.disj} A</b> fica acima de tudo (mínimo ${fmtn(ALIM.padraoMin.min, 1)} A).</li>
       </ul></li>
   </ul>
-  ${table(['Desarma primeiro', 'In', 'Depois', 'In', 'Sobrecarga: de cima vê (A)', 'Limite 1,13 × In (A)', 'Curto: disparo de baixo ≤ 5 × In de cima', ''], E.SELET.map((x) => `<tr><td class="c">${x.de}</td><td class="n">${x.In}</td><td class="c">${x.para}</td><td class="n">${x.InUp}</td><td class="n">${fmtn(x.sobre, 1)}</td><td class="n">${fmtn(x.limite, 1)}</td><td class="n">${x.mag} ≤ ${5 * x.InUp}</td><td class="${x.okSobre && x.okCurto ? 'ok' : 'bad'}">${x.okSobre && x.okCurto ? 'OK' : 'rever'}</td></tr>`))}
+  ${table(['Desarma primeiro', 'In', 'Depois', 'In', 'Sobrecarga: de cima vê (A)', 'Limite 1,13 × In (A)', 'Curto: disparo de baixo ≤ 5 × In de cima', ''], E.SELET.map((x) => `<tr><td class="c">${x.de}</td><td class="n">${x.In}</td><td class="c">${x.para}</td><td class="n">${x.InUp}</td>${x.razao ? `<td class="n">${x.InUp} / ${x.In} = ${fmtn(x.razao, 1)} × In</td><td class="n">≥ 1,6 × In (fabricantes)</td>` : `<td class="n">${fmtn(x.sobre, 1)}</td><td class="n">${fmtn(x.limite, 1)}</td>`}<td class="n">${x.mag} ≤ ${5 * x.InUp}</td><td class="${x.okSobre && x.okCurto ? 'ok' : 'bad'}">${x.okSobre && x.okCurto ? 'OK' : 'rever'}</td></tr>`))}
   <p>Em curtos muito fortes, perto do quadro, todos os disjuntores podem disparar ao mesmo tempo, porque o disparo é instantâneo. Para cobrir esse caso:</p>
   <ul>
     <li>usar <b>uma única marca</b> de disjuntores em todos os quadros, classe 3 de limitação;</li>
@@ -776,6 +804,9 @@ function memorial() {
   </ul>
   <h2>6. Diagrama unifilar</h2>
   ${unifilar(980)}
+  <h3>Montagem sugerida dos quadros (vista frontal)</h3>
+  <p><b>Quadro do térreo (QDC) a comprar:</b> quadro de distribuição <b>de embutir, ${QT.MOD.T.tam} módulos DIN</b> (${QT.MOD.T.tam / 12} fileiras de 12, ~${fmtm(QT.MOD.T.dim[0])} × ${fmtm(QT.MOD.T.dim[1])} m; conferir a medida da caixa no catálogo antes de abrir a parede), com porta, <b>barramentos trifásico (100 A ou mais), neutro e terra</b>, conforme a NBR IEC 61439-3, metálico ou de PVC antichama. A caixa embutida tem de caber na parede de 15 cm (até ~10 cm de fundo). O barramento precisa de bornes para os dois alimentadores de 25 mm² (QD-1 e QD-2), que saem depois da chave geral; se o modelo não tiver, usar um repartidor tetrapolar de 125 A no espaço livre da 1ª fileira. O QD-1 é igual; o QD-2 usa o quadro de 24 módulos já comprado.</p>
+  <div class="frentes">${['T', '1', '2'].map((b) => frente(b, 420)).join('')}</div>
   <h2>7. Infraestrutura de internet (fibra e rede)</h2>
   <p>Tubulação pronta para a operadora passar a fibra sem quebrar nada, e cabeamento estruturado Cat6 em estrela (NBR 14565 / NBR 16264). Tudo em <b>eletrodutos só de telecom</b>, nunca no mesmo eletroduto ou caixa dos cabos de energia.</p>
   <ul>
@@ -966,6 +997,8 @@ function pranchas() {
     <header class="sh-head"><div><b>Obra Mariára — Projeto elétrico (NBR 5410)</b><span>Quadros de distribuição (QDC, QD-1, QD-2): circuitos e diagrama unifilar</span></div><div class="sh-meta">Prancha ${total}/${total} · ${hoje}<br>ANTEPROJETO — conferir com o responsável técnico</div></header>
     <div class="sh-body q"><div class="sh-uni">${unifilar(620, true)}</div>
     <div class="sh-tab"><table class="pts"><thead><tr><th>Circ.</th><th>Quadro</th><th>Descrição</th><th>Tensão</th><th>VA</th><th>Cabo</th><th>Disjuntor</th><th>DR</th></tr></thead><tbody>${cRows.join('')}</tbody></table>
+    <p class="sh-note"><b>Montagem sugerida (vista frontal):</b></p>
+    <div class="sh-frente">${['T', '1', '2'].map((b) => frente(b, 300)).join('')}</div>
     <p class="sh-note">Padrão 3P ${ALIM.disj} A · chave geral do QDC 3P ${ALIM.disj} A · alimentador 3×${ALIM.secao} + N ${ALIM.neutro} + PE ${ALIM.pe} mm² · DPS 4× 275 V 20 kA · QDC ${QT.MOD.T.tam} módulos (térreo, à direita da porta do quarto) · QD-1 ${QT.MOD[1].tam} módulos (alimentador ${E.SUB[1].secao} mm², geral 3P C${E.SUB[1].disj}) · QD-2 ${QT.MOD[2].tam} módulos (alimentador ${E.SUB[2].secao} mm², geral 3P C${E.SUB[2].disj}) · alimentadores dos andares protegidos pelo padrão · centros a 1,50 m. Pico típico ${fmtn(ALIM.Iproj, 0)} A na fase mais carregada (tabela da concessionária: ${fmtn(ALIM.D, 1)} kW). Fases: A ${fmtn(FASES.A / 1000, 1)} · B ${fmtn(FASES.B / 1000, 1)} · C ${fmtn(FASES.C / 1000, 1)} kVA.</p></div></div>
     <footer class="sh-foot">Neutro azul-claro · terra verde/verde-amarelo · fases preto, vermelho e branco · retorno amarelo. Todos os circuitos com DR 30 mA. Chuveiros em eletroduto exclusivo.</footer>
   </section>`);
