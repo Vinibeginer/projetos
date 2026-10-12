@@ -10671,15 +10671,16 @@ kbd {
     {id: "1-IL-ESC", fl: "1", k: "il", tipo: "arandela", amb: "Escada", x: 8850, y: 9550, z: 2900, va: 100, desc: "Arandela da escada (1º → 2º)"},
     {id: "1-S3a", fl: "1", k: "int3", amb: "Circulação", x: 5900, y: 10350, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — pé da escada (1º)"},
     {id: "2-S3b", fl: "2", k: "int3", amb: "Varanda coberta", x: 6300, y: 8600, z: 1100, liga: ["1-IL-ESC"], desc: "Interruptor paralelo — chegada da escada (2º)"},
-    {id: "T-TV1", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 12500, z: 300, va: 100, desc: "TUG da TV (1/3) — parede da TV, atrás do rack"},
-    {id: "T-TV2", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 12700, z: 300, va: 100, desc: "TUG da TV (2/3) — parede da TV, atrás do rack"},
-    {id: "T-TV3", fl: "T", k: "tug", amb: "Sala", x: 4300, y: 13300, z: 300, va: 100, desc: "TUG da TV (3/3) — parede da TV, atrás do rack"},
+    {id: "T-TV1", fl: "T", k: "tug", amb: "Sala", x: 8850, y: 12427, z: 1800, va: 100, desc: "TUG da TV (1/3) a 1,80 m — parede da TV (divisa direita), atrás do painel"},
+    {id: "T-TV2", fl: "T", k: "tug", amb: "Sala", x: 8850, y: 12627, z: 1800, va: 100, desc: "TUG da TV (2/3) a 1,80 m — parede da TV (divisa direita), atrás do painel"},
+    {id: "T-TV3", fl: "T", k: "tug", amb: "Sala", x: 8850, y: 12827, z: 1800, va: 100, desc: "TUG da TV (3/3) a 1,80 m — parede da TV (divisa direita), atrás do painel"},
+    {id: "T-AC2", fl: "T", k: "tue", eq: "ac", amb: "Sala", x: 8850, y: 14350, z: 2200, va: 2000, v: 220, desc: "Ar-condicionado split 18.000 BTU/h (2.000 VA, 220 V) — Sala — parede da direita, junto à fachada; condensadora na fachada da frente"},
     {id: "T-T-RT", fl: "T", k: "tug", amb: "Sala", x: 4600, y: 14550, z: 2780, va: 100, desc: "Tomada no teto para o roteador Wi-Fi (junto ao ponto de rede)"},
     {id: "T-T-QDT", fl: "T", k: "tug", amb: "Sala (pé da escada)", x: 7000, y: 8750, z: 1500, va: 100, desc: "TUG do roteador / ONT da fibra (ao lado do QDT)"},
     {id: "CXT", fl: "T", k: "tel", tel: "entrada", amb: "Muro esquerdo (frente)", x: 150, y: 19300, z: 1500, desc: "Caixa de entrada da fibra (operadora) — muro esquerdo, ao lado do padrão"},
     {id: "CPT", fl: "T", k: "tel", tel: "passagem", amb: "Garagem", x: 2600, y: 10500, z: 300, desc: "Caixa de passagem 4×4 da fibra — parede do lavabo, lado da garagem"},
     {id: "QDT", fl: "T", k: "tel", tel: "qdt", amb: "Sala (sob a escada)", x: 6650, y: 8750, z: 1500, desc: "Quadro de telecom (QDT) 40×40 — ONT da fibra, roteador e distribuição Cat6"},
-    {id: "T-RJ1", fl: "T", k: "tel", tel: "rj", amb: "Sala", x: 4300, y: 13500, z: 300, desc: "Ponto de rede RJ45 (TV) — Sala, ao lado das tomadas da TV"},
+    {id: "T-RJ1", fl: "T", k: "tel", tel: "rj", amb: "Sala", x: 8850, y: 13027, z: 1800, desc: "Ponto de rede RJ45 (TV) a 1,80 m — Sala, ao lado das tomadas da TV"},
     {id: "T-RJ2", fl: "T", k: "tel", tel: "rj", amb: "Quarto", x: 4300, y: 6450, z: 300, desc: "Ponto de rede RJ45 — Quarto"},
     {id: "T-RT1", fl: "T", k: "tel", tel: "roteador", amb: "Sala", x: 4600, y: 14550, z: 2780, desc: "Ponto no teto para o roteador Wi-Fi (Cat6 do QDT + tomada no teto) — Sala, depois da 2ª janela da parede da garagem"},
     {id: "1-RJ1", fl: "1", k: "tel", tel: "rj", amb: "Quarto Master", x: 3150, y: 7063, z: 300, desc: "Ponto de rede RJ45 — Quarto Master"},
@@ -10757,9 +10758,11 @@ kbd {
     const order = { il: 0, tug: 1, tue: 2 };
     const flr = (c) => ({ T: 0, 1: 1, 2: 2 })[PBY[c.pts[0]].fl];
     C.forEach((c) => (c.fl = PBY[c.pts[0]].fl));
-    // chuveiros (os maiores circuitos) saem direto do QDC: assim os quadros de andar ficam com circuitos pequenos e a
-    // seletividade circuito → quadro → padrão fecha com um padrão de 80 A
-    C.forEach((c) => (c.board = c.eq === 'chuveiro' ? 'T' : c.fl));
+    // chuveiros e ar-condicionados (os maiores circuitos, 220 V) saem direto do QDC: os quadros de andar ficam só com
+    // iluminação e tomadas de até 10 A em curva B (disparo magnético 3–5 × In), e a seletividade circuito → quadro →
+    // padrão fecha com um padrão de 70 A (ramal de 16 mm²)
+    C.forEach((c) => (c.board = c.eq === 'chuveiro' || c.eq === 'ac' ? 'T' : c.fl));
+    C.forEach((c) => (c.curva = c.board === 'T' ? 'C' : 'B'));
     C.sort((a, b) => order[a.tipo] - order[b.tipo] || flr(a) - flr(b) || (a.v - b.v) || a.key.localeCompare(b.key, 'pt', { numeric: true }));
     C.forEach((c, i) => (c.n = i + 1));
     return C;
@@ -10771,7 +10774,7 @@ kbd {
     il: { fu: 0.4, fs: 0.6, nome: 'Iluminação', obs: 'LED consome ~40 % da carga mínima da NBR; 60 % das luzes acesas' },
     tug: { fu: 1, fs: 0.15, nome: 'Tomadas de uso geral (100 VA)', obs: 'carregadores, TV, notebook…: poucos ao mesmo tempo' },
     tug600: { fu: 1, fs: 0.3, nome: 'Tomadas de bancada e banheiro (600 VA)', obs: 'liquidificador, cafeteira, secador: uso curto' },
-    ac: { fu: 0.8, fs: 0.75, nome: 'Ar-condicionado', obs: '3 dos 4 ligados; compressor não fica 100 % do tempo' },
+    ac: { fu: 0.8, fs: 0.8, nome: 'Ar-condicionado', obs: '4 dos 5 ligados (sala e quartos); compressor não fica 100 % do tempo' },
     microondas: { fu: 1, fs: 0.3, nome: 'Micro-ondas', obs: 'uso de poucos minutos' },
     mlr: { fu: 0.6, fs: 0.5, nome: 'Máquina de lavar', obs: 'ciclo com aquecimento só parte do tempo' },
     portao: { fu: 1, fs: 0.05, nome: 'Portão', obs: 'segundos por acionamento' },
@@ -11005,7 +11008,9 @@ kbd {
   // NBR NM 60898 (disjuntores DIN):
   //   • sobrecarga: com o disjuntor de baixo em 1,45 × In (desarma com certeza em menos de 1 h) e o resto da casa no
   //     uso real, o de cima continua abaixo de 1,13 × In (não desarma);
-  //   • curto-circuito (disparo magnético, curva C entre 5 e 10 × In): 10 × In de baixo ≤ 5 × In de cima.
+  //   • curto-circuito (disparo magnético: curva B entre 3 e 5 × In, curva C entre 5 e 10 × In): o disparo máximo do
+  //     de baixo (5 × In na B, 10 × In na C) ≤ o mínimo do de cima (5 × In, curva C).
+  const MAG = { B: 5, C: 10 }; // múltiplo de In em que o disparo magnético é garantido
   // O geral do QDC é uma chave seccionadora (sem disparo): os níveis são circuito → disjuntor do quadro do andar
   // (no QDC) → disjuntor do padrão. Circuitos do próprio QDC (térreo e chuveiros) têm o padrão logo acima.
   const shs = CIRC.filter((c) => c.eq === 'chuveiro');
@@ -11027,8 +11032,9 @@ kbd {
     const d = demandaDe(mine);
     const L = polyLen(SUB_ROUTE[b]) + 1000;
     const maxDown = Math.max(...mine.map((c) => c.disj));
+    const magDown = Math.max(...mine.map((c) => MAG[c.curva] * c.disj)); // disparo magnético garantido do maior de baixo
     const sobre = acimaDe(mine, mine);
-    const disj = DISJ.find((x) => x >= Math.max(d.I, sobre, 2 * maxDown));
+    const disj = DISJ.find((x) => x >= Math.max(d.I, sobre, magDown / 5));
     let s2 = SECOES.find((x) => x >= 6 && IZ3[x] * FCA_SUB * FCT >= disj);
     const dv = (sec) => (100 * Math.sqrt(3) * RHO * (L / 1000) * d.I) / (sec * VFF);
     while (dv(s2) > 1 && s2 < 50) s2 = SECOES[SECOES.indexOf(s2) + 1];
@@ -11039,7 +11045,7 @@ kbd {
     const doQDC = CIRC.filter((c) => c.board === 'T');
     const sobreQ = acimaDe(doQDC, CIRC);
     const sobreSub = Math.max(...['1', '2'].flatMap((b) => ['A', 'B', 'C'].map((f) => (restoFase(CIRC.filter((c) => c.board !== b), null, f) + 1.45 * SUB[b].disj) / 1.13)));
-    const mag = 2 * Math.max(...doQDC.map((c) => c.disj), SUB[1].disj, SUB[2].disj);
+    const mag = Math.max(...doQDC.map((c) => MAG[c.curva] * c.disj), 10 * SUB[1].disj, 10 * SUB[2].disj) / 5;
     return { sobreQ, sobreSub, mag, min: Math.max(Iproj, sobreQ, sobreSub, mag) };
   }
   function demanda() {
@@ -11066,11 +11072,11 @@ kbd {
     const up = c.board === 'T' ? { nome: 'Padrão', In: ALIM.disj } : { nome: SUB[c.board].board.id, In: SUB[c.board].disj };
     const set = c.board === 'T' ? CIRC : CIRC.filter((x) => x.board === c.board);
     const sobre = Math.max(...c.fases.split('').map((f) => restoFase(set, c, f) + 1.45 * c.disj));
-    SELET.push({ de: 'C' + c.n, In: c.disj, para: up.nome, InUp: up.In, sobre, limite: 1.13 * up.In, okSobre: sobre <= 1.13 * up.In, okCurto: 10 * c.disj <= 5 * up.In });
+    SELET.push({ de: 'C' + c.n, In: c.disj, curva: c.curva, mag: MAG[c.curva] * c.disj, para: up.nome, InUp: up.In, sobre, limite: 1.13 * up.In, okSobre: sobre <= 1.13 * up.In, okCurto: MAG[c.curva] * c.disj <= 5 * up.In });
   });
   ['1', '2'].forEach((b) => {
     const sobre = Math.max(...['A', 'B', 'C'].map((f) => restoFase(CIRC.filter((c) => c.board !== b), null, f) + 1.45 * SUB[b].disj));
-    SELET.push({ de: SUB[b].board.id, In: SUB[b].disj, para: 'Padrão', InUp: ALIM.disj, sobre, limite: 1.13 * ALIM.disj, okSobre: sobre <= 1.13 * ALIM.disj, okCurto: 10 * SUB[b].disj <= 5 * ALIM.disj });
+    SELET.push({ de: SUB[b].board.id, In: SUB[b].disj, curva: 'C', mag: 10 * SUB[b].disj, para: 'Padrão', InUp: ALIM.disj, sobre, limite: 1.13 * ALIM.disj, okSobre: sobre <= 1.13 * ALIM.disj, okCurto: 10 * SUB[b].disj <= 5 * ALIM.disj });
   });
   // queda total (alimentador + alimentador do andar + circuito) ≤ 5 %: aumenta a seção do circuito se precisar
   CIRC.forEach((c) => {
@@ -11137,8 +11143,8 @@ kbd {
     it('Dispositivos', 'Conector/terminal para chuveiro 6 mm²', 'un', n('tue', (p) => p.eq === 'chuveiro'), 'ligação direta, sem tomada');
     // quadros
     const disj = {};
-    CIRC.forEach((c) => { const k = (c.v === VFF ? '2P ' : '1P ') + c.disj + ' A'; disj[k] = (disj[k] || 0) + 1; });
-    Object.keys(disj).sort().forEach((k) => it('Quadros', 'Disjuntor termomagnético DIN curva C ' + k, 'un', disj[k], 'circuitos terminais'));
+    CIRC.forEach((c) => { const k = 'curva ' + c.curva + ' ' + (c.v === VFF ? '2P ' : '1P ') + c.disj + ' A'; disj[k] = (disj[k] || 0) + 1; });
+    Object.keys(disj).sort().forEach((k) => it('Quadros', 'Disjuntor termomagnético DIN ' + k, 'un', disj[k], /curva B/.test(k) ? 'circuitos dos quadros de andar (QD-1, QD-2)' : 'circuitos que saem do QDC'));
     it('Quadros', 'Chave seccionadora 3P ' + ALIM.disj + ' A (geral do QDC, sem disparo)', 'un', 1, 'a proteção do ramal é o disjuntor do padrão (seletividade circuito → quadro → padrão)');
     it('Quadros', 'Disjuntor do padrão 3P ' + ALIM.disj + ' A curva C (kit do padrão Enel)', 'un', 1, 'categoria a pedir à Enel; mínimo ' + ALIM.padraoMin.min.toFixed(1).replace('.', ',') + ' A para a seletividade');
     Object.values(SUB).forEach((d) => it('Quadros', 'Disjuntor DIN curva C 3P ' + d.disj + ' A — alimentador do ' + d.board.id, 'un', 1, 'no QDC'));
@@ -11387,7 +11393,7 @@ kbd {
   }
 
   DD.eletrica = {
-    LEVEL, TETO, TT, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
+    LEVEL, TETO, TT, MAG, VFN, VFF, RHO, DV_MAX, DV_TOTAL, ALIM_SECAO, FCA, FCT, QDC_XY, QDT_XY, RISER, BOARDS, IZ_RAMAL_D, FCT_SOLO, FATORES, CENARIO, SELET, COBERTO, coberto, SUB, SUB_ROUTE, FASES_Q, COMPARA, ALIM_ROUTE, TEL_ROUTE, TEL, PONTOS, PBY, IZ2, IZ3, CIRC, FASES, DRS, ALIM, QT, CAP,
     COLOR, TIPO_NAME, fmtm, fmtn, planKey, conduits: conduitsOf, telConduits, routeXY, symbol, draw2dWorld, draw2dScreen, build3d,
   };
 })();

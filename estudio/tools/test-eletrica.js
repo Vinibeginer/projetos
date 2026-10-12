@@ -34,7 +34,7 @@ check('iluminação separada das tomadas', E.CIRC.every((c) => c.pts.every((id) 
 check('TUE em circuito exclusivo', E.CIRC.filter((c) => c.tipo === 'tue').every((c) => c.pts.length === 1));
 check('chuveiros 6.500 W em 220 V, cabo de 6 mm² e DR próprio', E.CIRC.filter((c) => c.eq === 'chuveiro').every((c) => c.v === 220 && c.va === 6500 && c.secao >= 6 && E.DRS.find((d) => d.id === c.dr).circ.length === 1));
 check('todos os circuitos com DR 30 mA', E.CIRC.every((c) => !!c.dr));
-check('um quadro trifásico por andar; cada circuito sai do quadro do seu andar', ['T', '1', '2'].every((b) => E.BOARDS[b] && P.some((p) => p.k === 'qdc' && p.fl === b)) && E.CIRC.every((c) => c.board === (c.eq === 'chuveiro' ? 'T' : c.fl)));
+check('um quadro trifásico por andar; cada circuito sai do quadro do seu andar (chuveiros e ar-condicionados direto do QDC)', ['T', '1', '2'].every((b) => E.BOARDS[b] && P.some((p) => p.k === 'qdc' && p.fl === b)) && E.CIRC.every((c) => c.board === (c.eq === 'chuveiro' || c.eq === 'ac' ? 'T' : c.fl)));
 check('alimentadores dos quadros de andar: Ib ≤ In ≤ Iz', ['1', '2'].every((b) => { const d = E.SUB[b]; return d.I <= d.disj && d.ok; }));
 check('fases equilibradas no uso real (sem chuveiro, ≤ 15 %)', (() => { const f = E.CENARIO.find((c) => c.id === 'semch').I, m = Math.max(f.A, f.B, f.C); return (m - Math.min(f.A, f.B, f.C)) / m <= 0.15; })());
 check('seletividade: em toda a cadeia o mais próximo desarma primeiro (sobrecarga 1,45/1,13 e curto 10×/5×)', E.SELET.length > 20 && E.SELET.every((x) => x.okSobre && x.okCurto), E.SELET.filter((x) => !(x.okSobre && x.okCurto)).map((x) => x.de).join(','));
@@ -50,7 +50,10 @@ check('ramal principal com no mínimo 16 mm² e disjuntor geral ≤ capacidade',
 check('queda de tensão total (alimentador + circuito) ≤ 5 %', E.CIRC.every((c) => c.dvTot <= 5), 'alim ' + E.ALIM.dv.toFixed(2) + ' %, máx ' + Math.max(...E.CIRC.map((c) => c.dvTot)).toFixed(2) + ' %');
 check('lista de materiais com cabos, quadro e dispositivos', ['Cabos', 'Quadros', 'Dispositivos', 'Eletrodutos'].every((g) => E.QT.items.some((i) => i.grupo === g)));
 check('nenhum eletroduto no ar: ponto fora da área coberta vai por baixo (enterrado no térreo, contrapiso no 2º)', P.filter((p) => /il|int|tug|tue/.test(p.k)).every((p) => { if (E.coberto(p)) return true; const b = p.circ.baixo.find((x) => x.id === p.id); return b && b.path.slice(1, -1).every((q) => q[2] <= 0) && !Object.values(p.circ.trees).some((t) => t.edges.some((e) => e.b === p)); }));
-check('parede da TV com 3 tomadas e RJ45 entre as janelas (sala/garagem)', ['T-TV1', 'T-TV2', 'T-TV3'].every((id) => E.PBY[id] && E.PBY[id].x === 4300 && E.PBY[id].y > 12020 && E.PBY[id].y < 13720 && E.PBY[id].circ) && E.PBY['T-RJ1'].y > 12020 && E.PBY['T-RJ1'].y < 13720);
+check('parede da TV (divisa da direita da sala) com 3 tomadas e RJ45 a 1,80 m', ['T-TV1', 'T-TV2', 'T-TV3', 'T-RJ1'].every((id) => E.PBY[id] && E.PBY[id].x === 8850 && E.PBY[id].z === 1800 && E.PBY[id].y > 11700 && E.PBY[id].y < 13600) && ['T-TV1', 'T-TV2', 'T-TV3'].every((id) => E.PBY[id].circ));
+check('tomada alta de ar-condicionado em cada quarto e na sala, em circuito próprio do QDC', ['Quarto', 'Quarto Master', 'Quarto 1', 'Quarto 2', 'Sala'].every((amb) => E.PONTOS.some((p) => p.eq === 'ac' && p.amb === amb && p.z >= 2200 && p.circ.pts.length === 1 && p.circ.board === 'T' && p.circ.v === 220)));
+check('quadros de andar só com circuitos de até 10 A curva B', E.CIRC.filter((c) => c.board !== 'T').every((c) => c.curva === 'B' && c.disj <= 10));
+check('seletividade circuito → quadro → padrão em todos os pares (sobrecarga e curto)', E.SELET.every((x) => x.okSobre && x.okCurto));
 check('roteador no teto depois da 2ª janela da parede da garagem, com tomada', E.PBY['T-RT1'].y > 14220 && E.PBY['T-RT1'].z === E.TETO && E.PBY['T-T-RT'].circ && E.TEL.cabos.some((c) => c.id === 'T-RT1'));
 check('motor do portão enterrado a −0,40 m até o muro', E.PBY['T-PT1'].circ.baixo.some((b) => b.id === 'T-PT1' && b.path.some((q) => q[2] === -400)));
 ['T', '1', '2'].forEach((fl) => check('pavimento ' + fl + ': eletrodutos desenhados', E.conduits(fl).length > 5));
