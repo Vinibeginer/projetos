@@ -224,6 +224,7 @@
   // seletividade com o padrão de 70 A; ar-condicionados em 220 V agrupados até 16 A (3.520 VA) — cada aparelho tem
   // menos de 10 A, então pode dividir o circuito (NBR 5410 9.5.3.1)
   const CAP = { il: 2000, tug: 2000, tg: 1270, ac: 3520 };
+  const QDC_MODULOS = 24; // quadro do térreo comprado pela obra (20 a 25 disjuntores)
   // nos andares, iluminação e tomadas ficam atrás do disjuntor geral do quadro do andar: circuitos de até 10 A (1.270 VA)
   const capFl = (fl, cap) => (fl === 'T' ? cap : Math.min(cap, CAP.tg));
   const FL_NAME = { T: 'térreo', 1: '1º pav.', 2: '2º pav.' };
@@ -246,16 +247,34 @@
         p.circ = c;
       });
     };
-    const banho = (p) => /Lav|Banh|Suíte/.test(p.amb);
+    // iluminação: um circuito a cada dois cômodos (externas juntas); tomadas: um circuito por cômodo (a cozinha e a
+    // bancada da varanda gourmet, exclusivas, NBR 5410 9.5.3.2); o motor do portão vai com as tomadas da garagem
+    const PARES_IL = {
+      T: [['Cozinha', 'Desp.'], ['Suíte', 'Quarto'], ['Lav.', 'Garagem'], ['Sala', 'Escada'], ['Fachada', 'Quintal', 'Corredor lateral']],
+      1: [['Closet', 'Quarto Master'], ['Suíte', 'Banhº'], ['Circulação', 'Escada'], ['Quarto 1', 'Quarto 2'], ['Varanda']],
+      2: [['Varanda coberta', 'Lav.'], ['Varanda descoberta']],
+    };
+    const comodo = (p) => p.amb.replace(/\s*\(.*\)\s*$/, ''); // "Garagem (portão)" → "Garagem"
     ['T', '1', '2'].forEach((fl) => {
       const P = PONTOS.filter((p) => p.fl === fl);
-      group('il' + fl, 'il', 'Iluminação — ' + FL_NAME[fl], P.filter((p) => p.k === 'il'), capFl(fl, CAP.il));
-      // cozinha/bancada e serviço em circuito exclusivo (NBR 5410 9.5.3.2); banheiros, demais cômodos e o motor do
-      // portão (< 10 A) juntos nas tomadas de uso geral
-      group('tc' + fl, 'tug', 'Tomadas da cozinha/bancada — ' + FL_NAME[fl], P.filter((p) => p.k === 'tug' && p.va >= 600 && !banho(p)), capFl(fl, CAP.tug));
-      group('tg' + fl, 'tug', 'Tomadas de uso geral e banheiros — ' + FL_NAME[fl], P.filter((p) => (p.k === 'tug' || p.eq === 'portao') && !p.circ), capFl(fl, CAP.tug));
+      const il = P.filter((p) => p.k === 'il');
+      const pares = PARES_IL[fl].slice();
+      // cômodo com luz que não está na lista: forma par com o seguinte
+      const soltos = [...new Set(il.map(comodo))].filter((a) => !pares.some((g) => g.includes(a)));
+      for (let i = 0; i < soltos.length; i += 2) pares.push(soltos.slice(i, i + 2));
+      pares.forEach((g, i) => group('il' + fl + '-' + i, 'il', 'Iluminação — ' + g.join(' + ') + ' (' + FL_NAME[fl] + ')', il.filter((p) => g.includes(comodo(p))), capFl(fl, CAP.il)));
+      const tug = P.filter((p) => p.k === 'tug' || p.eq === 'portao');
+      [...new Set(tug.map(comodo))].forEach((a, i) => {
+        // no cômodo, as de 600 VA primeiro (bancada, banheiro), depois as de uso geral
+        const L = tug.filter((p) => comodo(p) === a).sort((x, y) => (y.va || 0) - (x.va || 0));
+        group('tg' + fl + '-' + i, 'tug', 'Tomadas — ' + a + ' (' + FL_NAME[fl] + ')', L, capFl(fl, CAP.tug));
+      });
       group('ac' + fl, 'tue', 'Ar-condicionado — ' + FL_NAME[fl], P.filter((p) => p.eq === 'ac'), CAP.ac, { v: VFF, eq: 'ac' });
     });
+    // circuitos de um mesmo cômodo divididos por carga: numera (1/2, 2/2)
+    const porDesc = {};
+    C.forEach((c) => (porDesc[c.desc] = (porDesc[c.desc] || []).concat(c)));
+    Object.values(porDesc).filter((L) => L.length > 1).forEach((L) => L.forEach((c, i) => (c.desc = c.desc.replace(' (', ' ' + (i + 1) + '/' + L.length + ' ('))));
     C.filter((c) => c.eq === 'ac').forEach((c) => {
       const ambs = [...new Set(c.pts.map((id) => PBY[id].amb))];
       c.desc = 'Ar-condicionado — ' + ambs.join(' + ') + ' (' + FL_NAME[PBY[c.pts[0]].fl] + ')';
@@ -279,8 +298,21 @@
     // demais para caberem abaixo de um disjuntor de andar seletivo com o padrão de 70 A) ligam no mesmo quadro, antes
     // desse disjuntor. O alimentador de cada andar é protegido pelo disjuntor do padrão (cabo com Iz ≥ In do padrão).
     C.forEach((c) => (c.board = c.fl));
+    // o QDC do térreo tem de caber no quadro de 24 módulos comprado (com a reserva da NBR 5410, Tabela 59): o que não
+    // couber sai do QD-1, que fica logo acima dele na mesma parede — primeiro a iluminação do térreo (corre na laje do
+    // térreo, logo abaixo do QD-1), depois o ar-condicionado, depois as tomadas externas
+    const modQDC = () => {
+      const L = C.filter((c) => c.board === 'T'), N = L.length;
+      return L.reduce((s2, c) => s2 + (c.v === VFF ? 2 : 1), 0) + 4 + 3 + 4 + (N <= 6 ? 2 : N <= 12 ? 3 : N <= 30 ? 4 : Math.ceil(0.15 * N));
+    };
+    const fila = C.filter((c) => c.fl === 'T' && c.tipo === 'il')
+      .concat(C.filter((c) => c.fl === 'T' && c.eq === 'ac'))
+      .concat(C.filter((c) => c.fl === 'T' && c.tipo === 'tug' && /Quintal/.test(c.desc)))
+      .concat(C.filter((c) => c.fl === 'T' && c.tipo === 'tug' && !/Quintal|Cozinha/.test(c.desc)).sort((a, b) => a.va - b.va));
+    while (modQDC() > QDC_MODULOS && fila.length) fila.shift().board = '1';
     C.forEach((c) => (c.curva = c.tipo === 'tue' ? 'C' : 'B'));
-    C.sort((a, b) => order[a.tipo] - order[b.tipo] || flr(a) - flr(b) || (a.v - b.v) || a.key.localeCompare(b.key, 'pt', { numeric: true }));
+    const brd = { T: 0, 1: 1, 2: 2 };
+    C.sort((a, b) => brd[a.board] - brd[b.board] || flr(a) - flr(b) || order[a.tipo] - order[b.tipo] || (a.v - b.v) || a.key.localeCompare(b.key, 'pt', { numeric: true }));
     C.forEach((c, i) => (c.n = i + 1));
     return C;
   }
@@ -325,7 +357,8 @@
   // quadro é a soma dos seus circuitos
   // primeiro a iluminação e as tomadas de cada andar (atrás do disjuntor do andar) equilibradas entre si — o disjuntor do
   // andar fica pequeno —, depois os circuitos ligados direto, sobre a soma
-  const atrasDe = (c) => c.board !== 'T' && (c.tipo !== 'tue' || c.eq === 'mlr');
+  // (circuitos do térreo que saem do QD-1 ficam antes do disjuntor do andar: o disjuntor do 1º não comporta o térreo)
+  const atrasDe = (c) => c.board !== 'T' && c.fl === c.board && (c.tipo !== 'tue' || c.eq === 'mlr');
   const realTot = { A: 0, B: 0, C: 0 };
   ['1', '2'].forEach((b) => { const r = balance(CIRC.filter((c) => c.board === b && atrasDe(c))); ['A', 'B', 'C'].forEach((f) => (realTot[f] += r[f])); });
   balance(CIRC.filter((c) => !atrasDe(c)), realTot);
@@ -352,7 +385,7 @@
     return { root, edges };
   }
   /** Do quadro do circuito (centro a 1,50 m) até a laje do pavimento `fl` (o mesmo, ou outro no caso da escada). */
-  const rise = (fl, board) => LEVEL[fl] + TT[fl] - (LEVEL[board || fl] + 1500) + man(BOARDS[board || fl], BOARDS[fl]);
+  const rise = (fl, board) => Math.abs(LEVEL[fl] + TT[fl] - (LEVEL[board || fl] + 1500)) + man(BOARDS[board || fl], BOARDS[fl]); // sobe (ou desce, se o quadro é do andar de cima)
   /** Comprimentos de um circuito saindo do quadro `board` (eletroduto e caminho até o ponto mais distante). */
   function lengths(c, board) {
     const byFl = {};
@@ -464,7 +497,7 @@
     // QDC: um DR para todos; andares: um DR na entrada (chuveiros e ar) e outro depois do disjuntor geral do andar
     const grupos = b === 'T'
       ? [['Todos os circuitos do quadro', () => true, 'geral']]
-      : [['Chuveiros e ar-condicionado (entrada do quadro)', (c) => !c.atras, 'direto'], ['Iluminação e tomadas (depois do disjuntor do andar)', (c) => c.atras, 'quadro']];
+      : [['Chuveiros e ar-condicionado (entrada do quadro)', (c) => !c.atras && c.fl === b, 'direto'], ['Circuitos do térreo que saem deste quadro', (c) => c.fl !== b, 'direto'], ['Iluminação e tomadas (depois do disjuntor do andar)', (c) => c.atras, 'quadro']];
     grupos.forEach(([desc, f, secao]) => {
       const L = mine.filter(f);
       if (!L.length) return;
