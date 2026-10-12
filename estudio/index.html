@@ -11118,16 +11118,17 @@ kbd {
     return Object.assign(d, { Iproj: I, L, disj, secao: s, iz, okIz: disj <= iz, padraoMin: pm, minimo: ALIM_SECAO, subiu: s > ALIM_SECAO, dv, neutro: s, pe: s <= 16 ? s : 16, raros });
   }
   const ALIM = demanda();
-  // alimentadores dos quadros de andar: saem do barramento do QDC, depois da chave geral, sem disjuntor no QDC — o
-  // disjuntor do padrão protege o cabo (Iz ≥ In do padrão, 2 alimentadores juntos na prumada: FCA 0,8); na entrada do
-  // quadro do andar, uma chave geral (se houver circuitos ligados antes do disjuntor do andar) e o disjuntor do andar
+  // alimentadores dos quadros de andar: saem do barramento do QDC, depois da chave geral, cada um por uma chave
+  // seccionadora própria no QDC (desliga o andar inteiro, quadro e cabo, pelo térreo, sem desligar o padrão nem o resto
+  // da casa). A chave não tem disparo: o disjuntor do padrão protege o cabo (Iz ≥ In do padrão, 2 alimentadores juntos na
+  // prumada: FCA 0,8), e a ordem de desarme continua circuito → disjuntor do andar → padrão
   ['1', '2'].forEach((b) => {
     const mine = CIRC.filter((c) => c.board === b);
     const d = demandaDe(mine);
     const L = polyLen(SUB_ROUTE[b]) + 1000;
     const s2 = SECOES.find((x) => x >= 6 && IZ3[x] * FCA_SUB * FCT >= ALIM.disj);
     const dv = (100 * Math.sqrt(3) * RHO * (L / 1000) * d.I) / (s2 * VFF);
-    Object.assign(SUB[b], d, { L, protecao: ALIM.disj, chave: SUB[b].direto.length ? [63, 80, 100, 125].find((x) => x >= ALIM.disj) : null, secao: s2, iz: IZ3[s2] * FCA_SUB * FCT, dv, neutro: s2, pe: s2 <= 16 ? s2 : 16, ok: IZ3[s2] * FCA_SUB * FCT >= ALIM.disj });
+    Object.assign(SUB[b], d, { L, protecao: ALIM.disj, chave: [63, 80, 100, 125].find((x) => x >= ALIM.disj), chaveNo: 'QDC', secao: s2, iz: IZ3[s2] * FCA_SUB * FCT, dv, neutro: s2, pe: s2 <= 16 ? s2 : 16, ok: IZ3[s2] * FCA_SUB * FCT >= ALIM.disj });
   });
   // verificação par a par (para o memorial e os testes)
   const SELET = [];
@@ -11217,14 +11218,14 @@ kbd {
     it('Quadros', 'Chave seccionadora 3P ' + ALIM.disj + ' A (geral do QDC, sem disparo)', 'un', 1, 'a proteção do ramal é o disjuntor do padrão (seletividade circuito → quadro → padrão)');
     it('Quadros', 'Disjuntor do padrão 3P ' + ALIM.disj + ' A curva C (kit do padrão Enel)', 'un', 1, 'categoria a pedir à Enel; mínimo ' + ALIM.padraoMin.min.toFixed(1).replace('.', ',') + ' A para a seletividade');
     Object.values(SUB).forEach((d) => it('Quadros', 'Disjuntor DIN curva C 3P ' + d.disj + ' A — geral do ' + d.board.id + ' (no próprio quadro)', 'un', 1, 'protege a iluminação e as tomadas do andar; desarma depois do circuito e antes do padrão'));
-    Object.values(SUB).filter((d) => d.chave).forEach((d) => it('Quadros', 'Interruptor geral (seccionador) 3P ' + d.chave + ' A — entrada do ' + d.board.id, 'un', 1, 'desliga o andar todo; chuveiros e ar ligam antes do disjuntor do andar; o alimentador é protegido pelo padrão'));
+    Object.values(SUB).forEach((d) => it('Quadros', 'Chave seccionadora 3P ' + d.chave + ' A — no QDC, saída para o ' + d.board.id, 'un', 1, 'desliga pelo térreo o andar inteiro (quadro e cabo), sem desligar o padrão nem o resto da casa; sem disparo: o alimentador é protegido pelo padrão'));
     DRS.forEach((d) => it('Quadros', `Interruptor diferencial (DR) ${d.polos}P ${d.in} A 30 mA`, 'un', 1, BOARDS[d.board].id + ' · ' + d.id + ': ' + d.desc));
     it('Quadros', 'DPS classe II 275 V 20 kA', 'un', 4, '3 fases + neutro, no QDC (NBR 5410 6.3.5); os quadros de andar ficam a menos de 10 m');
     const MOD = {};
     ['T', '1', '2'].forEach((b) => {
       const mine = CIRC.filter((c) => c.board === b);
-      // ocupado: disjuntores dos circuitos + DRs + (QDC) chave geral 3P e 4 DPS / (andar) disjuntor geral 3P e chave de entrada
-      const mod = mine.reduce((s, c) => s + (c.v === VFF ? 2 : 1), 0) + DRS.filter((d) => d.board === b).reduce((s, d) => s + d.polos, 0) + (b === 'T' ? 3 + 4 : 3 + (SUB[b].chave ? 3 : 0));
+      // ocupado: disjuntores dos circuitos + DRs + (QDC) chave geral 3P, chaves 3P dos andares e 4 DPS / (andar) disjuntor geral 3P
+      const mod = mine.reduce((s, c) => s + (c.v === VFF ? 2 : 1), 0) + DRS.filter((d) => d.board === b).reduce((s, d) => s + d.polos, 0) + (b === 'T' ? 3 + 3 * Object.keys(SUB).length + 4 : 3);
       const N = mine.length, res = N <= 6 ? 2 : N <= 12 ? 3 : N <= 30 ? 4 : Math.ceil(0.15 * N); // reserva, NBR 5410 Tabela 59
       const comprado = b === COMPRADO.board && mod + res <= COMPRADO.modulos;
       const tam = comprado ? COMPRADO.modulos : [12, 18, 24, 36, 48, 56, 72].find((m) => m >= mod + res) || 72;
@@ -11248,14 +11249,16 @@ kbd {
     return { cabos, items, MOD, modulos: MOD.T.mod, qdc: MOD.T.tam };
   }
   /**
-   * Montagem sugerida do quadro em fileiras de 12 módulos DIN: entrada (chave geral, DPS), depois cada DR com os seus
+   * Montagem sugerida do quadro em fileiras de 12 módulos DIN: entrada (chave geral, chaves dos andares, DPS), depois cada DR com os seus
    * circuitos e as reservas (a maior parte junto da iluminação e das tomadas). Cada DR começa numa fileira nova; se
    * assim não couber no quadro, segue na fileira em que está, desde que caibam o DR e o primeiro circuito.
    */
   function fileiras(b, res, tam) {
     const ent = b === 'T'
-      ? [{ t: 'chave', mod: 3, txt: 'Chave geral', sub: '3P ' + ALIM.disj + ' A' }, { t: 'dps', mod: 4, txt: 'DPS × 4', sub: '275 V 20 kA' }]
-      : SUB[b].chave ? [{ t: 'chave', mod: 3, txt: 'Chave', sub: '3P ' + SUB[b].chave + ' A' }] : [];
+      ? [{ t: 'chave', mod: 3, txt: 'Chave geral', sub: '3P ' + ALIM.disj + ' A' }]
+        .concat(Object.values(SUB).map((d) => ({ t: 'chave', mod: 3, txt: 'Chave ' + d.board.id, sub: '3P ' + d.chave + ' A' })))
+        .concat([{ t: 'dps', mod: 4, txt: 'DPS × 4', sub: '275 V 20 kA' }])
+      : [];
     const drs = DRS.filter((d) => d.board === b);
     const blocos = drs.map((d) => {
       const L = d.secao === 'quadro' ? [{ t: 'geral', mod: 3, txt: 'Geral', sub: '3P C' + SUB[b].disj }] : [];
