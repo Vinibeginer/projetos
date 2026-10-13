@@ -311,7 +311,7 @@ function paintFloor(fl, w, h, print, k) {
   const P = PRANCHAS.find((p) => p.id === fl);
   ctx.strokeStyle = '#b3aa9b'; ctx.setLineDash([6, 4]); ctx.strokeRect(X(0), Y(0), 9000 * S.view.s, 20000 * S.view.s); ctx.setLineDash([]);
   drawWalls(P.fid, false);
-  // alimentador e entrada da fibra (térreo): enterrados (traço longo) e na laje (traço curto)
+  // alimentador e entrada da fibra (térreo): enterrados (traço longo) e sob a laje (traço curto)
   if (fl === 'T') {
     [[ALIM_ROUTE, '#2b2b2b', 2.6, true], [TEL_ROUTE, COLOR.tel, 2, S.layers.tel]].forEach(([R, col, w, on]) => {
       if (!on) return;
@@ -333,7 +333,7 @@ function paintFloor(fl, w, h, print, k) {
       const Rt = E.SUB_ROUTE['2'];
       ctx.strokeStyle = '#2b2b2b'; ctx.lineWidth = 2.2; ctx.setLineDash([4, 3]);
       ctx.beginPath(); ctx.moveTo(X(Rt[1][0]), Y(Rt[1][1])); ctx.lineTo(X(Rt[2][0]), Y(Rt[2][1])); ctx.lineTo(X(Rt[3][0]), Y(Rt[3][1])); ctx.stroke(); ctx.setLineDash([]);
-      if (S.layers.TXT) label('alimentador do QD-2 (laje do 2º)', 6500, 9150, '#2b2b2b', true);
+      if (S.layers.TXT) label('alimentador do QD-2 (sob a laje do 2º)', 6500, 9150, '#2b2b2b', true);
     }
     ctx.fillStyle = '#fff';
     if (S.layers.tel) {
@@ -349,7 +349,7 @@ function paintFloor(fl, w, h, print, k) {
     ctx.setLineDash([]);
     if (S.layers.TXT) { const m = b.path[2]; label(fl === 'T' ? 'C' + c.n + ' enterrado −0,40 m (PEAD Ø32)' : 'C' + c.n + ' no contrapiso', (m[0] + b.path[3][0]) / 2, m[1] - 250, COLOR[c.tipo], true); }
   }));
-  // rede de dados (Cat6) na laje, traço-ponto
+  // rede de dados (Cat6) sob a laje, traço-ponto
   if (S.layers.tel) {
     ctx.strokeStyle = COLOR.tel; ctx.globalAlpha = 0.8; ctx.lineWidth = 1.4; ctx.setLineDash([8, 3, 2, 3]);
     E.telConduits(fl).forEach(({ a, b }) => { ctx.beginPath(); ctx.moveTo(X(a.x), Y(a.y)); ctx.lineTo(X(b.x), Y(b.y)); ctx.stroke(); });
@@ -389,7 +389,7 @@ function paintFloor(fl, w, h, print, k) {
     });
   }
   ctx.font = '600 13px "Space Grotesk", sans-serif'; ctx.textAlign = 'left'; ctx.fillStyle = '#1f1d1a';
-  const titles = { T: 'Térreo — pontos, circuitos (nº·VA) e eletrodutos na laje', 1: '1º pavimento', 2: '2º pavimento' };
+  const titles = { T: 'Térreo — pontos, circuitos (nº·VA) e eletrodutos sob a laje', 1: '1º pavimento', 2: '2º pavimento' };
   if (!print) ctx.fillText(titles[fl], 12, h - 14);
   const m = 1000 * S.view.s;
   ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(w - 20 - m, h - 18); ctx.lineTo(w - 20, h - 18); ctx.stroke();
@@ -517,6 +517,12 @@ function buildNet3D(groups) {
   tube(groups.tel, [QDT_XY.x, QDT_XY.y, 1700], [QDT_XY.x, QDT_XY.y, L2 + TT[2]], 0.018, mat(COLOR.tel));
   ALIM_ROUTE.slice(1).forEach((q, i) => tube(groups.qdc, ALIM_ROUTE[i], q, 0.025, mat('#2b2b2b')));
   TEL_ROUTE.slice(1).forEach((q, i) => tube(groups.tel, TEL_ROUTE[i], q, 0.018, mat(COLOR.tel)));
+  // forro de gesso (mesma geometria do estúdio, E.forro3d): placa translúcida em cada pavimento, com as paredes
+  ['T', '1', '2'].forEach((fl) => E.forro3d(fl).forEach((f) => {
+    const m = new THREE.Mesh(new THREE.BoxGeometry(M(f.x1 - f.x0), 0.012, M(f.y1 - f.y0)), new THREE.MeshStandardMaterial({ color: '#eee8dc', transparent: true, opacity: 0.22, depthWrite: false }));
+    m.position.set(M((f.x0 + f.x1) / 2), M(f.z), M((f.y0 + f.y1) / 2));
+    groups.WALLS.add(m);
+  }));
   // caixas de passagem: mesma geometria do estúdio (E.caixa3d)
   ['T', '1', '2'].forEach((fl) => E.caixasDe(fl).forEach((b) => {
     const d = E.caixa3d(b), m = new THREE.Mesh(new THREE.BoxGeometry(d.size[0], d.size[1], d.size[2]), mat(E.COR_CAIXA[b.uso]));
@@ -694,12 +700,12 @@ function memorial() {
       <ul>
         <li><b>QDC (térreo, geral):</b> na parede do quarto do térreo, do lado direito da porta (olhando da sala), junto ao pé da escada, com o centro a 1,50 m. Recebe o alimentador e tem a chave geral (seccionadora, sem disparo), o DPS, os DRs e <b>todos os ${QT.MOD.T.circ} circuitos do térreo</b>: quadro de <b>${QT.MOD.T.tam} módulos</b> (${QT.MOD.T.mod} ocupados + ${QT.MOD.T.res} de reserva, ~${fmtm(QT.MOD.T.dim[0])} × ${fmtm(QT.MOD.T.dim[1])} m). Os alimentadores dos andares saem do barramento dele, <b>cada um por uma chave seccionadora 3P ${E.SUB[1].chave} A no próprio QDC</b> (só liga e desliga, não desarma: não é disjuntor; os ${E.SUB[1].chave} A são só a corrente que ela aguenta, acima dos ${ALIM.disj} A do padrão, para nunca ser o ponto fraco): desliga-se o 1º ou o 2º andar inteiro (quadro e cabo) pelo térreo, sem desligar o padrão nem o resto da casa. A proteção desses cabos é o disjuntor do padrão.</li>
         <li><b>QD-1 (1º pavimento):</b> logo acima do QDC, na mesma parede (lado da circulação). O alimentador sobe direto pela parede. Quadro de <b>${QT.MOD[1].tam} módulos</b> com os ${QT.MOD[1].circ} circuitos do 1º (${QT.MOD[1].mod} ocupados + ${QT.MOD[1].res} de reserva, ~${fmtm(QT.MOD[1].dim[0])} × ${fmtm(QT.MOD[1].dim[1])} m).</li>
-        <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até a laje do 2º e anda nela até a parede da escada, porque na prumada do QDC o 2º não tem parede. ${QT.MOD[2].comprado ? 'Usa o quadro de ' + QT.MOD[2].tam + ' módulos já comprado pela obra' : 'Quadro de ' + QT.MOD[2].tam + ' módulos'} (${QT.MOD[2].circ} circuitos, ${QT.MOD[2].mod} módulos ocupados + ${QT.MOD[2].res} de reserva); o comprado não comporta o térreo nem o 1º, que passam de 30 módulos.</li>
+        <li><b>QD-2 (2º pavimento):</b> na parede da escada, voltado para a varanda coberta. O alimentador sobe pela parede do QDC até o forro do 1º e anda sob a laje do 2º até a parede da escada, porque na prumada do QDC o 2º não tem parede. ${QT.MOD[2].comprado ? 'Usa o quadro de ' + QT.MOD[2].tam + ' módulos já comprado pela obra' : 'Quadro de ' + QT.MOD[2].tam + ' módulos'} (${QT.MOD[2].circ} circuitos, ${QT.MOD[2].mod} módulos ocupados + ${QT.MOD[2].res} de reserva); o comprado não comporta o térreo nem o 1º, que passam de 30 módulos.</li>
         <li><b>Cada circuito sai do quadro do seu andar</b> — nenhum circuito de um pavimento fica no quadro de outro: para mexer num andar, desliga-se só o quadro dele. Caminhos mais curtos e nenhum feixe de circuitos subindo pela parede. No próprio quadro do andar, o andar se desliga pelo disjuntor geral (iluminação e tomadas) e pelo DR dos chuveiros e do ar. Cada quadro com acesso livre na frente (NBR 5410 6.5.4.7).</li>
         <li><b>Divisão dos circuitos:</b> iluminação separada das tomadas, <b>um circuito de iluminação a cada dois cômodos</b> (as luzes externas juntas) e <b>um circuito de tomadas por cômodo</b> (a cozinha e a bancada da varanda gourmet em circuitos exclusivos, NBR 5410 9.5.3.2). Chuveiros, micro-ondas e máquina com circuito próprio; ar-condicionados aos pares. Um disparo apaga só o cômodo (ou o par de cômodos) com problema.</li>
       </ul></li>
 
-    <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). Eletrodutos corrugados correm nas lajes <b>em linha reta entre as caixas</b> e descem pelas paredes, sempre na vertical, até as caixas. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: <b>no máximo 3 circuitos por eletroduto</b> (FCA = ${fmtn(E.FCA, 2)}), em DN 25 (¾") na laje e nas subidas e DN 20 (½") nas descidas (um circuito); os chuveiros vão em eletroduto exclusivo (FCA = 1). Ocupação e caixas de passagem: item 9.</li>
+    <li><b>Linhas:</b> condutores de cobre isolados em PVC 750 V em eletroduto embutido (método B1). <b>Forro de gesso rebaixado em toda a casa: nada fica embutido na laje.</b> Os eletrodutos corrugados reforçados correm <b>presos sob a laje, acima do forro</b>, em linha reta entre as caixas, e descem pelas paredes, sempre na vertical, até as caixas. Pontos de luz e de teto ficam no gesso (forro a ${fmtm(E.FORRO.T)} m no térreo, ${fmtm(E.FORRO[1])} m no 1º e ${fmtm(E.FORRO[2])} m no 2º — confirmar na obra), ligados por uma caixa presa sob a laje logo acima de cada um. Temperatura ambiente 30 °C (FCT = ${fmtn(E.FCT, 2)}). Agrupamento: <b>no máximo 3 circuitos por eletroduto</b> (FCA = ${fmtn(E.FCA, 2)}), em DN 25 (¾") na laje e nas subidas e DN 20 (½") nas descidas (um circuito); os chuveiros vão em eletroduto exclusivo (FCA = 1). Ocupação e caixas de passagem: item 9.</li>
     <li><b>Seções mínimas:</b> 1,5 mm² em iluminação e 2,5 mm² em tomadas (NBR 5410 6.2.6). Queda de tensão máxima: ${E.DV_MAX} % nos circuitos terminais e ${E.DV_TOTAL} % no total, do padrão até o ponto mais distante (alimentador + circuito).</li>
     <li><b>Ramal principal (alimentador):</b> <b>${ALIM.secao} mm² em cabo 0,6/1 kV com isolação EPR/XLPE (90 °C)</b>. Esse tipo de cabo é obrigatório no trecho enterrado (o cabo comum de 750 V não pode ser enterrado) e conduz mais corrente que o de PVC. A capacidade vale no trecho mais desfavorável, o enterrado (método D, solo a 25 °C), e cobre o disjuntor do padrão.</li>
     <li><b>Previsão de cargas</b> (NBR 5410 9.5.2):
@@ -822,17 +828,18 @@ function memorial() {
       <ul>
         <li>PEAD Ø32 enterrado na mesma vala do alimentador, <b>20 cm ao lado</b>;</li>
         <li><b>caixa de passagem 4×4</b> na parede do lavabo (lado da garagem, a 0,30 m);</li>
-        <li>sobe na parede, corre na laje e desce no <b>quadro de telecom (QDT)</b>.</li>
+        <li>sobe na parede, corre sob a laje (acima do forro) e desce no <b>quadro de telecom (QDT)</b>.</li>
       </ul></li>
     <li><b>QDT:</b> caixa de embutir 40×40×12 com tampa, <b>sob a escada</b>, ao lado do QDC (centro a 1,50 m). Ali ficam a ONT da operadora, o roteador e um patch panel. Há uma tomada de energia ao lado (T-T-QDT).</li>
-    <li><b>Pontos:</b> ${PONTOS.filter((p) => p.tel === 'rj').length} tomadas RJ45 (sala/TV, quartos e varanda gourmet) e <b>roteador no teto da sala</b>, depois da 2ª janela da parede da garagem, com tomada no teto ao lado, e ${PONTOS.filter((p) => p.tel === 'ap').length} pontos de Wi-Fi no teto do 1º e do 2º (access point alimentado pelo próprio cabo, PoE). Cada ponto tem o seu cabo Cat6 direto do QDT; o mais longo tem ${fmtn(Math.max(...TEL.cabos.map((c) => c.L)) / 1000, 1)} m, contra o limite de 90 m.</li>
-    <li><b>Eletrodutos de rede:</b> Ø25 na laje e nas descidas, com uma prumada própria ao lado da do QDC. Usar curvas suaves, no máximo 2 curvas de 90° entre caixas, e <b>arame-guia</b> deixado em todos os trechos.</li>
+    <li><b>Pontos:</b> ${PONTOS.filter((p) => p.tel === 'rj').length} tomadas RJ45 (sala/TV, quartos e varanda gourmet) e <b>roteador no forro da sala</b>, depois da 2ª janela da parede da garagem, com tomada no teto ao lado, e ${PONTOS.filter((p) => p.tel === 'ap').length} pontos de Wi-Fi no teto do 1º e do 2º (access point alimentado pelo próprio cabo, PoE). Cada ponto tem o seu cabo Cat6 direto do QDT; o mais longo tem ${fmtn(Math.max(...TEL.cabos.map((c) => c.L)) / 1000, 1)} m, contra o limite de 90 m.</li>
+    <li><b>Eletrodutos de rede:</b> DN 25 sob a laje (acima do forro) e nas descidas, com uma prumada própria ao lado da do QDC. Usar curvas suaves, no máximo 2 curvas de 90° entre caixas, e <b>arame-guia</b> deixado em todos os trechos.</li>
     <li><b>Separação da energia:</b> pelo menos 20 cm de eletrodutos de energia em trechos paralelos. Cruzamentos sempre em ângulo reto.</li>
   </ul>
   <h2>8. Execução</h2>
   <ul>
     <li><b>Alturas:</b>
       <ul>
+        <li>pontos de luz, Wi-Fi e a tomada do roteador <b>no forro de gesso</b>: ${fmtm(E.FORRO.T)} m no térreo, ${fmtm(E.FORRO[1])} m no 1º e ${fmtm(E.FORRO[2])} m no 2º (provisório: o forro fica abaixo dos esgotos dos banheiros de cima que correm sob a laje);</li>
         <li>tomadas baixas a 0,30 m;</li>
         <li>tomadas de bancada, de banheiro e da máquina a 1,10 m;</li>
         <li>micro-ondas a 1,60 m;</li>
@@ -850,11 +857,11 @@ function memorial() {
     <li><b>Compatibilização com a estrutura e os vãos</b> (conferida ponto a ponto):
       <ul>
         <li><b>nenhum ponto sobre pilar:</b> caixa e eletroduto em pilar exigiriam um corte grande no concreto. Os pontos que caíam em pilar foram deslocados ao longo da mesma parede;</li>
-        <li><b>nenhuma descida na prumada de janela ou porta:</b> o eletroduto desce da laje por dentro da parede, e sobre um vão não há parede. Tomadas sob janela foram para o lado do vão, a pelo menos 15 cm do batente;</li>
+        <li><b>nenhuma descida na prumada de janela ou porta:</b> o eletroduto desce do forro por dentro da parede, e sobre um vão não há parede. Tomadas sob janela foram para o lado do vão, a pelo menos 15 cm do batente;</li>
         <li><b>descidas que passam por viga:</b> deixar espera (tubo-camisa de PVC) na forma <b>antes de concretar</b>, conferida com o calculista;</li>
         <li><b>nunca rasgar ou furar pilar ou viga</b> depois de pronto: se um ponto precisar mudar de lugar na obra, mover ao longo da alvenaria.</li>
       </ul></li>
-    <li><b>Lajes:</b> os eletrodutos, as caixas octogonais dos pontos de luz e as <b>caixas de passagem</b> (item 9) são colocados <b>antes da concretagem</b> de cada laje, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
+    <li><b>Forro de gesso:</b> a infraestrutura vai toda sob a laje, <b>antes de fechar o gesso</b>: eletrodutos presos à laje com abraçadeiras a cada 0,80 m (nunca apoiados no forro), caixas dos pontos de luz e <b>caixas de passagem</b> (item 9) fixadas na laje. Toda caixa precisa continuar acessível depois do forro pronto: pela abertura da luminária ou por alçapão. Onde o eletroduto cruza uma viga, passar <b>por baixo dela</b> (o forro tem de ficar abaixo do fundo da viga nesse trecho) ou por furo previsto <b>antes da concretagem</b> com aval do calculista — nunca furar viga pronta. A concretagem das lajes não depende mais da elétrica, junto com as esperas do hidrossanitário. Conferir com o calculista o furo da prumada do QDC nas lajes (3 eletrodutos Ø32).</li>
     <li><b>Hidráulica:</b> não passar eletroduto no mesmo rasgo de tubo de água, e manter 20 cm dos shafts (SH-1, SH-2, SH-3) e das prumadas de esgoto.</li>
     <li><b>Teste final:</b> continuidade do PE em todas as tomadas, isolamento (≥ 1 MΩ a 500 V), teste do botão dos DR e polaridade das tomadas (fase à direita, olhando de frente, no padrão NBR 14136).</li>
   </ul>
@@ -864,8 +871,8 @@ function memorial() {
   ${table(['Caso', 'Eletroduto', 'Condutores', 'Ocupação', 'Limite', ''], E.OCUPACAO.map((o) => `<tr><td>${esc(o.caso)}</td><td class="c">DN ${o.dn}</td><td class="n">${o.n}</td><td class="n">${fmtn(o.taxa * 100, 0)} %</td><td class="n">${fmtn(o.lim * 100, 0)} %</td><td class="${o.ok ? 'ok' : 'bad'}">${o.comparar ? (o.ok ? 'cabe' : 'não cabe — por isso DN 25 na laje') : o.ok ? 'OK' : 'rever'}</td></tr>`))}
   <h3>Caixas de passagem (6.2.11.1.6)</h3>
   <p>Entre duas caixas (ou entre o quadro e uma caixa), um trecho contínuo de eletroduto tem no máximo <b>15 m</b> dentro da edificação e <b>30 m</b> em área externa, <b>menos 3 m para cada curva de 90°</b>, e no máximo <b>3 curvas</b>. A rede (Cat6 e fibra) fica com no máximo 2 curvas. Cada percurso do projeto foi conferido trecho a trecho; onde passaria do limite entra uma caixa de passagem, marcada nas plantas com ⊠ e o número:</p>
-  ${table(['Caixa', 'Pavimento', 'Onde', 'Local', 'Serve a'], E.CAIXAS.map((b) => `<tr><td class="c">${b.id}</td><td class="c">${{ T: 'Térreo', 1: '1º pav.', 2: '2º pav.' }[b.fl]}</td><td>${{ laje: 'laje — tampa cega no teto', parede: b.z >= E.TT[b.fl] - 10 ? 'parede, logo abaixo da laje' : 'parede, a ' + fmtm(b.z) + ' m do piso', enterrada: b.fl === 'T' ? 'enterrada (−0,40 m), tampa no piso' : 'no contrapiso, tampa no piso' }[b.onde]}</td><td>${esc(ambDe(b))}</td><td>${esc(b.quem.join(', '))}</td></tr>`))}
-  <p>A laje do térreo já foi concretada: se os eletrodutos do teto do térreo já estão nela, conferir na obra se as caixas ${E.CAIXAS.filter((b) => b.fl === 'T' && b.onde === 'laje').map((b) => b.id).join(', ') || '—'} foram deixadas. Se a laje foi concretada sem elas, não abrir a laje: o trecho já embutido fica fora deste item e deve ser avaliado com o responsável técnico (enfiação com arame-guia e lubrificante próprio, ou novo trajeto pela parede com caixa).</p>
+  ${table(['Caixa', 'Pavimento', 'Onde', 'Local', 'Serve a'], E.CAIXAS.map((b) => `<tr><td class="c">${b.id}</td><td class="c">${{ T: 'Térreo', 1: '1º pav.', 2: '2º pav.' }[b.fl]}</td><td>${{ forro: 'acima do forro, presa sob a laje — ' + (b.acessoLuz ? 'acesso pela luminária' : 'alçapão no gesso'), parede: b.z >= E.TT[b.fl] - 10 ? 'parede, logo abaixo da laje' : 'parede, a ' + fmtm(b.z) + ' m do piso', enterrada: b.fl === 'T' ? 'enterrada (−0,40 m), tampa no piso' : 'no contrapiso, tampa no piso' }[b.onde]}</td><td>${esc(ambDe(b))}</td><td>${esc(b.quem.join(', '))}</td></tr>`))}
+  <p>Com o forro de gesso, as caixas de passagem ficam escondidas acima dele, mas precisam continuar acessíveis (a NBR 5410 exige acesso às conexões): as que ficam a até 40 cm de uma luminária são abertas pela abertura dela; as demais (${E.CAIXAS.filter((b) => b.onde === 'forro' && !b.acessoLuz).map((b) => b.id).join(', ') || '—'}) pedem um alçapão de inspeção no gesso.</p>
   <h3>Lista de conferência</h3>
   ${table(['Item da norma', 'Exigência', 'No projeto', ''], conformidade().map(([i, r, p2, ok]) => `<tr><td class="c">${i}</td><td>${r}</td><td>${p2}</td><td class="${ok ? 'ok' : 'bad'}">${ok ? 'OK' : 'rever'}</td></tr>`))}
   <p class="callout">Os números de item seguem a NBR 5410:2004. Conferir a redação final com a norma em mãos e com o responsável técnico (ART).</p>`;
@@ -879,7 +886,7 @@ function ambDe(b) {
   if (b.onde === 'enterrada') return 'área externa (frente)';
   // sobre a parede: o cômodo de um dos lados
   const lado = [[300, 0], [-300, 0], [0, 300], [0, -300]].map(([dx, dy]) => em(b.x + dx, b.y + dy)).find(Boolean);
-  return lado ? (b.onde === 'laje' ? 'laje, sobre a parede — ' : 'parede — ') + lado.name : 'junto à parede';
+  return lado ? (b.onde === 'forro' ? 'acima do forro, sobre a parede — ' : 'parede — ') + lado.name : 'junto à parede';
 }
 /** Itens da NBR 5410 conferidos no projeto: [item, exigência, como está, ok]. */
 function conformidade() {
@@ -899,12 +906,12 @@ function conformidade() {
     ['6.2.6.1', 'Seção mínima: 1,5 mm² em iluminação, 2,5 mm² em tomadas e força', 'menor seção de iluminação ' + N(Math.min(...CIRC.filter((c) => c.tipo === 'il').map((c) => c.secao))) + ' mm²; de tomadas ' + N(Math.min(...CIRC.filter((c) => c.tipo !== 'il').map((c) => c.secao))) + ' mm²', CIRC.every((c) => c.secao >= (c.tipo === 'il' ? 1.5 : 2.5))],
     ['Tabela 58', 'Condutor de proteção (PE) com a seção da fase até 16 mm² e 16 mm² até 35 mm²', 'PE em todos os circuitos; ramal PE ' + ALIM.pe + ' mm²; alimentadores PE ' + E.SUB[1].pe + ' mm²', CIRC.every((c) => c.pe >= Math.min(c.secao, 16))],
     ['6.2.7', 'Queda de tensão: até 4 % no circuito terminal e 5 % do ponto de entrega ao ponto mais distante', 'máx. ' + fmtn(Math.max(...CIRC.map((c) => c.dv)), 2) + ' % no circuito e ' + fmtn(Math.max(...CIRC.map((c) => c.dvTot)), 2) + ' % no total', CIRC.every((c) => c.dv <= E.DV_MAX && c.dvTot <= E.DV_TOTAL)],
-    ['6.2.11.1.6', 'Eletrodutos: ocupação ≤ 40 % (3 ou mais condutores); trechos entre caixas ≤ 15 m (30 m externos) − 3 m por curva, ≤ 3 curvas', 'DN 25 na laje, DN 20 nas descidas; ' + E.CAIXAS.length + ' caixas de passagem', E.OCUPACAO.filter((o) => !o.comparar).every((o) => o.ok)],
+    ['6.2.11.1.6', 'Eletrodutos: ocupação ≤ 40 % (3 ou mais condutores); trechos entre caixas ≤ 15 m (30 m externos) − 3 m por curva, ≤ 3 curvas', 'DN 25 sob a laje, DN 20 nas descidas; ' + E.CAIXAS.length + ' caixas de passagem', E.OCUPACAO.filter((o) => !o.comparar).every((o) => o.ok)],
     ['Tabela 42', 'Fator de agrupamento conforme o número de circuitos no eletroduto', 'no máximo 3 circuitos por eletroduto: FCA ' + fmtn(E.FCA, 2), true],
     ['6.3.5', 'DPS na entrada da instalação; condutores de ligação ≥ 4 mm²', '4 DPS classe II 275 V 20 kA no QDC, ligação ≥ 4 mm²', true],
     ['6.5.4 / Tabela 59', 'Espaço de reserva no quadro (Tabela 59) e advertência da norma na porta de cada quadro', ['T', '1', '2'].map((b) => E.BOARDS[b].id + ' ' + QT.MOD[b].res + ' de reserva').join(' · ') + ' · etiqueta de advertência e identificação dos circuitos', ['T', '1', '2'].every((b) => QT.MOD[b].mod + QT.MOD[b].res <= QT.MOD[b].tam)],
     ['9.1', 'Banheiros: nenhuma tomada nos volumes 0, 1 e 2; tomada do lavatório a 0,60 m ou mais do box; chuveiro com DR', 'tomadas dos lavatórios fora do volume do box; chuveiros com DR', true],
-    ['9.5.2.1', 'Iluminação: ao menos um ponto no teto por cômodo, com interruptor; 100 VA nos primeiros 6 m² + 60 VA a cada 4 m² inteiros', ilFalta.length ? 'abaixo do mínimo: ' + ilFalta.join(', ') : 'todos os cômodos no mínimo ou acima', !ilFalta.length],
+    ['9.5.2.1', 'Iluminação: ao menos um ponto de luz fixo no teto (aqui, no forro) por cômodo, com interruptor; 100 VA nos primeiros 6 m² + 60 VA a cada 4 m² inteiros', ilFalta.length ? 'abaixo do mínimo: ' + ilFalta.join(', ') : 'todos os cômodos no mínimo ou acima', !ilFalta.length],
     ['9.5.2.2', 'Tomadas: banheiro 1 junto ao lavatório; cozinha, serviço e análogos 1 a cada 3,5 m de perímetro; salas e dormitórios 1 a cada 5 m; varandas 1; demais cômodos 1 até 6 m² e 1 a cada 5 m acima; 600 VA nas 3 primeiras de áreas molhadas', tugFalta.length ? 'abaixo do mínimo: ' + tugFalta.join(', ') : 'todos os cômodos no mínimo ou acima (item 2)', !tugFalta.length],
     ['9.5.3.1', 'Equipamento com mais de 10 A em circuito próprio', 'chuveiros, micro-ondas e máquina com circuito próprio; ar-condicionados (menos de 10 A cada) até 2 por circuito', CIRC.filter((c) => c.pts.some((id) => PBY[id].k === 'tue' && PBY[id].va / (PBY[id].v || 127) > 10)).every((c) => c.pts.filter((id) => PBY[id].va).length === 1)],
     ['9.5.3.2', 'Tomadas de cozinha, copa, área de serviço e análogos em circuitos só delas', 'circuito exclusivo da cozinha e da varanda gourmet', CIRC.filter((c) => c.tipo === 'tug' && c.pts.some((id) => /Cozinha|Varanda coberta/.test(PBY[id].amb))).every((c) => c.pts.filter((id) => PBY[id].k === 'tug').every((id) => PBY[id].amb === PBY[c.pts[0]].amb))],
@@ -987,9 +994,9 @@ const KIND_ORDER = { qdc: 0, medidor: 0, il: 1, int: 2, int3: 2, tug: 3, tue: 4,
 function sheetPoints(sh) {
   return PONTOS.filter((p) => p.fl === sh.fl && (p.k === 'qdc' || p.k === 'medidor' ? sh.layers.il : sh.layers[tipoOf(p)])).map((p) => ({
     p, x: p.x, y: p.y, kind: tipoOf(p),
-    item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no teto') : p.k === 'tel' ? TEL_LABEL[p.tel] : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
+    item: (p.k === 'il' ? (p.tipo === 'arandela' ? 'Arandela' : 'Luz no forro') : p.k === 'tel' ? TEL_LABEL[p.tel] : KIND_LABEL[p.k]) + ' — ' + p.amb + (p.va ? ' (' + p.va + ' VA)' : '') + (p.caixa ? ' · mesma caixa do ' + p.caixa : ''),
     circ: p.circ ? 'C' + p.circ.n : p.k === 'qdc' ? 'QDC' : p.k === 'tel' ? 'rede' : '—',
-    alt: (p.k === 'il' && p.tipo === 'teto') || p.tel === 'ap' || p.tel === 'roteador' || p.z >= TT[p.fl] ? 'teto' : fmtm(p.z) + ' m',
+    alt: p.z >= E.FORRO[p.fl] - 10 ? 'forro' : fmtm(p.z) + ' m',
   }));
 }
 function renderSheetImage(sh, pts) {
@@ -1030,7 +1037,7 @@ function renderSheetImage(sh, pts) {
     return url;
   }
 }
-const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no teto · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · <b style="color:${COLOR.tel}">◆</b> RJ45 · <b style="color:${COLOR.tel}">◉</b> Wi-Fi · <b>⊠</b> caixa de passagem (tracejada: enterrada / no piso) · tracejado = eletroduto na laje, em linha reta entre as caixas · traço-ponto azul = rede</span>`;
+const SYMB = `<span class="sy"><b style="color:${COLOR.il}">⊗</b> luz no forro · <b style="color:${COLOR.il}">●</b> arandela · <b style="color:${COLOR.il}">□</b> interruptor (◩ paralelo) · <b style="color:${COLOR.tug}">△</b> tomada 100 VA · <b style="color:${COLOR.tug}">▲</b> tomada 600 VA · <b style="color:${COLOR.tue}">▲</b> uso específico · <b>▬</b> QDC · <b style="color:${COLOR.tel}">◆</b> RJ45 · <b style="color:${COLOR.tel}">◉</b> Wi-Fi · <b>⊠</b> caixa de passagem (tracejada: enterrada / no piso) · tracejado = eletroduto sob a laje (acima do forro de gesso), em linha reta entre as caixas · traço-ponto azul = rede</span>`;
 function pranchas() {
   const hoje = new Date().toLocaleDateString('pt-BR');
   let nChanged = 0;
@@ -1074,7 +1081,7 @@ function side() {
   const circs = CIRC.filter((c) => fl === '3d' || c.pts.some((id) => PBY[id].fl === fl));
   $('side').innerHTML = `
     <h2>${fl === '3d' ? '3D — eletrodutos e pontos' : PRANCHAS.find((p) => p.id === fl).label}</h2>
-    <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo. Eletrodutos na laje e descidas nas paredes; o alimentador chega enterrado do padrão ao QDC.' : 'Arraste para mover, roda ou pinça para zoom. Passe o mouse num ponto para ver o circuito. Ao lado de cada ponto: nº do circuito · VA.'}</p>
+    <p class="sub">${fl === '3d' ? 'Gire com o mouse/dedo. Eletrodutos sob a laje, acima do forro de gesso, e descidas nas paredes; o alimentador chega enterrado do padrão ao QDC.' : 'Arraste para mover, roda ou pinça para zoom. Passe o mouse num ponto para ver o circuito. Ao lado de cada ponto: nº do circuito · VA.'}</p>
     <div class="kpis">
       <div class="kpi"><b>${CIRC.length}</b><span>circuitos em 3 quadros (um por andar)</span></div>
       <div class="kpi"><b>${fmtn(ALIM.Iproj, 0)} A</b><span>pico típico na fase mais carregada (padrão ${ALIM.disj} A)</span></div>
@@ -1089,7 +1096,7 @@ function side() {
       <span><i style="border-color:${COLOR.tug};border-top-style:dashed"></i>Tomadas de uso geral (TUG)</span>
       <span><i style="border-color:${COLOR.tue};border-top-style:dashed"></i>Uso específico (TUE)</span>
       <span><i style="border-color:${COLOR.tel};border-top-style:dotted"></i>Rede / internet (eletrodutos exclusivos)</span>
-      <span>⊗ luz no teto · ● arandela · □ interruptor · △ tomada · ▲ 600 VA / TUE · ▬ QDC · ◆ RJ45 · ◉ Wi-Fi</span>
+      <span>⊗ luz no forro · ● arandela · □ interruptor · △ tomada · ▲ 600 VA / TUE · ▬ QDC · ◆ RJ45 · ◉ Wi-Fi</span>
     </div>
     <h3>Circuitos ${fl === '3d' ? '' : 'que passam aqui'}</h3>
     <ul class="list">${circs.map((c) => `<li><b style="color:${COLOR[c.tipo]}">C${c.n}</b> ${esc(c.desc)} — ${E.BOARDS[c.board].id}, ${c.secao} mm², ${c.disj} A</li>`).join('')}</ul>

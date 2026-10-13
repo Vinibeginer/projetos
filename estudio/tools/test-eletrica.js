@@ -119,6 +119,22 @@ check('montagem sugerida: cada quadro cabe nas suas fileiras de 12 módulos, com
 check('NBR 5410 6.2.11.1.6: taxa de ocupação dos eletrodutos (≤ 40 % com 3 ou mais condutores) em todos os casos do projeto', E.OCUPACAO.filter((o) => !o.comparar).every((o) => o.ok), E.OCUPACAO.map((o) => o.dn + ':' + Math.round(o.taxa * 100) + '%').join(' '));
 check('tomada nunca menor que o disjuntor do circuito (20 A nos circuitos de 16 A)', E.QT.items.some((i) => /Tomada 2P\+T 20 A/.test(i.desc) && i.q >= E.PONTOS.filter((p) => p.k === 'tug' && !p.externa && p.circ && p.circ.disj > 10).length));
 check('quadros com etiqueta de advertência e identificação dos circuitos; DPS ligado com ≥ 4 mm²', ['Etiqueta de advertência', 'Identificação dos circuitos', '4 mm² .* ligação dos DPS'].every((r) => E.QT.items.some((i) => new RegExp(r).test(i.desc))));
+// forro de gesso: infra sob a laje, acima do forro; o forro fica abaixo dos esgotos que correm sob a laje e acima das tomadas altas
+{
+  const HH = global.DD.hidro, ruim = [];
+  ['T', '1', '2'].forEach((fl) => {
+    if (!(E.TT[fl] > E.FORRO[fl] + 60)) ruim.push(fl + ': eletroduto não fica acima do forro');
+    const topo = E.LEVEL[fl] + E.LAJE[fl];
+    HH.PIPES.forEach((pp) => pp.pts.slice(1).forEach((q, i) => {
+      const a = pp.pts[i];
+      if (Math.hypot(q[0] - a[0], q[1] - a[1]) < 200) return; // só os trechos horizontais
+      const fundo = Math.min(a[2], q[2]) - pp.dn / 2;
+      if (fundo > topo - 700 && fundo <= topo && fundo < E.LEVEL[fl] + E.FORRO[fl] + 20) ruim.push(fl + ': ' + pp.id + ' abaixo do forro');
+    }));
+  });
+  const luzes = P.filter((p) => p.k === 'il' && p.tipo === 'teto');
+  check('forro de gesso: eletrodutos sob a laje acima do forro, luzes no forro, forro abaixo dos esgotos sob a laje e acima de tudo o que fica na parede', !ruim.length && luzes.every((p) => p.z === E.FORRO[p.fl]) && P.filter((p) => p.z < E.FORRO[p.fl] - 10 && !/qdc|medidor/.test(p.k) && p.amb !== 'Escada').every((p) => p.z <= E.FORRO[p.fl] - 150), ruim.join(' · ') + ' forro ' + ['T', '1', '2'].map((f) => E.FORRO[f]).join('/'));
+}
 check('dois DRs por quadro de andar e no QDC: iluminação e tomadas separadas dos chuveiros e aparelhos', ['T', '1'].every((b) => { const D = E.DRS.filter((d) => d.board === b); return D.length === 2 && D.every((d) => { const L = d.circ.map((n) => E.CIRC.find((c) => c.n === n)); return L.every((c) => c.tipo === 'tue' && c.eq !== 'mlr') || L.every((c) => c.tipo !== 'tue' || c.eq === 'mlr'); }); }));
 check('iluminação e tomadas dos andares atrás do disjuntor do andar (até 10 A, curva B); chuveiros e ar ligados antes dele', E.CIRC.filter((c) => c.board !== 'T' && c.fl === c.board && (c.tipo === 'il' || c.tipo === 'tug')).every((c) => c.atras && c.disj <= 10 && c.curva === 'B') && E.CIRC.filter((c) => c.eq === 'chuveiro' || c.eq === 'ac').every((c) => !c.atras));
 {
@@ -128,7 +144,7 @@ check('iluminação e tomadas dos andares atrás do disjuntor do andar (até 10 
   check('iluminação: um circuito a cada dois cômodos (as luzes externas juntas)', E.CIRC.filter((c) => c.tipo === 'il').every((c) => ambs(c).length <= 2 || ambs(c).every((a) => /Fachada|Quintal|Corredor/.test(a))), E.CIRC.filter((c) => c.tipo === 'il').map((c) => ambs(c).join('+')).join(' | '));
 }
 check('seletividade circuito → quadro → padrão em todos os pares (sobrecarga e curto)', E.SELET.every((x) => x.okSobre && x.okCurto));
-check('roteador no teto depois da 2ª janela da parede da garagem, com tomada', E.PBY['T-RT1'].y > 14220 && E.PBY['T-RT1'].z === E.TETO && E.PBY['T-T-RT'].circ && E.TEL.cabos.some((c) => c.id === 'T-RT1'));
+check('roteador no forro depois da 2ª janela da parede da garagem, com tomada', E.PBY['T-RT1'].y > 14220 && E.PBY['T-RT1'].z === E.FORRO.T && E.PBY['T-T-RT'].circ && E.TEL.cabos.some((c) => c.id === 'T-RT1'));
 check('motor do portão enterrado a −0,40 m até o muro', E.PBY['T-PT1'].circ.baixo.some((b) => b.id === 'T-PT1' && b.path.some((q) => q[2] === -400)));
 ['T', '1', '2'].forEach((fl) => check('pavimento ' + fl + ': eletrodutos desenhados', E.conduits(fl).length > 5));
 // compatibilização: nenhuma descida/subida de eletroduto passa por janela ou porta; nenhum ponto sobre pilar

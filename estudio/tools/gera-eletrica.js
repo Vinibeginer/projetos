@@ -19,6 +19,8 @@ const DD = global.DD, doc = DD.data.initialState(), H = DD.hidro;
 const FL = { f0: 'T', f1: '1', f2: '2' };
 // forro / face inferior da laje de cada pavimento (00-data.js; o 1º tem pé-direito maior desde out/2026)
 const FLS = DD.data.FLOORS, TT = { T: FLS[0].ceiling, 1: FLS[1].ceiling, 2: FLS[2].ceiling }, TETO = TT.T;
+// forro de gesso: pontos de luz e de teto ficam no gesso (o eletroduto corre sob a laje, acima dele)
+const FG = DD.data.FORRO_GESSO, FORRO = { T: FG.f0, 1: FG.f1, 2: FG.f2 };
 
 // ------------------------------------------------------------------ geometria
 const wallsOf = (fid) => doc.walls.filter((w) => w.floor === fid && w.kind !== 'railing');
@@ -189,11 +191,11 @@ roomList.forEach((r) => {
     grid.forEach(([u, v]) => {
       let p = { x: Math.round(b.minX + wx * u), y: Math.round(b.minY + wy * v) };
       if (!inside(r, p) || nearStair(r.fid, p)) p = { x: Math.round(r.labelX), y: Math.round(r.labelY) - (nl === 1 ? 0 : 0) };
-      if (!luzes.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 500)) luzes.push(Object.assign(p, { z: TT[fl], tipo: 'teto' }));
+      if (!luzes.some((q) => Math.hypot(q.x - p.x, q.y - p.y) < 500)) luzes.push(Object.assign(p, { z: FORRO[fl], tipo: 'teto' }));
     });
   }
   const vaEach = Math.max(100, Math.ceil(va / luzes.length / 10) * 10);
-  const ilIds = luzes.map((p) => add({ id: nextId(fl, 'IL'), fl, k: 'il', tipo: p.tipo, amb, x: p.x, y: p.y, z: p.z, va: vaEach, desc: (p.tipo === 'arandela' ? 'Arandela' : 'Ponto de luz no teto') + ' — ' + amb }).id);
+  const ilIds = luzes.map((p) => add({ id: nextId(fl, 'IL'), fl, k: 'il', tipo: p.tipo, amb, x: p.x, y: p.y, z: p.z, va: vaEach, desc: (p.tipo === 'arandela' ? 'Arandela' : 'Ponto de luz no forro') + ' — ' + amb }).id);
   // ---- interruptor
   if (r.kind !== 'terraco' || true) {
     const s = switchFor(r, /terraco|entrada|garagem/);
@@ -299,7 +301,7 @@ const EXTRA = [
   // atravessa a parede da frente para a condensadora na fachada (não invade o vizinho)
   { id: 'T-AC2', fl: 'T', k: 'tue', eq: 'ac', amb: 'Sala', x: 8850, y: 14350, z: 2200, va: 2000, v: 220, desc: 'Ar-condicionado split 18.000 BTU/h (2.000 VA, 220 V) — Sala — parede da direita, junto à fachada; condensadora na fachada da frente' },
   // tomada no teto para o roteador
-  { id: 'T-T-RT', fl: 'T', k: 'tug', amb: 'Sala', x: 4600, y: 14550, z: TETO, va: 100, desc: 'Tomada no teto para o roteador Wi-Fi (junto ao ponto de rede)' },
+  { id: 'T-T-RT', fl: 'T', k: 'tug', amb: 'Sala', x: 4600, y: 14550, z: FORRO.T, va: 100, desc: 'Tomada no forro para o roteador Wi-Fi (junto ao ponto de rede)' },
   // tomada do roteador/ONT, ao lado do quadro de telecom (QDT)
   { id: 'T-T-QDT', fl: 'T', k: 'tug', amb: 'Sala (pé da escada)', x: 7000, y: 8750, z: 1500, va: 100, desc: 'TUG do roteador / ONT da fibra (ao lado do QDT)' },
 ];
@@ -314,13 +316,13 @@ const TEL = [
   { id: 'T-RJ1', fl: 'T', k: 'tel', tel: 'rj', amb: 'Sala', x: 8850, y: 13027, z: 1800, desc: 'Ponto de rede RJ45 (TV) a 1,80 m — Sala, ao lado das tomadas da TV' },
   { id: 'T-RJ2', fl: 'T', k: 'tel', tel: 'rj', amb: 'Quarto', x: 4300, y: 6450, z: 300, desc: 'Ponto de rede RJ45 — Quarto' },
   // roteador no teto da sala, depois da 2ª janela da parede sala/garagem (lado da rua), a 30 cm da parede
-  { id: 'T-RT1', fl: 'T', k: 'tel', tel: 'roteador', amb: 'Sala', x: 4600, y: 14550, z: TETO, desc: 'Ponto no teto para o roteador Wi-Fi (Cat6 do QDT + tomada no teto) — Sala, depois da 2ª janela da parede da garagem' },
+  { id: 'T-RT1', fl: 'T', k: 'tel', tel: 'roteador', amb: 'Sala', x: 4600, y: 14550, z: FORRO.T, desc: 'Ponto no forro para o roteador Wi-Fi (Cat6 do QDT + tomada no teto) — Sala, depois da 2ª janela da parede da garagem' },
   { id: '1-RJ1', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto Master', x: 3150, y: 7063, z: 300, desc: 'Ponto de rede RJ45 — Quarto Master' },
   { id: '1-RJ2', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 1', x: 4150, y: 13063, z: 300, desc: 'Ponto de rede RJ45 — Quarto 1' },
   { id: '1-RJ3', fl: '1', k: 'tel', tel: 'rj', amb: 'Quarto 2', x: 4300, y: 11975, z: 300, desc: 'Ponto de rede RJ45 — Quarto 2' },
-  { id: '1-AP1', fl: '1', k: 'tel', tel: 'ap', amb: 'Circulação', x: 4700, y: 9550, z: TT[1], desc: 'Ponto de Wi-Fi no teto (access point) — Circulação do 1º' },
+  { id: '1-AP1', fl: '1', k: 'tel', tel: 'ap', amb: 'Circulação', x: 4700, y: 9550, z: FORRO[1], desc: 'Ponto de Wi-Fi no forro (access point) — Circulação do 1º' },
   { id: '2-RJ1', fl: '2', k: 'tel', tel: 'rj', amb: 'Varanda coberta', x: 7350, y: 7800, z: 300, desc: 'Ponto de rede RJ45 (TV) — Varanda coberta' },
-  { id: '2-AP1', fl: '2', k: 'tel', tel: 'ap', amb: 'Varanda coberta', x: 5250, y: 6700, z: TT[2], desc: 'Ponto de Wi-Fi no teto (access point) — Varanda coberta' },
+  { id: '2-AP1', fl: '2', k: 'tel', tel: 'ap', amb: 'Varanda coberta', x: 5250, y: 6700, z: FORRO[2], desc: 'Ponto de Wi-Fi no forro (access point) — Varanda coberta' },
 ];
 TEL.forEach(add);
 
@@ -389,14 +391,14 @@ function conflito(p, q) {
 }
 const relocados = [];
 pts.forEach((p) => {
-  if (/qdc|medidor/.test(p.k) || p.z >= TT[p.fl] || (p.k === 'tel' && p.tel !== 'rj')) return;
+  if (/qdc|medidor/.test(p.k) || p.z >= FORRO[p.fl] || (p.k === 'tel' && p.tel !== 'rj')) return;
   if (!conflito(p, p)) return;
   const w = wallOf(p);
   if (!w) return;
   const L = Math.hypot(w.b.x - w.a.x, w.b.y - w.a.y), d = { x: (w.b.x - w.a.x) / L, y: (w.b.y - w.a.y) / L }, n = { x: -d.y, y: d.x };
   const side = Math.sign((p.x - w.a.x) * n.x + (p.y - w.a.y) * n.y) || 1;
   const room = roomList.find((r) => r.fl === p.fl && r.name === p.amb && inside(r, { x: p.x + n.x * side * 120, y: p.y + n.y * side * 120 }));
-  const outros = pts.filter((o) => o !== p && o.fl === p.fl && o.z < TT[o.fl] && !(p.caixa && (o.id === p.caixa || o.caixa === p.caixa)) && o.caixa !== p.id);
+  const outros = pts.filter((o) => o !== p && o.fl === p.fl && o.z < FORRO[o.fl] && !(p.caixa && (o.id === p.caixa || o.caixa === p.caixa)) && o.caixa !== p.id);
   for (let k = 1; k <= 60; k++) {
     for (const sg of [1, -1]) {
       const q = { x: Math.round(p.x + d.x * sg * k * 50), y: Math.round(p.y + d.y * sg * k * 50) };
@@ -414,7 +416,7 @@ pts.forEach((p) => {
   // interruptores na mesma caixa acompanham
   pts.filter((o) => o.caixa === p.id).forEach((o) => ((o.x = p.x), (o.y = p.y)));
 });
-const restam = pts.filter((p) => !/qdc|medidor/.test(p.k) && p.z < TT[p.fl] && !(p.k === 'tel' && p.tel !== 'rj') && conflito(p, p));
+const restam = pts.filter((p) => !/qdc|medidor/.test(p.k) && p.z < FORRO[p.fl] && !(p.k === 'tel' && p.tel !== 'rj') && conflito(p, p));
 if (restam.length) console.warn('ATENÇÃO — pontos ainda em conflito: ' + restam.map((p) => p.id + ' (' + conflito(p, p) + ')').join(', '));
 console.log('compatibilização: ' + relocados.length + ' pontos deslocados ao longo da parede');
 
