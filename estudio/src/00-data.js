@@ -13,6 +13,10 @@
     { id: 'f2', name: '2º Pavimento', short: '2', level: 6340, height: 2880, ceiling: 2780 },
   ];
   const FLOOR_HEIGHT = Object.fromEntries(FLOORS.map((f) => [f.id, f.height]));
+  // forro de gesso rebaixado em toda a casa (out/2026): altura da face do gesso acima do piso de cada pavimento; a
+  // infraestrutura elétrica corre sob a laje, no vão acima do forro. Abaixo dos esgotos dos banheiros de cima que correm
+  // sob a laje (térreo ~2,52 m, 1º ~3,11 m no fundo do tubo). Provisório: confirmar na obra.
+  const FORRO_GESSO = { f0: 2450, f1: 2900, f2: 2500 };
 
   // Door & window schedule (Quadro de esquadrias) — width x height x sill (mm)
   const SCHEDULE = {
@@ -347,5 +351,5 @@
     };
   }
 
-  DD.data = { FLOORS, FLOOR_HEIGHT, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
+  DD.data = { FLOORS, FLOOR_HEIGHT, FORRO_GESSO, SCHEDULE, KIND_HEIGHT, AS_BUILT, initialState, migrateAsBuilt };
 })();
