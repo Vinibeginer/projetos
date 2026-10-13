@@ -100,7 +100,7 @@ test('house box: 2º Pav includes the terrace railing, excludes the lot muros; a
   ok(b0.minY > 2000 && b0.maxY < 17000, 'Térreo: no ground muros');
   near(b0.z1, 2880, 1e-6, 'Térreo height');
   const all = P.houseBox(doc, 'f0', true);
-  near(all.z1, 6340 + 2880 + 120 + 1000, 1e-6, 'roof slab + 1,00 m platibanda'); // laje do 2º em 6,34 (pé-direito do 1º maior)
+  near(all.z1, 6340 + 3460 + 120 + 1000, 1e-6, 'roof slab + 1,00 m platibanda'); // laje do 2º em 6,34 e 2º com o pé-direito do 1º (cobertura em 9,80)
 });
 test('easeInOutCubic endpoints and symmetry', () => {
   near(P.easeInOutCubic(0), 0);

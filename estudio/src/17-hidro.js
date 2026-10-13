@@ -15,8 +15,8 @@
   //  NBR 7229/13969 (só se não houver rede coletora). Pesos relativos: NBR 5626:1998 (método usual).
   // =====================================================================================================
   // pisos do 1º e do 2º e laje de cobertura — os mesmos da planta (00-data.js). As built out/2026: pé-direito do 1º
-  // maior, laje do 2º no nível 6,34 e cobertura em 9,22
-  const FLS = (DD.data && DD.data.FLOORS) || [{ level: 0 }, { level: 2880 }, { level: 6340, height: 2880 }];
+  // maior, laje do 2º no nível 6,34; 2º com o mesmo pé-direito, cobertura em 9,80
+  const FLS = (DD.data && DD.data.FLOORS) || [{ level: 0 }, { level: 2880 }, { level: 6340, height: 3460 }];
   const L1 = FLS[1].level, L2 = FLS[2].level, LR = FLS[2].level + FLS[2].height;
   const ZG = -360;                       // calçada externa
   const VT = LR + 300;                   // topo dos terminais de ventilação (30 cm acima da cobertura não utilizável)

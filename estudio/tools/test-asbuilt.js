@@ -94,6 +94,15 @@ check('rodada 5: 2º pavimento no nível 6,34 e 1º com 3,46 m de piso a piso', 
 check('rodada 5: paredes do 1º vão de piso a piso', m5.walls.filter((w) => w.floor === 'f1' && w.kind === 'structural').every((w) => w.height === 3460));
 check('rodada 5: parede baixa do usuário fica como está', m5.walls.find((w) => w.id === 'w1_quartosDiv').height === 1100);
 check('rodada 5: escada do 1º com degraus em leque', m5.stairs.find((s) => s.id === 'st1').winders === 2 && !m5.stairs.find((s) => s.id === 'st0').winders);
-check('rodada 5: térreo e paredes do 2º sem mudança', fl('f0').height === 2880 && m5.walls.filter((w) => w.floor === 'f2' && w.kind === 'structural').every((w) => w.height === 2880));
+check('rodada 5: térreo sem mudança', fl('f0').height === 2880 && fl('f0').ceiling === 2780);
+// rodada 6: pé-direito do 2º igual ao do 1º — cobertura em 9,80, paredes do 2º de piso a piso
+const v5 = DD.persist.validate(JSON.parse(JSON.stringify(fresh)));
+v5.meta.asBuilt = 5;
+Object.assign(v5.floors.find((f) => f.id === 'f2'), { height: 2880, ceiling: 2780 });
+v5.walls.filter((w) => w.floor === 'f2' && (w.kind === 'structural' || w.kind === 'partition')).forEach((w) => (w.height = 2880));
+const m6 = DD.data.migrateAsBuilt(v5).doc;
+const f6 = (id) => m6.floors.find((f) => f.id === id);
+check('rodada 6: 2º com 3,46 m de piso a piso (cobertura em 9,80) e forro igual ao 1º', f6('f2').level === 6340 && f6('f2').height === 3460 && f6('f2').ceiling === 3360 && f6('f1').height === 3460);
+check('rodada 6: paredes do 2º de piso a piso; muros e guarda-corpos do terraço sem mudança', m6.walls.filter((w) => w.floor === 'f2' && w.kind === 'structural').every((w) => w.height === 3460) && m6.walls.filter((w) => w.floor === 'f2' && /muro|railing/.test(w.kind)).every((w) => w.height === fresh.walls.find((x) => x.id === w.id).height));
 console.log(fails ? `test-asbuilt: ${fails} falha(s)` : 'test-asbuilt: todos os testes ok');
 process.exitCode = fails ? 1 : 0;

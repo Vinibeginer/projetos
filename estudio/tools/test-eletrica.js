@@ -123,7 +123,7 @@ check('quadros com etiqueta de advertência e identificação dos circuitos; DPS
 {
   const HH = global.DD.hidro, ruim = [];
   ['T', '1', '2'].forEach((fl) => {
-    if (!(E.TT[fl] > E.FORRO[fl] + 60)) ruim.push(fl + ': eletroduto não fica acima do forro');
+    if (!(E.TT[fl] >= E.FORRO[fl] + 40 && E.TT[fl] < E.LAJE[fl])) ruim.push(fl + ': eletroduto não fica entre o forro e a laje');
     const topo = E.LEVEL[fl] + E.LAJE[fl];
     HH.PIPES.forEach((pp) => pp.pts.slice(1).forEach((q, i) => {
       const a = pp.pts[i];

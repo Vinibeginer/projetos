@@ -1,6 +1,6 @@
 // ===== 15-structure.js — projeto estrutural (pilares, vigas, sapatas) e compatibilização =====
 // Dados do projeto estrutural lidos das pranchas (formas nos níveis 0/2880/5760/8640, pilares, sapatas).
-// Revisão de obra (out/2026): a laje do 2º passa para o nível 6340 e a cobertura para 9220 (REVISOES).
+// Revisões de obra (out/2026): a laje do 2º passa para o nível 6340 e a cobertura para 9800 (REVISOES).
 // Os dados NÃO ficam no repositório público (a prancha proíbe disponibilizá-los a terceiros): entram
 //   a) embutidos no build privado  → window.DD_STRUCT (python tools/build.py out.html --estrutura private/estrutura.json)
 //   b) importados pelo usuário      → arquivo .json guardado no navegador (DD.structure.importData)
@@ -29,6 +29,9 @@
     // out/2026: pé-direito do 1º — fundo da laje do 2º a 3,30 m do piso (no osso): nível 5,76 → 6,34 (+58 cm);
     // tudo o que está desse nível para cima (vigas, topo dos pilares, cobertura) sobe junto
     { desde: 5760, delta: 580, nota: 'Laje do 2º no nível 6,34 (pé-direito do 1º maior, +58 cm)' },
+    // out/2026: pé-direito do 2º igual ao do 1º — cobertura de 9,22 para 9,80 (+58 cm); vigas da cobertura e topo dos
+    // pilares que chegam a ela sobem junto
+    { desde: 9220, delta: 580, nota: 'Cobertura no nível 9,80 (pé-direito do 2º igual ao do 1º, +58 cm)' },
   ];
   /** Aplica as revisões de nível (uma vez: dados já revisados trazem a cota nova e não mudam). */
   function revisar(raw) {
