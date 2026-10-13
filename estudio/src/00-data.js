@@ -10,13 +10,15 @@
     // as built (out/2026): pé-direito do 1º maior — fundo da laje do 2º a 3,30 m do piso no osso, laje do 2º
     // sobe do nível 5,76 para 6,34 (+58 cm); o 2º pavimento e a cobertura sobem junto (cobertura em 9,22)
     { id: 'f1', name: '1º Pavimento', short: '1', level: 2880, height: 3460, ceiling: 3360 },
-    { id: 'f2', name: '2º Pavimento', short: '2', level: 6340, height: 2880, ceiling: 2780 },
+    // as built (out/2026): pé-direito do 2º igual ao do 1º — cobertura sobe de 9,22 para 9,80 (+58 cm)
+    { id: 'f2', name: '2º Pavimento', short: '2', level: 6340, height: 3460, ceiling: 3360 },
   ];
   const FLOOR_HEIGHT = Object.fromEntries(FLOORS.map((f) => [f.id, f.height]));
   // forro de gesso rebaixado em toda a casa (out/2026): altura da face do gesso acima do piso de cada pavimento; a
-  // infraestrutura elétrica corre sob a laje, no vão acima do forro. Abaixo dos esgotos dos banheiros de cima que correm
-  // sob a laje (térreo ~2,52 m, 1º ~3,11 m no fundo do tubo). Provisório: confirmar na obra.
-  const FORRO_GESSO = { f0: 2450, f1: 2900, f2: 2500 };
+  // infraestrutura elétrica corre no vão acima do forro. Térreo: abaixo dos esgotos dos banheiros de cima que correm sob a
+  // laje (~2,52 m no fundo do tubo). 1º e 2º: abaixo do fundo das vigas, para os eletrodutos passarem por baixo delas sem
+  // furo (no 2º as vigas da cobertura são mais altas).
+  const FORRO_GESSO = { f0: 2450, f1: 2850, f2: 2750 };
 
   // Door & window schedule (Quadro de esquadrias) — width x height x sill (mm)
   const SCHEDULE = {
@@ -235,8 +237,8 @@
   // Alterações feitas na obra em relação à planta aprovada. `version` sobe a cada nova rodada de alterações:
   // uma planta salva no navegador com versão menor é atualizada no boot por migrateAsBuilt().
   const AS_BUILT = {
-    version: 5,
-    date: '2026-10-09',
+    version: 6,
+    date: '2026-10-13',
     changes: [
       { floor: 'f0', text: 'Banheiro da suíte do térreo 0,50 m maior, avançando sobre a despensa (a despensa ficou 0,50 m menor).' },
       { floor: 'f0', text: 'Porta do quarto (P1) saiu de baixo da escada: agora fica logo após o pilar P7, ao lado da porta da cozinha.' },
@@ -247,6 +249,7 @@
       { floor: 'f1', text: 'Quartos 1 e 2 (frente): cada porta balcão da sacada (P5, 1,60 m) virou uma porta de 0,80 × 2,10 e uma janela de 1,20 × 1,20 (peitoril 1,10).' },
       { floor: 'f1', text: 'Pé-direito do 1º pavimento maior: fundo da laje do 2º a 3,30 m do piso (no osso). A laje do 2º sobe do nível 5,76 para 6,34 (+58 cm), e o 2º pavimento e a cobertura sobem junto.' },
       { floor: 'f1', text: 'Escada do 1º para o 2º: 19 espelhos de 18,2 cm no mesmo vão da laje; o patamar virou 4 degraus em leque.' },
+      { floor: 'f2', text: 'Pé-direito do 2º pavimento igual ao do 1º: a cobertura sobe do nível 9,22 para 9,80 (+58 cm), 3,46 m de piso a piso. Com forro de gesso abaixo das vigas, a elétrica passa por baixo delas sem furar.' },
     ],
     // o que cada rodada troca (uma planta salva recebe só as rodadas que ainda não tem)
     rounds: [
@@ -262,6 +265,8 @@
       { version: 4, walls: [], openings: ['o1_j8_q1', 'o1_p10_q1', 'o1_p10_q2', 'o1_j8_q2'], removedOpenings: ['o1_p5_q1', 'o1_p5_q2'], roomSeeds: [] },
       // níveis: pisos e pé-direito dos pavimentos, altura das paredes de piso a piso e a escada do 1º
       { version: 5, walls: [], openings: [], removedOpenings: [], roomSeeds: [], floors: true, stairs: ['st1'] },
+      // pé-direito do 2º igual ao do 1º (cobertura em 9,80): altura do 2º e paredes dele de piso a piso
+      { version: 6, walls: [], openings: [], removedOpenings: [], roomSeeds: [], floors: true },
     ],
   };
 
