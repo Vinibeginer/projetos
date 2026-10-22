@@ -128,6 +128,9 @@ ul.list li { margin: 3px 0; }
 details.dados { margin-top: 14px; font-size: 12px; }
 details.dados summary { cursor: pointer; color: var(--muted); }
 details.dados pre { white-space: pre-wrap; word-break: break-all; font: 11px/1.4 var(--font-mono); background: var(--panel-2); border: 1px solid var(--line-soft); border-radius: 8px; padding: 8px; max-height: 220px; overflow: auto; }
+.casa3d { position: absolute; left: 10px; top: 42px; z-index: 2; display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgba(20,19,17,.72); backdrop-filter: blur(6px); }
+.casa3d button { border: 0; background: transparent; color: #cfc8bb; font: 500 12px/1 var(--font-ui); padding: 7px 9px; border-radius: 6px; cursor: pointer; }
+.casa3d button[aria-pressed='true'] { background: #ede8df; color: #1f1d1a; }
 .tag { display: inline-block; font: 600 10px/1 var(--font-mono); padding: 3px 6px; border-radius: 5px; background: var(--accent); color: var(--accent-ink); vertical-align: 1px; margin-right: 4px; }
 </style>
 </head>
@@ -161,9 +164,15 @@ details.dados pre { white-space: pre-wrap; word-break: break-all; font: 11px/1.4
       </div>
       <div class="pane pane-3d">
         <span class="pane-title">3D</span>
+        <div class="casa3d" id="casa3d" role="group" aria-label="Casa no 3D e na planta">
+          <button type="button" data-casa="inteira" aria-pressed="true">Casa</button>
+          <button type="button" data-casa="vidro" aria-pressed="false">Casa em vidro</button>
+          <button type="button" data-casa="oculta" aria-pressed="false">Sem a casa</button>
+        </div>
         <div id="view3d"></div>
         <div class="hint3d">Arraste para girar · botão direito para deslocar · roda para aproximar</div>
         <div class="cams" id="cams">
+          <button type="button" data-cam="anexos">Só os anexos</button>
           <button type="button" data-cam="fundos">Fundos</button>
           <button type="button" data-cam="servico">Área de serviço</button>
           <button type="button" data-cam="gas">Corredor (gás)</button>
@@ -390,7 +399,7 @@ const TABS = [
   { id: 'C', k: 'C', label: 'Frente C', cam: 'frente', bounds: [-400, 13900, 9400, 20500] },
   { id: 'lote', k: '◱', label: 'Lote', cam: 'alto', bounds: [-500, -500, 9500, 20500] },
 ];
-const S = { tab: 'fundos', frente: 'A', antes: false, view: 'split', pv: null };
+const S = { tab: 'fundos', frente: 'A', antes: false, view: 'split', pv: null, casa: 'inteira' };
 const $ = (id) => document.getElementById(id);
 const tabsEl = $('tabs');
 TABS.forEach((t) => {
@@ -535,7 +544,8 @@ function drawPlan() {
   // calçada pública (fora do lote) e rua
   ctx.fillStyle = '#e2ddd3'; ctx.fillRect(...rectP({ x0: -500, x1: 9500, y0: 20000, y1: 22000 }));
   // cômodos do térreo e projeção da varanda do 1º
-  ROOMS.f0.filter((r) => !r.open && !r.outdoor).forEach((r) => { ctx.fillStyle = '#ece6da'; poly(r.outer); ctx.fill(); });
+  const fraca = S.casa !== 'inteira';
+  ROOMS.f0.filter((r) => !r.open && !r.outdoor).forEach((r) => { ctx.fillStyle = fraca ? 'rgba(236,230,218,.8)' : '#ece6da'; poly(r.outer); ctx.fill(); });
   ctx.setLineDash([6, 4]); ctx.strokeStyle = 'rgba(58,54,49,.55)'; ctx.lineWidth = 1;
   ctx.strokeRect(...rectP({ x0: 75, x1: 8925, y0: 15000, y1: 16200 })); ctx.setLineDash([]);
   if (S.tab !== 'fundos' && S.tab !== 'gas') label('projeção da varanda do 1º (coberto)', 6600, 15250, { size: 9.5, color: '#6b6356', bg: false });
@@ -550,8 +560,8 @@ function drawPlan() {
   // paredes existentes
   const ops = REF.openings.slice();
   if (!S.antes && S.frente === 'C' && (S.tab === 'C' || S.tab === 'lote')) ops.push({ id: 'n0_portao2', wall: 'm0_frente', type: 'door', style: 'gateSlide', t: (OPC.C.portao2.x0 + OPC.C.portao2.x1) / 2, width: OPC.C.portao2.x1 - OPC.C.portao2.x0 });
-  REF.walls.filter((w) => w.floor === 'f0').forEach((w) => drawWall(w, w.kind === 'structural' ? '#3a3631' : w.kind === 'partition' ? '#8c8375' : '#a99f8f', openingsOf(w, ops)));
-  ROOMS.f0.filter((r) => !r.open && !r.outdoor).forEach((r) => label(r.name, r.labelX, r.labelY, { size: 10.5, color: '#6b6356', bg: false }));
+  REF.walls.filter((w) => w.floor === 'f0').forEach((w) => drawWall(w, w.kind === 'muro' ? '#a99f8f' : fraca ? '#d3cbbe' : w.kind === 'structural' ? '#3a3631' : '#8c8375', openingsOf(w, ops)));
+  ROOMS.f0.filter((r) => !r.open && !r.outdoor).forEach((r) => label(r.name, r.labelX, r.labelY, { size: 10.5, color: fraca ? 'rgba(107,99,86,.45)' : '#6b6356', bg: false }));
   if (!S.antes) drawProposta();
   else { ctx.font = '600 12px "JetBrains Mono", monospace'; const t = 'HOJE — sem a proposta', w = ctx.measureText(t).width + 12; ctx.fillStyle = 'rgba(243,239,230,.92)'; ctx.fillRect(10, 40, w, 20); ctx.fillStyle = '#c65a2b'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, 16, 50); }
   drawNorte();
@@ -747,27 +757,56 @@ function wall3D(g, w, ops, base, m) {
     if (!op) piece(s0, s1, 0, H); else { piece(s0, s1, 0, op.z0); piece(s0, s1, op.z1, H); }
   }
 }
-function buildCasa(g, extraOps) {
+// casa (paredes dos 3 pavimentos, guarda-corpos e lajes) — some ou vira vidro com o botão "Casa"
+function buildCasa(g) {
   const level = Object.fromEntries(REF.floors.map((f) => [f.id, f.level]));
-  const ops = REF.openings.concat(extraOps || []);
-  const cw = mat(0xeee8de), cm = mat(0xe3d6c4), cr = mat(0x2b2b2b, { transparent: true, opacity: 0.55 });
+  const ops = REF.openings;
+  const cw = mat(0xeee8de), cr = mat(0x2b2b2b, { transparent: true, opacity: 0.55 });
   REF.walls.forEach((w) => {
+    if (w.kind === 'muro') return;
     if (w.kind === 'railing') {
       const r = wallPoly(w), xs = r.map((p) => p.x), ys = r.map((p) => p.y);
       box(g, { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }, level[w.floor], level[w.floor] + (w.mureta || 0), cw);
       box(g, { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys) + 40, y1: Math.max(...ys) - 40 }, level[w.floor] + (w.mureta || 0), level[w.floor] + w.height, cr, false);
       return;
     }
-    wall3D(g, w, ops, level[w.floor] || 0, w.kind === 'muro' ? cm : cw);
+    wall3D(g, w, ops, level[w.floor] || 0, cw);
   });
   // lajes (contorno aproximado de cada pavimento)
   const sl = mat(0xd6cfc3);
   [[2880, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500], [0, 9000, 10425, 16200]]],
    [6340, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500], [0, 9000, 10425, 15000]]],
    [9800, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500]]]].forEach(([z, rs]) => rs.forEach(([x0, x1, y0, y1]) => box(g, { x0, x1, y0, y1 }, z - 160, z, sl)));
-  // portões (folhas fechadas)
+}
+// muros de divisa e portões (ficam sempre, também sem a casa)
+function buildMuros(g, extraOps) {
+  const ops = REF.openings.concat(extraOps || []), cm = mat(0xe3d6c4);
+  REF.walls.filter((w) => w.kind === 'muro').forEach((w) => wall3D(g, w, ops, 0, cm));
   const gate = mat(0x2a2a2a, { metalness: 0.4, roughness: 0.5 });
   [[CASA.portaoCarro, 1900], [CASA.portaoPedestre, 1800]].forEach(([p, h]) => box(g, { x0: p.x0, x1: p.x1, y0: 19890, y1: 19960 }, 0, h, gate));
+}
+const VIDRO = new THREE.MeshStandardMaterial({ color: 0xd9d3c8, transparent: true, opacity: 0.12, depthWrite: false });
+function casaModo(modo) {
+  if (!R3) return;
+  const g = R3.groups;
+  g.casa.visible = modo !== 'oculta';
+  g.casa.children.forEach((m) => {
+    if (!m.isMesh) return;
+    if (!m.userData.orig) m.userData.orig = { mat: m.material, sh: m.castShadow };
+    m.material = modo === 'vidro' ? VIDRO : m.userData.orig.mat;
+    m.castShadow = modo === 'vidro' ? false : m.userData.orig.sh;
+  });
+  if (modo === 'vidro' && !g.casaLinhas.children.length) {
+    const lm = new THREE.LineBasicMaterial({ color: 0x8c8375, transparent: true, opacity: 0.55 });
+    g.casa.children.forEach((m) => {
+      if (!m.isMesh) return;
+      const l = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 30), lm);
+      l.position.copy(m.position); l.rotation.copy(m.rotation); l.scale.copy(m.scale);
+      g.casaLinhas.add(l);
+    });
+  }
+  g.casaLinhas.visible = modo === 'vidro';
+  g.pegada.visible = modo !== 'inteira';
 }
 function zonas3D(g, Z) {
   Z.forEach((z, i) => {
@@ -872,6 +911,9 @@ function buildFundos(g) {
     const c = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.18, 0.46, 20), mat(0x3f6fb0, { metalness: 0.3, roughness: 0.4 }));
     c.position.set(M(b.x), M(A.base) + 0.23, M(b.y)); c.castShadow = true; g.add(c);
   });
+  // fogão (referência para o tubo de gás; aparece com a casa em vidro ou oculta)
+  box(g, { x0: 1660, x1: 2250, y0: CASA.fogao.y0, y1: CASA.fogao.y1 }, 0, 900, mat(0x9aa0a6, { metalness: 0.4, roughness: 0.4 }));
+  box(g, { x0: 1700, x1: 2200, y0: CASA.fogao.y0 + 40, y1: CASA.fogao.y1 - 40 }, 900, 920, mat(0x222222));
   // tubo de gás (amarelo) até o fogão
   const amarelo = mat(0xe6b800, { metalness: 0.3, roughness: 0.4 });
   GAS.pts.slice(1).forEach((q, i) => tube(g, GAS.pts[i], q, 0.011, amarelo));
@@ -901,17 +943,32 @@ function init3D() {
   const lot = new THREE.Mesh(new THREE.PlaneGeometry(9, 20), mat(SURF.grama.c3)); lot.rotation.x = -Math.PI / 2; lot.position.set(4.5, 0.001, 10); lot.receiveShadow = true; scene.add(lot);
   const viz = mat(0xe4dfd6, { transparent: true, opacity: 0.55 });
   [[-6.2, -0.2, 3.5, 15, 3000], [9.2, 15.2, 3.5, 15, 3000]].forEach(([x0, x1, y0, y1, h]) => box(scene, { x0: x0 * 1000, x1: x1 * 1000, y0: y0 * 1000, y1: y1 * 1000 }, 0, h, viz));
-  const groups = { casa: new THREE.Group(), hoje: new THREE.Group(), fundos: new THREE.Group(), A: new THREE.Group(), B: new THREE.Group(), C: new THREE.Group(), casaC: new THREE.Group() };
+  const groups = { casa: new THREE.Group(), casaLinhas: new THREE.Group(), pegada: new THREE.Group(), muro: new THREE.Group(), muroC: new THREE.Group(), hoje: new THREE.Group(), fundos: new THREE.Group(), A: new THREE.Group(), B: new THREE.Group(), C: new THREE.Group() };
   Object.values(groups).forEach((q) => scene.add(q));
   R3 = { renderer, scene, camera, controls, groups, host };
   buildCasa(groups.casa);
-  // a opção C abre um 2º portão no muro da frente: casa própria só com o muro trocado
-  buildCasa(groups.casaC, [{ id: 'n0_portao2', wall: 'm0_frente', type: 'door', t: 7600, width: 2500, sill: 0, height: 1900 }]);
+  { // pegada do térreo: piso claro onde fica a casa (sem a casa, o chão não vira grama)
+    const pm = new THREE.MeshStandardMaterial({ color: 0xe6e0d5, side: THREE.DoubleSide, roughness: 0.95 });
+    ROOMS.f0.filter((r) => !r.open && !r.outdoor).forEach((r) => {
+      const sh = new THREE.Shape(r.outer.map((q) => new THREE.Vector2(M(q.x), M(q.y))));
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), pm);
+      m.rotation.x = Math.PI / 2; m.position.y = 0.03; m.receiveShadow = true; groups.pegada.add(m);
+    });
+    const wm = new THREE.MeshStandardMaterial({ color: 0xc9c1b4, side: THREE.DoubleSide, roughness: 0.95 });
+    REF.walls.filter((w) => w.floor === 'f0' && w.kind !== 'muro').forEach((w) => {
+      const m = new THREE.Mesh(new THREE.ShapeGeometry(new THREE.Shape(wallPoly(w).map((q) => new THREE.Vector2(M(q.x), M(q.y))))), wm);
+      m.rotation.x = Math.PI / 2; m.position.y = 0.035; m.receiveShadow = true; groups.pegada.add(m);
+    });
+  }
+  buildMuros(groups.muro);
+  // a opção C abre um 2º portão no muro da frente
+  buildMuros(groups.muroC, [{ id: 'n0_portao2', wall: 'm0_frente', type: 'door', t: 7600, width: 2500, sill: 0, height: 1900 }]);
   zonas3D(groups.hoje, zonas(true, 'A'));
   buildFundos(groups.fundos);
   ['A', 'B', 'C'].forEach((k) => { zonas3D(groups[k], zonas(false, k)); buildFrente(groups[k], k); });
-  // carro da garagem (sempre)
-  carro(scene, { x: 1700, y: 12870 });
+  // carro da garagem (some junto com a casa)
+  carro(groups.casa, { x: 1700, y: 12870 });
+  casaModo(S.casa);
   setCam(TABS.find((t) => t.id === S.tab).cam, true);
   const loop = () => { controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); };
   loop();
@@ -923,8 +980,14 @@ const CAMS = {
   frente: [[4.5, 11.5, 24.6], [4.5, 0, 17.6]],
   rua: [[6.6, 3.7, 24.2], [4.6, 0.8, 16.2]],
   alto: [[4.6, 34, 15.5], [4.5, 0, 10.2]],
+  anexos: [[4.6, 6.2, 9.4], [2.9, 0.6, 2.4]],
+  anexosFrente: [[4.5, 7.5, 9.0], [4.5, 0.4, 17.0]],
 };
 function setCam(k) {
+  if (k === 'anexos') {
+    if (S.casa === 'inteira') setCasa('oculta');
+    if (OPC[S.tab]) k = 'anexosFrente';
+  }
   if (!R3 || !CAMS[k]) return;
   const [p, t] = CAMS[k];
   R3.camera.position.set(...p); R3.controls.target.set(...t); R3.controls.update();
@@ -935,10 +998,21 @@ function sync3D() {
   g.hoje.visible = S.antes;
   g.fundos.visible = !S.antes;
   ['A', 'B', 'C'].forEach((k) => (g[k].visible = !S.antes && k === f));
-  g.casaC.visible = !S.antes && f === 'C'; g.casa.visible = !g.casaC.visible;
+  g.muroC.visible = !S.antes && f === 'C'; g.muro.visible = !g.muroC.visible;
   const w = R3.host.clientWidth, h = R3.host.clientHeight;
   if (w && h) { R3.renderer.setSize(w, h, false); R3.camera.aspect = w / h; R3.camera.updateProjectionMatrix(); }
 }
+function setCasa(modo) {
+  S.casa = modo;
+  [...$('casa3d').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.casa === modo ? 'true' : 'false'));
+  casaModo(modo); drawPlan();
+}
+$('casa3d').addEventListener('click', (e) => {
+  const b = e.target.closest('button[data-casa]'); if (!b) return;
+  const antes = S.casa; setCasa(b.dataset.casa);
+  // sem a casa, a melhor vista dos fundos é de onde a casa estava
+  if (antes === 'inteira' && b.dataset.casa !== 'inteira' && (S.tab === 'fundos' || S.tab === 'gas')) setCam('anexos');
+});
 $('cams').addEventListener('click', (e) => { const b = e.target.closest('button[data-cam]'); if (b) setCam(b.dataset.cam); });
 
 // ---------------------------------------------------------------- painel lateral
@@ -1006,7 +1080,7 @@ $('antes').addEventListener('click', (e) => { const b = e.target.closest('button
 new ResizeObserver(() => { S.pv = null; fitView(); drawPlan(); sync3D(); }).observe($('stage'));
 const h0 = (location.hash || '').slice(1);
 setTab(TABS.some((t) => t.id === h0) ? h0 : 'fundos');
-window.__estudo = { S, setTab, setView, setAntes, setCam, AREAS, NOVO, ABRIGO, OPC };
+window.__estudo = { S, setTab, setView, setAntes, setCam, setCasa, AREAS, NOVO, ABRIGO, OPC };
 </script>
 </body>
 </html>
