@@ -42,4 +42,5 @@ Base do estúdio: repositório [infosetecinco/estudio-decoracao-casa](https://gi
 ## Páginas de estudo (não alteram o projeto)
 
 - `cozinha-teto.html` — estudo do teto da cozinha (vigas aparentes): opções A–D em abas, planta de forro e 3D.
+- `estudo-fundos-frente.html` — estudo dos espaços externos do térreo: depósito de ferramentas e área de serviço coberta no quintal dos fundos, abrigo do botijão na parede lateral da cozinha (com o tubo de gás até o fogão) e três opções para o recuo de 5 m da frente (jardim, varanda com pergolado, duas vagas), com planta, 3D, comparação *hoje × proposta* e áreas permeável e ocupada. As paredes novas estão no formato de `00-data.js`, prontas para entrar no projeto se aprovadas.
 - `hidrossanitario.html` — anteprojeto hidrossanitário (água fria, esgoto, ventilação) sobre a planta as built: plantas por pavimento, 3D, memorial de cálculo (NBR 5626 / NBR 8160), furos e esperas nas lajes e lista de materiais (CSV). Precisa de revisão e ART/RRT antes de executar.
