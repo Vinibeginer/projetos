@@ -9,6 +9,7 @@ Ferramentas da obra de Vinícius Sampaio Ornellas. Página inicial: `index.html`
 | `projeto-3d/` | Maquete, modelo 3D e o editor da planta anterior ao estúdio |
 | `editor-projeto-eletrico/` | Projeto elétrico (NBR 5410) |
 | `gastos-pessoais/` | Controle de gastos |
+| `witcher3-otimizador/` | Script (Windows) que ajusta as configurações do The Witcher 3 para RX 7800 XT + Ryzen 7 5700X |
 
 O estúdio segue o padrão do repositório [infosetecinco/estudio-decoracao-casa](https://github.com/infosetecinco/estudio-decoracao-casa):
 código em `estudio/src/` (módulos numerados), página gerada com `python estudio/tools/build.py estudio/index.html`,

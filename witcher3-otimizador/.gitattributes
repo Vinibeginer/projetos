@@ -1,0 +1,3 @@
+# Arquivos para Windows: manter CRLF e o BOM do .ps1 exatamente como estão
+*.ps1 -text
+*.bat -text
