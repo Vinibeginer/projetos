@@ -222,7 +222,8 @@ async function baixarDados() {
   carregarTetosMO(ob.data);
   document.body.classList.toggle('obra-original-on', obraOriginal);
   itens = (it.data || []).map(r => ({ id: r.ordem || r.id, desc: r.descricao, pciPct: +r.pci_pct,
-    exec: +r.exec_pct, locked: !!r.travado, prevExec: +r.prev_pct, obs: r.obs || '' }));
+    exec: +r.exec_pct, locked: !!r.travado, prevExec: +r.prev_pct, obs: r.obs || '',
+    medido: r.medido_pct != null ? +r.medido_pct : (r.travado ? +r.exec_pct : 0) }));
   materiais = (mt.data || []).map(r => ({ id: r.id, data: brData(r.data), desc: r.descricao,
     cat: r.categoria, forn: r.fornecedor, ref: r.referencia, valor: +r.valor, pago: r.pago ? 'sim' : 'nao' }));
   moPagamentos = (mo.data || []).map(r => ({ id: r.id, data: brData(r.data), dest: r.destinatario,
@@ -233,7 +234,7 @@ async function baixarDados() {
     deltaPct: +r.delta_pct, deltaVal: +r.delta_valor, prev: !!r.previsao, obs: r.obs || '' }));
 
   if (!itens.length) itens = ITENS_DEFAULT.map(i => ({ id: i.id, desc: i.desc, pciPct: i.pciPct,
-    exec: 0, locked: false, prevExec: 0, obs: '' }));
+    exec: 0, locked: false, prevExec: 0, obs: '', medido: 0 }));
 
   const conf = medicoesConfirmadas.filter(m => m.confirmada);
   MED_PCT = conf.reduce((s, m) => s + (+m.pctCaixa || 0), 0);
@@ -280,7 +281,8 @@ function montarPayload(oid) {
   const o = semId ? {} : { obra_id: oid };
   return {
     itens: itens.map(i => ({ ...o, ordem: i.id, descricao: i.desc,
-      pci_pct: i.pciPct || 0, exec_pct: i.exec || 0, travado: !!i.locked, prev_pct: i.prevExec || 0, obs: i.obs || '' })),
+      pci_pct: i.pciPct || 0, exec_pct: i.exec || 0, prev_pct: i.prevExec || 0, obs: i.obs || '',
+      medido_pct: i.medido || 0, travado: (i.medido || 0) > 0 && (i.exec || 0) <= (i.medido || 0) })),
     materiais: materiais.map(m => ({ ...o, data: isoData(m.data), descricao: m.desc,
       categoria: m.cat, fornecedor: m.forn, referencia: m.ref, valor: m.valor || 0, pago: (m.pago === 'sim' || m.pago === true) })),
     mo_pagamentos: moPagamentos.map(p => ({ ...o, data: isoData(p.data), destinatario: p.dest,
