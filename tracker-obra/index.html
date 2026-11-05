@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Obra — Vinícius Ornellas</title>
-<link rel="stylesheet" href="css/app.css?v=2.05">
+<link rel="stylesheet" href="css/app.css?v=2.06">
 </head>
 <body>
 
@@ -761,7 +761,7 @@
 
     <!-- REGISTRAR (admin) -->
     <div id="tab-registrar" class="panel">
-      <div class="alert alert-info">Registre o avanço executado ou previsão para a próxima semana. Dados salvos automaticamente no navegador.</div>
+      <div class="alert alert-info">Estime quanto cada serviço já avançou (% acumulado do item). O tracker calcula quanto deve entrar na próxima medição da CAIXA: <strong>peso do item × (% estimado − % já medido) × base</strong>. Uma estimativa pode ser editada ou excluída a qualquer momento, até a medição ser confirmada.</div>
       <div class="form-card">
         <div class="form-grid">
           <div class="form-group">
@@ -773,24 +773,18 @@
             <select id="inp-item"><option value="">Selecionar...</option></select>
           </div>
           <div class="form-group">
-            <label>% executado</label>
-            <select id="inp-pct">
-              <option value="10">10%</option>
-              <option value="25">25%</option>
-              <option value="50">50%</option>
-              <option value="60">60%</option>
-              <option value="75">75%</option>
-              <option value="100" selected>100%</option>
-            </select>
+            <label>% acumulado do item</label>
+            <input type="number" id="inp-pct" min="0" max="100" step="1" placeholder="Ex: 60" inputmode="decimal" />
           </div>
           <div class="form-group">
             <label>Tipo</label>
             <select id="inp-tipo">
-              <option value="exec">Executado</option>
+              <option value="exec">Estimativa</option>
               <option value="prev">Previsão</option>
             </select>
           </div>
         </div>
+        <div class="alert alert-info" id="reg-preview" style="display:none;margin-bottom:0.75rem;"></div>
         <div class="form-group" style="margin-bottom:0.75rem;">
           <label>Observação (opcional)</label>
           <textarea id="inp-obs" placeholder="Ex: Alvenaria iniciada pela fachada principal..."></textarea>
@@ -803,6 +797,33 @@
           <span class="msg" id="msg-reg"></span>
         </div>
       </div>
+      <div class="sect-title">Estimativa da próxima medição</div>
+      <div class="table-wrap" style="margin-bottom:0.5rem;">
+        <table class="resumo-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Serviço</th>
+              <th class="right">Peso</th>
+              <th class="right">Medido</th>
+              <th class="right">Estimado</th>
+              <th class="right">Avanço na obra</th>
+              <th class="right admin-only">Valor a medir</th>
+              <th class="center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="est-tbody"></tbody>
+          <tfoot>
+            <tr class="total a-medir">
+              <td colspan="5">Total estimado para a próxima medição</td>
+              <td class="right" id="est-total-pct">—</td>
+              <td class="right admin-only" id="est-total-val">—</td>
+              <td class="center"><button class="btn btn-ghost btn-sm" id="est-excluir-todas" onclick="excluirTodasEstimativas()" style="color:var(--red);border-color:var(--red);">Excluir todas</button></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
       <div class="sect-title">Confirmar previsões da semana</div>
       <div id="previsoes-rapidas" class="form-card" style="padding:0.75rem 1rem;"></div>
     </div>
@@ -1337,13 +1358,13 @@
   </div><!-- /container -->
 </div><!-- /app -->
 
-<script src="js/config.js?v=2.05"></script>
-<script src="js/nuvem.js?v=2.05"></script>
-<script src="js/app.js?v=2.05"></script>
-<script src="js/mao-de-obra.js?v=2.05"></script>
-<script src="js/materiais.js?v=2.05"></script>
-<script src="js/medicoes.js?v=2.05"></script>
-<script src="js/init.js?v=2.05"></script>
+<script src="js/config.js?v=2.06"></script>
+<script src="js/nuvem.js?v=2.06"></script>
+<script src="js/app.js?v=2.06"></script>
+<script src="js/mao-de-obra.js?v=2.06"></script>
+<script src="js/materiais.js?v=2.06"></script>
+<script src="js/medicoes.js?v=2.06"></script>
+<script src="js/init.js?v=2.06"></script>
 </body>
 </html>
 

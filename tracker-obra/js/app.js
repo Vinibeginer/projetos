@@ -121,6 +121,12 @@ function dispVal(v, unit='R$') {
   return '<span class="blurred-val">' + (unit === '%' ? fmtP(v) : fmt(v)) + '</span>';
 }
 
+/* ══ MEDIDO × ESTIMADO ═══════════════════════════════════════ */
+/* medido = % do item já medido e pago pela CAIXA; exec = % estimado atual (≥ medido) */
+function medidoDe(i)  { return i.medido != null ? +i.medido : (i.locked ? +i.exec : 0); }
+function avancoDe(i)  { return Math.max(0, (+i.exec || 0) - medidoDe(i)); }      // % do item a medir
+function avancoObra(i){ return i.pciPct * avancoDe(i) / 100; }                    // % da obra a medir
+
 /* ══ BUILD TABLE ═════════════════════════════════════════════ */
 function buildTable() {
   // cabeçalho dinâmico
@@ -152,7 +158,7 @@ function buildTable() {
     const color  = barColor(item);
     const barHTML = isPrev
       ? `<div class="bar-bg"><div class="bar-stripe" style="width:${item.prevExec}%"></div></div>`
-      : `<div class="bar-bg"><div class="bar-fill" style="width:${item.exec}%;background:${color}"></div></div>`;
+      : `<div class="bar-bg"><div class="bar-fill" style="width:100%;background:linear-gradient(90deg,#1D9E75 0 ${medidoDe(item)}%,${color} ${medidoDe(item)}% ${item.exec}%,transparent ${item.exec}%)"></div></div>`;
     const execLabel = isPrev
       ? `<em style="color:var(--text3)">${item.prevExec}%*</em>`
       : `<span style="color:${item.exec>0?'var(--blue)':'var(--text3)'}">${item.exec}%</span>`;
@@ -185,7 +191,11 @@ function buildTable() {
 }
 
 function statusBadge(item) {
-  if (item.locked && item.exec===100) return ['b-medido','Medido ✓'];
+  const m = medidoDe(item);
+  if (m >= 100) return ['b-medido','Medido ✓'];
+  if (item.exec > m) return ['b-novo', 'Estimado ' + item.exec + '%'];
+  if (item.prevExec > item.exec) return ['b-previsao','Previsão '+item.prevExec+'%'];
+  if (m > 0) return ['b-medido','Medido ' + m + '%'];
   if (item.novo   && item.exec > 0)   return ['b-novo','Novo '+item.exec+'%'];
   if (item.prevExec > 0 && item.exec===0) return ['b-previsao','Previsão '+item.prevExec+'%'];
   if (item.exec===100) return ['b-concluido','Concluído'];
@@ -193,7 +203,8 @@ function statusBadge(item) {
   return ['b-pendente','Pendente'];
 }
 function barColor(item) {
-  if (item.locked)       return '#1D9E75';
+  if (avancoDe(item) > 0) return '#EF9F27';
+  if (medidoDe(item) > 0) return '#1D9E75';
   if (item.novo)         return '#EF9F27';
   if (item.exec===100)   return '#378ADD';
   if (item.exec > 0)     return '#BA7517';
@@ -202,17 +213,15 @@ function barColor(item) {
 
 /* ══ RECALCULAR ══════════════════════════════════════════════ */
 function recalcular() {
-  // execAcum = só itens com exec > 0 (inclui locked já medidos)
-  // execNovo = itens com exec > 0 mas NÃO locked (ainda não medidos pela CAIXA)
+  // execAcum = % físico estimado da obra (medido + estimado)
   // prevAcum = execNovo + previsões pendentes
+  // execNovo = avanço estimado ainda não medido (peso × (exec − medido))
+  // prevAcum = execNovo + previsões acima do estimado
   let execAcum = 0, execNovo = 0, prevAcum = 0;
   itens.forEach(i => {
-    const execPct = i.pciPct * i.exec / 100;
-    execAcum += execPct;
-    if (!i.locked) {
-      execNovo += execPct;
-      prevAcum += i.pciPct * Math.min(i.exec + i.prevExec, 100) / 100;
-    }
+    execAcum += i.pciPct * i.exec / 100;
+    execNovo += avancoObra(i);
+    prevAcum += avancoObra(i) + i.pciPct * Math.max(0, Math.min(i.prevExec, 100) - Math.max(i.exec, medidoDe(i))) / 100;
   });
 
   // % CAIXA = % PCI (validado com Medição 1 e 2: valor liberado = % PCI da etapa × BASE_OBRA, sem fator de conversão)
@@ -235,15 +244,12 @@ function recalcular() {
 
   if (isAdmin) {
     const saldoConfirmado = BASE_OBRA - MED_VAL;
-    document.getElementById('c-medido-sub').textContent = isAdmin
-      ? `R$ 30.623 · 1ª med. 30/05/2026`
-      : `1ª med. 30/05/2026`;
     document.getElementById('c-saldo').textContent         = fmt(saldoConfirmado);
     document.getElementById('c-total-lib').textContent     = fmt(MED_VAL);
     document.getElementById('c-total-lib-sub').textContent = fmtP(MED_VAL/BASE_OBRA*100) + '% confirmado · ' + fmt(saldoConfirmado) + ' a liberar';
   }
 
-  document.getElementById('tfoot-exec').textContent = fmtP(execNovo);
+  document.getElementById('tfoot-exec').textContent = fmtP(execAcum);
 
   // barra — confirmado | executado não medido | previsão (só admin)
   const m = Math.min(window.MED_PCT_ATUAL ?? MED_PCT, 100);
@@ -269,19 +275,20 @@ function recalcular() {
 
   if (isAdmin) buildMedicao(execNovo, execNovoCaixa, novoVal);
   buildPrevisaoRapida();
+  buildEstimativas();
 }
 
 function buildMedicao(execNovo, execNovoCaixa, novoVal) {
   const tb = document.getElementById('medicao-tbody');
   tb.innerHTML = '';
   itens.forEach(item => {
-    if (item.locked) return; // já medido — não entra na estimativa
-    if (item.exec === 0 && item.prevExec === 0) return;
-    const execPct  = item.pciPct * item.exec / 100;
+    const base     = Math.max(item.exec, medidoDe(item));
+    const isPrev   = avancoDe(item) === 0 && item.prevExec > base;
+    if (avancoDe(item) === 0 && !isPrev) return;   // nada a medir neste item
+    const execPct  = avancoObra(item);
     const execCaixa= execPct;
-    const prevPct  = item.prevExec > 0 && item.exec < 100 ? item.pciPct * item.prevExec / 100 : 0;
+    const prevPct  = isPrev ? item.pciPct * (item.prevExec - base) / 100 : 0;
     const prevCaixa= prevPct;
-    const isPrev   = item.exec === 0 && item.prevExec > 0;
     const [cls,lbl]= statusBadge(item);
     const tr = document.createElement('tr');
     tr.style.background = isPrev ? 'var(--surface2)' : '';
@@ -310,7 +317,7 @@ function buildMedicao(execNovo, execNovoCaixa, novoVal) {
 function buildPrevisaoRapida() {
   if (!isAdmin) return;
   const el = document.getElementById('previsoes-rapidas');
-  const prev = itens.filter(i => i.prevExec > 0 && i.exec < 100);
+  const prev = itens.filter(i => i.prevExec > Math.max(i.exec, medidoDe(i)));
   if (!prev.length) { el.innerHTML = '<p class="empty">Nenhuma previsão registrada.</p>'; return; }
   el.innerHTML = prev.map(i => `
     <div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px;">
@@ -318,6 +325,101 @@ function buildPrevisaoRapida() {
       <button class="btn btn-success btn-sm" onclick="confirmarPrevisao(${i.id})">Confirmar</button>
       <button class="btn btn-ghost btn-sm"   onclick="cancelarPrevisao(${i.id})">Cancelar</button>
     </div>`).join('');
+}
+
+function buildEstimativas() {
+  const tb = document.getElementById('est-tbody');
+  if (!tb) return;
+  const lista = itens.filter(i => avancoDe(i) > 0);
+  const vis = isAdmin ? '' : 'display:none';
+  tb.innerHTML = lista.length ? '' :
+    `<tr><td colspan="8" class="empty">Nenhuma estimativa de avanço. Use o formulário acima para estimar o % de um serviço.</td></tr>`;
+  let tPct = 0;
+  lista.forEach(i => {
+    const av = avancoObra(i); tPct += av;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td style="color:var(--text3);font-size:12px">${i.id}</td>
+      <td>${esc(i.desc)}</td>
+      <td class="right" style="color:var(--text2)">${fmtP(i.pciPct)}</td>
+      <td class="right" style="color:var(--green)">${medidoDe(i)}%</td>
+      <td class="right" style="font-weight:600;color:var(--amber)">${i.exec}%</td>
+      <td class="right">+${fmtP(av)}</td>
+      <td class="right" style="font-weight:600;${vis}">~${fmt(av / 100 * BASE_OBRA)}</td>
+      <td class="center" style="white-space:nowrap">
+        <button class="btn btn-ghost btn-sm" onclick="editarEstimativa(${i.id})">Editar</button>
+        <button class="btn btn-ghost btn-sm" onclick="excluirEstimativa(${i.id})" style="color:var(--red);border-color:var(--red);">Excluir</button>
+      </td>`;
+    tb.appendChild(tr);
+  });
+  document.getElementById('est-total-pct').textContent = '+' + fmtP(tPct);
+  document.getElementById('est-total-val').textContent = '~' + fmt(tPct / 100 * BASE_OBRA);
+  document.getElementById('est-excluir-todas').style.visibility = lista.length ? 'visible' : 'hidden';
+}
+
+/* prévia no formulário: quanto a estimativa digitada acrescenta à medição */
+function previaRegistro() {
+  const el   = document.getElementById('reg-preview');
+  const item = itens.find(i => i.id === parseInt(document.getElementById('inp-item').value));
+  const raw  = document.getElementById('inp-pct').value;
+  const tipo = document.getElementById('inp-tipo').value;
+  if (!el) return;
+  if (!item) { el.style.display = 'none'; return; }
+  const m = medidoDe(item), pct = raw === '' ? null : Math.min(100, Math.max(0, parseFloat(raw.replace(',', '.'))));
+  let txt = `<strong>${esc(item.desc)}</strong> · peso ${fmtP(item.pciPct)} · já medido <strong>${m}%</strong>` +
+            (item.exec > m ? ` · estimativa atual <strong>${item.exec}%</strong>` : '');
+  if (pct !== null && !isNaN(pct)) {
+    if (tipo === 'exec' && pct < m) {
+      txt += `<br>⚠️ O % não pode ser menor que o já medido pela CAIXA (${m}%).`;
+    } else if (tipo === 'exec') {
+      const av = item.pciPct * (pct - m) / 100;
+      txt += `<br>Com ${pct}%: entra <strong>+${fmtP(av)}</strong> da obra na próxima medição` +
+             (isAdmin ? ` ≈ <strong>${fmt(av / 100 * BASE_OBRA)}</strong>` : '') + '.';
+    } else {
+      const base = Math.max(item.exec, m);
+      txt += pct > base ? `<br>Previsão: +${fmtP(item.pciPct * (pct - base) / 100)} da obra quando for executado.`
+                        : `<br>⚠️ A previsão precisa ser maior que o % atual (${base}%).`;
+    }
+  }
+  el.innerHTML = txt;
+  el.style.display = '';
+}
+
+function editarEstimativa(id) {
+  const item = itens.find(i => i.id === id); if (!item) return;
+  document.getElementById('inp-item').value = id;
+  document.getElementById('inp-tipo').value = 'exec';
+  document.getElementById('inp-pct').value  = item.exec;
+  previaRegistro();
+  document.getElementById('inp-pct').focus();
+  document.getElementById('inp-item').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function excluirEstimativa(id) {
+  const item = itens.find(i => i.id === id); if (!item) return;
+  const m = medidoDe(item), ant = item.exec;
+  if (!confirm(`Excluir a estimativa de "${item.desc}"?\n\nO item volta para ${m}% (o que a CAIXA já mediu).`)) return;
+  item.exec = m; item.novo = false;
+  const delta = item.pciPct * (m - ant) / 100;
+  historico.push({ data: new Date().toLocaleDateString('pt-BR'), desc: `Estimativa excluída: ${item.desc} (${ant}% → ${m}%)`,
+    deltaPct: delta, deltaVal: delta / 100 * BASE_OBRA, prev: false, obs: '' });
+  salvar(); buildSelect(); buildTable(); buildLog(); previaRegistro();
+}
+
+function excluirTodasEstimativas() {
+  const lista = itens.filter(i => avancoDe(i) > 0);
+  if (!lista.length) return;
+  if (!confirm(`Excluir as ${lista.length} estimativas de avanço?\n\nCada item volta para o % já medido pela CAIXA.`)) return;
+  const delta = -lista.reduce((s, i) => s + avancoObra(i), 0);
+  lista.forEach(i => { i.exec = medidoDe(i); i.novo = false; });
+  historico.push({ data: new Date().toLocaleDateString('pt-BR'), desc: `Estimativas excluídas (${lista.length} itens)`,
+    deltaPct: delta, deltaVal: delta / 100 * BASE_OBRA, prev: false, obs: lista.map(i => i.desc).join(' · ') });
+  salvar(); buildSelect(); buildTable(); buildLog(); previaRegistro();
+}
+
+/* ao confirmar uma medição: o estimado de cada item passa a ser o medido */
+function consolidarEstimativas() {
+  itens.forEach(i => { i.medido = Math.max(medidoDe(i), +i.exec || 0); i.locked = i.medido > 0; i.novo = false; });
 }
 
 function buildLog() {
@@ -342,10 +444,10 @@ function buildSelect() {
   const sel = document.getElementById('inp-item');
   sel.innerHTML = '<option value="">Selecionar serviço...</option>';
   itens.forEach(item => {
-    if (item.locked) return;
     const o = document.createElement('option');
     o.value = item.id;
-    o.textContent = `${item.id}. ${item.desc}`;
+    const m = medidoDe(item);
+    o.textContent = `${item.id}. ${item.desc}` + (m > 0 ? ` (medido ${m}%)` : '') + (item.exec > m ? ` · estimado ${item.exec}%` : '');
     sel.appendChild(o);
   });
 }
@@ -354,13 +456,17 @@ function buildSelect() {
 function registrar() {
   const dataVal = document.getElementById('inp-data').value;
   const itemId  = parseInt(document.getElementById('inp-item').value);
-  const pctVal  = parseInt(document.getElementById('inp-pct').value);
+  const pctVal  = Math.round(parseFloat(String(document.getElementById('inp-pct').value).replace(',', '.')) * 100) / 100;
   const tipo    = document.getElementById('inp-tipo').value;
   const obs     = document.getElementById('inp-obs').value.trim();
   const msgEl   = document.getElementById('msg-reg');
   if (!dataVal || !itemId) { msgEl.textContent='Preencha data e serviço.'; msgEl.className='msg error'; return; }
   const item    = itens.find(i=>i.id===itemId);
   if (!item) return;
+  if (isNaN(pctVal) || pctVal < 0 || pctVal > 100) { msgEl.textContent='Informe o % acumulado do item (0 a 100).'; msgEl.className='msg error'; return; }
+  const m = medidoDe(item);
+  if (tipo !== 'prev' && pctVal < m) { msgEl.textContent=`O % não pode ser menor que o já medido pela CAIXA (${m}%).`; msgEl.className='msg error'; return; }
+  if (tipo === 'prev' && pctVal <= Math.max(item.exec, m)) { msgEl.textContent=`A previsão precisa ser maior que o % atual (${Math.max(item.exec, m)}%).`; msgEl.className='msg error'; return; }
   const dateStr = new Date(dataVal+'T12:00:00').toLocaleDateString('pt-BR');
   if (tipo==='prev') {
     item.prevExec = pctVal;
@@ -368,28 +474,30 @@ function registrar() {
     msgEl.textContent = `Previsão salva: ${item.desc} → ${pctVal}%`;
   } else {
     const ant = item.exec;
-    item.exec = Math.max(item.exec, pctVal);
-    item.prevExec = 0; item.novo = false;
+    item.exec = pctVal;                       // estimativa: pode subir ou descer (até o medido)
+    if (item.prevExec <= item.exec) item.prevExec = 0;
+    item.novo = false;
     if (obs) item.obs = obs;
     const deltaPci  = item.pciPct*(item.exec-ant)/100;
     const deltaCaixa= deltaPci;
     const deltaVal  = deltaCaixa/100*BASE_OBRA;
     historico.push({ data:dateStr, desc:`${item.desc} (${ant}% → ${item.exec}%)`, deltaPct:deltaPci, deltaVal, prev:false, obs });
-    msgEl.textContent = `✓ ${item.desc} → ${item.exec}% · +${fmtP(deltaPci)} PCI · ~+${fmtP(deltaCaixa)} CAIXA · ~${fmt(deltaVal)}`;
+    msgEl.textContent = `✓ ${item.desc} → ${item.exec}% · a medir: +${fmtP(avancoObra(item))} da obra` + (isAdmin ? ` ≈ ${fmt(avancoObra(item)/100*BASE_OBRA)}` : '');
   }
   msgEl.className = 'msg';
   document.getElementById('inp-obs').value = '';
-  salvar(); buildTable(); buildLog();
+  document.getElementById('inp-pct').value = '';
+  salvar(); buildSelect(); buildTable(); buildLog(); previaRegistro();
 }
 
 function confirmarPrevisao(id) {
   const item = itens.find(i=>i.id===id); if(!item) return;
   const ant = item.exec;
-  item.exec = Math.max(item.exec, item.prevExec);
+  item.exec = Math.max(item.exec, medidoDe(item), item.prevExec);
   item.prevExec=0; item.novo=false;
   const delta = item.pciPct*(item.exec-ant)/100;
   historico.push({ data:new Date().toLocaleDateString('pt-BR'), desc:`${item.desc} confirmado (${ant}% → ${item.exec}%)`, deltaPct:delta, deltaVal:delta/100*BASE_OBRA, prev:false, obs:'Confirmado via ação rápida' });
-  salvar(); buildTable(); buildLog();
+  salvar(); buildSelect(); buildTable(); buildLog();
 }
 function cancelarPrevisao(id) {
   const item = itens.find(i=>i.id===id); if(item){item.prevExec=0;} salvar(); buildTable();

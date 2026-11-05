@@ -81,7 +81,7 @@ function confirmarMedicao() {
   const dataVal = document.getElementById('med-inp-data').value;
   const valorStr= document.getElementById('med-inp-valor').value.replace(/\./g,'').replace(',','.');
   const ref     = document.getElementById('med-inp-ref').value.trim();
-  const itens   = document.getElementById('med-inp-itens').value.trim();
+  const itensTxt = document.getElementById('med-inp-itens').value.trim();
   const msg     = document.getElementById('med-msg');
   const valor   = parseFloat(valorStr);
 
@@ -94,12 +94,20 @@ function confirmarMedicao() {
   const pctCaixa = valor / BASE_OBRA * 100;
   const num      = medicoesConfirmadas.length + 1;
 
-  medicoesConfirmadas.push({ num, data:dateStr, pctCaixa, valor, ref, itens, confirmada:true });
+  medicoesConfirmadas.push({ num, data:dateStr, pctCaixa, valor, ref, itens: itensTxt, confirmada:true });
+
+  // os avanços estimados viram medidos (saem da estimativa da próxima medição)
+  const pend = itens.filter(i => avancoDe(i) > 0);
+  if (pend.length && confirm(`Marcar as estimativas atuais como medidas nesta ${num}ª medição?\n\n` +
+      pend.map(i => `• ${i.desc}: ${medidoDe(i)}% → ${i.exec}%`).join('\n') +
+      `\n\nOK = sim (saem da estimativa da próxima medição) · Cancelar = manter como estimativa`)) {
+    consolidarEstimativas();
+  }
 
   // registrar no histórico
   historico.push({
     data: dateStr,
-    desc: `${num}ª Medição CAIXA confirmada — ${itens || 'itens conforme PLS'}`,
+    desc: `${num}ª Medição CAIXA confirmada — ${itensTxt || 'itens conforme PLS'}`,
     deltaPct: pctCaixa,
     deltaVal: valor,
     prev: false,
@@ -118,7 +126,8 @@ function confirmarMedicao() {
   salvarMedicoes(); salvar();
   buildMedicoesConfirmadas();
   buildLog();
-  recalcular();
+  buildSelect();
+  buildTable();
 }
 
 function removerMedicao(idx) {
