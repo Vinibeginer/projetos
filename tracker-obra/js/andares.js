@@ -14,7 +14,37 @@ const PAVIMENTOS = [
   { id:'P2', nome:'2º pavimento' },
   { id:'G',  nome:'Geral (obra toda)' },
 ];
-const NOME_ETAPA = { T:'Térreo', P1:'1º pavimento', P2:'2º pavimento', CX:"Castelo da caixa d'água", G:'Obra toda' };
+/* nome de cada etapa por andar: o mesmo item da PCI ganha um nome por pavimento */
+const NOME_BASE = {
+  1:  ['Serviços preliminares', 'barracão e ligações provisórias'],
+  2:  ['Fundação', 'sapatas e baldrames'],
+  3:  ['Estrutura', 'pilares, vigas, laje e escada'],
+  4:  ['Alvenaria', 'paredes'],
+  5:  ['Esquadrias', 'portas e janelas'],
+  6:  ['Vidros e guarda-corpos', ''],
+  7:  ['Telhado', 'telhas e platibanda'],
+  8:  ['Impermeabilização', ''],
+  9:  ['Chapisco e reboco interno', ''],
+  10: ['Forro', ''],
+  11: ['Reboco externo e fachada', ''],
+  12: ['Pintura', ''],
+  13: ['Pisos e rodapés', ''],
+  14: ['Soleiras e peitoris', ''],
+  15: ['Instalações elétricas', ''],
+  16: ['Instalações hidráulicas', 'água fria e quente'],
+  17: ['Esgoto e águas pluviais', ''],
+  18: ['Louças e metais', ''],
+  19: ['Complementos', 'limpeza final e calafete'],
+  20: ['Outros serviços', 'muro frontal e documentação'],
+};
+const DO_ANDAR = { T:'do térreo', P1:'do 1º pavimento', P2:'do 2º pavimento', G:'' };
+function nomeEtapa(item, a, comDetalhe) {
+  if (a === 'CX') return "Castelo da caixa d'água" + (comDetalhe ? ' (estrutura sobre o 2º pavimento)' : '');
+  const [base, det] = NOME_BASE[item.id] || [item.desc, ''];
+  const nome = base + (DO_ANDAR[a] ? ' ' + DO_ANDAR[a] : '');
+  return comDetalhe && det ? nome + ' (' + det + ')' : nome;
+}
+
 const ABA_DA_ETAPA = { T:'T', P1:'P1', P2:'P2', CX:'P2', G:'G' };   // o castelo aparece na aba do 2º pavimento
 const ORDEM_ETAPAS = ['T', 'P1', 'P2', 'CX', 'G'];                   // obra sobe do térreo para o topo
 
@@ -137,7 +167,8 @@ function buildAvancoTabela() {
   etapasDaAba(abaAvanco).forEach(({ item, x }) => {
     const tr = document.createElement('tr');
     tr.dataset.ordem = item.id; tr.dataset.a = x.a;
-    const nome = x.a === 'CX' ? NOME_ETAPA.CX + ' <span style="font-size:11px;color:var(--text3)">(' + esc(item.desc.split(' — ')[0]) + ')</span>' : esc(item.desc);
+    const nome = '<strong style="font-weight:500">' + esc(nomeEtapa(item, x.a, true)) + '</strong>' +
+      '<div style="font-size:11px;color:var(--text3)">item ' + item.id + ' da PCI: ' + esc(item.desc) + ' · peso ' + fmtP2(item.pciPct) + ' da obra</div>';
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${item.id}</td>
       <td>${nome}<div class="av-prev" style="font-size:11px;color:var(--text2);margin-top:2px"></div></td>
@@ -167,8 +198,7 @@ function atualizarLinhaAvanco(tr, item, x, valor) {
   if (e < x.m) {
     prev.innerHTML = `⚠️ Não pode ser menor que o já medido pela CAIXA (${x.m}%).`;
   } else if (e !== x.e) {
-    const nome = x.a === 'CX' ? NOME_ETAPA.CX : esc(item.desc.split(' — ')[0].split(' (')[0]) + ' no ' + NOME_ETAPA[x.a].toLowerCase();
-    prev.innerHTML = `${e}% de ${nome} = <strong>${fmtP2(doItem)}</strong> do item = <strong>${fmtP2(obra)}</strong> da obra` +
+    prev.innerHTML = `${e}% de ${esc(nomeEtapa(item, x.a))} = <strong>${fmtP2(doItem)}</strong> do item ${item.id} = <strong>${fmtP2(obra)}</strong> da obra` +
       (medir > 0 ? ` · a medir <strong>+${fmtP2(medir)}</strong>` + (isAdmin ? ` ≈ <strong>${fmt(medir / 100 * BASE_OBRA)}</strong>` : '') : '') +
       ' <span style="color:var(--text3)">(salva ao sair do campo)</span>';
   } else {
@@ -180,7 +210,7 @@ function gravarEtapa(item, x, valor, inp) {
   if (!podeEditar) return;
   const e = r2(Math.min(100, Math.max(0, parseFloat(String(valor).replace(',', '.')) || 0)));
   const msg = document.getElementById('av-msg');
-  if (e < x.m) { msg.textContent = `${item.desc}: o % não pode ser menor que o já medido (${x.m}%).`; msg.className = 'msg error'; inp.value = x.e; atualizarLinhaAvanco(inp.closest('tr'), item, x, x.e); return; }
+  if (e < x.m) { msg.textContent = `${nomeEtapa(item, x.a)}: o % não pode ser menor que o já medido (${x.m}%).`; msg.className = 'msg error'; inp.value = x.e; atualizarLinhaAvanco(inp.closest('tr'), item, x, x.e); return; }
   if (e === x.e) return;
   const ant = x.e, obraAntes = naObra(item, x, ant);
   x.e = e;
@@ -189,11 +219,11 @@ function gravarEtapa(item, x, valor, inp) {
   if (item.andares.every(y => y.e === y.m)) item.exec = medidoDe(item);
   item.novo = false;
   const delta = naObra(item, x, e) - obraAntes;
-  const nomeEt = x.a === 'CX' ? NOME_ETAPA.CX : NOME_ETAPA[x.a];
+  const nomeEt = nomeEtapa(item, x.a);
   historico.push({ data: new Date().toLocaleDateString('pt-BR'),
-    desc: `${item.desc} — ${nomeEt}: ${ant}% → ${e}% (item ${execAnt}% → ${item.exec}%)`,
+    desc: `${nomeEt}: ${ant}% → ${e}% (item ${item.id} da PCI: ${execAnt}% → ${item.exec}%)`,
     deltaPct: delta, deltaVal: delta / 100 * BASE_OBRA, prev: false, obs: '' });
-  msg.textContent = `✓ ${nomeEt} · ${item.desc.split(' — ')[0]}: ${e}% → ${delta >= 0 ? '+' : ''}${fmtP2(delta)} da obra` +
+  msg.textContent = `✓ ${nomeEt}: ${e}% → ${delta >= 0 ? '+' : ''}${fmtP2(delta)} da obra` +
     (isAdmin ? ` (${delta >= 0 ? '+' : ''}${fmt(delta / 100 * BASE_OBRA)})` : '');
   msg.className = 'msg';
   atualizarLinhaAvanco(inp.closest('tr'), item, x, e);

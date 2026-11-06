@@ -341,7 +341,8 @@ function buildEstimativas() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td style="color:var(--text3);font-size:12px">${i.id}</td>
-      <td>${esc(i.desc)}</td>
+      <td>${esc(i.desc)}${(i.andares || []).filter(x => x.e > x.m).map(x =>
+        `<div style="font-size:11px;color:var(--text2)">${esc(nomeEtapa(i, x.a))}: ${x.m}% → ${x.e}%</div>`).join('')}</td>
       <td class="right" style="color:var(--text2)">${fmtP(i.pciPct)}</td>
       <td class="right" style="color:var(--green)">${medidoDe(i)}%</td>
       <td class="right" style="font-weight:600;color:var(--amber)">${i.exec}%</td>
