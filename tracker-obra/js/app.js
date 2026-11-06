@@ -25,11 +25,11 @@ function iniciarApp() {
   document.getElementById('app').style.display = 'block';
   aplicarPerfil();
   carregar();
+  normalizarTodosAndares();
   buildSelect();
   buildTable();
   buildLog();
   atualizarTimestamp();
-  document.getElementById('inp-data').value = new Date().toISOString().split('T')[0];
   iniciarAppMO();
   buildVersoes();
 }
@@ -54,28 +54,28 @@ function aplicarPerfil() {
 }
 
 /* ══ DADOS ══════════════════════════════════════════════════ */
+// itens da PLS CAIXA (20 itens, somam 100%) — valores da obra original, usados só na importação do navegador antigo
 const ITENS_DEFAULT = [
-  { id:1,   desc:'Serviços preliminares e gerais (barracão + ligações prov.)', pciPct:3.64,  exec:100, locked:true,  prevExec:0, obs:'100% concluído — medido na 1ª medição CAIXA.' },
-  { id:2,   desc:'Infraestrutura (sapatas, baldrames)',                        pciPct:7.07,  exec:100, locked:true,  prevExec:0, obs:'100% concluído — medido na 1ª medição CAIXA.' },
-  { id:3,   desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)', pciPct:14.56, exec:35,  locked:true,  prevExec:0, obs:'35% conforme PLS assinada pelo RT (03/07/2026) — medido e pago na 2ª medição CAIXA. PLS é a fonte oficial de avanço.' },
-  { id:4,   desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento',           pciPct:8.14,  exec:40,  locked:true,  prevExec:0, obs:'40% medido na 2ª medição CAIXA (PLS 03/07/2026) — pagamento efetuado.' },
-  { id:5,   desc:'Esquadrias (22 portas + 18 janelas)',                        pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:6,   desc:'Vidros, plásticos e guarda-corpos',                         pciPct:1.07,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:7,   desc:'Cobertura (telhas, platibanda, laje 2ºpav)',                pciPct:2.57,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:8,   desc:'Impermeabilizações',                                        pciPct:2.57,  exec:60,  locked:true,  prevExec:0, obs:'60% medido na 2ª medição CAIXA (PLS 03/07/2026). Falta laje 2ºpav e varanda.' },
-  { id:9,   desc:'Revestimentos internos (chapisco + reboco)',                 pciPct:8.14,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:10,  desc:'Forros',                                                     pciPct:1.28,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:11,  desc:'Revestimentos externos e fachada',                          pciPct:4.07,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:12,  desc:'Pinturas',                                                   pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:13,  desc:'Pisos e rodapés (~205m²)',                                  pciPct:10.28, exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:14,  desc:'Acabamentos (soleiras, peitoris)',                           pciPct:1.28,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:15,  desc:'Instalações elétricas (3 pavimentos)',                       pciPct:4.07,  exec:30,  locked:true,  prevExec:0, obs:'30% medido na 2ª medição CAIXA (PLS 03/07/2026) — padrão + infra início.' },
-  { id:16,  desc:'Instalações hidráulicas (3 pavimentos)',                     pciPct:4.07,  exec:20,  locked:true,  prevExec:0, obs:'20% medido na 2ª medição CAIXA (PLS 03/07/2026) — ramais parciais térreo.' },
-  { id:17,  desc:'Instalações de esgoto sanitário',                           pciPct:2.70,  exec:100, locked:true,  prevExec:0, obs:'Medido na 2ª medição CAIXA — esgoto térreo + caixa de gordura + ligação rua.' },
-  { id:171, desc:'Rede de águas pluviais',                                     pciPct:1.37,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:18,  desc:'Louças e metais',                                            pciPct:4.71,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:19,  desc:'Complementos (limpeza, calafete)',                           pciPct:1.50,  exec:0,   locked:false, prevExec:0, obs:'Não iniciado.' },
-  { id:20,  desc:'Concreto magro / contrapiso',                               pciPct:1.28,  exec:100, locked:true,  prevExec:0, obs:'Medido na 2ª medição CAIXA. Contrapiso definitivo após alvenaria.' },
+  { id:1 , desc:'Serviços preliminares e gerais (barracão + ligações prov.)', pciPct:3.64, exec:100, locked:true, prevExec:0, medido:100, obs:'100% medido na 1ª medição CAIXA.' },
+  { id:2 , desc:'Infraestrutura (sapatas, baldrames)', pciPct:7.07, exec:100, locked:true, prevExec:0, medido:100, obs:'100% medido na 1ª medição CAIXA.' },
+  { id:3 , desc:'Supraestrutura — pilares, vigas e escada interna (3 pav.)', pciPct:14.56, exec:35, locked:true, prevExec:0, medido:35, obs:'35% conforme PLS 2ª medição (03/07/2026).' },
+  { id:4 , desc:'Paredes e alvenaria — térreo, 1º e 2º pavimento', pciPct:8.14, exec:40, locked:true, prevExec:0, medido:40, obs:'40% conforme PLS 2ª medição (03/07/2026).' },
+  { id:5 , desc:'Esquadrias (22 portas + 18 janelas)', pciPct:4.71, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:6 , desc:'Vidros, plásticos e guarda-corpos', pciPct:1.07, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:7 , desc:'Cobertura (telhas, platibanda, laje 2ºpav)', pciPct:2.57, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:8 , desc:'Impermeabilizações', pciPct:2.57, exec:60, locked:true, prevExec:0, medido:60, obs:'60% conforme PLS 2ª medição (03/07/2026).' },
+  { id:9 , desc:'Revestimentos internos (chapisco + reboco)', pciPct:8.14, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:10, desc:'Forros', pciPct:1.28, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:11, desc:'Revestimentos externos e fachada', pciPct:4.07, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:12, desc:'Pinturas', pciPct:4.71, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:13, desc:'Pisos e rodapés (~205m²)', pciPct:10.28, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:14, desc:'Acabamentos (soleiras, peitoris)', pciPct:1.28, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:15, desc:'Instalações elétricas (3 pavimentos)', pciPct:4.07, exec:30, locked:true, prevExec:0, medido:30, obs:'30% conforme PLS 2ª medição (03/07/2026).' },
+  { id:16, desc:'Instalações hidráulicas (3 pavimentos)', pciPct:4.07, exec:20, locked:true, prevExec:0, medido:20, obs:'20% conforme PLS 2ª medição (03/07/2026).' },
+  { id:17, desc:'Instalações de esgoto e águas pluviais', pciPct:4.07, exec:30, locked:true, prevExec:0, medido:30, obs:'30% conforme PLS 2ª medição (03/07/2026).' },
+  { id:18, desc:'Louças e metais', pciPct:4.71, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:19, desc:'Complementos (limpeza, calafete)', pciPct:1.50, exec:0, locked:false, prevExec:0, medido:0, obs:'' },
+  { id:20, desc:'Outros serviços (muro frontal, documentação)', pciPct:7.49, exec:20, locked:true, prevExec:0, medido:20, obs:'20% conforme PLS 2ª medição (03/07/2026).' },
 ];
 
 const HISTORICO_DEFAULT = [
@@ -276,6 +276,7 @@ function recalcular() {
   if (isAdmin) buildMedicao(execNovo, execNovoCaixa, novoVal);
   buildPrevisaoRapida();
   buildEstimativas();
+  buildAvancoAndares();
 }
 
 function buildMedicao(execNovo, execNovoCaixa, novoVal) {
@@ -333,7 +334,7 @@ function buildEstimativas() {
   const lista = itens.filter(i => avancoDe(i) > 0);
   const vis = isAdmin ? '' : 'display:none';
   tb.innerHTML = lista.length ? '' :
-    `<tr><td colspan="8" class="empty">Nenhuma estimativa de avanço. Use o formulário acima para estimar o % de um serviço.</td></tr>`;
+    `<tr><td colspan="8" class="empty">Nenhuma estimativa de avanço. Digite o % executado de uma etapa nas abas de pavimento acima.</td></tr>`;
   let tPct = 0;
   lista.forEach(i => {
     const av = avancoObra(i); tPct += av;
@@ -357,42 +358,14 @@ function buildEstimativas() {
   document.getElementById('est-excluir-todas').style.visibility = lista.length ? 'visible' : 'hidden';
 }
 
-/* prévia no formulário: quanto a estimativa digitada acrescenta à medição */
-function previaRegistro() {
-  const el   = document.getElementById('reg-preview');
-  const item = itens.find(i => i.id === parseInt(document.getElementById('inp-item').value));
-  const raw  = document.getElementById('inp-pct').value;
-  const tipo = document.getElementById('inp-tipo').value;
-  if (!el) return;
-  if (!item) { el.style.display = 'none'; return; }
-  const m = medidoDe(item), pct = raw === '' ? null : Math.min(100, Math.max(0, parseFloat(raw.replace(',', '.'))));
-  let txt = `<strong>${esc(item.desc)}</strong> · peso ${fmtP(item.pciPct)} · já medido <strong>${m}%</strong>` +
-            (item.exec > m ? ` · estimativa atual <strong>${item.exec}%</strong>` : '');
-  if (pct !== null && !isNaN(pct)) {
-    if (tipo === 'exec' && pct < m) {
-      txt += `<br>⚠️ O % não pode ser menor que o já medido pela CAIXA (${m}%).`;
-    } else if (tipo === 'exec') {
-      const av = item.pciPct * (pct - m) / 100;
-      txt += `<br>Com ${pct}%: entra <strong>+${fmtP(av)}</strong> da obra na próxima medição` +
-             (isAdmin ? ` ≈ <strong>${fmt(av / 100 * BASE_OBRA)}</strong>` : '') + '.';
-    } else {
-      const base = Math.max(item.exec, m);
-      txt += pct > base ? `<br>Previsão: +${fmtP(item.pciPct * (pct - base) / 100)} da obra quando for executado.`
-                        : `<br>⚠️ A previsão precisa ser maior que o % atual (${base}%).`;
-    }
-  }
-  el.innerHTML = txt;
-  el.style.display = '';
-}
-
+/* abre o pavimento onde está o avanço estimado do item e põe o cursor no campo */
 function editarEstimativa(id) {
   const item = itens.find(i => i.id === id); if (!item) return;
-  document.getElementById('inp-item').value = id;
-  document.getElementById('inp-tipo').value = 'exec';
-  document.getElementById('inp-pct').value  = item.exec;
-  previaRegistro();
-  document.getElementById('inp-pct').focus();
-  document.getElementById('inp-item').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const x = (item.andares || []).find(y => y.e > y.m) || (item.andares || [])[0];
+  if (!x) return;
+  selecionarAbaAvanco(ABA_DA_ETAPA[x.a]);
+  const inp = document.querySelector(`#av-tbody tr[data-ordem="${id}"][data-a="${x.a}"] .av-inp`);
+  if (inp) { inp.scrollIntoView({ behavior: 'smooth', block: 'center' }); inp.focus(); inp.select(); }
 }
 
 function excluirEstimativa(id) {
@@ -400,10 +373,11 @@ function excluirEstimativa(id) {
   const m = medidoDe(item), ant = item.exec;
   if (!confirm(`Excluir a estimativa de "${item.desc}"?\n\nO item volta para ${m}% (o que a CAIXA já mediu).`)) return;
   item.exec = m; item.novo = false;
+  (item.andares || []).forEach(x => { x.e = x.m; });
   const delta = item.pciPct * (m - ant) / 100;
   historico.push({ data: new Date().toLocaleDateString('pt-BR'), desc: `Estimativa excluída: ${item.desc} (${ant}% → ${m}%)`,
     deltaPct: delta, deltaVal: delta / 100 * BASE_OBRA, prev: false, obs: '' });
-  salvar(); buildSelect(); buildTable(); buildLog(); previaRegistro();
+  salvar(); buildSelect(); buildTable(); buildLog();
 }
 
 function excluirTodasEstimativas() {
@@ -411,15 +385,18 @@ function excluirTodasEstimativas() {
   if (!lista.length) return;
   if (!confirm(`Excluir as ${lista.length} estimativas de avanço?\n\nCada item volta para o % já medido pela CAIXA.`)) return;
   const delta = -lista.reduce((s, i) => s + avancoObra(i), 0);
-  lista.forEach(i => { i.exec = medidoDe(i); i.novo = false; });
+  lista.forEach(i => { i.exec = medidoDe(i); i.novo = false; (i.andares || []).forEach(x => { x.e = x.m; }); });
   historico.push({ data: new Date().toLocaleDateString('pt-BR'), desc: `Estimativas excluídas (${lista.length} itens)`,
     deltaPct: delta, deltaVal: delta / 100 * BASE_OBRA, prev: false, obs: lista.map(i => i.desc).join(' · ') });
-  salvar(); buildSelect(); buildTable(); buildLog(); previaRegistro();
+  salvar(); buildSelect(); buildTable(); buildLog();
 }
 
 /* ao confirmar uma medição: o estimado de cada item passa a ser o medido */
 function consolidarEstimativas() {
-  itens.forEach(i => { i.medido = Math.max(medidoDe(i), +i.exec || 0); i.locked = i.medido > 0; i.novo = false; });
+  itens.forEach(i => {
+    i.medido = Math.max(medidoDe(i), +i.exec || 0); i.locked = i.medido > 0; i.novo = false;
+    (i.andares || []).forEach(x => { x.m = Math.max(x.m, x.e); });
+  });
 }
 
 function buildLog() {
@@ -442,6 +419,7 @@ function buildLog() {
 
 function buildSelect() {
   const sel = document.getElementById('inp-item');
+  if (!sel) return;
   sel.innerHTML = '<option value="">Selecionar serviço...</option>';
   itens.forEach(item => {
     const o = document.createElement('option');
@@ -453,43 +431,6 @@ function buildSelect() {
 }
 
 /* ══ AÇÕES ADMIN ════════════════════════════════════════════ */
-function registrar() {
-  const dataVal = document.getElementById('inp-data').value;
-  const itemId  = parseInt(document.getElementById('inp-item').value);
-  const pctVal  = Math.round(parseFloat(String(document.getElementById('inp-pct').value).replace(',', '.')) * 100) / 100;
-  const tipo    = document.getElementById('inp-tipo').value;
-  const obs     = document.getElementById('inp-obs').value.trim();
-  const msgEl   = document.getElementById('msg-reg');
-  if (!dataVal || !itemId) { msgEl.textContent='Preencha data e serviço.'; msgEl.className='msg error'; return; }
-  const item    = itens.find(i=>i.id===itemId);
-  if (!item) return;
-  if (isNaN(pctVal) || pctVal < 0 || pctVal > 100) { msgEl.textContent='Informe o % acumulado do item (0 a 100).'; msgEl.className='msg error'; return; }
-  const m = medidoDe(item);
-  if (tipo !== 'prev' && pctVal < m) { msgEl.textContent=`O % não pode ser menor que o já medido pela CAIXA (${m}%).`; msgEl.className='msg error'; return; }
-  if (tipo === 'prev' && pctVal <= Math.max(item.exec, m)) { msgEl.textContent=`A previsão precisa ser maior que o % atual (${Math.max(item.exec, m)}%).`; msgEl.className='msg error'; return; }
-  const dateStr = new Date(dataVal+'T12:00:00').toLocaleDateString('pt-BR');
-  if (tipo==='prev') {
-    item.prevExec = pctVal;
-    historico.push({ data:dateStr, desc:`[Previsão] ${item.desc} → ${pctVal}%`, deltaPct:item.pciPct*pctVal/100, deltaVal:0, prev:true, obs });
-    msgEl.textContent = `Previsão salva: ${item.desc} → ${pctVal}%`;
-  } else {
-    const ant = item.exec;
-    item.exec = pctVal;                       // estimativa: pode subir ou descer (até o medido)
-    if (item.prevExec <= item.exec) item.prevExec = 0;
-    item.novo = false;
-    if (obs) item.obs = obs;
-    const deltaPci  = item.pciPct*(item.exec-ant)/100;
-    const deltaCaixa= deltaPci;
-    const deltaVal  = deltaCaixa/100*BASE_OBRA;
-    historico.push({ data:dateStr, desc:`${item.desc} (${ant}% → ${item.exec}%)`, deltaPct:deltaPci, deltaVal, prev:false, obs });
-    msgEl.textContent = `✓ ${item.desc} → ${item.exec}% · a medir: +${fmtP(avancoObra(item))} da obra` + (isAdmin ? ` ≈ ${fmt(avancoObra(item)/100*BASE_OBRA)}` : '');
-  }
-  msgEl.className = 'msg';
-  document.getElementById('inp-obs').value = '';
-  document.getElementById('inp-pct').value = '';
-  salvar(); buildSelect(); buildTable(); buildLog(); previaRegistro();
-}
-
 function confirmarPrevisao(id) {
   const item = itens.find(i=>i.id===id); if(!item) return;
   const ant = item.exec;

@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Obra — Vinícius Ornellas</title>
-<link rel="stylesheet" href="css/app.css?v=2.06">
+<link rel="stylesheet" href="css/app.css?v=2.07">
 </head>
 <body>
 
@@ -761,42 +761,86 @@
 
     <!-- REGISTRAR (admin) -->
     <div id="tab-registrar" class="panel">
-      <div class="alert alert-info">Estime quanto cada serviço já avançou (% acumulado do item). O tracker calcula quanto deve entrar na próxima medição da CAIXA: <strong>peso do item × (% estimado − % já medido) × base</strong>. Uma estimativa pode ser editada ou excluída a qualquer momento, até a medição ser confirmada.</div>
-      <div class="form-card">
-        <div class="form-grid">
-          <div class="form-group">
-            <label>Data / semana</label>
-            <input type="date" id="inp-data" />
-          </div>
-          <div class="form-group">
-            <label>Serviço</label>
-            <select id="inp-item"><option value="">Selecionar...</option></select>
-          </div>
-          <div class="form-group">
-            <label>% acumulado do item</label>
-            <input type="number" id="inp-pct" min="0" max="100" step="1" placeholder="Ex: 60" inputmode="decimal" />
-          </div>
-          <div class="form-group">
-            <label>Tipo</label>
-            <select id="inp-tipo">
-              <option value="exec">Estimativa</option>
-              <option value="prev">Previsão</option>
-            </select>
-          </div>
+      <div class="alert alert-info">Registre o avanço <strong>por pavimento</strong>: digite o % executado de cada etapa no andar. O tracker converte para o item da PCI e para a obra toda, proporcionalmente ao peso do andar no item e ao peso do item na obra. Ex.: <em>40% da alvenaria do 1º pavimento</em> = 40% × peso do andar no item = % do item → × peso do item = % da obra → × base = valor de medição. O campo grava ao sair dele (Tab ou Enter).</div>
+
+      <div class="mo-frentes" id="av-abas"></div>
+
+      <div id="av-andar">
+        <div class="cards" id="av-cards" style="margin-bottom:1rem;"></div>
+        <div class="table-wrap" style="margin-bottom:0.5rem;">
+          <table class="resumo-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Etapa (item da PCI)</th>
+                <th class="right" title="peso do andar dentro do item">Peso no item</th>
+                <th class="right">Medido</th>
+                <th class="center">% executado</th>
+                <th class="right">Representa no item</th>
+                <th class="right">Representa na obra</th>
+                <th class="right">A medir</th>
+              </tr>
+            </thead>
+            <tbody id="av-tbody"></tbody>
+            <tfoot>
+              <tr class="total a-medir">
+                <td colspan="6">Total do andar</td>
+                <td class="right" id="av-tot-obra">—</td>
+                <td class="right" id="av-tot-medir">—</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-        <div class="alert alert-info" id="reg-preview" style="display:none;margin-bottom:0.75rem;"></div>
-        <div class="form-group" style="margin-bottom:0.75rem;">
-          <label>Observação (opcional)</label>
-          <textarea id="inp-obs" placeholder="Ex: Alvenaria iniciada pela fachada principal..."></textarea>
+        <span class="msg" id="av-msg"></span>
+      </div>
+
+      <div id="av-resumo" style="display:none;">
+        <div class="table-wrap" style="margin-bottom:1.25rem;">
+          <table class="resumo-table">
+            <thead>
+              <tr>
+                <th>Pavimento</th>
+                <th class="right">Peso na obra</th>
+                <th class="right">Executado</th>
+                <th class="right">Medido</th>
+                <th class="right">A medir (% obra)</th>
+                <th class="right admin-only">A medir (R$)</th>
+              </tr>
+            </thead>
+            <tbody id="av-res-tbody"></tbody>
+            <tfoot>
+              <tr class="total">
+                <td>Obra toda</td>
+                <td class="right" id="av-res-peso">—</td>
+                <td class="right" id="av-res-exec">—</td>
+                <td class="right" id="av-res-med">—</td>
+                <td class="right" id="av-res-medir">—</td>
+                <td class="right admin-only" id="av-res-val">—</td>
+              </tr>
+            </tfoot>
+          </table>
         </div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-primary" onclick="registrar()">Salvar registro</button>
-          <button class="btn btn-ghost"   onclick="limparPrevisoes()">Limpar previsões</button>
-          <button class="btn btn-ghost"   onclick="exportarDados()">Exportar JSON</button>
-          <button class="btn btn-ghost"   onclick="importarDados()">Importar JSON</button>
-          <span class="msg" id="msg-reg"></span>
+
+        <div class="sect-title">Peso de cada pavimento dentro do item</div>
+        <div class="alert alert-info" style="margin-bottom:0.75rem;">Quanto de cada serviço está em cada andar (a linha precisa somar 100%). Padrão: um terço por andar; sapatas só no térreo; telhado só no 2º; supraestrutura 32/32/28 + 8% do castelo da caixa d'água. Ajuste conforme o projeto (ex.: área ou quantitativo de cada andar).</div>
+        <div class="table-wrap" style="margin-bottom:0.5rem;">
+          <table class="resumo-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Item da PCI</th>
+                <th class="center">Térreo</th><th class="center">1º pav.</th><th class="center">2º pav.</th>
+                <th class="center">Castelo</th><th class="center">Geral</th><th class="right">Soma</th>
+              </tr>
+            </thead>
+            <tbody id="av-pesos-tbody"></tbody>
+          </table>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1rem;">
+          <button class="btn btn-primary admin-only" onclick="salvarPesosAndares()">Salvar pesos</button>
+          <span class="msg" id="av-pesos-msg"></span>
         </div>
       </div>
+
       <div class="sect-title">Estimativa da próxima medição</div>
       <div class="table-wrap" style="margin-bottom:0.5rem;">
         <table class="resumo-table">
@@ -826,6 +870,11 @@
 
       <div class="sect-title">Confirmar previsões da semana</div>
       <div id="previsoes-rapidas" class="form-card" style="padding:0.75rem 1rem;"></div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:0.75rem;">
+        <button class="btn btn-ghost btn-sm" onclick="limparPrevisoes()">Limpar previsões</button>
+        <button class="btn btn-ghost btn-sm" onclick="exportarDados()">Exportar JSON</button>
+        <button class="btn btn-ghost btn-sm" onclick="importarDados()">Importar JSON</button>
+      </div>
     </div>
 
     <!-- RESUMO MEDIÇÃO (admin) -->
@@ -1358,13 +1407,14 @@
   </div><!-- /container -->
 </div><!-- /app -->
 
-<script src="js/config.js?v=2.06"></script>
-<script src="js/nuvem.js?v=2.06"></script>
-<script src="js/app.js?v=2.06"></script>
-<script src="js/mao-de-obra.js?v=2.06"></script>
-<script src="js/materiais.js?v=2.06"></script>
-<script src="js/medicoes.js?v=2.06"></script>
-<script src="js/init.js?v=2.06"></script>
+<script src="js/config.js?v=2.07"></script>
+<script src="js/nuvem.js?v=2.07"></script>
+<script src="js/app.js?v=2.07"></script>
+<script src="js/andares.js?v=2.07"></script>
+<script src="js/mao-de-obra.js?v=2.07"></script>
+<script src="js/materiais.js?v=2.07"></script>
+<script src="js/medicoes.js?v=2.07"></script>
+<script src="js/init.js?v=2.07"></script>
 </body>
 </html>
 

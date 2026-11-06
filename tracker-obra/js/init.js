@@ -32,10 +32,6 @@ function buildVersoes() {
   aplicarTema(temaAtual());
   const cc = document.getElementById('cons-cod');
   if (cc) cc.addEventListener('keydown', function (e) { if (e.key === 'Enter') consultarObra(); });
-  ['inp-item', 'inp-pct', 'inp-tipo'].forEach(id => {
-    const e = document.getElementById(id);
-    if (e) { e.addEventListener('input', previaRegistro); e.addEventListener('change', previaRegistro); }
-  });
   const se = document.getElementById('au-senha');
   if (se) se.addEventListener('keydown', function (e) { if (e.key === 'Enter') autenticar(); });
   const c = sbClient();
