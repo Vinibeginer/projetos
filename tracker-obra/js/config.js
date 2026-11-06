@@ -1,5 +1,5 @@
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '2.07';
+const APP_VERSION = '2.08';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -61,6 +61,7 @@ const VERSOES = [
   { v:'2.05', data:'29/09/2026', autor:'Claude', desc:'Mão de obra por frente de serviço: abas Geral, 1º, 2º e 3º andar e Outros serviços · teto do 1º andar = pago até a troca de pedreiro + R$ 49.000 · 2º e 3º andar R$ 70.000 cada · muro, escadas e montagem de ferragens em Outros serviços (fora do teto) · teto editável por andar' },
   { v:'2.06', data:'05/11/2026', autor:'Claude', desc:'Registrar avanço: % medido pela CAIXA separado do % estimado em cada item · % livre com prévia do valor a medir · tabela Estimativa da próxima medição com Editar e Excluir (item volta ao % medido) · itens já medidos podem receber novo avanço · ao confirmar medição, as estimativas viram medidas' },
   { v:'2.07', data:'06/11/2026', autor:'Claude', desc:'Avanço por pavimento: abas Térreo, 1º, 2º (com telhado e castelo da caixa d\'água) e Geral · % de cada etapa convertido proporcionalmente para o item da PCI, para a obra e para o valor de medição · resumo por pavimento e pesos de cada andar editáveis' },
+  { v:'2.08', data:'06/11/2026', autor:'Claude', desc:'Avanço por pavimento: cada etapa com nome próprio do andar (ex.: Alvenaria do 1º pavimento, Telhado do 2º pavimento, Fundação do térreo), item da PCI de origem abaixo do nome · estimativa da próxima medição mostra quais andares geraram o avanço' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */
