@@ -39,6 +39,7 @@ Tracker financeiro da obra — Vinícius Sampaio Ornellas
 | `js/config.js` | Versão, histórico de versões e variáveis da obra aberta |
 | `js/nuvem.js` | Supabase: login, obras, carregar e gravar (`salvar_obra`) |
 | `js/app.js` | Tema, itens da PCI, tabela, cálculos e registro de avanço |
+| `js/andares.js` | Avanço por pavimento (térreo, 1º, 2º, geral) e conversão para item/obra/medição |
 | `js/mao-de-obra.js` | Mão de obra e desembolso consolidado |
 | `js/materiais.js` | Compras de materiais |
 | `js/medicoes.js` | Medições confirmadas pela CAIXA |
