@@ -478,5 +478,5 @@ function showTab(t, el) {
   el.classList.add('active');
   if(t==='historico') buildLog();
   if(t==='versoes')   buildVersoes();
-  if(t==='medicao')   buildMedicoesConfirmadas();
+  if(t==='medicao')   { buildMedicoesConfirmadas(); buildGradePLS(); }
 }

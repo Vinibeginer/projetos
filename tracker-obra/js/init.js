@@ -32,6 +32,8 @@ function buildVersoes() {
   aplicarTema(temaAtual());
   const cc = document.getElementById('cons-cod');
   if (cc) cc.addEventListener('keydown', function (e) { if (e.key === 'Enter') consultarObra(); });
+  const mv = document.getElementById('med-inp-valor');
+  if (mv) mv.addEventListener('input', () => { if (document.getElementById('pls-tbody')) conferirPLS(); });
   const se = document.getElementById('au-senha');
   if (se) se.addEventListener('keydown', function (e) { if (e.key === 'Enter') autenticar(); });
   const c = sbClient();
