@@ -225,7 +225,7 @@ tfoot td { padding: 8px 10px; font-weight: 600; border-top: 2px solid var(--bord
 .form-grid { display: grid; grid-template-columns: 1fr 1fr 110px 110px; gap: 10px; align-items: end; margin-bottom: 0.75rem; }
 @media (max-width: 680px) { .form-grid { grid-template-columns: 1fr 1fr; } }
 .form-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
-input[type="date"], input[type="number"], input[type="text"], select, textarea { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font-family: inherit; }
+input[type="date"], input[type="month"], input[type="number"], input[type="text"], select, textarea { width: 100%; padding: 8px 10px; font-size: 13px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); font-family: inherit; }
 input:focus, select:focus, textarea:focus { outline: none; border-color: var(--blue-mid); box-shadow: 0 0 0 3px rgba(55,138,221,0.15); }
 textarea { resize: vertical; min-height: 60px; }
 
@@ -376,3 +376,6 @@ body:not(.obra-original-on) .obra-original { display: none !important; }
   .mo-frentes { flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
   .mo-frente-btn { flex-shrink: 0; white-space: nowrap; font-size: 12px; padding: 6px 12px; }
 }
+
+/* ══ PROJEÇÃO DE CUSTOS ═════════════════════════════════════ */
+#tab-projecao td.right { white-space: nowrap; }

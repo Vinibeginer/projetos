@@ -1,5 +1,5 @@
 /* ══ VERSÃO ════════════════════════════════════════════════════ */
-const APP_VERSION = '2.11';
+const APP_VERSION = '2.12';
 const VERSOES = [
   { v:'1.0',  data:'19/06/2026', autor:'Claude', desc:'Criação do tracker — PCI, cronograma e histórico base' },
   { v:'1.1',  data:'19/06/2026', autor:'Claude', desc:'Adição do sistema de login (admin/visitante) com senha hash SHA-256' },
@@ -65,6 +65,7 @@ const VERSOES = [
   { v:'2.09', data:'13/11/2026', autor:'Claude', desc:'PLS como fonte oficial do medido: cada medição guarda o % de cada item da PLS (2ª e 3ª já registradas) · Confirmar medição pede a PLS item a item, calcula o % da etapa e o valor esperado e confere com o valor pago · ao confirmar, o medido de cada item passa a ser o da PLS · base CAIXA R$ 372.088,46' },
   { v:'2.10', data:'13/11/2026', autor:'Claude', desc:'PLS em PDF: anexar no Confirmar medição — o tracker lê o PDF, preenche a grade item a item e confere acumulado anterior × total pago, alvará vencido e data do levantamento · PDF fica guardado na medição (Storage privado) e abre pelo 📎 · PDF digitalizado é anexado com preenchimento manual' },
   { v:'2.11', data:'13/11/2026', autor:'Claude', desc:'PLS em PDF não é mais guardada: o arquivo é lido só no navegador, preenche e confere a grade, e é descartado ao confirmar a medição — ficam gravados apenas os percentuais · bucket de arquivos removido · medição sem PLS pode receber os % por "ler PLS"' },
+  { v:'2.12', data:'13/11/2026', autor:'Claude', desc:'Nova aba Projeção de custos: etapas futuras com material, mão de obra e outros por mês · liberação da CAIXA calculada pelo avanço de cada etapa · aportes de recursos próprios · fluxo de caixa mensal a partir do caixa de hoje com a necessidade de recurso próprio · mão de obra prevista × teto de cada frente' },
 ];
 
 /* ══ CONFIG ══════════════════════════════════════════════════ */

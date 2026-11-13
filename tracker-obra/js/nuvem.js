@@ -209,13 +209,14 @@ async function abrirObra(id) {
 
 async function baixarDados() {
   const c = sbClient(), oid = obraAtual.id;
-  const [ob, it, mt, mo, md, hs] = await Promise.all([
+  const [ob, it, mt, mo, md, hs, pj] = await Promise.all([
     c.from('obras').select('*').eq('id', oid).single(),
     c.from('itens').select('*').eq('obra_id', oid).order('ordem'),
     c.from('materiais').select('*').eq('obra_id', oid).order('id'),
     c.from('mo_pagamentos').select('*').eq('obra_id', oid).order('id'),
     c.from('medicoes').select('*').eq('obra_id', oid).order('numero'),
-    c.from('historico').select('*').eq('obra_id', oid).order('id')
+    c.from('historico').select('*').eq('obra_id', oid).order('id'),
+    c.from('projecoes').select('*').eq('obra_id', oid).order('ordem')
   ]);
   obraVersao = (ob.data && ob.data.atualizado_em) || null;
   obraOriginal = !!(ob.data && ob.data.detalhes_fixos);
@@ -232,6 +233,9 @@ async function baixarDados() {
   medicoesConfirmadas = (md.data || []).map(r => ({ num: r.numero, data: brData(r.data),
     pctCaixa: +r.pct_caixa, valor: +r.valor, ref: r.referencia, itens: r.itens_desc, confirmada: !!r.confirmada,
     pls: r.pls && typeof r.pls === 'object' ? r.pls : null }));
+  projecoes = (pj && !pj.error && pj.data || []).map(r => ({ tipo: r.tipo, desc: r.descricao, item: r.item_ordem, andar: r.andar,
+    ate: r.ate_pct != null ? +r.ate_pct : null, mes: r.mes ? String(r.mes).slice(0, 7) : '', material: +r.material || 0,
+    mo: +r.mao_obra || 0, outros: +r.outros || 0, aporte: +r.aporte || 0, obs: r.obs || '' }));
   historico = (hs.data || []).map(r => ({ data: r.data_txt || brData(r.data), desc: r.descricao,
     deltaPct: +r.delta_pct, deltaVal: +r.delta_valor, prev: !!r.previsao, obs: r.obs || '' }));
 
@@ -248,7 +252,7 @@ function espelharLocal() {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ itens: itens, historico: historico,
       moPagamentos: moPagamentos, materiais: materiais, medicoesConfirmadas: medicoesConfirmadas,
-      savedAt: new Date().toISOString() }));
+      projecoes: projecoes, savedAt: new Date().toISOString() }));
   } catch (e) {}
 }
 
@@ -294,7 +298,11 @@ function montarPayload(oid) {
       pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada,
       pls: m.pls || null, pls_arquivo: null })),
     historico: historico.map(h => ({ ...o, data: isoData(h.data), data_txt: h.data,
-      descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' }))
+      descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' })),
+    projecoes: projecoes.map((p, k) => ({ ...o, ordem: k + 1, tipo: p.tipo || 'etapa', descricao: p.desc || '',
+      item_ordem: p.item || null, andar: p.andar || null, ate_pct: p.ate != null ? p.ate : null,
+      mes: p.mes ? p.mes + '-01' : null, material: p.material || 0, mao_obra: p.mo || 0, outros: p.outros || 0,
+      aporte: p.aporte || 0, obs: p.obs || '' }))
   };
 }
 /* gravação antiga, tabela por tabela — só usada se a função salvar_obra ainda não existir no banco */

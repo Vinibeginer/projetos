@@ -479,4 +479,5 @@ function showTab(t, el) {
   if(t==='historico') buildLog();
   if(t==='versoes')   buildVersoes();
   if(t==='medicao')   { buildMedicoesConfirmadas(); buildGradePLS(); }
+  if(t==='projecao')  { const m = document.getElementById('proj-mes'); if (m && !m.value) m.value = somaMes(mesAtual(), 1); buildProjecao(); }
 }
