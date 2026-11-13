@@ -67,7 +67,9 @@ function conferirPLS() {
     tr.querySelector('.pls-delta').style.color = d < 0 ? 'var(--red)' : '';
     tr.style.background = d !== 0 ? 'var(--amber-bg)' : '';
   });
-  const acum = Math.round(plsAcumulado(pls) * 100) / 100;
+  let acum = Math.round(plsAcumulado(pls) * 100) / 100;
+  // PLS lida do PDF: usa o acumulado oficial do documento (a CAIXA arredonda linha a linha)
+  if (typeof plsLida !== 'undefined' && plsLida && plsLida.acumAtual != null && Math.abs(plsLida.acumAtual - acum) <= 0.05) acum = plsLida.acumAtual;
   const ant  = Math.round(pagoAcumulado() * 100) / 100;
   const etapa = Math.round((acum - ant) * 100) / 100;
   const esperado = etapa / 100 * BASE_OBRA;
@@ -144,7 +146,9 @@ function buildMedicoesConfirmadas() {
       <td class="right">${fmt(acum)}</td>
       <td class="center"><span class="badge b-medido">Confirmado ✓</span>${m.pls
         ? `<div style="font-size:11px;margin-top:3px">PLS ${pct2(plsAcumulado(m.pls))} · <a href="#" onclick="verPLS(${idx});return false">ver itens</a></div>`
-        : '<div style="font-size:11px;margin-top:3px;color:var(--text3)">sem PLS registrada</div>'}</td>
+        : '<div style="font-size:11px;margin-top:3px;color:var(--text3)">sem PLS registrada</div>'}${m.plsArquivo
+        ? `<div style="font-size:11px;margin-top:2px"><a href="#" onclick="abrirPLS(${idx});return false">📎 PDF da PLS</a></div>`
+        : (podeEditar ? `<div style="font-size:11px;margin-top:2px"><a href="#" onclick="anexarPLSexistente(${idx});return false">📎 anexar PDF</a></div>` : '')}</td>
       <td class="center admin-only">
         ${podeEditar ? `<button class="btn btn-danger btn-sm" onclick="removerMedicao(${idx})">✕</button>` : ''}
       </td>
@@ -219,8 +223,10 @@ function confirmarMedicao() {
   const acumPLS = plsAcumulado(pls), etapaPLS = acumPLS - pagoAcumulado();
   if (Math.abs(pctCaixa - etapaPLS) > 0.05 &&
       !confirm(`O valor pago (${pct2(pctCaixa)} da base) não bate com a PLS (${pct2(etapaPLS)}).\n\nConfirmar mesmo assim? O % medido dos itens será o da PLS informada.`)) return;
-  medicoesConfirmadas.push({ num, data:dateStr, pctCaixa, valor, ref, itens: resumo, confirmada:true, pls });
+  const nova = { num, data:dateStr, pctCaixa, valor, ref, itens: resumo, confirmada:true, pls };
+  medicoesConfirmadas.push(nova);
   aplicarPLS(pls);
+  const arqPLS = plsArquivoPendente;
 
   // registrar no histórico
   historico.push({
@@ -247,6 +253,8 @@ function confirmarMedicao() {
   buildSelect();
   buildTable();
   buildGradePLS();
+  limparPLSpendente();
+  if (arqPLS) anexarPLSnaMedicao(nova, arqPLS);
 }
 
 function removerMedicao(idx) {
