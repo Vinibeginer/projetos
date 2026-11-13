@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Obra — Vinícius Ornellas</title>
-<link rel="stylesheet" href="css/app.css?v=2.09">
+<link rel="stylesheet" href="css/app.css?v=2.10">
 </head>
 <body>
 
@@ -938,6 +938,12 @@
           <label>Itens cobertos (resumo)</label>
           <input type="text" id="med-inp-itens" placeholder="Ex: impermeabilização 60% + esgoto 100% + magro 100%" />
         </div>
+        <div class="form-group" style="margin-bottom:0.75rem;">
+          <label>PLS desta medição (PDF enviado pelo engenheiro)</label>
+          <input type="file" id="pls-arquivo" accept="application/pdf,.pdf" onchange="escolherPLS(this)" />
+          <div style="font-size:11px;color:var(--text3);margin-top:3px">O tracker lê o PDF, preenche a grade abaixo e confere o acumulado anterior, o alvará e a data do levantamento. O arquivo fica anexado à medição.</div>
+        </div>
+        <div class="alert" id="pls-leitura" style="display:none;margin-bottom:0.75rem;"></div>
         <div class="sect-title" style="margin-top:0.25rem;">% de cada item na PLS desta medição</div>
         <div class="table-wrap" style="margin-bottom:0.75rem;">
           <table class="resumo-table">
@@ -1429,14 +1435,15 @@
   </div><!-- /container -->
 </div><!-- /app -->
 
-<script src="js/config.js?v=2.09"></script>
-<script src="js/nuvem.js?v=2.09"></script>
-<script src="js/app.js?v=2.09"></script>
-<script src="js/andares.js?v=2.09"></script>
-<script src="js/mao-de-obra.js?v=2.09"></script>
-<script src="js/materiais.js?v=2.09"></script>
-<script src="js/medicoes.js?v=2.09"></script>
-<script src="js/init.js?v=2.09"></script>
+<script src="js/config.js?v=2.10"></script>
+<script src="js/nuvem.js?v=2.10"></script>
+<script src="js/app.js?v=2.10"></script>
+<script src="js/andares.js?v=2.10"></script>
+<script src="js/mao-de-obra.js?v=2.10"></script>
+<script src="js/materiais.js?v=2.10"></script>
+<script src="js/medicoes.js?v=2.10"></script>
+<script src="js/pls.js?v=2.10"></script>
+<script src="js/init.js?v=2.10"></script>
 </body>
 </html>
 
