@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Obra — Vinícius Ornellas</title>
-<link rel="stylesheet" href="css/app.css?v=2.11">
+<link rel="stylesheet" href="css/app.css?v=2.12">
 </head>
 <body>
 
@@ -164,6 +164,7 @@
       <button class="tab-btn" onclick="showTab('historico',this)">Histórico</button>
       <button class="tab-btn admin-tab" onclick="showTab('mo',this)">Mão de obra</button>
       <button class="tab-btn admin-tab" onclick="showTab('mat',this)">Materiais</button>
+      <button class="tab-btn admin-tab" onclick="showTab('projecao',this)">Projeção de custos</button>
       <button class="tab-btn admin-tab obra-original" onclick="showTab('contrato',this)">Contrato</button>
       <button class="tab-btn admin-tab" onclick="showTab('versoes',this)">Versões</button>
     </div>
@@ -1389,6 +1390,105 @@
     </div><!-- /tab-mat -->
 
     <!-- CONTRATO (admin) -->
+    <!-- PROJEÇÃO DE CUSTOS (admin) -->
+    <div id="tab-projecao" class="panel">
+      <div class="alert alert-info">Projete as próximas etapas: custo de material, mão de obra e outros, e até qual % cada etapa avança. O tracker calcula a <strong>liberação da CAIXA</strong> que esse avanço gera (peso da etapa × avanço acima do já medido × base) e monta o <strong>fluxo de caixa</strong> mês a mês, a partir do caixa de hoje.</div>
+
+      <div class="cards" id="proj-cards" style="margin-bottom:1.25rem;"></div>
+
+      <div class="form-card admin-only" style="margin-bottom:1.25rem;">
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tipo</label>
+            <select id="proj-tipo" onchange="alternarTipoProj()">
+              <option value="etapa">Etapa de obra (custo)</option>
+              <option value="aporte">Aporte de recursos próprios</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Mês previsto</label>
+            <input type="month" id="proj-mes" oninput="previaProj()" />
+          </div>
+          <div class="form-group proj-so-etapa" style="grid-column:span 2">
+            <label>Etapa da obra</label>
+            <select id="proj-etapa" onchange="escolherEtapaProj()"></select>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="form-group proj-so-etapa">
+            <label>Avança até (% da etapa)</label>
+            <input type="number" id="proj-ate" min="0" max="100" step="1" placeholder="Ex: 100" oninput="previaProj()" />
+          </div>
+          <div class="form-group" style="grid-column:span 3">
+            <label>Descrição</label>
+            <input type="text" id="proj-desc" placeholder="Ex: Alvenaria do 2º pavimento" oninput="this.dataset.auto=''" />
+          </div>
+        </div>
+        <div class="form-grid proj-so-etapa">
+          <div class="form-group"><label>Material (R$)</label><input type="text" id="proj-mat" placeholder="0,00" inputmode="decimal" oninput="previaProj()" /></div>
+          <div class="form-group"><label>Mão de obra (R$)</label><input type="text" id="proj-mo" placeholder="0,00" inputmode="decimal" oninput="previaProj()" /></div>
+          <div class="form-group"><label>Outros (R$)</label><input type="text" id="proj-out" placeholder="0,00" inputmode="decimal" oninput="previaProj()" /></div>
+          <div class="form-group"><label>Observação</label><input type="text" id="proj-obs" placeholder="Ex: orçamento do fornecedor X" /></div>
+        </div>
+        <div class="form-grid proj-so-aporte" style="display:none">
+          <div class="form-group"><label>Valor do aporte (R$)</label><input type="text" id="proj-aporte" placeholder="0,00" inputmode="decimal" oninput="previaProj()" /></div>
+        </div>
+        <div class="alert alert-info" id="proj-previa" style="display:none;margin-bottom:0.75rem;"></div>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+          <button class="btn btn-primary" id="proj-btn" onclick="salvarProjecao()">Incluir na projeção</button>
+          <button class="btn btn-ghost" id="proj-cancelar" onclick="limparFormProj()" style="display:none">Cancelar edição</button>
+          <span class="msg" id="proj-msg"></span>
+        </div>
+      </div>
+
+      <div class="sect-title">Etapas projetadas</div>
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table class="resumo-table">
+          <thead>
+            <tr>
+              <th>Mês</th><th>Etapa</th>
+              <th class="right">Material</th><th class="right">Mão de obra</th><th class="right">Outros</th>
+              <th class="right">Custo</th><th class="right">Entrada (CAIXA / aporte)</th><th class="right">Resultado</th>
+              <th class="center">Ações</th>
+            </tr>
+          </thead>
+          <tbody id="proj-tbody"></tbody>
+          <tfoot>
+            <tr class="total">
+              <td colspan="2">Total projetado</td>
+              <td class="right" id="proj-t-mat">—</td><td class="right" id="proj-t-mo">—</td><td class="right" id="proj-t-out">—</td>
+              <td class="right" id="proj-t-custo">—</td><td class="right" id="proj-t-lib">—</td><td class="right" id="proj-t-saldo">—</td><td></td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="sect-title" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">Fluxo de caixa projetado
+        <select id="proj-defasagem" onchange="mudarDefasagem(this)" style="width:auto;font-size:12px;padding:4px 6px;text-transform:none;letter-spacing:0;font-weight:400;">
+          <option value="1">liberação da CAIXA no mês seguinte à etapa</option>
+          <option value="0">liberação da CAIXA no mesmo mês da etapa</option>
+        </select>
+      </div>
+      <div class="table-wrap" style="margin-bottom:1.5rem;">
+        <table class="resumo-table">
+          <thead>
+            <tr><th>Mês</th><th class="right">Custos</th><th class="right">Liberação CAIXA</th><th class="right">Aportes</th><th class="right">Saldo do mês</th><th class="right">Caixa acumulado</th></tr>
+          </thead>
+          <tbody id="proj-fluxo-tbody"></tbody>
+        </table>
+      </div>
+
+      <div class="sect-title">Mão de obra prevista × teto de cada frente</div>
+      <div class="table-wrap">
+        <table class="resumo-table">
+          <thead>
+            <tr><th>Frente</th><th class="right">Teto</th><th class="right">Já pago</th><th class="right">Previsto na projeção</th><th class="right">Sobra do teto</th></tr>
+          </thead>
+          <tbody id="proj-mo-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
     <div id="tab-contrato" class="panel obra-original">
       <div class="cards" style="margin-bottom:1rem;">
         <div class="card"><div class="card-label">Contrato</div><div class="card-value" style="font-size:14px;">1.4444.2662250-5</div><div class="card-sub">assinado 06/05/2026</div></div>
@@ -1435,15 +1535,16 @@
   </div><!-- /container -->
 </div><!-- /app -->
 
-<script src="js/config.js?v=2.11"></script>
-<script src="js/nuvem.js?v=2.11"></script>
-<script src="js/app.js?v=2.11"></script>
-<script src="js/andares.js?v=2.11"></script>
-<script src="js/mao-de-obra.js?v=2.11"></script>
-<script src="js/materiais.js?v=2.11"></script>
-<script src="js/medicoes.js?v=2.11"></script>
-<script src="js/pls.js?v=2.11"></script>
-<script src="js/init.js?v=2.11"></script>
+<script src="js/config.js?v=2.12"></script>
+<script src="js/nuvem.js?v=2.12"></script>
+<script src="js/app.js?v=2.12"></script>
+<script src="js/andares.js?v=2.12"></script>
+<script src="js/mao-de-obra.js?v=2.12"></script>
+<script src="js/materiais.js?v=2.12"></script>
+<script src="js/medicoes.js?v=2.12"></script>
+<script src="js/pls.js?v=2.12"></script>
+<script src="js/projecao.js?v=2.12"></script>
+<script src="js/init.js?v=2.12"></script>
 </body>
 </html>
 
