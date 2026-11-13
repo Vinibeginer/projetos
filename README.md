@@ -43,7 +43,7 @@ Tracker financeiro da obra — Vinícius Sampaio Ornellas
 | `js/mao-de-obra.js` | Mão de obra e desembolso consolidado |
 | `js/materiais.js` | Compras de materiais |
 | `js/medicoes.js` | Medições confirmadas pela CAIXA e PLS de cada medição |
-| `js/pls.js` | Leitura do PDF da PLS (pdf.js) e anexo no Storage |
+| `js/pls.js` | Leitura do PDF da PLS no navegador (pdf.js) — o arquivo não é guardado |
 | `js/init.js` | Aba de versões e inicialização da página |
 
 Os scripts são carregados em ordem e compartilham variáveis globais (sem build).
