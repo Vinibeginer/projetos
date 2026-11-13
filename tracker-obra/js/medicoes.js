@@ -146,9 +146,8 @@ function buildMedicoesConfirmadas() {
       <td class="right">${fmt(acum)}</td>
       <td class="center"><span class="badge b-medido">Confirmado ✓</span>${m.pls
         ? `<div style="font-size:11px;margin-top:3px">PLS ${pct2(plsAcumulado(m.pls))} · <a href="#" onclick="verPLS(${idx});return false">ver itens</a></div>`
-        : '<div style="font-size:11px;margin-top:3px;color:var(--text3)">sem PLS registrada</div>'}${m.plsArquivo
-        ? `<div style="font-size:11px;margin-top:2px"><a href="#" onclick="abrirPLS(${idx});return false">📎 PDF da PLS</a></div>`
-        : (podeEditar ? `<div style="font-size:11px;margin-top:2px"><a href="#" onclick="anexarPLSexistente(${idx});return false">📎 anexar PDF</a></div>` : '')}</td>
+        : '<div style="font-size:11px;margin-top:3px;color:var(--text3)">sem PLS registrada</div>' +
+          (podeEditar ? `<div style="font-size:11px;margin-top:2px"><a href="#" onclick="lerPLSexistente(${idx});return false">📄 ler PLS</a></div>` : '')}</td>
       <td class="center admin-only">
         ${podeEditar ? `<button class="btn btn-danger btn-sm" onclick="removerMedicao(${idx})">✕</button>` : ''}
       </td>
@@ -226,7 +225,6 @@ function confirmarMedicao() {
   const nova = { num, data:dateStr, pctCaixa, valor, ref, itens: resumo, confirmada:true, pls };
   medicoesConfirmadas.push(nova);
   aplicarPLS(pls);
-  const arqPLS = plsArquivoPendente;
 
   // registrar no histórico
   historico.push({
@@ -253,8 +251,7 @@ function confirmarMedicao() {
   buildSelect();
   buildTable();
   buildGradePLS();
-  limparPLSpendente();
-  if (arqPLS) anexarPLSnaMedicao(nova, arqPLS);
+  limparPLSpendente();          // descarta o PDF: só os percentuais ficam gravados
 }
 
 function removerMedicao(idx) {

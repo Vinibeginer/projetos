@@ -1,9 +1,11 @@
-/* ══ PLS EM PDF: anexar e ler automaticamente ═══════════════════
+/* ══ PLS EM PDF: ler automaticamente (o arquivo não é guardado) ═══
    O PDF gerado pela planilha da CAIXA tem texto: cada serviço vem numa
    linha com incidência, % do item e execução na obra. A leitura usa a
-   posição dos textos na página (pdf.js). PDF digitalizado (só imagem)
-   não tem texto: nesse caso o arquivo é anexado e a grade é preenchida
-   à mão. O arquivo fica no Storage do Supabase (bucket privado "pls"). */
+   posição dos textos na página (pdf.js) e acontece só no navegador: o
+   arquivo nunca é enviado ao servidor. Depois de lido, conferido e com
+   a medição confirmada, só os percentuais ficam gravados e o arquivo é
+   descartado. PDF digitalizado (só imagem) não tem texto: a grade é
+   preenchida à mão. */
 
 const PDFJS_URL    = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.min.mjs';
 const PDFJS_WORKER = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@4.10.38/build/pdf.worker.min.mjs';
@@ -75,7 +77,7 @@ async function lerPLS(arquivo) {
 const dataBR = s => { const m = /(\d{2})\/(\d{2})\/(\d{4})/.exec(s || ''); return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null; };
 
 /* ── no formulário de nova medição ─────────────────────────────── */
-let plsArquivoPendente = null;   // PDF escolhido, enviado ao Storage quando a medição é confirmada
+let plsArquivoPendente = null;   // PDF escolhido — só fica na memória do navegador até confirmar a medição
 let plsLida = null;
 
 async function escolherPLS(input) {
@@ -94,13 +96,13 @@ async function escolherPLS(input) {
   catch (e) {
     console.error('PLS:', e);
     box.className = 'alert alert-warn';
-    box.innerHTML = `Não foi possível ler o PDF (${esc(e.message || String(e))}). O arquivo será anexado à medição; preencha a grade abaixo.`;
+    box.innerHTML = `Não foi possível ler o PDF (${esc(e.message || String(e))}). Preencha a grade abaixo.`;
     return;
   }
   plsLida = r;
   if (!r.temTexto || r.achados < 15) {
     box.className = 'alert alert-warn';
-    box.innerHTML = `📎 <strong>${esc(arq.name)}</strong> anexado. ` + (r.temTexto
+    box.innerHTML = `📄 <strong>${esc(arq.name)}</strong>: ` + (r.temTexto
       ? `Só ${r.achados} de 20 serviços foram reconhecidos — confira e complete a grade abaixo.`
       : 'Este PDF é digitalizado (imagem), sem texto para ler: preencha a grade abaixo com a coluna "Execução do Item".');
   }
@@ -146,20 +148,9 @@ function mostrarLeituraPLS(arq, r) {
   }
   if (r.etapaRef != null) ok.push(`etapa de referência ${r.etapaRef}`);
   box.className = alerta.length ? 'alert alert-warn' : 'alert alert-ok';
-  box.innerHTML = `📎 <strong>${esc(arq.name)}</strong> — grade preenchida com a PLS.<br>✓ ${ok.join(' · ')}` +
+  box.innerHTML = `📄 <strong>${esc(arq.name)}</strong> lida — grade preenchida com a PLS. O arquivo não é guardado.<br>✓ ${ok.join(' · ')}` +
     (alerta.length ? '<br>' + alerta.map(a => '⚠️ ' + a).join('<br>') : '');
   box.style.display = '';
-}
-
-/* envia o PDF ao Storage e liga à medição */
-async function anexarPLSnaMedicao(m, arq) {
-  if (!obraAtual || !arq) return false;
-  const caminho = `${obraAtual.id}/medicao-${m.num}-${Date.now()}.pdf`;
-  const { error } = await sbClient().storage.from('pls').upload(caminho, arq, { contentType: 'application/pdf', upsert: false });
-  if (error) { alert('A medição foi registrada, mas o PDF da PLS não foi anexado: ' + error.message); return false; }
-  m.plsArquivo = caminho;
-  salvarMedicoes(); buildMedicoesConfirmadas();
-  return true;
 }
 
 function limparPLSpendente() {
@@ -168,25 +159,18 @@ function limparPLSpendente() {
   const box = document.getElementById('pls-leitura'); if (box) box.style.display = 'none';
 }
 
-/* abre o PDF anexado (link temporário) */
-async function abrirPLS(idx) {
-  const m = medicoesConfirmadas[idx]; if (!m || !m.plsArquivo) return;
-  const janela = window.open('', '_blank');
-  const { data, error } = await sbClient().storage.from('pls').createSignedUrl(m.plsArquivo, 600);
-  if (error || !data) { if (janela) janela.close(); alert('Não foi possível abrir o PDF: ' + (error ? error.message : '')); return; }
-  if (janela) janela.location = data.signedUrl; else location.href = data.signedUrl;
-}
-
-/* anexar o PDF a uma medição já confirmada (e ler a PLS, se ela ainda não tiver) */
-function anexarPLSexistente(idx) {
+/* medição já confirmada sem PLS registrada: lê o PDF só para gravar os % dos itens */
+function lerPLSexistente(idx) {
   const inp = document.createElement('input');
   inp.type = 'file'; inp.accept = 'application/pdf,.pdf';
   inp.onchange = async () => {
     const arq = inp.files[0], m = medicoesConfirmadas[idx]; if (!arq || !m) return;
-    if (!m.pls) {
-      try { const r = await lerPLS(arq); if (r.temTexto && r.achados >= 15) m.pls = r.itens; } catch (e) { console.error('PLS:', e); }
-    }
-    await anexarPLSnaMedicao(m, arq);
+    let r;
+    try { r = await lerPLS(arq); } catch (e) { alert('Não foi possível ler o PDF: ' + (e.message || e)); return; }
+    if (!r.temTexto || r.achados < 15) { alert('Não deu para ler os itens deste PDF (digitalizado ou fora do padrão da PLS).'); return; }
+    if (!confirm(`Registrar na ${m.num}ª medição a PLS lida (acumulado ${pct2(r.acumAtual ?? plsAcumulado(r.itens))})?\n\nSó os percentuais são gravados; o arquivo não é guardado.`)) return;
+    m.pls = r.itens;
+    salvarMedicoes(); buildMedicoesConfirmadas();
   };
   inp.click();
 }
