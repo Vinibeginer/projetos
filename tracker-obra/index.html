@@ -9,7 +9,7 @@
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
 <title>Obra — Vinícius Ornellas</title>
-<link rel="stylesheet" href="css/app.css?v=2.08">
+<link rel="stylesheet" href="css/app.css?v=2.09">
 </head>
 <body>
 
@@ -918,7 +918,7 @@
       <div class="sect-title admin-only">Confirmar nova medição CAIXA</div>
       <div class="form-card admin-only" style="margin-bottom:1.5rem;">
         <div class="alert alert-info" style="margin-bottom:0.75rem;">
-          Quando a CAIXA liberar o valor, registre aqui. O tracker move automaticamente de "estimado" para "confirmado".
+          Quando a CAIXA liberar o valor, registre aqui junto com o <strong>% de cada item na PLS</strong> desta medição (coluna "Execução do Item"). O % medido de cada serviço passa a ser exatamente o da PLS. A grade já vem preenchida com as estimativas atuais; ajuste para bater com o documento.
         </div>
         <div class="form-grid" style="grid-template-columns:1fr 1fr 1fr;">
           <div class="form-group">
@@ -938,6 +938,28 @@
           <label>Itens cobertos (resumo)</label>
           <input type="text" id="med-inp-itens" placeholder="Ex: impermeabilização 60% + esgoto 100% + magro 100%" />
         </div>
+        <div class="sect-title" style="margin-top:0.25rem;">% de cada item na PLS desta medição</div>
+        <div class="table-wrap" style="margin-bottom:0.75rem;">
+          <table class="resumo-table">
+            <thead>
+              <tr>
+                <th>#</th><th>Serviço (PLS)</th>
+                <th class="right">Incidência</th>
+                <th class="right">PLS anterior</th>
+                <th class="center">% nesta PLS</th>
+                <th class="right">Execução na obra</th>
+                <th class="right">Avanço nesta etapa</th>
+              </tr>
+            </thead>
+            <tbody id="pls-tbody"></tbody>
+            <tfoot>
+              <tr class="total"><td colspan="5">Mensurado acumulado atual (PLS)</td><td class="right" id="pls-acum">—</td><td></td></tr>
+              <tr class="total"><td colspan="5">Mensurado acumulado anterior (pago pela CAIXA)</td><td class="right" id="pls-ant">—</td><td></td></tr>
+              <tr class="total a-medir"><td colspan="5">% executado nesta etapa → valor esperado</td><td class="right" id="pls-etapa">—</td><td class="right" id="pls-esperado">—</td></tr>
+            </tfoot>
+          </table>
+        </div>
+        <div class="alert" id="pls-conferencia" style="display:none;margin-bottom:0.75rem;"></div>
         <div style="display:flex;gap:8px;align-items:center;">
           <button class="btn btn-success" onclick="confirmarMedicao()">
             <i class="ti ti-check" aria-hidden="true"></i> Confirmar medição
@@ -1407,14 +1429,14 @@
   </div><!-- /container -->
 </div><!-- /app -->
 
-<script src="js/config.js?v=2.08"></script>
-<script src="js/nuvem.js?v=2.08"></script>
-<script src="js/app.js?v=2.08"></script>
-<script src="js/andares.js?v=2.08"></script>
-<script src="js/mao-de-obra.js?v=2.08"></script>
-<script src="js/materiais.js?v=2.08"></script>
-<script src="js/medicoes.js?v=2.08"></script>
-<script src="js/init.js?v=2.08"></script>
+<script src="js/config.js?v=2.09"></script>
+<script src="js/nuvem.js?v=2.09"></script>
+<script src="js/app.js?v=2.09"></script>
+<script src="js/andares.js?v=2.09"></script>
+<script src="js/mao-de-obra.js?v=2.09"></script>
+<script src="js/materiais.js?v=2.09"></script>
+<script src="js/medicoes.js?v=2.09"></script>
+<script src="js/init.js?v=2.09"></script>
 </body>
 </html>
 

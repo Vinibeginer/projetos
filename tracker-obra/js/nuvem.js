@@ -230,7 +230,8 @@ async function baixarDados() {
   moPagamentos = (mo.data || []).map(r => ({ id: r.id, data: brData(r.data), dest: r.destinatario,
     ref: r.referencia, valor: +r.valor, tipo: r.tipo, itemId: r.item_id, frente: r.frente || 'p1' }));
   medicoesConfirmadas = (md.data || []).map(r => ({ num: r.numero, data: brData(r.data),
-    pctCaixa: +r.pct_caixa, valor: +r.valor, ref: r.referencia, itens: r.itens_desc, confirmada: !!r.confirmada }));
+    pctCaixa: +r.pct_caixa, valor: +r.valor, ref: r.referencia, itens: r.itens_desc, confirmada: !!r.confirmada,
+    pls: r.pls && typeof r.pls === 'object' ? r.pls : null }));
   historico = (hs.data || []).map(r => ({ data: r.data_txt || brData(r.data), desc: r.descricao,
     deltaPct: +r.delta_pct, deltaVal: +r.delta_valor, prev: !!r.previsao, obs: r.obs || '' }));
 
@@ -290,7 +291,8 @@ function montarPayload(oid) {
     mo_pagamentos: moPagamentos.map(p => ({ ...o, data: isoData(p.data), destinatario: p.dest,
       referencia: p.ref, valor: p.valor || 0, tipo: p.tipo || 'mo', item_id: p.itemId || null, frente: p.frente || 'p1' })),
     medicoes: medicoesConfirmadas.map(m => ({ ...o, numero: m.num, data: isoData(m.data),
-      pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada })),
+      pct_caixa: m.pctCaixa || 0, valor: m.valor || 0, referencia: m.ref, itens_desc: m.itens, confirmada: !!m.confirmada,
+      pls: m.pls || null })),
     historico: historico.map(h => ({ ...o, data: isoData(h.data), data_txt: h.data,
       descricao: h.desc, delta_pct: h.deltaPct || 0, delta_valor: h.deltaVal || 0, previsao: !!h.prev, obs: h.obs || '' }))
   };
