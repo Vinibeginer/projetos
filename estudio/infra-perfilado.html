@@ -121,6 +121,9 @@ ul.list li { margin: 3px 0; }
 }
 /* ---- específico desta página ---- */
 .kpi small { display: block; font: 500 11px/1.3 var(--font-mono); color: var(--muted); margin-top: 3px; }
+.btns-side { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.btns-side button { border: 1px solid var(--line); background: var(--panel-2); color: var(--text); font: 500 12.5px/1 var(--font-ui); padding: 8px 10px; border-radius: 7px; cursor: pointer; }
+.btns-side button:hover { background: var(--hover); }
 .tag { display: inline-block; font: 600 10px/1 var(--font-mono); padding: 3px 6px; border-radius: 5px; background: var(--accent); color: var(--accent-ink); vertical-align: 1px; white-space: nowrap; }
 .dimlist { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 12.5px; }
 .dimlist dt { color: var(--muted); }
@@ -234,7 +237,7 @@ const TABS = [
   { id: 'M', k: 'M', nome: 'Materiais' },
   { id: 'D', k: 'D', nome: 'Detalhes' },
 ];
-const S = { tab: 'T', view: 'split', pv: null, casa: 'vidro', mat: 'resumo' };
+const S = { tab: 'T', view: 'split', pv: null, casa: 'vidro', mat: 'T' };
 const fl = () => (/^[T12]$/.test(S.tab) ? S.tab : 'T');
 const fmt = (mm, d = 2) => (mm / 1000).toFixed(d).replace('.', ',');
 const num = (v, d = 0) => Number(v).toFixed(d).replace('.', ',');
@@ -613,8 +616,12 @@ function side() {
   h += `<h3>Fora do perfilado</h3><ul class="list">${Object.entries(grp).map(([m, L]) => `<li><b>${esc(MOTIVO[m])}</b> — ${L.join(', ')}</li>`).join('')}</ul>`;
   const longas = R.deriv.filter((d) => d.Lh > 2500).sort((a, b) => b.Lh - a.Lh);
   if (longas.length) h += `<h3>Derivações mais longas</h3><ul class="list">${longas.map((d) => `<li>${d.pts.join('+')} — ${fmt(d.Lh, 2)} m no forro${d.furos.length ? ', atravessa ' + d.furos.length + ' parede' : ''}</li>`).join('')}</ul>`;
+  h += `<h3>Materiais deste andar</h3><table class="t">${RES.porAndar[k].items.filter((i) => !conf(i)).map((i) => `<tr><td>${esc(i.desc.replace(/ — barra de \d m/, '').replace(/, não propagante de chama( \(laranja\))?/, ''))}</td><td class="n"><b>${num(i.compra)}</b> ${esc(i.un)}</td></tr>`).join('')}</table>`;
+  h += `<div class="btns-side"><button type="button" id="csv-andar">Baixar planilha do ${k === 'T' ? 'térreo' : NOME[k].replace(' pavimento', ' pavimento')}</button><button type="button" id="ver-lista">Ver lista completa</button></div>`;
   h += `<div class="note">Os cabos dos circuitos de <b>iluminação</b> que passam pelo perfilado sobem de 1,5 para <b>2,5 mm²</b>: no feixe (até ${Math.max(...Object.values(R.SEC).map((x) => x.nMax))} circuitos, fator ${num(Math.min(...Object.values(R.SEC).map((x) => x.fca)), 2)}) o de 1,5 mm² aguentaria só ${num(17.5 * Math.min(...Object.values(R.SEC).map((x) => x.fca)), 1)} A, menos que o disjuntor de 10 A. Detalhe na aba Materiais.</div>`;
   el.innerHTML = h;
+  $('csv-andar').addEventListener('click', () => baixarCSV(k));
+  $('ver-lista').addEventListener('click', () => { S.mat = k; setTab('M'); });
 }
 function sideDoc(el) {
   const M2 = RES.M;
@@ -628,7 +635,7 @@ function sideDoc(el) {
 
 // ---------------------------------------------------------------- aba Materiais
 // listas por andar (compra e orçamento em etapas) e o resumo lado a lado; "Casa toda" é a compra única
-const MATV = [['resumo', 'Resumo por andar'], ['T', 'Térreo'], ['1', '1º pav.'], ['2', '2º pav.'], ['casa', 'Casa toda']];
+const MATV = [['T', 'Térreo'], ['1', '1º pav.'], ['2', '2º pav.'], ['resumo', 'Comparar andares'], ['casa', 'Casa toda (compra única)']];
 const NOMEV = { resumo: 'resumo por andar', T: 'térreo', 1: '1º pavimento', 2: '2º pavimento', casa: 'casa toda' };
 const listaDe = (v) => (v === 'casa' ? RES.items : RES.porAndar[v].items);
 const conf = (i) => i.un === '—';
@@ -678,9 +685,9 @@ function verifCabos(v) {
   return h + `</table>`;
 }
 function docMateriais() {
-  const v = S.mat || 'resumo';
+  const v = S.mat || 'T';
   let h = `<h2>Lista de materiais — infra elétrica em perfilado 38×38</h2>`;
-  h += `<p class="sub">Separada por andar para comprar e orçar em etapas. "Calculado" é o que o projeto usa; "Comprar" já tem a margem de perda de cada compra (≈10 % na parafusaria e nos chumbadores, rolos de 25 m de eletroduto, barras inteiras). Comprando tudo de uma vez, vale a coluna "Casa toda": as sobras de barra de um andar servem no outro.</p>`;
+  h += `<p class="sub">Uma lista para cada andar, para comprar e orçar em etapas. "Calculado" é o que o projeto usa; "Comprar" já tem a margem de perda de cada compra (≈10 % na parafusaria e nos chumbadores, rolos de 25 m de eletroduto, barras inteiras). Comprando tudo de uma vez, vale a coluna "Casa toda": as sobras de barra de um andar servem no outro.</p>`;
   h += `<div class="btns mv">${MATV.map(([id, t]) => `<button type="button" data-mv="${id}" aria-pressed="${id === v}">${t}</button>`).join('')}</div>`;
   h += `<div class="btns"><button type="button" id="csv">Baixar planilha — ${NOMEV[v]} (CSV, abre no Excel)</button><button type="button" onclick="window.print()">Imprimir</button></div>`;
   if (v === 'resumo') {
