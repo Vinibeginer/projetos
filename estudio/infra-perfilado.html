@@ -149,6 +149,8 @@ table.t tr.warn td { color: var(--warn); }
 .doc .btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
 .doc .btns button { border: 1px solid #cfc6b6; background: #fffdf8; color: #1f1d1a; font: 500 13px/1 var(--font-ui); padding: 9px 12px; border-radius: 8px; cursor: pointer; }
 .doc .btns button:hover { background: #f1ebe0; }
+.doc .btns.mv button[aria-pressed='true'] { background: #1f6f8b; color: #fff; border-color: #1f6f8b; }
+.doc .menos { color: #b02020; font-size: 11px; }
 .doc .figs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 18px; max-width: 1180px; }
 .doc figure { margin: 0; background: #fffdf8; border: 1px solid #ddd5c7; border-radius: 10px; padding: 12px; }
 .doc figure svg { width: 100%; height: auto; display: block; }
@@ -232,7 +234,7 @@ const TABS = [
   { id: 'M', k: 'M', nome: 'Materiais' },
   { id: 'D', k: 'D', nome: 'Detalhes' },
 ];
-const S = { tab: 'T', view: 'split', pv: null, casa: 'vidro' };
+const S = { tab: 'T', view: 'split', pv: null, casa: 'vidro', mat: 'resumo' };
 const fl = () => (/^[T12]$/.test(S.tab) ? S.tab : 'T');
 const fmt = (mm, d = 2) => (mm / 1000).toFixed(d).replace('.', ',');
 const num = (v, d = 0) => Number(v).toFixed(d).replace('.', ',');
@@ -625,48 +627,85 @@ function sideDoc(el) {
 }
 
 // ---------------------------------------------------------------- aba Materiais
-function linhasCSV() {
-  const L = [['Grupo', 'Item', 'Unidade', 'Quantidade calculada', 'Comprar', 'Observação']];
-  RES.items.forEach((i) => L.push([i.grupo, i.desc, i.un, i.q, i.compra, i.obs]));
-  L.push([]); L.push(['Ferramentas (não somam)']); RES.FERRAMENTAS.forEach(([a, b]) => L.push(['Ferramentas', a, '', '', '', b]));
+// listas por andar (compra e orçamento em etapas) e o resumo lado a lado; "Casa toda" é a compra única
+const MATV = [['resumo', 'Resumo por andar'], ['T', 'Térreo'], ['1', '1º pav.'], ['2', '2º pav.'], ['casa', 'Casa toda']];
+const NOMEV = { resumo: 'resumo por andar', T: 'térreo', 1: '1º pavimento', 2: '2º pavimento', casa: 'casa toda' };
+const listaDe = (v) => (v === 'casa' ? RES.items : RES.porAndar[v].items);
+const conf = (i) => i.un === '—';
+function linhasCSV(v) {
+  if (v === 'resumo') {
+    const L = [['Grupo', 'Item', 'Unidade', 'Térreo (comprar)', '1º pav. (comprar)', '2º pav. (comprar)', 'Soma dos andares', 'Casa toda (compra única)']];
+    RES.items.filter((i) => !conf(i)).forEach((i) => L.push([i.grupo, i.desc, i.un].concat(['T', '1', '2'].map((k) => { const x = RES.porAndar[k].items.find((y) => y.desc === i.desc); return x ? x.compra : 0; })).concat([['T', '1', '2'].reduce((s2, k) => s2 + ((RES.porAndar[k].items.find((y) => y.desc === i.desc) || {}).compra || 0), 0), i.compra])));
+    return L;
+  }
+  const L = [['Grupo', 'Item', 'Unidade', 'Quantidade calculada', 'Comprar', 'Preço unitário (R$)', 'Total (R$)', 'Observação']];
+  listaDe(v).forEach((i) => L.push([i.grupo, i.desc, i.un, conf(i) ? '' : i.q, conf(i) ? '' : i.compra, '', '', i.obs]));
+  L.push([]); RES.FERRAMENTAS.forEach(([a, b2]) => L.push(['Ferramentas (não somam)', a, '', '', '', '', '', b2]));
   return L;
 }
-function baixarCSV() {
-  const txt = '﻿' + linhasCSV().map((r) => r.map((c) => { const s2 = String(c == null ? '' : c); return /[;"\n]/.test(s2) ? '"' + s2.replace(/"/g, '""') + '"' : s2; }).join(';')).join('\r\n');
+function baixarCSV(v) {
+  const txt = '﻿' + linhasCSV(v).map((r) => r.map((c) => { const s2 = String(c == null ? '' : c); return /[;"\n]/.test(s2) ? '"' + s2.replace(/"/g, '""') + '"' : s2; }).join(';')).join('\r\n');
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([txt], { type: 'text/csv;charset=utf-8' }));
-  a.download = 'obra-mariara-perfilado-materiais.csv'; a.click();
+  a.download = 'obra-mariara-perfilado-' + { resumo: 'resumo-por-andar', T: 'terreo', 1: '1o-pavimento', 2: '2o-pavimento', casa: 'casa-toda' }[v] + '.csv'; a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
-function docMateriais() {
-  const M2 = RES.M;
-  let h = `<h2>Lista de materiais — infra elétrica em perfilado 38×38</h2>`;
-  h += `<p class="sub">Calculada do traçado das plantas (aba de cada andar). "Quantidade calculada" é o que o projeto usa; "Comprar" já tem a margem de perda (≈10 % na parafusaria e nos chumbadores, rolos inteiros de eletroduto). Unidades em barras de 6 m (perfilado), 3 m (tampa) e 1 m (barra roscada).</p>`;
-  h += `<div class="btns"><button type="button" id="csv">Baixar planilha (CSV, abre no Excel)</button><button type="button" onclick="window.print()">Imprimir</button></div>`;
-  h += `<table class="mat"><tr><th>#</th><th>Item</th><th>Un</th><th>Calculado</th><th>Comprar</th><th>Onde / observação</th></tr>`;
+function tabelaLista(items) {
+  let h = `<table class="mat"><tr><th>#</th><th>Item</th><th>Un</th><th>Calculado</th><th>Comprar</th><th>Onde / observação</th></tr>`;
   let g = '', n = 0;
-  RES.items.forEach((i) => {
+  items.forEach((i) => {
     if (i.grupo !== g) { g = i.grupo; h += `<tr class="g"><td colspan="6">${esc(g)}</td></tr>`; }
-    const conf = i.un === '—';
-    h += `<tr><td class="n">${conf ? '' : ++n}</td><td>${esc(i.desc)}</td><td>${esc(i.un)}</td><td class="n">${conf ? '' : num(i.q)}</td><td class="n"><b>${conf ? '' : num(i.compra)}</b></td><td class="o">${esc(i.obs)}</td></tr>`;
+    h += `<tr><td class="n">${conf(i) ? '' : ++n}</td><td>${esc(i.desc)}</td><td>${esc(i.un)}</td><td class="n">${conf(i) ? '' : num(i.q)}</td><td class="n"><b>${conf(i) ? '' : num(i.compra)}</b></td><td class="o">${esc(i.obs)}</td></tr>`;
   });
-  h += `</table>`;
-  h += `<h3>Ferramentas (não entram na lista)</h3><table class="mat"><tr><th>Ferramenta</th><th>Para quê</th></tr>${RES.FERRAMENTAS.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="o">${esc(b)}</td></tr>`).join('')}</table>`;
-  // verificação dos cabos
-  h += `<h3>Cabos no perfilado (verificação NBR 5410)</h3><p>No perfilado todos os circuitos do trecho formam um feixe: a capacidade do cabo cai pelo fator de agrupamento (Tabela 42). Com até 15 circuitos (fator 0,45) o cabo de 2,5 mm² aguenta 24 × 0,45 = 10,8 A, acima do disjuntor de 10 A; o de 1,5 mm² aguentaria só 7,9 A. Por isso os circuitos de iluminação que passam pelo perfilado ficam com <b>2,5 mm²</b> (fase, neutro, retornos e terra). Circuitos com disjuntor acima de 10 A (chuveiros, ar-condicionado de 16 A, tomadas da cozinha e micro-ondas) não entram no perfilado: seguem em eletroduto próprio, como no projeto.</p>`;
+  return h + `</table>`;
+}
+function tabelaResumo() {
+  let h = `<table class="mat"><tr><th>Item</th><th>Un</th><th>Térreo</th><th>1º pav.</th><th>2º pav.</th><th>Soma dos andares</th><th>Casa toda (compra única)</th></tr>`;
+  let g = '';
+  RES.items.filter((i) => !conf(i)).forEach((i) => {
+    if (i.grupo !== g) { g = i.grupo; h += `<tr class="g"><td colspan="7">${esc(g)}</td></tr>`; }
+    const v = ['T', '1', '2'].map((k) => (RES.porAndar[k].items.find((y) => y.desc === i.desc) || {}).compra || 0);
+    const soma = v.reduce((a2, b2) => a2 + b2, 0);
+    h += `<tr><td>${esc(i.desc)}</td><td>${esc(i.un)}</td>${v.map((x) => `<td class="n">${x ? num(x) : '—'}</td>`).join('')}<td class="n"><b>${num(soma)}</b></td><td class="n">${num(i.compra)}${soma > i.compra ? ` <span class="menos">−${num(soma - i.compra)}</span>` : ''}</td></tr>`;
+  });
+  return h + `</table>`;
+}
+function verifCabos(v) {
+  const fls = /^[T12]$/.test(v) ? [v] : ['T', '1', '2'];
+  let h = `<h3>Cabos no perfilado (verificação NBR 5410)</h3><p>No perfilado todos os circuitos do trecho formam um feixe: a capacidade do cabo cai pelo fator de agrupamento (Tabela 42). Com até 15 circuitos (fator 0,45) o cabo de 2,5 mm² aguenta 24 × 0,45 = 10,8 A, acima do disjuntor de 10 A; o de 1,5 mm² aguentaria só 7,9 A. Por isso os circuitos de iluminação que passam pelo perfilado ficam com <b>2,5 mm²</b> (fase, neutro, retornos e terra). Circuitos com disjuntor acima de 10 A (chuveiros, ar-condicionado de 16 A, tomadas da cozinha e micro-ondas) não entram no perfilado: seguem em eletroduto próprio, como no projeto.</p>`;
   h += `<table class="mat"><tr><th>Circuito</th><th>Descrição</th><th>Disj.</th><th>Circuitos no pior trecho</th><th>Fator</th><th>Projeto</th><th>No perfilado</th><th>Iz no feixe</th></tr>`;
-  ['T', '1', '2'].forEach((k) => Object.values(RES.R[k].SEC).sort((a, b) => a.n - b.n).forEach((x) => (h += `<tr${x.muda ? ' style="background:#fbf1dd"' : ''}><td class="n">C${x.n}</td><td>${esc(x.desc)}</td><td class="n">${x.disj} A</td><td class="n">${x.nMax}</td><td class="n">${num(x.fca, 2)}</td><td class="n">${num(x.projeto, 1)} mm²</td><td class="n"><b>${num(x.secao, 1)} mm²</b></td><td class="n">${num(x.iz, 1)} A</td></tr>`)));
-  h += `</table>`;
+  fls.forEach((k) => Object.values(RES.R[k].SEC).sort((a, b2) => a.n - b2.n).forEach((x) => (h += `<tr${x.muda ? ' style="background:#fbf1dd"' : ''}><td class="n">C${x.n}</td><td>${esc(x.desc)}</td><td class="n">${x.disj} A</td><td class="n">${x.nMax}</td><td class="n">${num(x.fca, 2)}</td><td class="n">${num(x.projeto, 1)} mm²</td><td class="n"><b>${num(x.secao, 1)} mm²</b></td><td class="n">${num(x.iz, 1)} A</td></tr>`)));
+  return h + `</table>`;
+}
+function docMateriais() {
+  const v = S.mat || 'resumo';
+  let h = `<h2>Lista de materiais — infra elétrica em perfilado 38×38</h2>`;
+  h += `<p class="sub">Separada por andar para comprar e orçar em etapas. "Calculado" é o que o projeto usa; "Comprar" já tem a margem de perda de cada compra (≈10 % na parafusaria e nos chumbadores, rolos de 25 m de eletroduto, barras inteiras). Comprando tudo de uma vez, vale a coluna "Casa toda": as sobras de barra de um andar servem no outro.</p>`;
+  h += `<div class="btns mv">${MATV.map(([id, t]) => `<button type="button" data-mv="${id}" aria-pressed="${id === v}">${t}</button>`).join('')}</div>`;
+  h += `<div class="btns"><button type="button" id="csv">Baixar planilha — ${NOMEV[v]} (CSV, abre no Excel)</button><button type="button" onclick="window.print()">Imprimir</button></div>`;
+  if (v === 'resumo') {
+    h += `<h3>Resumo: quanto comprar em cada andar</h3>` + tabelaResumo();
+    h += `<p class="sub" style="font-size:12px">"Soma dos andares" é o total comprando um andar de cada vez; a última coluna é a compra única (o número em vermelho é o que economiza). Pontos de conferência (passagens das vigas) estão na lista do térreo.</p>`;
+  } else {
+    if (v !== 'casa') {
+      const R = RES.R[v], Mk = RES.porAndar[v].M;
+      h += `<h3>${NOMEV[v][0].toUpperCase() + NOMEV[v].slice(1)}</h3><p>${fmt(Mk.Ltot, 1)} m de perfilado (${Mk.barras.length} barras de 6 m) · ${R.deriv.length} derivações (${num(Mk.Lder, 0)} m de eletroduto ¾") · ${Mk.nSusp} suportes · ${Mk.nTir} tirantes · quadro ${R.board.id}${Mk.nPas ? ` · ${Mk.nPas} passagens em viga` : ''}</p>`;
+    } else h += `<h3>Casa toda (compra única)</h3>`;
+    h += tabelaLista(listaDe(v));
+  }
+  h += `<h3>Ferramentas (não entram na lista)</h3><table class="mat"><tr><th>Ferramenta</th><th>Para quê</th></tr>${RES.FERRAMENTAS.map(([a, b2]) => `<tr><td>${esc(a)}</td><td class="o">${esc(b2)}</td></tr>`).join('')}</table>`;
+  h += verifCabos(v);
   h += `<h3>Regras usadas no cálculo</h3><ul>`;
   h += `<li>Perfilado <b>liso</b> (sem furos) e <b>com tampa</b> em todo o comprimento: com cabo flexível 750 V comum (condutor isolado, sem capa) a NBR 5410 só admite perfilado de paredes e tampa maciças. Perfilado perfurado só com cabos com capa (PP ou 0,6/1 kV).</li>`;
   h += `<li>Tirante a cada 1,50 m no máximo e a até 30 cm de cada junção, curva, ponta e passagem de viga; chumbador só na nervura de concreto (vigota) da laje treliçada.</li>`;
-  h += `<li>Barras de 6 m cortadas por trecho (as junções T, L e X dividem a rede em peças); emenda "I" só onde a peça passa de 6 m.</li>`;
+  h += `<li>Barras de 6 m cortadas por trecho (as junções T, L e X dividem a rede em peças); emenda "I" só onde a peça passa de 6 m, mais uma de reserva por andar.</li>`;
   h += `<li>Uma derivação por caixa: saída ¾" no perfilado, eletroduto corrugado reforçado ¾" pelo forro (+10 % no comprimento) e descendo embutido na parede até a caixa; apoio em tirante a cada 1,0 m nas mais longas.</li>`;
   h += `<li>Quadro ligado ao perfilado por eletrodutos DN 32 embutidos (até 6 circuitos cada) + 1 de reserva.</li>`;
-  h += `<li>Perfilado ligado ao terra (PE) de cada quadro, com arruela dentada nas junções e jumper nas passagens das vigas.</li></ul>`;
+  h += `<li>Perfilado ligado ao terra (PE) do quadro do andar, com arruela dentada nas junções e jumper nas passagens das vigas.</li></ul>`;
   h += `<div class="aviso">Conferir na obra antes de comprar: (1) a folga entre o topo do forro e o fundo das vigas do 1º e do 2º (precisa de pelo menos 6 cm para o perfilado passar por baixo); (2) a posição, a altura e o diâmetro das passagens nas vigas do térreo; (3) o sentido das vigotas da laje, para posicionar os tirantes.</div>`;
   $('doc').innerHTML = h;
-  $('csv').addEventListener('click', baixarCSV);
+  $('csv').addEventListener('click', () => baixarCSV(v));
+  $('doc').querySelector('.mv').addEventListener('click', (e) => { const b2 = e.target.closest('button[data-mv]'); if (!b2) return; S.mat = b2.dataset.mv; docMateriais(); });
 }
 
 // ---------------------------------------------------------------- aba Detalhes (desenhos esquemáticos, sem escala)
@@ -754,7 +793,7 @@ $('viewseg').addEventListener('click', (e) => { const b = e.target.closest('butt
 new ResizeObserver(() => { if (!/^[T12]$/.test(S.tab)) return; S.pv = null; fitView(); drawPlan(); sync3D(); }).observe($('stage'));
 const h0 = (location.hash || '').slice(1);
 setTab(TABS.some((t) => t.id === h0) ? h0 : 'T');
-window.__perf = { S, setTab, setView, setCam, setCasa, RES, r3: () => R3 };
+window.__perf = { S, setTab, setView, setCam, setCasa, RES, docMateriais, r3: () => R3 };
 </script>
 </body>
 </html>

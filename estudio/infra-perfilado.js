@@ -277,7 +277,7 @@
   const NOME = { T: 'térreo', 1: '1º', 2: '2º' };
   function materiais(andares) {
     const items = [];
-    const it = (grupo, desc, un, q, obs, compra) => items.push({ grupo, desc, un, q, compra: compra == null ? q : compra, obs: obs || '' });
+    const it = (grupo, desc, un, q, obs, compra) => (q > 0 || un === '—') && items.push({ grupo, desc, un, q, compra: compra == null ? q : compra, obs: obs || '' });
     const soma = (f) => andares.reduce((s, R) => s + f(R), 0);
     const porAndar = (f) => andares.map((R) => NOME[R.fl] + ': ' + f(R)).join(' · ');
     // --- perfilado e tampa (no térreo, sem o vão de cada viga)
@@ -289,12 +289,13 @@
     const conTipo = (tp) => soma((R) => R.conex.filter((c) => c.tipo === tp).length);
     const nPas = soma((R) => R.T.reduce((s, t) => s + t.nPas, 0));
     const nT = conTipo('T'), nL = conTipo('L'), nX = conTipo('X'), nPonta = conTipo('ponta') + conTipo('inicio') + 2 * nPas;
-    it('Perfilado e acessórios', 'Perfilado (eletrocalha perfil) 38×38 mm liso, chapa 18, pré-zincado — barra de 6 m', 'barra', barras.length, `${fmt(Ltot)} m em ${pecas.length} peças (${porAndar((R) => fmt(R.T.reduce((s, t) => s + t.Lperf, 0)) + ' m')}); corte: ${barras.map((b) => b.map((v) => fmt(v, 2)).join(' + ')).join(' | ')}`);
+    it('Perfilado e acessórios', 'Perfilado (eletrocalha perfil) 38×38 mm liso, chapa 18, pré-zincado — barra de 6 m', 'barra', barras.length, `${fmt(Ltot)} m em ${pecas.length} peças${andares.length > 1 ? ' (' + porAndar((R) => fmt(R.T.reduce((s, t) => s + t.Lperf, 0)) + ' m') + ')' : ''}; corte: ${barras.map((b) => b.map((v) => fmt(v, 2)).join(' + ')).join(' | ')}`);
     it('Perfilado e acessórios', 'Tampa de encaixe para perfilado 38 mm, pré-zincada — barra de 3 m', 'barra', tampas.length, 'em todo o comprimento: cabo flexível 750 V (sem capa) só em perfilado liso e fechado');
     it('Perfilado e acessórios', 'Junção "T" para perfilado 38×38', 'un', nT, 'derivação do tronco para os ramais');
     it('Perfilado e acessórios', 'Junção "L" (curva horizontal 90°) para perfilado 38×38', 'un', nL, 'mudança de direção');
     if (nX) it('Perfilado e acessórios', 'Junção "X" (cruzeta) para perfilado 38×38', 'un', nX, 'cruzamento da sala do térreo (4 ramais)');
-    it('Perfilado e acessórios', 'Emenda interna "I" (tala) para perfilado 38×38', 'un', emendas + 2, emendas ? `${emendas} nas peças acima de 6 m + 2 de reserva` : 'nenhuma peça passa de 6 m (barras inteiras entre conexões); 2 de reserva para corte errado');
+    const resE = andares.length; // uma emenda de reserva por andar (corte errado)
+    it('Perfilado e acessórios', 'Emenda interna "I" (tala) para perfilado 38×38', 'un', emendas + resE, emendas ? `${emendas} nas peças acima de 6 m + ${resE} de reserva` : `nenhuma peça passa de 6 m (barras inteiras entre conexões); ${resE} de reserva para corte errado`);
     it('Perfilado e acessórios', 'Tampa terminal (fechamento de ponta) para perfilado 38×38', 'un', nPonta, `pontas, início de cada rede (em cima do quadro) e ${2 * nPas} nas ${nPas} passagens das vigas do térreo (furadas para o eletroduto)`);
     // --- suspensão
     const nSusp = soma((R) => R.T.reduce((s, t) => s + t.nSusp, 0));
@@ -311,19 +312,19 @@
     it('Suspensão e fixação', 'Abraçadeira tipo "D" ¾" com cunha/parafuso para tirante', 'un', fixD, 'apoio das derivações mais longas, a cada 1,0 m (o eletroduto nunca fica apoiado no forro)', ceil10(fixD * 1.1));
     // --- parafusaria
     const nSub = soma((R) => R.subidas + R.reserva);
-    const paraf = nT * 6 + nL * 4 + nX * 8 + (emendas + 2) * 4 + nPonta * 2 + derivs.length + nSub;
+    const paraf = nT * 6 + nL * 4 + nX * 8 + (emendas + resE) * 4 + nPonta * 2 + derivs.length + nSub;
     const porcasTir = nTir * 2;
     it('Parafusaria', 'Parafuso cabeça lentilha (francês) ¼" × ½" zincado', 'un', paraf, 'junções T (6), X (8), L (4), emendas (4), tampas terminais (2) e saídas (1) — cabeça lisa para dentro do perfilado, sem ferir os cabos', ceil10(paraf * 1.1));
     it('Parafusaria', 'Porca sextavada ¼" zincada', 'un', paraf + porcasTir, `${paraf} dos parafusos + ${porcasTir} dos tirantes (uma acima e uma abaixo do suporte, da abraçadeira ou da caixa)`, ceil10((paraf + porcasTir) * 1.1));
     it('Parafusaria', 'Arruela lisa ¼" zincada', 'un', paraf + porcasTir, 'uma em cada porca', ceil10((paraf + porcasTir) * 1.1));
-    const dent = nT * 3 + nL * 2 + nX * 4 + (emendas + 2) * 2 + andares.length;
+    const dent = nT * 3 + nL * 2 + nX * 4 + (emendas + resE) * 2 + andares.length;
     it('Parafusaria', 'Arruela dentada (de contato) ¼"', 'un', dent, 'continuidade elétrica: em um parafuso de cada lado de cada junção e emenda, e no terminal de terra', ceil10(dent * 1.2));
     // --- passagens das vigas do térreo
     const tPas = andares.flatMap((R) => R.T.filter((t) => t.nPas));
     if (tPas.length) {
       const nDN = tPas.reduce((s, t) => s + t.nPas * t.dnPas, 0);
       it('Passagens nas vigas (térreo)', 'Eletroduto corrugado reforçado DN 32 (1") — dentro da passagem da viga', 'm', Math.ceil(nDN * 0.5), `${nPas} passagens; em cada uma, ${tPas.map((t) => t.id + ': ' + t.dnPas + '×').join(' · ')} DN 32 (até 6 circuitos cada) de 0,50 m, de uma ponta do perfilado à outra`, Math.ceil(nDN * 0.5) + 1);
-      it('Passagens nas vigas (térreo)', 'Bucha e arruela de alumínio 1"', 'cj', 2 * nDN, 'prende o eletroduto nas tampas terminais furadas dos dois lados', 2 * nDN + 2);
+      it('Passagens nas vigas (térreo)', 'Bucha e arruela de alumínio 1" — passagens', 'cj', 2 * nDN, 'prende o eletroduto nas tampas terminais furadas dos dois lados', 2 * nDN + 2);
       const dMin = Math.max(...tPas.map((t) => Math.ceil(Math.sqrt((4 * t.area) / (0.4 * Math.PI)))));
       it('Passagens nas vigas (térreo)', 'Conferência: diâmetro das passagens', '—', 0, `cada passagem precisa de Ø ≥ ${Math.max(40, Math.ceil(dMin / 5) * 5)} mm livre (ou uma passagem por eletroduto DN 32); onde for menor, os cabos seguem direto pela passagem com bucha nas bordas`, 0);
       const dp = derivs.filter((d) => d.passa);
@@ -332,7 +333,7 @@
     // --- derivações e saídas
     const Lder = derivs.reduce((s, d) => s + d.L, 0) / 1000;
     it('Derivações e saídas', 'Saída lateral/inferior para eletroduto ¾" (perfilado 38×38)', 'un', derivs.length, `uma por caixa ligada (${porAndar((R) => R.deriv.length)})`, Math.ceil(derivs.length * 1.05));
-    it('Derivações e saídas', 'Eletroduto corrugado reforçado DN 25 (¾"), não propagante de chama (laranja)', 'm', Math.ceil(Lder), `do perfilado até cada caixa: no forro (+10 %) e descendo na parede até a caixa; ${derivs.length} derivações, ${(Lder / derivs.length).toFixed(1).replace('.', ',')} m em média; rolos de 50 m`, Math.ceil(Lder / 50) * 50);
+    it('Derivações e saídas', 'Eletroduto corrugado reforçado DN 25 (¾"), não propagante de chama (laranja)', 'm', Math.ceil(Lder), `do perfilado até cada caixa: no forro (+10 %) e descendo na parede até a caixa; ${derivs.length} derivações, ${(Lder / derivs.length).toFixed(1).replace('.', ',')} m em média; em rolos de 25 m`, Math.ceil(Lder / 25) * 25);
     it('Derivações e saídas', 'Bucha e arruela de alumínio ¾"', 'cj', derivs.length * 2, 'na saída do perfilado e na entrada da caixa', ceil10(derivs.length * 2 * 1.1));
     it('Derivações e saídas', 'Conector (luva/adaptador) para eletroduto corrugado ¾" com rosca', 'un', derivs.length * 2, 'prende o corrugado na saída do perfilado e na caixa', ceil10(derivs.length * 2 * 1.1));
     const furosDer = derivs.reduce((s, d) => s + d.furos.length, 0);
@@ -350,9 +351,10 @@
     it('Aterramento', 'Terminal de compressão (olhal) 6 mm² furo ¼"', 'un', 2 * andares.length, 'nas duas pontas do cabo de terra, em cada andar');
     it('Aterramento', 'Cordoalha/jumper de cobre 6 mm² com terminais — continuidade nas passagens', 'un', nPas, 'liga as duas pontas do perfilado em cada viga do térreo (o perfilado é interrompido ali)');
     // --- miscelânea
-    it('Miscelânea', 'Abraçadeira de nylon 200 × 4,8 mm (pacote de 100)', 'pct', 2, 'amarrar o feixe de cada circuito dentro do perfilado, a cada 1,5 m e em cada saída');
-    it('Miscelânea', 'Anilha/etiqueta de identificação de cabos (C1…C41)', 'cj', 1, 'identificar o circuito em cada saída do perfilado, nas pontas e nas passagens');
-    it('Miscelânea', 'Argamassa pronta para arremate (saco 20 kg)', 'sc', 1, `${travPerf} travessias do perfilado em alvenaria (furo 6×6 cm) e ${furosDer} furos Ø 3 cm de derivações`);
+    const ns = andares.flatMap((R) => Object.keys(R.SEC).map(Number));
+    it('Miscelânea', 'Abraçadeira de nylon 200 × 4,8 mm (pacote de 100)', 'pct', andares.length, 'amarrar o feixe de cada circuito dentro do perfilado, a cada 1,5 m e em cada saída');
+    it('Miscelânea', 'Anilha/etiqueta de identificação de cabos', 'cj', 1, `circuitos C${Math.min(...ns)} a C${Math.max(...ns)}: identificar em cada saída do perfilado, nas pontas e nas passagens`);
+    it('Miscelânea', 'Argamassa pronta para arremate (saco 20 kg)', 'sc', andares.filter((R) => R.T.some((t) => t.travessias.length) || R.deriv.some((d) => d.furos.length)).length, `${travPerf} travessias do perfilado em alvenaria (furo 6×6 cm) e ${furosDer} furos Ø 3 cm de derivações`);
     it('Miscelânea', 'Spray de galvanização a frio (zinco)', 'un', 1, 'retocar os cortes e furos do perfilado e das barras roscadas');
     const muda = andares.flatMap((R) => Object.values(R.SEC).filter((s) => s.muda).map((s) => Object.assign({ fl: R.fl }, s)));
     return { items, Ltot, barras, tampas, emendas, nT, nL, nX, nPonta, nSusp, nTir, barrasTir, derivs: derivs.length, Lder, travPerf, furosDer, nPas, muda };
@@ -360,23 +362,23 @@
 
   // ------------------------------------------------------------------ fora do perfilado (eletrodutos próprios, como no projeto)
   const polyLen = (P) => P.slice(1).reduce((s, q, i) => s + Math.abs(q[0] - P[i][0]) + Math.abs(q[1] - P[i][1]) + Math.abs(q[2] - P[i][2]), 0);
-  function foraDoPerfilado() {
+  function foraDoPerfilado(fls) {
     const items = [];
-    const it = (grupo, desc, un, q, obs, compra) => items.push({ grupo, desc, un, q, compra: compra == null ? q : compra, obs: obs || '' });
+    const it = (grupo, desc, un, q, obs, compra) => q > 0 && items.push({ grupo, desc, un, q, compra: compra == null ? q : compra, obs: obs || '' });
     const G = 'Fora do perfilado (eletroduto próprio)';
-    const pot = CIRC.filter((c) => !noPerfilado(c));
+    const pot = CIRC.filter((c) => !noPerfilado(c) && fls.includes(c.board));
     const Lpot = (pot.reduce((s, c) => s + c.conduite, 0) * 1.1) / 1000;
-    it(G, 'Eletroduto corrugado reforçado DN 25 (¾") — circuitos de potência', 'm', Math.ceil(Lpot), pot.map((c) => 'C' + c.n + ' ' + c.desc.replace(/ \(.*\)$/, '').replace(/^Tomadas — /, 'tomadas ')).join(' · ') + ' — do quadro ao ponto, um eletroduto por circuito, preso nos tirantes do perfilado', Math.ceil(Lpot / 50) * 50);
+    if (pot.length) it(G, 'Eletroduto corrugado reforçado DN 25 (¾") — circuitos de potência', 'm', Math.ceil(Lpot), pot.map((c) => 'C' + c.n + ' ' + c.desc.replace(/ \(.*\)$/, '').replace(/^Tomadas — /, 'tomadas ')).join(' · ') + ' — do quadro ao ponto, um eletroduto por circuito, preso nos tirantes do perfilado; em rolos de 25 m', Math.ceil(Lpot / 25) * 25);
     const fx = Math.ceil(pot.reduce((s, c) => s + c.horiz, 0) / 800);
     it(G, 'Abraçadeira tipo "D" ¾" com parafuso ¼" (no tirante do perfilado ou em tirante próprio)', 'un', fx, 'a cada 0,80 m; onde correm junto do perfilado, prendem no mesmo tirante, abaixo do suporte', ceil10(fx * 1.1));
     const ptsPot = pot.flatMap((c) => c.pts.map((id) => PBY[id]));
     const ch = ptsPot.filter((p) => p.eq === 'chuveiro').length;
-    it(G, 'Caixa 4×4" de embutir (parede)', 'un', ch, 'chuveiros');
-    it(G, 'Caixa 4×2" de embutir (parede)', 'un', new Set(ptsPot.filter((p) => p.eq !== 'chuveiro').map((p) => p.caixa || p.id)).size, 'cozinha (16 A), micro-ondas e ar-condicionado de 16 A');
-    const baixoT = CIRC.flatMap((c) => c.baixo.filter((b) => b.fl === 'T')), baixoS = CIRC.flatMap((c) => c.baixo.filter((b) => b.fl !== 'T'));
+    it(G, 'Caixa 4×4" de embutir (parede) — chuveiros', 'un', ch, 'conector do chuveiro');
+    it(G, 'Caixa 4×2" de embutir (parede) — circuitos de potência', 'un', new Set(ptsPot.filter((p) => p.eq !== 'chuveiro').map((p) => p.caixa || p.id)).size, 'cozinha (16 A), micro-ondas e ar-condicionado de 16 A');
+    const baixoT = fls.includes('T') ? CIRC.flatMap((c) => c.baixo.filter((b) => b.fl === 'T')) : [], baixoS = CIRC.flatMap((c) => c.baixo.filter((b) => b.fl !== 'T' && fls.includes(b.fl)));
     if (baixoT.length) it(G, 'Eletroduto PEAD corrugado Ø 32 mm enterrado — motor do portão', 'm', Math.ceil(baixoT.reduce((s, b) => s + polyLen(b.path), 0) * 1.1 / 1000), 'por baixo do piso até o muro da frente, a −0,40 m, com fita de aviso (como no projeto)');
     if (baixoS.length) it(G, 'Eletroduto corrugado reforçado DN 25 (¾") no contrapiso — varanda descoberta', 'm', Math.ceil(baixoS.reduce((s, b) => s + polyLen(b.path), 0) * 1.1 / 1000), 'arandelas dos muros da varanda descoberta (por baixo, como no projeto)');
-    it(G, 'Escada (paralelos e arandelas)', 'vb', 1, 'embutidos nas paredes da escada, sem forro — iguais ao projeto elétrico');
+    it(G, 'Escada (paralelos e arandelas)', 'vb', 1, 'embutidos nas paredes da escada, sem forro — iguais ao projeto elétrico' + (fls.length === 1 ? ' (a parte deste andar)' : ''));
     return items;
   }
 
@@ -392,8 +394,11 @@
   function tudo(opts) {
     const R = { T: calcula('T', opts && opts.T), 1: calcula('1', opts && opts[1]), 2: calcula('2', opts && opts[2]) };
     const M = materiais([R.T, R[1], R[2]]);
-    const F = foraDoPerfilado();
-    return { R, M, F, items: M.items.concat(F), FERRAMENTAS, PERF, H, LIM, LEVEL, PASSAGENS, fca, IZ };
+    const F = foraDoPerfilado(['T', '1', '2']);
+    // por andar, para comprar e orçar em etapas: cada lista com o seu corte de barras e a sua margem de perda
+    const porAndar = {};
+    ['T', '1', '2'].forEach((k) => { const Mk = materiais([R[k]]); porAndar[k] = { M: Mk, items: Mk.items.concat(foraDoPerfilado([k])) }; });
+    return { R, M, F, items: M.items.concat(F), porAndar, FERRAMENTAS, PERF, H, LIM, LEVEL, PASSAGENS, fca, IZ };
   }
 
   DD.perfilado = { REDE, PERF, H, LIM, LEVEL, PASSAGENS, calcula, tudo, cortes, fca, base, eixo, NOME };
