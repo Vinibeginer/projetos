@@ -1,0 +1,760 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<script src="../auth/sessao.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Infra em perfilado 38×38</title>
+<meta name="description" content="Obra Mariára — anteprojeto separado da infraestrutura elétrica em perfilado (eletrocalha perfil) 38×38 no forro dos três pavimentos: traçado, derivações, 3D, detalhes de montagem e lista completa de materiais. Não altera o projeto.">
+<script>
+  // mesmo tema escolhido no estúdio (dd.decor.theme)
+  try { var t = localStorage.getItem('dd.decor.theme'); if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@400;500;600;700&display=swap">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.170.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.170.0/examples/jsm/"}}</script>
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #151412; --panel: #1e1d1a; --panel-2: #26241f; --line: #34312b; --line-soft: #2a2823;
+  --text: #ede8df; --muted: #a39a8c; --faint: #7a7266;
+  --accent: #e0703f; --accent-soft: rgba(224,112,63,.15); --accent-ink: #1c0f08; --accent-2: #2ba3a3;
+  --warn: #e3a53a; --ok: #46a758; --hover: rgba(237,232,223,.06);
+  --paper: #f3efe6; --ink: #1f1d1a;
+  --font-ui: 'Space Grotesk', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+}
+:root[data-theme='light'] {
+  color-scheme: light;
+  --bg: #e8e4dc; --panel: #f6f3ee; --panel-2: #eeeae3; --line: #d7d0c4; --line-soft: #e3ddd2;
+  --text: #211e1a; --muted: #6b6356; --faint: #8f8679; --accent: #c65a2b; --accent-soft: rgba(198,90,43,.12);
+  --accent-ink: #fff8f3; --accent-2: #1b7f7f; --warn: #a8700f; --ok: #2e8540; --hover: rgba(33,30,26,.05);
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    color-scheme: light;
+    --bg: #e8e4dc; --panel: #f6f3ee; --panel-2: #eeeae3; --line: #d7d0c4; --line-soft: #e3ddd2;
+    --text: #211e1a; --muted: #6b6356; --faint: #8f8679; --accent: #c65a2b; --accent-soft: rgba(198,90,43,.12);
+    --accent-ink: #fff8f3; --accent-2: #1b7f7f; --warn: #a8700f; --ok: #2e8540; --hover: rgba(33,30,26,.05);
+  }
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); font: 14px/1.45 var(--font-ui); }
+body { overflow: hidden; }
+.app { display: grid; grid-template-rows: auto minmax(0, 1fr); grid-template-columns: minmax(0, 1fr); height: 100vh; height: 100dvh; }
+
+/* topo */
+.topbar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; padding: 8px 14px; border-bottom: 1px solid var(--line); background: var(--panel); }
+.brand { display: flex; align-items: center; gap: 10px; min-width: 0; text-decoration: none; color: inherit; }
+.brand svg { flex: none; }
+.brand b { display: block; font-size: 14px; font-weight: 600; }
+.brand small { display: block; font: 500 11px/1.3 var(--font-mono); color: var(--muted); }
+.badge { font: 500 10.5px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 5px 8px; border-radius: 99px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.spacer { flex: 1; }
+.tabs { display: flex; gap: 4px; padding: 3px; border-radius: 10px; background: var(--panel-2); border: 1px solid var(--line-soft); overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+.tabs button { flex: none; display: flex; align-items: center; gap: 7px; border: 0; background: transparent; color: var(--muted); font: 500 13px/1 var(--font-ui); padding: 8px 11px; border-radius: 7px; cursor: pointer; white-space: nowrap; }
+.tabs button .k { font: 600 11px/1 var(--font-mono); width: 20px; height: 20px; display: inline-grid; place-items: center; border-radius: 5px; background: var(--line-soft); color: var(--text); }
+.tabs button:hover { background: var(--hover); color: var(--text); }
+.tabs button[aria-selected='true'] { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.tabs button[aria-selected='true'] .k { background: var(--accent); color: var(--accent-ink); }
+.seg { display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: var(--panel-2); border: 1px solid var(--line-soft); }
+.seg button { border: 0; background: transparent; color: var(--muted); font: 500 12.5px/1 var(--font-ui); padding: 7px 10px; border-radius: 6px; cursor: pointer; }
+.seg button[aria-pressed='true'] { background: var(--panel); color: var(--text); }
+.link { color: var(--muted); font-size: 12.5px; text-decoration: none; border: 1px solid var(--line); padding: 7px 10px; border-radius: 8px; white-space: nowrap; }
+.link:hover { color: var(--text); background: var(--hover); }
+
+/* área principal */
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 330px; min-height: 0; }
+.stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); min-height: 0; min-width: 0; }
+.stage[data-view='2d'] { grid-template-columns: minmax(0, 1fr) 0; }
+.stage[data-view='3d'] { grid-template-columns: 0 minmax(0, 1fr); }
+.pane { position: relative; min-width: 0; min-height: 0; overflow: hidden; }
+.pane + .pane { border-left: 1px solid var(--line); }
+.pane-title { position: absolute; left: 10px; top: 10px; z-index: 2; font: 500 11px/1 var(--font-mono); text-transform: uppercase; letter-spacing: .06em; padding: 6px 8px; border-radius: 6px; background: rgba(20,19,17,.72); color: #ede8df; pointer-events: none; }
+#plan { position: absolute; inset: 0; width: 100%; height: 100%; background: var(--paper); touch-action: none; }
+#view3d { position: absolute; inset: 0; }
+#view3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+#view3d canvas:active { cursor: grabbing; }
+.cams { position: absolute; left: 10px; right: 10px; bottom: 10px; z-index: 2; display: flex; flex-wrap: wrap; gap: 6px; }
+.cams button { border: 1px solid rgba(255,255,255,.18); background: rgba(20,19,17,.72); color: #ede8df; font: 500 12px/1 var(--font-ui); padding: 7px 10px; border-radius: 7px; cursor: pointer; backdrop-filter: blur(6px); }
+.cams button:hover { background: rgba(40,38,34,.85); }
+.hint3d { position: absolute; right: 10px; top: 10px; z-index: 2; font: 500 11px/1.4 var(--font-mono); color: #ede8df; background: rgba(20,19,17,.6); padding: 6px 8px; border-radius: 6px; max-width: 60%; text-align: right; pointer-events: none; }
+
+/* painel da opção */
+.side { border-left: 1px solid var(--line); background: var(--panel); overflow-y: auto; padding: 16px 16px 24px; scrollbar-width: thin; }
+.side h2 { margin: 0 0 4px; font-size: 18px; font-weight: 600; }
+.side .sub { margin: 0 0 14px; color: var(--muted); }
+.side h3 { margin: 18px 0 8px; font: 500 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .07em; color: var(--muted); }
+.kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.kpi { border: 1px solid var(--line-soft); border-radius: 9px; padding: 9px 10px; background: var(--panel-2); }
+.kpi b { display: block; font: 600 17px/1.2 var(--font-mono); }
+.kpi span { display: block; font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.kpi.warn b { color: var(--warn); }
+.kpi.ok b { color: var(--ok); }
+ul.list { margin: 0; padding-left: 18px; }
+ul.list li { margin: 3px 0; }
+.pros li::marker { color: var(--ok); }
+.cons li::marker { color: var(--warn); }
+.note { margin-top: 14px; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--line); background: var(--accent-soft); font-size: 12.5px; }
+.legend { display: grid; gap: 6px; font-size: 12.5px; }
+.legend i { display: inline-block; width: 22px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 8px; border: 1px solid rgba(0,0,0,.25); }
+.alert { margin: 0 0 12px; padding: 10px 12px; border-radius: 9px; border: 1px solid var(--warn); color: var(--text); background: rgba(227,165,58,.12); font-size: 12.5px; }
+
+@media (max-width: 999px) {
+  html, body { overflow-x: hidden; }
+  body { overflow-y: auto; }
+  .topbar { padding: 8px 10px; }
+  .badge, .hint3d { display: none; }
+  .tabs { order: 5; width: 100%; }
+  .seg { order: 6; }
+  .topbar > * { min-width: 0; }
+  .stage, .main { min-width: 0; width: 100%; }
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .app { height: auto; min-height: 100vh; }
+  .stage, .stage[data-view] { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto; }
+  .pane { height: 62vh; }
+  .stage[data-view='2d'] .pane-3d, .stage[data-view='3d'] .pane-2d { display: none; }
+  .stage[data-view='split'] .pane + .pane { border-left: 0; border-top: 1px solid var(--line); }
+  .side { border-left: 0; border-top: 1px solid var(--line); }
+}
+/* ---- específico desta página ---- */
+.kpi small { display: block; font: 500 11px/1.3 var(--font-mono); color: var(--muted); margin-top: 3px; }
+.tag { display: inline-block; font: 600 10px/1 var(--font-mono); padding: 3px 6px; border-radius: 5px; background: var(--accent); color: var(--accent-ink); vertical-align: 1px; white-space: nowrap; }
+.dimlist { display: grid; grid-template-columns: auto 1fr; gap: 3px 10px; font-size: 12.5px; }
+.dimlist dt { color: var(--muted); }
+.dimlist dd { margin: 0; font-family: var(--font-mono); font-size: 12px; }
+.casa3d { position: absolute; left: 10px; top: 42px; z-index: 2; display: flex; gap: 2px; padding: 3px; border-radius: 9px; background: rgba(20,19,17,.72); backdrop-filter: blur(6px); }
+.casa3d button { border: 0; background: transparent; color: #cfc8bb; font: 500 12px/1 var(--font-ui); padding: 7px 9px; border-radius: 6px; cursor: pointer; }
+.casa3d button[aria-pressed='true'] { background: #ede8df; color: #1f1d1a; }
+table.t { width: 100%; border-collapse: collapse; font-size: 12px; }
+table.t th, table.t td { text-align: left; padding: 4px 5px; border-bottom: 1px solid var(--line-soft); vertical-align: top; }
+table.t th { font: 500 10.5px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+table.t td.n { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+table.t tr.warn td { color: var(--warn); }
+.doc { display: none; min-height: 0; overflow-y: auto; background: var(--paper); color: var(--ink); padding: 22px 26px 40px; }
+.main[data-doc='1'] .stage { display: none; }
+.main[data-doc='1'] .doc { display: block; }
+.doc h2 { margin: 0 0 4px; font-size: 20px; }
+.doc h3 { margin: 22px 0 8px; font-size: 14px; }
+.doc p { margin: 6px 0; max-width: 980px; }
+.doc .sub { color: #6b6356; }
+.doc table.mat { width: 100%; max-width: 1180px; border-collapse: collapse; font-size: 12.5px; background: #fffdf8; }
+.doc table.mat th, .doc table.mat td { border: 1px solid #ddd5c7; padding: 5px 7px; vertical-align: top; text-align: left; }
+.doc table.mat th { background: #ece6da; font: 600 11px/1.2 var(--font-mono); text-transform: uppercase; letter-spacing: .04em; }
+.doc table.mat tr.g td { background: #f1ebe0; font-weight: 600; }
+.doc table.mat td.n { text-align: right; font-family: var(--font-mono); white-space: nowrap; }
+.doc table.mat td.o { color: #5d564b; font-size: 11.5px; }
+.doc .btns { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
+.doc .btns button { border: 1px solid #cfc6b6; background: #fffdf8; color: #1f1d1a; font: 500 13px/1 var(--font-ui); padding: 9px 12px; border-radius: 8px; cursor: pointer; }
+.doc .btns button:hover { background: #f1ebe0; }
+.doc .figs { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 520px), 1fr)); gap: 18px; max-width: 1180px; }
+.doc figure { margin: 0; background: #fffdf8; border: 1px solid #ddd5c7; border-radius: 10px; padding: 12px; }
+.doc figure svg { width: 100%; height: auto; display: block; }
+.doc figcaption { font-size: 12.5px; color: #3a3631; margin-top: 8px; }
+.doc figcaption b { display: block; font-size: 13.5px; color: #1f1d1a; margin-bottom: 2px; }
+.doc .aviso { max-width: 980px; padding: 10px 12px; border-radius: 9px; border: 1px solid #d8a74a; background: #fbf1dd; font-size: 12.5px; margin: 10px 0; }
+@media (max-width: 999px) { .doc { padding: 16px 14px 30px; } .doc table.mat { font-size: 11.5px; } }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="topbar">
+    <a class="brand" href="./" title="Voltar ao estúdio">
+      <svg width="28" height="28" viewBox="0 0 28 28" aria-hidden="true"><rect x=".5" y=".5" width="27" height="27" rx="7" fill="#E0703F"/><path d="M6.5 13.2 14 7l7.5 6.2V21H6.5z" fill="none" stroke="#1C0F08" stroke-width="1.8" stroke-linejoin="round"/><path d="M11.8 21v-4.6h4.4V21" fill="none" stroke="#1C0F08" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span><b>Infra elétrica em perfilado 38×38</b><small>anteprojeto separado · forro dos 3 pavimentos</small></span>
+    </a>
+    <span class="badge" title="Projeto separado: o projeto elétrico do estúdio não é alterado">não altera o projeto</span>
+    <span class="spacer"></span>
+    <nav class="tabs" id="tabs" role="tablist" aria-label="Partes do projeto"></nav>
+    <div class="seg" id="viewseg" role="group" aria-label="Visualização">
+      <button type="button" data-view="2d" aria-pressed="false">Planta</button>
+      <button type="button" data-view="split" aria-pressed="true">Lado a lado</button>
+      <button type="button" data-view="3d" aria-pressed="false">3D</button>
+    </div>
+    <a class="link" href="./eletrica.html">Projeto elétrico</a>
+    <a class="link" href="./">← Estúdio</a>
+  </header>
+
+  <div class="main" id="main">
+    <section class="stage" id="stage" data-view="split">
+      <div class="pane pane-2d">
+        <span class="pane-title" id="plan-title">Planta</span>
+        <canvas id="plan" aria-label="Planta do pavimento com o perfilado"></canvas>
+      </div>
+      <div class="pane pane-3d">
+        <span class="pane-title">3D</span>
+        <div class="casa3d" id="casa3d" role="group" aria-label="Casa no 3D">
+          <button type="button" data-casa="inteira" aria-pressed="false">Casa</button>
+          <button type="button" data-casa="vidro" aria-pressed="true">Casa em vidro</button>
+          <button type="button" data-casa="oculta" aria-pressed="false">Só a infra</button>
+        </div>
+        <div id="view3d"></div>
+        <div class="hint3d">Arraste para girar · botão direito para deslocar · roda para aproximar</div>
+        <div class="cams" id="cams">
+          <button type="button" data-cam="geral">Vista geral</button>
+          <button type="button" data-cam="cima">De cima</button>
+          <button type="button" data-cam="quadro">Saída do quadro</button>
+          <button type="button" data-cam="rente">Rente ao forro</button>
+        </div>
+      </div>
+    </section>
+    <section class="doc" id="doc"></section>
+    <aside class="side" id="side" aria-live="polite"></aside>
+  </div>
+</div>
+
+<script src="./src/00-data.js"></script>
+<script src="./src/01-core.js"></script>
+<script src="./src/18-eletrica.js"></script>
+<script src="./infra-perfilado.js"></script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+// =====================================================================================================
+//  INFRA EM PERFILADO 38×38 — anteprojeto separado (não altera o projeto elétrico do estúdio).
+//  Cálculo em infra-perfilado.js (DD.perfilado): traçado, derivações, agrupamento, ocupação e materiais.
+//  Mesmo sistema do estúdio: mm, origem no canto fundo-esquerdo do lote, x → direita, y → rua, z = altura.
+// =====================================================================================================
+const $ = (id) => document.getElementById(id);
+const DD = window.DD, E = DD.eletrica, P = DD.perfilado;
+const REF = DD.data.initialState();
+const RES = P.tudo();
+const FID = { T: 'f0', 1: 'f1', 2: 'f2' };
+const NOME = { T: 'Térreo', 1: '1º pavimento', 2: '2º pavimento' };
+const ROOMS = { f0: DD.rooms.compute(REF, 'f0'), f1: DD.rooms.compute(REF, 'f1'), f2: DD.rooms.compute(REF, 'f2') };
+const TABS = [
+  { id: 'T', k: 'T', nome: 'Térreo', bounds: [-300, 2500, 9300, 15400] },
+  { id: '1', k: '1', nome: '1º pav.', bounds: [-300, 2500, 9300, 16400] },
+  { id: '2', k: '2', nome: '2º pav.', bounds: [-300, 2500, 9300, 15200] },
+  { id: 'M', k: 'M', nome: 'Materiais' },
+  { id: 'D', k: 'D', nome: 'Detalhes' },
+];
+const S = { tab: 'T', view: 'split', pv: null, casa: 'vidro' };
+const fl = () => (/^[T12]$/.test(S.tab) ? S.tab : 'T');
+const fmt = (mm, d = 2) => (mm / 1000).toFixed(d).replace('.', ',');
+const num = (v, d = 0) => Number(v).toFixed(d).replace('.', ',');
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+const COR = { perf: '#1f6f8b', perfIn: '#9cc3d1', luz: '#d99a00', int: '#b7791f', tug: '#c0392b', tue: '#1f5fbf', arandela: '#d99a00', fora: '#9a9285', trav: '#e0703f', susp: '#1f1d1a', qd: '#1f1d1a' };
+
+// ---------------------------------------------------------------- abas
+const tabsEl = $('tabs');
+TABS.forEach((t) => {
+  const b = document.createElement('button');
+  b.type = 'button'; b.role = 'tab'; b.dataset.tab = t.id;
+  b.innerHTML = `<span class="k">${t.k}</span>${t.nome}`;
+  b.addEventListener('click', () => setTab(t.id));
+  tabsEl.appendChild(b);
+});
+
+// ---------------------------------------------------------------- planta 2D
+const plan = $('plan');
+let ctx = plan.getContext('2d');
+const wallPoly = (w) => {
+  const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy) || 1, nx = (-dy / L) * w.thick / 2, ny = (dx / L) * w.thick / 2;
+  return [{ x: w.a.x + nx, y: w.a.y + ny }, { x: w.b.x + nx, y: w.b.y + ny }, { x: w.b.x - nx, y: w.b.y - ny }, { x: w.a.x - nx, y: w.a.y - ny }];
+};
+function fitView() {
+  const t = TABS.find((q) => q.id === fl()), [x0, y0, x1, y1] = t.bounds;
+  const w = plan.clientWidth, h = plan.clientHeight;
+  const s = Math.min((w - 24) / (x1 - x0), (h - 24) / (y1 - y0));
+  S.pv = { s, ox: (w - (x1 - x0) * s) / 2 - x0 * s, oy: (h - (y1 - y0) * s) / 2 - y0 * s };
+}
+const X = (x) => S.pv.ox + x * S.pv.s;
+const Y = (y) => S.pv.oy + y * S.pv.s;
+const poly = (pts) => { ctx.beginPath(); pts.forEach((p, i) => (i ? ctx.lineTo(X(p.x), Y(p.y)) : ctx.moveTo(X(p.x), Y(p.y)))); ctx.closePath(); };
+function label(txt, x, y, o = {}) {
+  ctx.font = `${o.bold ? 600 : 500} ${o.size || 11}px "JetBrains Mono", monospace`;
+  ctx.textAlign = o.align || 'center'; ctx.textBaseline = 'middle';
+  const w = ctx.measureText(txt).width + 8;
+  if (o.bg !== false) {
+    ctx.fillStyle = o.bg || 'rgba(243,239,230,.9)';
+    const bx = o.align === 'left' ? X(x) - 4 : o.align === 'right' ? X(x) - w + 4 : X(x) - w / 2;
+    ctx.fillRect(bx, Y(y) - 8, w, 16);
+  }
+  ctx.fillStyle = o.color || '#1f1d1a'; ctx.fillText(txt, X(x), Y(y));
+}
+function drawWall(w, fill) {
+  ctx.fillStyle = fill; poly(wallPoly(w)); ctx.fill();
+  REF.openings.filter((o) => o.wall === w.id).forEach((o) => {
+    const dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L;
+    const c0 = o.t - o.width / 2, c1 = o.t + o.width / 2;
+    const f = { a: { x: w.a.x + ux * c0, y: w.a.y + uy * c0 }, b: { x: w.a.x + ux * c1, y: w.a.y + uy * c1 }, thick: w.thick + 8 };
+    ctx.fillStyle = '#f3efe6'; poly(wallPoly(f)); ctx.fill();
+    ctx.strokeStyle = '#8c8375'; ctx.lineWidth = 1;
+    if (o.type === 'window') { ctx.beginPath(); ctx.moveTo(X(f.a.x), Y(f.a.y)); ctx.lineTo(X(f.b.x), Y(f.b.y)); ctx.stroke(); }
+  });
+}
+function simbolo(d, cor, oco) {
+  const x = X(d.x), y = Y(d.y), r = Math.max(3.2, 70 * S.pv.s);
+  ctx.lineWidth = 1.4; ctx.strokeStyle = cor; ctx.fillStyle = oco ? '#fffdf8' : cor;
+  ctx.beginPath();
+  if (d.tipo === 'luz') ctx.arc(x, y, r * 1.15, 0, Math.PI * 2);
+  else if (d.tipo === 'int') ctx.rect(x - r * 0.8, y - r * 0.8, r * 1.6, r * 1.6);
+  else if (d.tipo === 'arandela') { ctx.moveTo(x, y - r); ctx.lineTo(x + r, y + r * 0.8); ctx.lineTo(x - r, y + r * 0.8); ctx.closePath(); }
+  else ctx.arc(x, y, r * 0.85, 0, Math.PI * 2);
+  ctx.fill(); ctx.stroke();
+}
+function drawPlan() {
+  if (!/^[T12]$/.test(S.tab)) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2), w = plan.clientWidth, h = plan.clientHeight;
+  if (!w || !h) return;
+  if (!S.pv) fitView();
+  plan.width = Math.round(w * dpr); plan.height = Math.round(h * dpr);
+  ctx = plan.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.fillStyle = '#f3efe6'; ctx.fillRect(0, 0, w, h);
+  const k = fl(), fid = FID[k], R = RES.R[k], s = S.pv.s;
+  ROOMS[fid].filter((r) => r.outer).forEach((r) => { ctx.fillStyle = r.open || r.outdoor ? '#e9eee2' : '#ece6da'; poly(r.outer); ctx.fill(); });
+  REF.walls.filter((q) => q.floor === fid).forEach((q) => drawWall(q, q.kind === 'muro' ? '#c9c1b4' : q.kind === 'railing' ? '#b8b0a2' : q.kind === 'structural' ? '#3a3631' : '#8c8375'));
+  ROOMS[fid].filter((r) => r.outer && !r.open).forEach((r) => label(r.name, r.labelX, r.labelY, { size: 10.5, color: 'rgba(107,99,86,.75)', bg: false }));
+  // derivações
+  ctx.setLineDash([5, 3]);
+  R.deriv.forEach((d) => {
+    ctx.strokeStyle = COR[d.tipo] || COR.tug; ctx.lineWidth = 1.3;
+    ctx.beginPath(); ctx.moveTo(X(d.ax), Y(d.ay)); ctx.lineTo(X(d.x), Y(d.y)); ctx.stroke();
+  });
+  ctx.setLineDash([]);
+  // perfilado
+  const lw = Math.max(4, 38 * s * 2.2);
+  R.T.forEach((t) => {
+    ctx.lineCap = 'butt';
+    ctx.strokeStyle = COR.perf; ctx.lineWidth = lw; ctx.beginPath(); ctx.moveTo(X(t.A[0]), Y(t.A[1])); ctx.lineTo(X(t.B[0]), Y(t.B[1])); ctx.stroke();
+    ctx.strokeStyle = COR.perfIn; ctx.lineWidth = Math.max(1.2, lw * 0.35); ctx.beginPath(); ctx.moveTo(X(t.A[0]), Y(t.A[1])); ctx.lineTo(X(t.B[0]), Y(t.B[1])); ctx.stroke();
+  });
+  // travessias de parede
+  R.T.forEach((t) => t.travessias.forEach((q) => {
+    const ux = (t.B[0] - t.A[0]) / t.L, uy = (t.B[1] - t.A[1]) / t.L, nx = -uy, ny = ux, a = lw * 1.4;
+    ctx.strokeStyle = COR.trav; ctx.lineWidth = 2.2;
+    ctx.beginPath(); ctx.moveTo(X(q.x) + nx * a, Y(q.y) + ny * a); ctx.lineTo(X(q.x) - nx * a, Y(q.y) - ny * a); ctx.stroke();
+  }));
+  // tirantes
+  R.T.forEach((t) => t.susp.filter((u) => !u.passagem).forEach((u) => { ctx.fillStyle = COR.susp; ctx.beginPath(); ctx.arc(X(u.p[0]), Y(u.p[1]), Math.max(1.8, lw * 0.28), 0, Math.PI * 2); ctx.fill(); }));
+  // conexões
+  R.conex.forEach((c) => {
+    const q = Math.max(5, lw * 1.25);
+    ctx.fillStyle = c.tipo === 'ponta' ? '#fffdf8' : COR.perf; ctx.strokeStyle = '#0f3a4a'; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.rect(X(c.x) - q / 2, Y(c.y) - q / 2, q, q); ctx.fill(); ctx.stroke();
+    const t = c.tipo === 'inicio' ? '' : c.tipo === 'ponta' ? '' : c.tipo;
+    if (t) label(t, c.x, c.y, { size: 9, color: '#fff', bg: false, bold: true });
+  });
+  // pontos
+  R.deriv.forEach((d) => simbolo(d, COR[d.tipo] || COR.tug, d.tipo === 'int' || d.tipo === 'tug' || d.tipo === 'tue'));
+  R.fora.forEach((d) => simbolo(d, COR.fora, true));
+  if (s > 0.045) {
+    R.deriv.forEach((d) => label(d.pts.map((id) => id.replace(/^[T12]-/, '')).join('+'), d.x + 90, d.y - 90, { size: 8.5, color: COR[d.tipo] || COR.tug, bg: 'rgba(255,253,248,.75)', align: 'left' }));
+    R.fora.forEach((d) => label(d.pts.map((id) => id.replace(/^[T12]-/, '')).join('+') + ' · fora', d.x + 90, d.y - 90, { size: 8.5, color: COR.fora, bg: 'rgba(255,253,248,.75)', align: 'left' }));
+  }
+  // trechos
+  R.T.filter((t) => t.L >= 1000).forEach((t) => {
+    const mx = (t.A[0] + t.B[0]) / 2, my = (t.A[1] + t.B[1]) / 2, hz = Math.abs(t.B[0] - t.A[0]) > Math.abs(t.B[1] - t.A[1]);
+    label(`${t.id} · ${fmt(t.L, 2)} m`, mx + (hz ? 0 : 230), my + (hz ? -230 : 0), { size: 10, color: '#0f3a4a', bold: true, bg: 'rgba(255,253,248,.9)', align: hz ? 'center' : 'left' });
+  });
+  // quadro e subida
+  const B = R.board;
+  ctx.fillStyle = COR.qd; ctx.fillRect(X(B.x) - 180 * s, Y(B.y) - 50 * s, 360 * s, 100 * s);
+  label(B.id, B.x, B.y + (k === '2' ? -260 : 260), { size: 10.5, bold: true, color: '#1f1d1a' });
+  ctx.strokeStyle = '#1f1d1a'; ctx.lineWidth = 1.6; ctx.setLineDash([2, 2]);
+  ctx.beginPath(); ctx.moveTo(X(B.x), Y(B.y)); ctx.lineTo(X(R.nos.R[0]), Y(R.nos.R[1])); ctx.stroke(); ctx.setLineDash([]);
+  if (k === 'T') {
+    const t = `Perfilado interrompido em cada viga: ${RES.M.nPas} passagens (${Object.entries(P.PASSAGENS.T.trechos).map(([a, n]) => a + ' ×' + n).join(', ')})`;
+    ctx.font = '600 10px "JetBrains Mono", monospace';
+    const w2 = Math.min(ctx.measureText(t).width + 14, plan.clientWidth - 20);
+    ctx.fillStyle = 'rgba(251,241,221,.95)'; ctx.fillRect(10, plan.clientHeight - 58, w2, 20);
+    ctx.fillStyle = '#8a4b16'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, 17, plan.clientHeight - 47.5, w2 - 14);
+  }
+  legenda();
+  norte();
+}
+function legenda() {
+  const items = [['perf', 'Perfilado 38×38'], ['luz', 'Luz (caixa octogonal)'], ['int', 'Interruptor'], ['tug', 'Tomada'], ['tue', 'Ar 10 A / máquina'], ['fora', 'Fora do perfilado'], ['trav', 'Travessia de parede'], ['susp', 'Tirante']];
+  ctx.font = '500 10px "JetBrains Mono", monospace';
+  const x0 = 10, y0 = plan.clientHeight - 30;
+  let x = x0 + 8;
+  const W = items.reduce((s2, [, t]) => s2 + ctx.measureText(t).width + 30, 10);
+  ctx.fillStyle = 'rgba(255,253,248,.92)'; ctx.fillRect(x0, y0 - 2, Math.min(W, plan.clientWidth - 20), 24);
+  items.forEach(([k2, t]) => {
+    if (x + ctx.measureText(t).width + 26 > plan.clientWidth - 10) return;
+    ctx.strokeStyle = COR[k2]; ctx.fillStyle = COR[k2]; ctx.lineWidth = k2 === 'perf' ? 5 : 2;
+    if (k2 === 'susp') { ctx.beginPath(); ctx.arc(x + 8, y0 + 10, 2.5, 0, Math.PI * 2); ctx.fill(); }
+    else { ctx.setLineDash(k2 === 'perf' || k2 === 'trav' ? [] : [4, 2]); ctx.beginPath(); ctx.moveTo(x, y0 + 10); ctx.lineTo(x + 16, y0 + 10); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.fillStyle = '#3a3631'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle'; ctx.fillText(t, x + 21, y0 + 10.5);
+    x += ctx.measureText(t).width + 30;
+  });
+}
+function norte() {
+  const deg = REF.site.northDeg || 0, cx = plan.clientWidth - 34, cy = 40, r = 16;
+  ctx.save(); ctx.translate(cx, cy); ctx.rotate((deg * Math.PI) / 180);
+  ctx.fillStyle = '#1f1d1a'; ctx.beginPath(); ctx.moveTo(0, -r); ctx.lineTo(6, 6); ctx.lineTo(0, 2); ctx.lineTo(-6, 6); ctx.closePath(); ctx.fill();
+  ctx.restore(); ctx.font = '600 11px "JetBrains Mono", monospace'; ctx.textAlign = 'center'; ctx.fillStyle = '#1f1d1a'; ctx.fillText('N', cx, cy + 28);
+}
+(() => {
+  let drag = null;
+  plan.addEventListener('pointerdown', (e) => { drag = { x: e.clientX, y: e.clientY }; plan.setPointerCapture(e.pointerId); });
+  plan.addEventListener('pointermove', (e) => { if (!drag) return; S.pv.ox += e.clientX - drag.x; S.pv.oy += e.clientY - drag.y; drag = { x: e.clientX, y: e.clientY }; drawPlan(); });
+  plan.addEventListener('pointerup', () => (drag = null));
+  plan.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    const r = plan.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top, k = Math.exp(-e.deltaY * 0.0015);
+    S.pv.ox = px - (px - S.pv.ox) * k; S.pv.oy = py - (py - S.pv.oy) * k; S.pv.s *= k; drawPlan();
+  }, { passive: false });
+  plan.addEventListener('dblclick', () => { fitView(); drawPlan(); });
+})();
+
+// ---------------------------------------------------------------- 3D
+let R3 = null;
+const M = (mm) => mm / 1000;
+const MAT = {};
+const mat = (hex, o = {}) => { const key = hex + JSON.stringify(o); return MAT[key] || (MAT[key] = new THREE.MeshStandardMaterial(Object.assign({ color: hex, roughness: 0.85, metalness: 0 }, o))); };
+function box(g, r, z0, z1, m, cast = true) {
+  if (r.x1 - r.x0 < 1 || r.y1 - r.y0 < 1 || z1 - z0 < 0.5) return null;
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(M(r.x1 - r.x0), M(z1 - z0), M(r.y1 - r.y0)), m);
+  mesh.position.set(M((r.x0 + r.x1) / 2), M((z0 + z1) / 2), M((r.y0 + r.y1) / 2));
+  mesh.castShadow = cast; mesh.receiveShadow = true; g.add(mesh); return mesh;
+}
+function tube(g, a, b, r, m, seg = 8) {
+  const A = new THREE.Vector3(M(a[0]), M(a[2]), M(a[1])), B = new THREE.Vector3(M(b[0]), M(b[2]), M(b[1]));
+  const L = A.distanceTo(B); if (L < 1e-4) return;
+  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, L, seg), m);
+  mesh.position.copy(A).lerp(B, 0.5); mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), B.clone().sub(A).normalize());
+  g.add(mesh); return mesh;
+}
+/** Barra retangular (largura × altura em mm) de a até b (horizontal). */
+function barra(g, a, b, larg, alt, z0, m) {
+  const L = Math.hypot(b[0] - a[0], b[1] - a[1]); if (L < 1) return;
+  const mesh = new THREE.Mesh(new THREE.BoxGeometry(M(L), M(alt), M(larg)), m);
+  mesh.position.set(M((a[0] + b[0]) / 2), M(z0 + alt / 2), M((a[1] + b[1]) / 2));
+  mesh.rotation.y = -Math.atan2(b[1] - a[1], b[0] - a[0]); mesh.castShadow = true; g.add(mesh); return mesh;
+}
+function wall3D(g, w, base, m) {
+  const H = w.height || 2880, dx = w.b.x - w.a.x, dy = w.b.y - w.a.y, L = Math.hypot(dx, dy);
+  const list = REF.openings.filter((o) => o.wall === w.id).map((o) => ({ a: o.t - o.width / 2, b: o.t + o.width / 2, z0: o.sill, z1: o.sill + o.height })).sort((p, q) => p.a - q.a);
+  const cuts = [0]; list.forEach((o) => cuts.push(o.a, o.b)); cuts.push(L);
+  const piece = (s0, s1, z0, z1) => {
+    if (s1 - s0 < 5 || z1 - z0 < 5) return;
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(M(s1 - s0), M(z1 - z0), M(w.thick)), m);
+    const sm = (s0 + s1) / 2;
+    mesh.position.set(M(w.a.x + (dx / L) * sm), M(base + (z0 + z1) / 2), M(w.a.y + (dy / L) * sm));
+    mesh.rotation.y = -Math.atan2(dy, dx); mesh.castShadow = true; mesh.receiveShadow = true; g.add(mesh);
+  };
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const s0 = cuts[i], s1 = cuts[i + 1], op = list.find((o) => o.a === s0 && o.b === s1);
+    if (!op) piece(s0, s1, 0, H); else { piece(s0, s1, 0, op.z0); piece(s0, s1, op.z1, H); }
+  }
+}
+const LV = { T: 0, 1: 2880, 2: 6340 };
+function buildCasa(G) {
+  const cw = mat(0xeee8de);
+  ['T', '1', '2'].forEach((k) => {
+    REF.walls.filter((w) => w.floor === FID[k] && w.kind !== 'muro').forEach((w) => {
+      if (w.kind === 'railing') return box(G[k], wallRect(w), LV[k], LV[k] + (w.mureta || 1100), cw);
+      wall3D(G[k], w, LV[k], cw);
+    });
+  });
+  // lajes (contorno aproximado de cada pavimento)
+  const sl = mat(0xd6cfc3);
+  [['T', 2880, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500], [0, 9000, 10425, 16200]]],
+   ['1', 6340, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500], [0, 9000, 10425, 15000]]],
+   ['2', 9800, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500]]]].forEach(([k, z, rs]) => rs.forEach(([x0, x1, y0, y1]) => box(G['laje' + k], { x0, x1, y0, y1 }, z - 160, z, sl)));
+}
+const wallRect = (w) => { const r = wallPoly(w), xs = r.map((p) => p.x), ys = r.map((p) => p.y); return { x0: Math.min(...xs), x1: Math.max(...xs), y0: Math.min(...ys), y1: Math.max(...ys) }; };
+function buildInfra(g, k) {
+  const R = RES.R[k], lv = LV[k], z0 = lv + R.base, ze = lv + R.eixo, zl = lv + R.H.laje;
+  const aco = mat(0x9aa6ad, { metalness: 0.55, roughness: 0.4 }), tampa = mat(0xc3ccd1, { metalness: 0.5, roughness: 0.45 });
+  const cor = mat(0xe8742f, { roughness: 0.6 }), rosca = mat(0x6b7378, { metalness: 0.6, roughness: 0.35 }), cxm = mat(0xf2efe8), fora = mat(0xb9b2a6);
+  R.T.forEach((t) => {
+    barra(g, t.A, t.B, 38, 34, z0, aco);
+    barra(g, t.A, t.B, 40, 4, z0 + 34, tampa);
+    t.susp.filter((u) => !u.passagem).forEach((u) => {
+      tube(g, [u.p[0], u.p[1], z0 - 8], [u.p[0], u.p[1], zl], 0.0045, rosca, 6);
+      box(g, { x0: u.p[0] - 25, x1: u.p[0] + 25, y0: u.p[1] - 25, y1: u.p[1] + 25 }, z0 - 10, z0, rosca, false);
+    });
+  });
+  R.conex.forEach((c) => box(g, { x0: c.x - 45, x1: c.x + 45, y0: c.y - 45, y1: c.y + 45 }, z0 - 3, z0 + 41, aco));
+  R.deriv.forEach((d) => {
+    const luz = d.tipo === 'luz';
+    tube(g, [d.ax, d.ay, ze], [d.x, d.y, ze], 0.0125, cor);
+    if (luz) {
+      const cx = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.05, 8), cxm);
+      cx.position.set(M(d.x), M(ze), M(d.y)); g.add(cx);
+      tube(g, [d.x, d.y, ze], [d.x, d.y, zl], 0.004, rosca, 6);
+      tube(g, [d.x, d.y, ze - 25], [d.x, d.y, lv + R.H.forro + 5], 0.004, mat(0x222222), 6);
+      const lum = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.012, 20), mat(0xfff6d8, { emissive: 0x554422 }));
+      lum.position.set(M(d.x), M(lv + R.H.forro - 8), M(d.y)); g.add(lum);
+    } else {
+      tube(g, [d.x, d.y, ze], [d.x, d.y, lv + d.z], 0.0125, cor);
+      box(g, { x0: d.x - 50, x1: d.x + 50, y0: d.y - 50, y1: d.y + 50 }, lv + d.z - 50, lv + d.z + 50, cxm, false);
+    }
+  });
+  R.fora.forEach((d) => box(g, { x0: d.x - 45, x1: d.x + 45, y0: d.y - 45, y1: d.y + 45 }, lv + d.z - 45, lv + d.z + 45, fora, false));
+  // quadro e subidas
+  const B = R.board, n = R.subidas + R.reserva, qd = mat(0x2a2a2a, { metalness: 0.3, roughness: 0.5 });
+  box(g, { x0: B.x - 180, x1: B.x + 180, y0: B.y - 60, y1: B.y + 60 }, lv + 1150, lv + 1850, qd);
+  const r0 = R.nos.R;
+  for (let i = 0; i < n; i++) {
+    const off = (i - (n - 1) / 2) * 55;
+    const top = [B.x + off, B.y, lv + 1850], up = [B.x + off, B.y, z0 - 20], end = [r0[0] + off * 0.6, r0[1], z0 - 20];
+    tube(g, top, up, 0.017, i === n - 1 ? mat(0xb0a89a) : cor); tube(g, up, end, 0.017, i === n - 1 ? mat(0xb0a89a) : cor);
+  }
+  // forro de gesso (translúcido) em cada cômodo do pavimento
+  const fm = new THREE.MeshStandardMaterial({ color: 0xf4f1ea, transparent: true, opacity: 0.22, side: THREE.DoubleSide, depthWrite: false });
+  ROOMS[FID[k]].filter((r) => r.outer && !r.open && !r.outdoor).forEach((r) => {
+    const sh = new THREE.Shape(r.outer.map((q) => new THREE.Vector2(M(q.x), M(q.y))));
+    const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), fm);
+    m.rotation.x = Math.PI / 2; m.position.y = M(lv + R.H.forro); g.add(m);
+  });
+}
+const VIDRO = new THREE.MeshStandardMaterial({ color: 0xd9d3c8, transparent: true, opacity: 0.1, depthWrite: false });
+function casaModo() {
+  if (!R3) return;
+  const k = fl(), ord = { T: 0, 1: 1, 2: 2 }, G = R3.groups;
+  ['T', '1', '2'].forEach((q) => {
+    const vis = S.casa !== 'oculta' && ord[q] <= ord[k];
+    G[q].visible = vis;
+    G[q].children.forEach((m) => {
+      if (!m.isMesh) return;
+      if (!m.userData.orig) m.userData.orig = { mat: m.material, sh: m.castShadow };
+      const vidro = S.casa === 'vidro' || q === k;
+      m.material = vidro ? VIDRO : m.userData.orig.mat;
+      m.castShadow = !vidro;
+    });
+    G['laje' + q].visible = S.casa !== 'oculta' && ord[q] < ord[k];
+    G['laje' + q].children.forEach((m) => (m.material = S.casa === 'vidro' ? VIDRO : m.material));
+    G['infra' + q].visible = q === k;
+  });
+  // laje do teto do pavimento atual: transparente (onde chumbam os tirantes)
+  G['teto'].children.forEach((m) => (m.visible = m.userData.k === k && S.casa !== 'oculta'));
+}
+function init3D() {
+  if (R3) return;
+  const host = $('view3d');
+  const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  host.appendChild(renderer.domElement);
+  const scene = new THREE.Scene(); scene.background = new THREE.Color(0xdfe7ea);
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.03, 300);
+  const controls = new OrbitControls(camera, renderer.domElement); controls.enableDamping = true;
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x9a907e, 2.4));
+  const sun = new THREE.DirectionalLight(0xfff4e0, 2.2); sun.position.set(14, 22, 26); sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+  Object.assign(sun.shadow.camera, { left: -14, right: 14, top: 14, bottom: -14, near: 1, far: 70 }); scene.add(sun);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(40, 50), mat(0xc9c3b6)); ground.rotation.x = -Math.PI / 2; ground.position.set(4.5, -0.01, 12); ground.receiveShadow = true; scene.add(ground);
+  const groups = {};
+  ['T', '1', '2'].forEach((k) => ['', 'laje', 'infra'].forEach((p) => { groups[p + k] = new THREE.Group(); scene.add(groups[p + k]); }));
+  groups.teto = new THREE.Group(); scene.add(groups.teto);
+  R3 = { renderer, scene, camera, controls, groups, host };
+  buildCasa(groups);
+  ['T', '1', '2'].forEach((k) => buildInfra(groups['infra' + k], k));
+  // laje do teto de cada pavimento, transparente, para ver os tirantes chegando
+  const tm = new THREE.MeshStandardMaterial({ color: 0xb9b1a3, transparent: true, opacity: 0.18, depthWrite: false, side: THREE.DoubleSide });
+  [['T', 2880, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500], [0, 9000, 10425, 15000]]], ['1', 6340, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500], [0, 9000, 10425, 16100]]], ['2', 9800, [[1500, 7500, 2850, 10500], [7500, 9000, 8000, 10500]]]]
+    .forEach(([k, z, rs]) => rs.forEach(([x0, x1, y0, y1]) => { const m = box(groups.teto, { x0, x1, y0, y1 }, z - 160, z, tm, false); m.userData.k = k; }));
+  casaModo();
+  setCam('geral');
+  const loop = () => { controls.update(); renderer.render(scene, camera); requestAnimationFrame(loop); };
+  loop();
+}
+function camOf(c) {
+  const k = fl(), lv = M(LV[k]), R = RES.R[k], B = R.board, zf = lv + M(R.H.forro);
+  if (c === 'geral') return [[10.6, lv + 7.2, 19.5], [4.6, zf, 9.0]];
+  if (c === 'cima') return [[4.7, lv + 13.5, 10.2], [4.6, zf, 9.1]];
+  if (c === 'quadro') return [[M(B.x) + (k === '2' ? -1.6 : 1.4), zf - 0.6, M(B.y) + (k === '2' ? -2.2 : 2.4)], [M(R.nos.R[0]), zf + 0.15, M(R.nos.R[1])]];
+  if (c === 'rente') return [[8.3, zf - 0.35, k === '2' ? 10.0 : 14.6], [4.2, zf + 0.15, 6.0]];
+  return null;
+}
+function setCam(c) {
+  const v = camOf(c);
+  if (!R3 || !v) return;
+  R3.camera.position.set(...v[0]); R3.controls.target.set(...v[1]); R3.controls.update();
+}
+function sync3D() {
+  if (!R3) return;
+  casaModo();
+  const w = R3.host.clientWidth, h = R3.host.clientHeight;
+  if (w && h) { R3.renderer.setSize(w, h, false); R3.camera.aspect = w / h; R3.camera.updateProjectionMatrix(); }
+}
+function setCasa(modo) {
+  S.casa = modo;
+  [...$('casa3d').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.casa === modo ? 'true' : 'false'));
+  casaModo();
+}
+$('casa3d').addEventListener('click', (e) => { const b = e.target.closest('button[data-casa]'); if (b) setCasa(b.dataset.casa); });
+$('cams').addEventListener('click', (e) => { const b = e.target.closest('button[data-cam]'); if (b) setCam(b.dataset.cam); });
+
+// ---------------------------------------------------------------- painel lateral
+const TXT = {
+  T: `No térreo as vigas descem abaixo do forro e dividem o vão em quadros. O perfilado corre dentro de cada quadro, preso na laje, com o eixo a ${num(RES.R.T.eixo / 1000, 2)} m do piso (a altura das passagens deixadas nas vigas), e para a 5 cm de cada viga: os cabos atravessam a viga dentro de um trecho de eletroduto DN 32 enfiado na passagem, e o perfilado recomeça do outro lado. Do QDC a ligação corre pela sala até o lavabo; de lá um ramal vai para a cozinha e os fundos e outro para a garagem; do cruzamento saem o ramal do quarto, do depósito e da suíte e o da sala e da fachada.`,
+  1: `No 1º o forro fica abaixo das vigas, então o perfilado corre num nível só, com a face de baixo ${num(P.PERF.folga / 10, 1)} cm acima do gesso, por baixo das vigas, e atravessa as paredes por um furo de 6 × 6 cm na última fiada. O tronco desce pelo eixo x = 4,90 m, do closet até o quarto 2, ao lado da divisória dos quartos; dois braços atravessam os closets e os quartos, e a ligação do QD-1 vem pela circulação.`,
+  2: `No 2º, como no 1º, o perfilado passa por baixo das vigas, ${num(P.PERF.folga / 10, 1)} cm acima do gesso. Do QD-2 o tronco atravessa a varanda coberta em y = 8,15 m e sobe pelos dois lados (x = 2,40 m e x = 6,80 m), perto das paredes onde estão as tomadas. Não atravessa nenhuma parede.`,
+};
+const MOTIVO = { potencia: 'circuito de potência (disjuntor acima de 10 A): eletroduto próprio', escada: 'escada (sem forro): embutido na parede', baixo: 'área descoberta: por baixo, como no projeto' };
+function side() {
+  const el = $('side');
+  if (S.tab === 'M' || S.tab === 'D') return sideDoc(el);
+  const k = fl(), R = RES.R[k];
+  const Lp = R.T.reduce((s, t) => s + t.Lperf, 0), nS = R.T.reduce((s, t) => s + t.nSusp, 0), nC = new Set(R.T.flatMap((t) => [...t.circ])).size;
+  const tir = R.H.laje - R.base + 40;
+  let h = `<h2>${NOME[k]}</h2><p class="sub">${TXT[k]}</p>`;
+  h += `<div class="kpis"><div class="kpi"><b>${fmt(Lp, 1)} m</b><span>perfilado 38×38 (${R.T.length} trechos)</span></div><div class="kpi"><b>${R.deriv.length}</b><span>derivações em eletroduto ¾" até as caixas</span></div>`;
+  h += `<div class="kpi"><b>${nS}</b><span>tirantes do perfilado (a cada 1,50 m)</span></div><div class="kpi"><b>${nC}</b><span>circuitos no perfilado (${R.board.id})</span></div></div>`;
+  h += `<h3>Trechos</h3><table class="t"><tr><th>Trecho</th><th>m</th><th>circ.</th><th>cabos</th><th>ocup.</th><th>fator</th></tr>`;
+  R.T.forEach((t) => (h += `<tr class="${t.ocup > P.LIM.ocup ? 'warn' : ''}"><td>${t.id} <span style="color:var(--muted)">${esc(t.nome)}</span>${t.nPas ? ` <span class="tag" title="passagens em viga">${t.nPas} viga${t.nPas > 1 ? 's' : ''}</span>` : ''}</td><td class="n">${fmt(t.L, 2)}</td><td class="n">${t.circ.size}</td><td class="n">${t.nCond}</td><td class="n">${Math.round(t.ocup * 100)}%</td><td class="n">${num(t.fca, 2)}</td></tr>`));
+  h += `</table><p class="sub" style="font-size:11.5px;margin-top:6px">Ocupação: área dos cabos ÷ ${P.PERF.area} mm² úteis do perfilado (limite de projeto 40 %). Fator de agrupamento da NBR 5410 (Tabela 42, feixe em conduto fechado) pelo número de circuitos no trecho.</p>`;
+  h += `<h3>Alturas (sobre o piso do ${k === 'T' ? 'térreo' : NOME[k].replace(' pavimento', '')})</h3><dl class="dimlist">`;
+  h += `<dt>Forro (face do gesso)</dt><dd>${fmt(R.H.forro)} m</dd><dt>Perfilado (face de baixo)</dt><dd>${fmt(R.base)} m</dd><dt>Eixo do perfilado</dt><dd>${fmt(R.eixo)} m</dd><dt>Fundo da laje</dt><dd>${fmt(R.H.laje)} m</dd><dt>Tirante (barra roscada ¼")</dt><dd>~${fmt(tir)} m</dd>`;
+  h += `<dt>Subidas do ${R.board.id}</dt><dd>${R.subidas} × DN 32 + 1 reserva</dd></dl>`;
+  if (k === 'T') h += `<div class="note"><b>Passagens nas vigas:</b> ${RES.M.nPas} (${Object.entries(P.PASSAGENS.T.trechos).map(([a, n]) => a + ' ×' + n).join(' · ')}). Em cada uma o perfilado termina numa tampa terminal furada a 5 cm da viga, os cabos passam dentro de ${R.T.filter((t) => t.nPas).map((t) => t.id + ': ' + t.dnPas + '× DN 32').join(' · ')}, e um jumper de 6 mm² liga as duas pontas do perfilado. Precisa de passagem de Ø 40 mm ou mais; se a passagem estiver deslocada, o perfilado desvia até ela. A derivação ${P.PASSAGENS.T.deriv.join(', ')} também cruza uma viga.</div>`;
+  const grp = {};
+  R.fora.forEach((d) => (grp[d.motivo] = grp[d.motivo] || []).push(d.pts.join('+')));
+  h += `<h3>Fora do perfilado</h3><ul class="list">${Object.entries(grp).map(([m, L]) => `<li><b>${esc(MOTIVO[m])}</b> — ${L.join(', ')}</li>`).join('')}</ul>`;
+  const longas = R.deriv.filter((d) => d.Lh > 2500).sort((a, b) => b.Lh - a.Lh);
+  if (longas.length) h += `<h3>Derivações mais longas</h3><ul class="list">${longas.map((d) => `<li>${d.pts.join('+')} — ${fmt(d.Lh, 2)} m no forro${d.furos.length ? ', atravessa ' + d.furos.length + ' parede' : ''}</li>`).join('')}</ul>`;
+  h += `<div class="note">Os cabos dos circuitos de <b>iluminação</b> que passam pelo perfilado sobem de 1,5 para <b>2,5 mm²</b>: no feixe (até ${Math.max(...Object.values(R.SEC).map((x) => x.nMax))} circuitos, fator ${num(Math.min(...Object.values(R.SEC).map((x) => x.fca)), 2)}) o de 1,5 mm² aguentaria só ${num(17.5 * Math.min(...Object.values(R.SEC).map((x) => x.fca)), 1)} A, menos que o disjuntor de 10 A. Detalhe na aba Materiais.</div>`;
+  el.innerHTML = h;
+}
+function sideDoc(el) {
+  const M2 = RES.M;
+  let h = `<h2>${S.tab === 'M' ? 'Lista de materiais' : 'Detalhes de montagem'}</h2><p class="sub">Perfilado liso 38×38 com tampa no forro dos três pavimentos, derivações em eletroduto corrugado reforçado ¾" até cada caixa.</p>`;
+  h += `<div class="kpis"><div class="kpi"><b>${fmt(M2.Ltot, 1)} m</b><span>perfilado → ${M2.barras.length} barras de 6 m</span></div><div class="kpi"><b>${M2.derivs}</b><span>derivações · ${num(M2.Lder, 0)} m de eletroduto ¾"</span></div>`;
+  h += `<div class="kpi"><b>${M2.nSusp}</b><span>suportes no perfilado · ${M2.nTir} tirantes no total</span></div><div class="kpi"><b>${M2.nPas}</b><span>passagens em viga (térreo)</span></div></div>`;
+  h += `<h3>Por andar</h3><table class="t"><tr><th></th><th>perfilado</th><th>deriv.</th><th>tirantes</th></tr>${['T', '1', '2'].map((k) => { const R = RES.R[k]; return `<tr><td>${NOME[k]}</td><td class="n">${fmt(R.T.reduce((s, t) => s + t.Lperf, 0), 1)} m</td><td class="n">${R.deriv.length}</td><td class="n">${R.T.reduce((s, t) => s + t.nSusp, 0)}</td></tr>`; }).join('')}</table>`;
+  h += `<h3>O que não entra</h3><ul class="list"><li>Cabos, disjuntores, DR e quadros: lista do projeto elétrico (com a troca da iluminação para 2,5 mm²).</li><li>Rede (Cat6) e fibra: eletrodutos próprios, nunca no perfilado de energia.</li><li>Alimentadores dos quadros e ramal de entrada.</li></ul>`;
+  el.innerHTML = h;
+}
+
+// ---------------------------------------------------------------- aba Materiais
+function linhasCSV() {
+  const L = [['Grupo', 'Item', 'Unidade', 'Quantidade calculada', 'Comprar', 'Observação']];
+  RES.items.forEach((i) => L.push([i.grupo, i.desc, i.un, i.q, i.compra, i.obs]));
+  L.push([]); L.push(['Ferramentas (não somam)']); RES.FERRAMENTAS.forEach(([a, b]) => L.push(['Ferramentas', a, '', '', '', b]));
+  return L;
+}
+function baixarCSV() {
+  const txt = '﻿' + linhasCSV().map((r) => r.map((c) => { const s2 = String(c == null ? '' : c); return /[;"\n]/.test(s2) ? '"' + s2.replace(/"/g, '""') + '"' : s2; }).join(';')).join('\r\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([txt], { type: 'text/csv;charset=utf-8' }));
+  a.download = 'obra-mariara-perfilado-materiais.csv'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+function docMateriais() {
+  const M2 = RES.M;
+  let h = `<h2>Lista de materiais — infra elétrica em perfilado 38×38</h2>`;
+  h += `<p class="sub">Calculada do traçado das plantas (aba de cada andar). "Quantidade calculada" é o que o projeto usa; "Comprar" já tem a margem de perda (≈10 % na parafusaria e nos chumbadores, rolos inteiros de eletroduto). Unidades em barras de 6 m (perfilado), 3 m (tampa) e 1 m (barra roscada).</p>`;
+  h += `<div class="btns"><button type="button" id="csv">Baixar planilha (CSV, abre no Excel)</button><button type="button" onclick="window.print()">Imprimir</button></div>`;
+  h += `<table class="mat"><tr><th>#</th><th>Item</th><th>Un</th><th>Calculado</th><th>Comprar</th><th>Onde / observação</th></tr>`;
+  let g = '', n = 0;
+  RES.items.forEach((i) => {
+    if (i.grupo !== g) { g = i.grupo; h += `<tr class="g"><td colspan="6">${esc(g)}</td></tr>`; }
+    const conf = i.un === '—';
+    h += `<tr><td class="n">${conf ? '' : ++n}</td><td>${esc(i.desc)}</td><td>${esc(i.un)}</td><td class="n">${conf ? '' : num(i.q)}</td><td class="n"><b>${conf ? '' : num(i.compra)}</b></td><td class="o">${esc(i.obs)}</td></tr>`;
+  });
+  h += `</table>`;
+  h += `<h3>Ferramentas (não entram na lista)</h3><table class="mat"><tr><th>Ferramenta</th><th>Para quê</th></tr>${RES.FERRAMENTAS.map(([a, b]) => `<tr><td>${esc(a)}</td><td class="o">${esc(b)}</td></tr>`).join('')}</table>`;
+  // verificação dos cabos
+  h += `<h3>Cabos no perfilado (verificação NBR 5410)</h3><p>No perfilado todos os circuitos do trecho formam um feixe: a capacidade do cabo cai pelo fator de agrupamento (Tabela 42). Com até 15 circuitos (fator 0,45) o cabo de 2,5 mm² aguenta 24 × 0,45 = 10,8 A, acima do disjuntor de 10 A; o de 1,5 mm² aguentaria só 7,9 A. Por isso os circuitos de iluminação que passam pelo perfilado ficam com <b>2,5 mm²</b> (fase, neutro, retornos e terra). Circuitos com disjuntor acima de 10 A (chuveiros, ar-condicionado de 16 A, tomadas da cozinha e micro-ondas) não entram no perfilado: seguem em eletroduto próprio, como no projeto.</p>`;
+  h += `<table class="mat"><tr><th>Circuito</th><th>Descrição</th><th>Disj.</th><th>Circuitos no pior trecho</th><th>Fator</th><th>Projeto</th><th>No perfilado</th><th>Iz no feixe</th></tr>`;
+  ['T', '1', '2'].forEach((k) => Object.values(RES.R[k].SEC).sort((a, b) => a.n - b.n).forEach((x) => (h += `<tr${x.muda ? ' style="background:#fbf1dd"' : ''}><td class="n">C${x.n}</td><td>${esc(x.desc)}</td><td class="n">${x.disj} A</td><td class="n">${x.nMax}</td><td class="n">${num(x.fca, 2)}</td><td class="n">${num(x.projeto, 1)} mm²</td><td class="n"><b>${num(x.secao, 1)} mm²</b></td><td class="n">${num(x.iz, 1)} A</td></tr>`)));
+  h += `</table>`;
+  h += `<h3>Regras usadas no cálculo</h3><ul>`;
+  h += `<li>Perfilado <b>liso</b> (sem furos) e <b>com tampa</b> em todo o comprimento: com cabo flexível 750 V comum (condutor isolado, sem capa) a NBR 5410 só admite perfilado de paredes e tampa maciças. Perfilado perfurado só com cabos com capa (PP ou 0,6/1 kV).</li>`;
+  h += `<li>Tirante a cada 1,50 m no máximo e a até 30 cm de cada junção, curva, ponta e passagem de viga; chumbador só na nervura de concreto (vigota) da laje treliçada.</li>`;
+  h += `<li>Barras de 6 m cortadas por trecho (as junções T, L e X dividem a rede em peças); emenda "I" só onde a peça passa de 6 m.</li>`;
+  h += `<li>Uma derivação por caixa: saída ¾" no perfilado, eletroduto corrugado reforçado ¾" pelo forro (+10 % no comprimento) e descendo embutido na parede até a caixa; apoio em tirante a cada 1,0 m nas mais longas.</li>`;
+  h += `<li>Quadro ligado ao perfilado por eletrodutos DN 32 embutidos (até 6 circuitos cada) + 1 de reserva.</li>`;
+  h += `<li>Perfilado ligado ao terra (PE) de cada quadro, com arruela dentada nas junções e jumper nas passagens das vigas.</li></ul>`;
+  h += `<div class="aviso">Conferir na obra antes de comprar: (1) a folga entre o topo do forro e o fundo das vigas do 1º e do 2º (precisa de pelo menos 6 cm para o perfilado passar por baixo); (2) a posição, a altura e o diâmetro das passagens nas vigas do térreo; (3) o sentido das vigotas da laje, para posicionar os tirantes.</div>`;
+  $('doc').innerHTML = h;
+  $('csv').addEventListener('click', baixarCSV);
+}
+
+// ---------------------------------------------------------------- aba Detalhes (desenhos esquemáticos, sem escala)
+const SV = (w, h, inner) => `<svg viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg" font-family="JetBrains Mono, monospace" font-size="11">${inner}</svg>`;
+const T_ = (x, y, t, o = '') => `<text x="${x}" y="${y}" ${o}>${t}</text>`;
+const seta = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#1f1d1a" stroke-width="1"/><circle cx="${x2}" cy="${y2}" r="2.2" fill="#1f1d1a"/>`;
+const perfC = (x, y, s = 1) => `<g transform="translate(${x},${y}) scale(${s})"><path d="M0 0 V38 H38 V0 H30 V6 H34 V34 H4 V6 H8 V0 Z" fill="#9aa6ad" stroke="#4a5358" stroke-width="1"/><rect x="-1" y="-4" width="40" height="4" fill="#c3ccd1" stroke="#4a5358" stroke-width=".8"/></g>`;
+function figuras() {
+  const R1 = RES.R[1], tir1 = R1.H.laje - R1.base + 40;
+  const F = [];
+  // 1 — suspensão
+  F.push(['Suspensão do perfilado (corte)', `Tirante de barra roscada ¼" chumbado na nervura da laje (chumbador CB ¼"), suporte (pendural) por baixo do perfilado travado entre porca e arruela, tampa por cima. Tirante de ~${fmt(tir1)} m no 1º, ~${fmt(RES.R[2].H.laje - RES.R[2].base + 40)} m no 2º e ~${fmt(RES.R.T.H.laje - RES.R.T.base + 40)} m no térreo; a cada 1,50 m no máximo.`,
+    SV(520, 336, `<rect x="20" y="20" width="480" height="46" fill="#d6cfc3" stroke="#8c8375"/>${[0, 1, 2].map((i) => `<rect x="${40 + i * 160}" y="40" width="110" height="26" fill="#f4f1ea" stroke="#b8b0a2"/>`).join('')}${T_(46, 57, 'EPS', 'fill="#8c8375"')}<rect x="205" y="20" width="30" height="46" fill="#bdb5a7" stroke="#8c8375"/>${T_(244, 34, 'vigota de concreto: chumbar aqui')}
+    <rect x="214" y="60" width="12" height="18" fill="#6b7378"/>${T_(250, 82, 'chumbador CB ¼" (furo 3/8")')}<line x1="220" y1="78" x2="220" y2="222" stroke="#6b7378" stroke-width="5"/>${T_(250, 150, 'barra roscada ¼"')}
+    <path d="M196 222 V268 H244 V222" fill="none" stroke="#4a5358" stroke-width="4"/><rect x="208" y="212" width="24" height="7" fill="#4a5358"/><rect x="208" y="270" width="24" height="7" fill="#4a5358"/>${T_(250, 216, 'porca + arruela (trava em cima)')}${T_(250, 282, 'porca + arruela (trava embaixo)')}
+    ${perfC(201, 228)}${T_(250, 246, 'perfilado 38×38 liso + tampa')}<rect x="20" y="304" width="480" height="10" fill="#f4f1ea" stroke="#b8b0a2"/>${T_(26, 326, 'forro de gesso', 'fill="#8c8375"')}<line x1="180" y1="266" x2="180" y2="304" stroke="#c0392b"/>${T_(118, 286, '≥ 4,5 cm', 'fill="#c0392b"')}`)]);
+  // 2 — conexões
+  F.push(['Conexões (vista de cima) e parafusos', 'Cada peça da rede é uma barra inteira entre duas conexões. Parafuso cabeça lentilha ¼" × ½" com a cabeça para dentro (não fere o cabo), porca e arruela por fora; arruela dentada em um parafuso de cada lado (continuidade do terra).',
+    SV(520, 250, `${[['Junção T', 70, '6 parafusos'], ['Junção L', 200, '4 parafusos'], ['Junção X', 330, '8 parafusos'], ['Emenda I', 455, '4 parafusos']].map(([n, x, p], i) => {
+      const bar = (x1, y1, x2, y2) => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="#9aa6ad" stroke-width="16"/>`;
+      const c = { x, y: 110 };
+      let g = '';
+      if (i === 0) g = bar(c.x - 55, c.y, c.x + 55, c.y) + bar(c.x, c.y, c.x, c.y + 60);
+      if (i === 1) g = bar(c.x - 55, c.y, c.x, c.y) + bar(c.x, c.y, c.x, c.y + 60);
+      if (i === 2) g = bar(c.x - 55, c.y, c.x + 55, c.y) + bar(c.x, c.y - 60, c.x, c.y + 60);
+      if (i === 3) g = bar(c.x - 55, c.y, c.x + 55, c.y);
+      const pl = i === 3 ? `<rect x="${c.x - 22}" y="${c.y - 6}" width="44" height="12" fill="#1f6f8b" opacity=".85"/>` : `<rect x="${c.x - 22}" y="${c.y - 22}" width="44" height="${i === 1 ? 44 : 44}" fill="#1f6f8b" opacity=".85"/>`;
+      const nb = [6, 4, 8, 4][i], bolts = Array.from({ length: nb }, (_, k) => { const a = (k / nb) * Math.PI * 2; return `<circle cx="${c.x + Math.cos(a) * 15}" cy="${c.y + Math.sin(a) * 15}" r="2.6" fill="#fff"/>`; }).join('');
+      return g + pl + bolts + T_(x, 205, n, 'text-anchor="middle" font-weight="600"') + T_(x, 222, p, 'text-anchor="middle" fill="#5d564b"');
+    }).join('')}${T_(20, 30, 'tampa terminal nas pontas: 2 parafusos · saída ¾" das derivações: 1 parafuso', 'fill="#5d564b"')}`)]);
+  // 3 — derivação até tomada/interruptor
+  F.push(['Derivação até tomada ou interruptor', 'Saída lateral ¾" no perfilado, eletroduto corrugado reforçado ¾" (laranja) pelo forro, preso com abraçadeira "D" em tirante a cada 1,0 m (nunca apoiado no forro), curva e descida embutida na parede até a caixa 4×2. Bucha e arruela nas duas pontas.',
+    SV(520, 330, `<rect x="20" y="20" width="480" height="20" fill="#d6cfc3" stroke="#8c8375"/>${perfC(40, 90)}${T_(30, 145, 'perfilado')}<path d="M78 105 H360 Q392 105 392 137 V280" fill="none" stroke="#e8742f" stroke-width="9"/><rect x="78" y="98" width="10" height="14" fill="#4a5358"/>${T_(92, 128, 'saída ¾" + bucha e arruela')}
+    <line x1="300" y1="40" x2="300" y2="98" stroke="#6b7378" stroke-width="4"/><path d="M290 98 h20 v14 h-20z" fill="none" stroke="#4a5358" stroke-width="2"/>${T_(120, 62, 'abraçadeira "D" no tirante')}${T_(120, 76, '(a cada 1,0 m)')}
+    <rect x="400" y="40" width="56" height="280" fill="#e5ddd0" stroke="#8c8375"/>${T_(462, 60, 'parede')}<rect x="20" y="150" width="378" height="8" fill="#f4f1ea" stroke="#b8b0a2"/>${T_(26, 172, 'forro', 'fill="#8c8375"')}<rect x="380" y="276" width="26" height="40" fill="#fff" stroke="#1f1d1a"/>${T_(300, 305, 'caixa 4×2"')}${T_(250, 230, 'descida embutida', 'fill="#e8742f"')}`)]);
+  // 4 — caixa de luz
+  F.push(['Ponto de luz no forro', 'Derivação até uma caixa octogonal 4×4" presa num tirante próprio, na altura do perfilado; da caixa desce o rabicho (cabo PP 3 × 2,5 mm²) até a luminária no gesso. Caixa a até 40 cm da luminária: o acesso é pelo furo dela.',
+    SV(520, 260, `<rect x="20" y="20" width="480" height="20" fill="#d6cfc3" stroke="#8c8375"/>${perfC(40, 110)}<path d="M78 125 H300" fill="none" stroke="#e8742f" stroke-width="9"/><line x1="330" y1="40" x2="330" y2="110" stroke="#6b7378" stroke-width="4"/><polygon points="305,112 355,112 362,124 355,138 305,138 298,124" fill="#fff" stroke="#1f1d1a"/>${T_(372, 128, 'caixa octogonal 4×4"')}
+    <path d="M330 138 Q332 170 330 196" fill="none" stroke="#1f1d1a" stroke-width="2.5"/>${T_(340, 176, 'rabicho PP')}<rect x="20" y="196" width="480" height="8" fill="#f4f1ea" stroke="#b8b0a2"/><ellipse cx="330" cy="210" rx="44" ry="6" fill="#fff6d8" stroke="#b7791f"/>${T_(26, 230, 'forro de gesso · luminária', 'fill="#8c8375"')}`)]);
+  // 5 — travessia de viga (térreo)
+  F.push(['Passagem da viga (térreo)', 'O perfilado termina numa tampa terminal furada a 5 cm da viga; um trecho de eletroduto DN 32 enfiado na passagem leva os cabos até o perfilado do outro lado (bucha e arruela 1" nas duas tampas). Jumper de cobre 6 mm² liga as duas pontas; tirante a até 30 cm de cada face.',
+    SV(520, 300, `<rect x="20" y="20" width="480" height="40" fill="#d6cfc3" stroke="#8c8375"/><rect x="220" y="60" width="80" height="170" fill="#c9c1b4" stroke="#8c8375"/>${T_(232, 220, 'viga')}<circle cx="260" cy="135" r="22" fill="#f4f1ea" stroke="#8c8375"/>${T_(232, 104, 'passagem', 'text-anchor="middle"')}
+    <rect x="40" y="117" width="170" height="38" fill="#9aa6ad" stroke="#4a5358"/><rect x="310" y="117" width="170" height="38" fill="#9aa6ad" stroke="#4a5358"/><rect x="206" y="115" width="6" height="42" fill="#4a5358"/><rect x="308" y="115" width="6" height="42" fill="#4a5358"/>
+    <rect x="200" y="128" width="120" height="14" fill="#e8742f"/>${T_(350, 108, 'eletroduto DN 32 (0,50 m)')}<path d="M180 160 Q260 200 340 160" fill="none" stroke="#2e8540" stroke-width="2.5"/>${T_(220, 252, 'jumper 6 mm² (terra)', 'fill="#2e8540"')}
+    <line x1="180" y1="60" x2="180" y2="117" stroke="#6b7378" stroke-width="4"/><line x1="340" y1="60" x2="340" y2="117" stroke="#6b7378" stroke-width="4"/>${T_(40, 200, 'tirante ≤ 30 cm da viga')}<rect x="20" y="270" width="480" height="8" fill="#f4f1ea" stroke="#b8b0a2"/>${T_(26, 266, 'forro', 'fill="#8c8375"')}`)]);
+  // 6 — travessia de parede (1º e 2º)
+  F.push(['Travessia de parede (1º e 2º)', 'O perfilado passa por baixo das vigas e atravessa a alvenaria por um furo de 6 × 6 cm na última fiada (entre o forro e a viga), sem emenda dentro da parede; arremate com argamassa depois de passar os cabos.',
+    SV(520, 260, `<rect x="20" y="20" width="480" height="30" fill="#d6cfc3" stroke="#8c8375"/><rect x="200" y="50" width="120" height="60" fill="#c9c1b4" stroke="#8c8375"/>${T_(232, 85, 'viga')}<rect x="226" y="110" width="68" height="140" fill="#e5ddd0" stroke="#8c8375"/>${T_(330, 200, 'parede (bloco 14 cm)')}
+    <rect x="40" y="118" width="440" height="38" fill="#9aa6ad" stroke="#4a5358"/><rect x="222" y="114" width="76" height="46" fill="none" stroke="#c0392b" stroke-dasharray="4 3"/>${T_(300, 140, 'furo 6×6 cm', 'fill="#c0392b"')}<rect x="20" y="166" width="206" height="8" fill="#f4f1ea" stroke="#b8b0a2"/><rect x="294" y="166" width="206" height="8" fill="#f4f1ea" stroke="#b8b0a2"/>${T_(26, 188, 'forro', 'fill="#8c8375"')}`)]);
+  // 7 — saída do quadro
+  F.push(['Saída do quadro', 'Do topo do quadro sobem eletrodutos DN 32 embutidos (até 6 circuitos cada, mais 1 de reserva) até as saídas inferiores 1" no início do perfilado, logo acima. Cabo 6 mm² verde-amarelo do barramento de terra do quadro até o perfilado (terminal olhal + arruela dentada).',
+    SV(520, 320, `<rect x="20" y="20" width="480" height="20" fill="#d6cfc3" stroke="#8c8375"/><rect x="120" y="40" width="200" height="270" fill="#e5ddd0" stroke="#8c8375"/>${T_(330, 300, 'parede')}<rect x="150" y="200" width="140" height="100" fill="#2a2a2a"/>${T_(160, 255, 'quadro', 'fill="#fff"')}
+    ${[0, 1, 2, 3].map((i) => `<line x1="${170 + i * 32}" y1="200" x2="${170 + i * 32}" y2="96" stroke="${i === 3 ? '#b0a89a' : '#e8742f'}" stroke-width="9"/>`).join('')}<rect x="130" y="58" width="260" height="38" fill="#9aa6ad" stroke="#4a5358"/>${T_(395, 80, 'início do perfilado')}${T_(362, 186, 'DN 32 + reserva')}
+    <path d="M286 230 Q350 200 350 96" fill="none" stroke="#2e8540" stroke-width="2.5"/>${T_(356, 120, 'terra 6 mm²', 'fill="#2e8540"')}`)]);
+  return F;
+}
+function docDetalhes() {
+  let h = `<h2>Detalhes de montagem</h2><p class="sub">Desenhos esquemáticos, sem escala. Ordem de obra: marcar a altura do perfilado nas paredes → furar as travessias → chumbar os tirantes nas vigotas → montar o perfilado com as junções → derivações e caixas → passar os cabos → tampa → só então fechar o forro.</p><div class="figs">`;
+  figuras().forEach(([t, c, svg]) => (h += `<figure>${svg}<figcaption><b>${esc(t)}</b>${esc(c)}</figcaption></figure>`));
+  h += `</div>`;
+  $('doc').innerHTML = h;
+}
+
+// ---------------------------------------------------------------- navegação
+function setTab(id) {
+  S.tab = id;
+  [...tabsEl.children].forEach((b) => b.setAttribute('aria-selected', b.dataset.tab === id ? 'true' : 'false'));
+  const doc = id === 'M' || id === 'D';
+  $('main').dataset.doc = doc ? '1' : '0';
+  $('viewseg').hidden = doc; $('casa3d').hidden = false;
+  try { history.replaceState(null, '', '#' + id); } catch (e) { /* file:// */ }
+  side();
+  if (doc) { (id === 'M' ? docMateriais : docDetalhes)(); return; }
+  $('plan-title').textContent = 'Planta — ' + NOME[id];
+  S.pv = null; requestAnimationFrame(() => { fitView(); drawPlan(); });
+  if (S.view !== '2d') { init3D(); sync3D(); setCam('geral'); }
+}
+function setView(v) {
+  S.view = v; $('stage').dataset.view = v;
+  [...$('viewseg').children].forEach((b) => b.setAttribute('aria-pressed', b.dataset.view === v ? 'true' : 'false'));
+  if (v !== '2d') init3D();
+  requestAnimationFrame(() => { S.pv = null; fitView(); drawPlan(); sync3D(); });
+}
+$('viewseg').addEventListener('click', (e) => { const b = e.target.closest('button[data-view]'); if (b) setView(b.dataset.view); });
+new ResizeObserver(() => { if (!/^[T12]$/.test(S.tab)) return; S.pv = null; fitView(); drawPlan(); sync3D(); }).observe($('stage'));
+const h0 = (location.hash || '').slice(1);
+setTab(TABS.some((t) => t.id === h0) ? h0 : 'T');
+window.__perf = { S, setTab, setView, setCam, setCasa, RES, r3: () => R3 };
+</script>
+</body>
+</html>
