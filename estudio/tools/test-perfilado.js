@@ -57,7 +57,7 @@ check('comprar ≥ calculado em todos os itens', it.every((i) => i.compra >= i.q
 const PA = RES.porAndar;
 check('lista separada por andar (térreo, 1º e 2º)', FL.every((k) => PA[k] && PA[k].items.length > 10));
 const somaQ = (re) => FL.reduce((s, k) => s + ((PA[k].items.find((i) => re.test(i.desc)) || {}).q || 0), 0);
-const unit = [/^Saída lateral/, /^Caixa octogonal/, /^Caixa 4×2" de embutir \(parede\)$/, /^Chumbador/, /^Suporte de suspensão/, /^Junção "T"/, /^Junção "L"/, /^Tampa terminal/];
+const unit = [/^Saída lateral/, /^Caixa octogonal/, /^Caixa 4×2" de embutir \(parede\)$/, /^Chumbador/, /^Gancho curto/, /^Junção "T"/, /^Junção "L"/, /^Tampa terminal/];
 check('por andar: saídas, caixas, chumbadores, suportes e junções somam a casa toda', unit.every((re) => somaQ(re) === q(re)), unit.map((re) => somaQ(re) + '/' + q(re)).join(' '));
 check('por andar: barras compradas por andar cobrem o perfilado de cada andar', FL.every((k) => { const it2 = PA[k].items.find((i) => /^Perfilado/.test(i.desc)); return it2.q * 6000 >= PA[k].M.Ltot; }));
 check('nomes de item únicos em cada lista (o resumo por andar casa linha a linha)', [RES.items].concat(FL.map((k) => PA[k].items)).every((L) => new Set(L.map((i) => i.desc)).size === L.length));
