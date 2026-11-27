@@ -307,8 +307,8 @@
     const barrasTir = cortes(pecasTir, 1000);
     const nTir = pecasTir.length;
     it('Suspensão e fixação', 'Barra roscada (vergalhão) ¼" zincada — barra de 1 m', 'barra', barrasTir.length, `${nTir} tirantes: ${nSusp} do perfilado (${porAndar((R) => '~' + fmt(tir(R), 2) + ' m')}), ${luzes.length} das caixas de luz e ${fixD} das derivações`);
-    it('Suspensão e fixação', 'Chumbador CB ¼" (com rosca interna) para concreto', 'un', nTir, 'um por tirante, só na nervura (vigota) da laje treliçada — nunca no EPS/lajota', ceil10(nTir * 1.1));
-    it('Suspensão e fixação', 'Suporte de suspensão (pendural) para perfilado 38×38, furo para vergalhão ¼"', 'un', nSusp, `a cada 1,50 m no máximo e a até 30 cm de cada junção, curva, ponta e viga (${porAndar((R) => R.T.reduce((s, t) => s + t.nSusp, 0))})`, Math.ceil(nSusp * 1.05));
+    it('Suspensão e fixação', 'Chumbador PBI ¼" (drop-in, rosca interna) para concreto', 'un', nTir, 'um por tirante, só na nervura (vigota) da laje treliçada — nunca no EPS/lajota', ceil10(nTir * 1.1));
+    it('Suspensão e fixação', 'Gancho curto (suporte de suspensão) para perfilado 38×38, preso no vergalhão ¼"', 'un', nSusp, `a cada 1,50 m no máximo e a até 30 cm de cada junção, curva, ponta e viga (${porAndar((R) => R.T.reduce((s, t) => s + t.nSusp, 0))})`, Math.ceil(nSusp * 1.05));
     it('Suspensão e fixação', 'Abraçadeira tipo "D" ¾" com cunha/parafuso para tirante', 'un', fixD, 'apoio das derivações mais longas, a cada 1,0 m (o eletroduto nunca fica apoiado no forro)', ceil10(fixD * 1.1));
     // --- parafusaria
     const nSub = soma((R) => R.subidas + R.reserva);
@@ -383,8 +383,8 @@
   }
 
   const FERRAMENTAS = [
-    ['Furadeira/martelete SDS com broca 3/8" (10 mm)', 'furo do chumbador CB ¼"'],
-    ['Assentador (batedor) de chumbador CB ¼"', 'obrigatório para expandir o chumbador'],
+    ['Furadeira/martelete SDS com broca 3/8" (9,5 mm)', 'furo do chumbador PBI ¼" (27 mm de fundo)'],
+    ['Batedor (assentador) do chumbador PBI ¼"', 'obrigatório: é ele que expande o chumbador dentro do furo'],
     ['Serra-copo 7/8" e 1⅜" (ou punção)', 'furos das saídas ¾" e 1" no perfilado e nas tampas terminais das passagens'],
     ['Serra de fita/arco ou esmerilhadeira com disco de corte fino', 'corte do perfilado e das barras roscadas (rebarbar e passar zinco)'],
     ['Detector de vigotas (ou furo-piloto)', 'achar a nervura de concreto da laje treliçada antes de chumbar'],
