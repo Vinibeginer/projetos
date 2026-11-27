@@ -49,7 +49,7 @@ check('quadro de cada andar ligado ao início da rede (subidas DN 32 + reserva)'
 const it = RES.items;
 const q = (re) => (it.find((i) => re.test(i.desc)) || {}).q;
 check('lista: perfilado, tampa, junções, tirantes, chumbadores, parafusos, porcas e arruelas', [/^Perfilado/, /^Tampa de encaixe/, /Junção "T"/, /Junção "L"/, /Barra roscada/, /Chumbador/, /Parafuso cabeça lentilha/, /Porca sextavada/, /Arruela lisa/, /Arruela dentada/, /Saída lateral/, /Caixa octogonal/].every((re) => q(re) > 0));
-check('barras de perfilado cobrem o comprimento', q(/^Perfilado/) * 6000 >= RES.M.Ltot);
+check('barras de perfilado cobrem o comprimento', q(/^Perfilado/) * P.PERF.barra >= RES.M.Ltot);
 check('uma porca e uma arruela para cada parafuso e duas por tirante', q(/Porca sextavada/) === q(/Parafuso cabeça lentilha/) + 2 * RES.M.nTir && q(/Arruela lisa/) === q(/Porca sextavada/));
 check('um chumbador por tirante', q(/Chumbador/) === RES.M.nTir);
 check('comprar ≥ calculado em todos os itens', it.every((i) => i.compra >= i.q));
@@ -59,7 +59,7 @@ check('lista separada por andar (térreo, 1º e 2º)', FL.every((k) => PA[k] && 
 const somaQ = (re) => FL.reduce((s, k) => s + ((PA[k].items.find((i) => re.test(i.desc)) || {}).q || 0), 0);
 const unit = [/^Saída lateral/, /^Caixa octogonal/, /^Caixa 4×2" de embutir \(parede\)$/, /^Chumbador/, /^Gancho curto/, /^Junção "T"/, /^Junção "L"/, /^Tampa terminal/];
 check('por andar: saídas, caixas, chumbadores, suportes e junções somam a casa toda', unit.every((re) => somaQ(re) === q(re)), unit.map((re) => somaQ(re) + '/' + q(re)).join(' '));
-check('por andar: barras compradas por andar cobrem o perfilado de cada andar', FL.every((k) => { const it2 = PA[k].items.find((i) => /^Perfilado/.test(i.desc)); return it2.q * 6000 >= PA[k].M.Ltot; }));
+check('por andar: barras compradas por andar cobrem o perfilado de cada andar', FL.every((k) => { const it2 = PA[k].items.find((i) => /^Perfilado/.test(i.desc)); return it2.q * P.PERF.barra >= PA[k].M.Ltot; }));
 check('nomes de item únicos em cada lista (o resumo por andar casa linha a linha)', [RES.items].concat(FL.map((k) => PA[k].items)).every((L) => new Set(L.map((i) => i.desc)).size === L.length));
 check('passagens das vigas só na lista do térreo', FL.every((k) => PA[k].items.some((i) => /passagem/.test(i.desc)) === (k === 'T')));
 // projeto estrutural: nenhuma posição de viga no arquivo público — só a contagem de passagens por trecho

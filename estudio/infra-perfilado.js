@@ -22,7 +22,7 @@
   const H = { T: { forro: FG.f0, laje: 2720, eixo: 2640 }, 1: { forro: FG.f1, laje: 3300 }, 2: { forro: FG.f2, laje: 3300 } };
   // perfilado liso 38×38 chapa 18 com tampa: face de baixo 4,5 cm acima do gesso (livre da estrutura do forro), aba
   // para cima, tampa por cima; passa por baixo das vigas (folga a conferir na obra: ≥ 6 cm entre o forro e a viga)
-  const PERF = { lado: 38, chapa: 1.25, barra: 6000, tampa: 3000, folga: 45, area: Math.round((38 - 2 * 1.25) ** 2) };
+  const PERF = { lado: 38, chapa: 1.25, barra: 3000, tampa: 3000, folga: 45, area: Math.round((38 - 2 * 1.25) ** 2) };
   const base = (fl) => (H[fl].eixo ? H[fl].eixo - PERF.lado / 2 : H[fl].forro + PERF.folga);
   const eixo = (fl) => base(fl) + PERF.lado / 2;
   const LIM = { susp: 1500, pontaSusp: 300, ocup: 0.4, deriv: 3500, fixDeriv: 1000 };
@@ -141,7 +141,9 @@
       const nPas = fl === 'T' ? (vigas ? pas.length : (PASSAGENS.T.trechos[id] || 0)) : 0;
       const naViga = (pt) => pas.some((q) => hyp(pt, [q.x, q.y]) < 200);
       const travessias = W.map((w) => ({ w, c: cruza(A, B, w) })).filter((x) => x.c && !naViga(x.c.pt)).map((x) => ({ parede: x.w.id, x: Math.round(x.c.pt[0]), y: Math.round(x.c.pt[1]), esp: x.w.thick }));
-      return { i, id, nome, a: p, b: f, A, B, L, Lperf: L - nPas * GAP_PASSAGEM, passagens: pas, nPas, travessias, circ: new Set(), ret: 0 };
+      const Lperf = L - nPas * GAP_PASSAGEM, pecas = Array(nPas + 1).fill(Lperf / (nPas + 1)); // no térreo o perfilado é cortado em cada viga
+      const emendas = pecas.reduce((s, x) => s + Math.max(0, Math.ceil(x / PERF.barra - 1e-6) - 1), 0);
+      return { i, id, nome, a: p, b: f, A, B, L, Lperf, pecas, emendas, passagens: pas, nPas, travessias, circ: new Set(), ret: 0 };
     });
     const caminho = (no) => { const L = []; for (let n = no; pai[n]; n = pai[n]) L.push(paiT[n]); return L; }; // trechos do quadro até o nó
 
@@ -235,7 +237,8 @@
       // térreo: o perfilado é interrompido em cada viga — mais um tirante de cada lado, a até 30 cm da face da viga
       t.suspPas = 2 * t.nPas;
       t.passagens.forEach((q) => [-1, 1].forEach((sg) => { const s = q.s + sg * 300; t.susp.push({ s, p: ponto(s), desvio: 0, ok: true, passagem: true }); }));
-      t.nSusp = t.susp.filter((x) => !x.passagem).length + t.suspPas;
+      // e um tirante a até 30 cm de cada emenda (a junção das barras de 3 m não pode ficar no meio do vão)
+      t.nSusp = t.susp.filter((x) => !x.passagem).length + t.suspPas + t.emendas;
     });
 
     // ---------------------------------------------------------------- conexões nos nós
@@ -281,21 +284,21 @@
     const soma = (f) => andares.reduce((s, R) => s + f(R), 0);
     const porAndar = (f) => andares.map((R) => NOME[R.fl] + ': ' + f(R)).join(' · ');
     // --- perfilado e tampa (no térreo, sem o vão de cada viga)
-    const pecas = andares.flatMap((R) => R.T.map((t) => t.Lperf));
+    const pecas = andares.flatMap((R) => R.T.flatMap((t) => t.pecas));
     const Ltot = pecas.reduce((s, v) => s + v, 0);
     const barras = cortes(pecas, PERF.barra);
-    const emendas = pecas.reduce((s, L) => s + Math.max(0, Math.ceil(L / PERF.barra) - 1), 0);
+    const emendas = andares.reduce((s, R) => s + R.T.reduce((a, t) => a + t.emendas, 0), 0);
     const tampas = cortes(pecas, PERF.tampa);
     const conTipo = (tp) => soma((R) => R.conex.filter((c) => c.tipo === tp).length);
     const nPas = soma((R) => R.T.reduce((s, t) => s + t.nPas, 0));
     const nT = conTipo('T'), nL = conTipo('L'), nX = conTipo('X'), nPonta = conTipo('ponta') + conTipo('inicio') + 2 * nPas;
-    it('Perfilado e acessórios', 'Perfilado (eletrocalha perfil) 38×38 mm liso, chapa 18, pré-zincado — barra de 6 m', 'barra', barras.length, `${fmt(Ltot)} m em ${pecas.length} peças${andares.length > 1 ? ' (' + porAndar((R) => fmt(R.T.reduce((s, t) => s + t.Lperf, 0)) + ' m') + ')' : ''}; corte: ${barras.map((b) => b.map((v) => fmt(v, 2)).join(' + ')).join(' | ')}`);
+    it('Perfilado e acessórios', 'Perfilado (eletrocalha perfil) 38×38 mm liso, chapa 18, pré-zincado — barra de 3 m', 'barra', barras.length, `${fmt(Ltot)} m em ${pecas.length} peças${andares.length > 1 ? ' (' + porAndar((R) => fmt(R.T.reduce((s, t) => s + t.Lperf, 0)) + ' m') + ')' : ''}; corte: ${barras.map((b) => b.map((v) => fmt(v, 2)).join(' + ')).join(' | ')}`);
     it('Perfilado e acessórios', 'Tampa de encaixe para perfilado 38 mm, pré-zincada — barra de 3 m', 'barra', tampas.length, 'em todo o comprimento: cabo flexível 750 V (sem capa) só em perfilado liso e fechado');
     it('Perfilado e acessórios', 'Junção "T" para perfilado 38×38', 'un', nT, 'derivação do tronco para os ramais');
     it('Perfilado e acessórios', 'Junção "L" (curva horizontal 90°) para perfilado 38×38', 'un', nL, 'mudança de direção');
     if (nX) it('Perfilado e acessórios', 'Junção "X" (cruzeta) para perfilado 38×38', 'un', nX, 'cruzamento da sala do térreo (4 ramais)');
     const resE = andares.length; // uma emenda de reserva por andar (corte errado)
-    it('Perfilado e acessórios', 'Emenda interna "I" (tala) para perfilado 38×38', 'un', emendas + resE, emendas ? `${emendas} nas peças acima de 6 m + ${resE} de reserva` : `nenhuma peça passa de 6 m (barras inteiras entre conexões); ${resE} de reserva para corte errado`);
+    it('Perfilado e acessórios', 'Emenda interna "I" (tala) para perfilado 38×38', 'un', emendas + resE, emendas ? `${emendas} para unir as barras de 3 m nos trechos mais longos (cada uma com um tirante a até 30 cm) + ${resE} de reserva` : `nenhum trecho passa de 3 m; ${resE} de reserva para corte errado`);
     it('Perfilado e acessórios', 'Tampa terminal (fechamento de ponta) para perfilado 38×38', 'un', nPonta, `pontas, início de cada rede (em cima do quadro) e ${2 * nPas} nas ${nPas} passagens das vigas do térreo (furadas para o eletroduto)`);
     // --- suspensão
     const nSusp = soma((R) => R.T.reduce((s, t) => s + t.nSusp, 0));

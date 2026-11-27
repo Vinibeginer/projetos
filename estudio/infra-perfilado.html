@@ -626,7 +626,7 @@ function side() {
 function sideDoc(el) {
   const M2 = RES.M;
   let h = `<h2>${S.tab === 'M' ? 'Lista de materiais' : 'Detalhes de montagem'}</h2><p class="sub">Perfilado liso 38×38 com tampa no forro dos três pavimentos, derivações em eletroduto corrugado reforçado ¾" até cada caixa.</p>`;
-  h += `<div class="kpis"><div class="kpi"><b>${fmt(M2.Ltot, 1)} m</b><span>perfilado → ${M2.barras.length} barras de 6 m</span></div><div class="kpi"><b>${M2.derivs}</b><span>derivações · ${num(M2.Lder, 0)} m de eletroduto ¾"</span></div>`;
+  h += `<div class="kpis"><div class="kpi"><b>${fmt(M2.Ltot, 1)} m</b><span>perfilado → ${M2.barras.length} barras de 3 m</span></div><div class="kpi"><b>${M2.derivs}</b><span>derivações · ${num(M2.Lder, 0)} m de eletroduto ¾"</span></div>`;
   h += `<div class="kpi"><b>${M2.nSusp}</b><span>suportes no perfilado · ${M2.nTir} tirantes no total</span></div><div class="kpi"><b>${M2.nPas}</b><span>passagens em viga (térreo)</span></div></div>`;
   h += `<h3>Por andar</h3><table class="t"><tr><th></th><th>perfilado</th><th>deriv.</th><th>tirantes</th></tr>${['T', '1', '2'].map((k) => { const R = RES.R[k]; return `<tr><td>${NOME[k]}</td><td class="n">${fmt(R.T.reduce((s, t) => s + t.Lperf, 0), 1)} m</td><td class="n">${R.deriv.length}</td><td class="n">${R.T.reduce((s, t) => s + t.nSusp, 0)}</td></tr>`; }).join('')}</table>`;
   h += `<h3>O que não entra</h3><ul class="list"><li>Cabos, disjuntores, DR e quadros: lista do projeto elétrico (com a troca da iluminação para 2,5 mm²).</li><li>Rede (Cat6) e fibra: eletrodutos próprios, nunca no perfilado de energia.</li><li>Alimentadores dos quadros e ramal de entrada.</li></ul>`;
@@ -696,7 +696,7 @@ function docMateriais() {
   } else {
     if (v !== 'casa') {
       const R = RES.R[v], Mk = RES.porAndar[v].M;
-      h += `<h3>${NOMEV[v][0].toUpperCase() + NOMEV[v].slice(1)}</h3><p>${fmt(Mk.Ltot, 1)} m de perfilado (${Mk.barras.length} barras de 6 m) · ${R.deriv.length} derivações (${num(Mk.Lder, 0)} m de eletroduto ¾") · ${Mk.nSusp} suportes · ${Mk.nTir} tirantes · quadro ${R.board.id}${Mk.nPas ? ` · ${Mk.nPas} passagens em viga` : ''}</p>`;
+      h += `<h3>${NOMEV[v][0].toUpperCase() + NOMEV[v].slice(1)}</h3><p>${fmt(Mk.Ltot, 1)} m de perfilado (${Mk.barras.length} barras de 3 m) · ${R.deriv.length} derivações (${num(Mk.Lder, 0)} m de eletroduto ¾") · ${Mk.nSusp} suportes · ${Mk.nTir} tirantes · quadro ${R.board.id}${Mk.nPas ? ` · ${Mk.nPas} passagens em viga` : ''}</p>`;
     } else h += `<h3>Casa toda (compra única)</h3>`;
     h += tabelaLista(listaDe(v));
   }
@@ -705,7 +705,7 @@ function docMateriais() {
   h += `<h3>Regras usadas no cálculo</h3><ul>`;
   h += `<li>Perfilado <b>liso</b> (sem furos) e <b>com tampa</b> em todo o comprimento: com cabo flexível 750 V comum (condutor isolado, sem capa) a NBR 5410 só admite perfilado de paredes e tampa maciças. Perfilado perfurado só com cabos com capa (PP ou 0,6/1 kV).</li>`;
   h += `<li>Tirante a cada 1,50 m no máximo e a até 30 cm de cada junção, curva, ponta e passagem de viga; chumbador só na nervura de concreto (vigota) da laje treliçada.</li>`;
-  h += `<li>Barras de 6 m cortadas por trecho (as junções T, L e X dividem a rede em peças); emenda "I" só onde a peça passa de 6 m, mais uma de reserva por andar.</li>`;
+  h += `<li>Barras de 3 m cortadas por trecho (as junções T, L e X e as vigas do térreo dividem a rede em peças); onde a peça passa de 3 m, emenda "I" com tirante a até 30 cm dela, mais uma emenda de reserva por andar.</li>`;
   h += `<li>Uma derivação por caixa: saída ¾" no perfilado, eletroduto corrugado reforçado ¾" pelo forro (+10 % no comprimento) e descendo embutido na parede até a caixa; apoio em tirante a cada 1,0 m nas mais longas.</li>`;
   h += `<li>Quadro ligado ao perfilado por eletrodutos DN 32 embutidos (até 6 circuitos cada) + 1 de reserva.</li>`;
   h += `<li>Perfilado ligado ao terra (PE) do quadro do andar, com arruela dentada nas junções e jumper nas passagens das vigas.</li></ul>`;
